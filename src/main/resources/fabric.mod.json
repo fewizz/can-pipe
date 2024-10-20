@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "canpipe",
+	"version": "1",
+	"name": "Canvas Pipeline",
+	"description": "Some description",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/canpipe/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"client": [
+			"fewizz.canpipe.Mod"
+		]
+	},
+	"mixins": [
+		{
+			"config": "canpipe.mixins.json",
+			"environment": "client"
+		}
+	],
+	"accessWidener" : "canpipe.accesswidener",
+	"depends": {
+		"fabricloader": ">=0.16.2",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"package": "fewizz.canpipe.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"GameRendererMixin",
+		"GameRendererReloadListenerMixin",
+		"GLStateManagerAccessor",
+		"LevelRendererMixin",
+		"ShaderInstanceMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

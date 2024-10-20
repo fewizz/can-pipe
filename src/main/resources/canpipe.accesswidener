@@ -1,0 +1,6 @@
+accessWidener v2 named
+
+accessible  class  com/mojang/blaze3d/platform/GlStateManager$TextureState
+accessible  field  net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
+mutable     field  net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
+accessible  field  net/minecraft/client/renderer/RenderStateShard  name  Ljava/lang/String;
