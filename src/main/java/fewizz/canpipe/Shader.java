@@ -1,33 +1,31 @@
 package fewizz.canpipe;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
-import com.mojang.blaze3d.shaders.Program;
+import com.mojang.blaze3d.shaders.CompiledShader;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-public final class CanvasShader extends Program {
+public class Shader extends CompiledShader {
 
-    private CanvasShader(Type type, int i, ResourceLocation loc) {
-        super(type, i, loc.toString());
+    private Shader(int id, ResourceLocation resourceLocation) {
+        super(id, resourceLocation);
     }
 
-    public static CanvasShader create(
-        Program.Type type,
-        ResourceLocation loc,
+    public static Shader compile(
+        ResourceLocation location,
+        Type type,
         int version,
-        String source,
-        ResourceManager manager,
-        Map<ResourceLocation, Option> options
-    ) throws IOException {
+        Map<ResourceLocation, Option> options,
+        String source
+    ) throws CompilationException, IOException {
         String preprocessedSource =
             "#version " + version + "\n\n" +
             "#define " + type.name() + "_SHADER\n\n" +
@@ -35,42 +33,19 @@ public final class CanvasShader extends Program {
 
         Set<ResourceLocation> preprocessed = new HashSet<>();
         Set<ResourceLocation> processing = new HashSet<>();
-        preprocessedSource = getPreprocessedSource(preprocessedSource, preprocessed, processing, manager, options);
-
-        var is = new ByteArrayInputStream(preprocessedSource.getBytes());
-
-        int id = -1;
-        try {
-            id = Program.compileShaderInternal(type, loc.getPath(), is, loc.getNamespace(), new GlslPreprocessor() {
-                @Override
-                public String applyImport(boolean bl, String string) {
-                    return string;  // we won't handle #moj_import's
-                }
-            });
-        } catch (IOException e) {
-            StringBuilder sourceWithLineNumbers = new StringBuilder();
-            var lines = preprocessedSource.lines().collect(Collectors.toCollection(ArrayList::new));
-            int digits = (int) Math.log10(lines.size()) + 1;
-            for(int i = 0; i < lines.size(); ++i) {
-                sourceWithLineNumbers.append(("%1$"+digits+"s|").formatted(i+1));
-                sourceWithLineNumbers.append(lines.get(i));
-                sourceWithLineNumbers.append("\n");
-            }
-            throw new IOException("Source: \n" + sourceWithLineNumbers.toString(), e);
-        }
-
-        CanvasShader shader = new CanvasShader(type, id, loc);
-        type.getPrograms().put(shader.getName(), shader);
-        return shader;
+        preprocessedSource = processIncludes(preprocessedSource, preprocessed, processing, options);
+        return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location);
     }
 
-    private static String getPreprocessedSource(
+    private static String processIncludes(
         String source,
         Set<ResourceLocation> preprocessed,
         Set<ResourceLocation> processing,
-        ResourceManager resourceManager,
         Map<ResourceLocation, Option> options
     ) throws IOException {
+        Minecraft mc = Minecraft.getInstance();
+        ResourceManager resourceManager = mc.getResourceManager();
+
         StringBuilder preprocessedSource = new StringBuilder();
 
         Iterable<String> lines = () -> source.lines().iterator();
@@ -117,7 +92,7 @@ public final class CanvasShader extends Program {
                         }
                         String resourceStr = resource.get().openAsReader().lines().collect(Collectors.joining("\n"));
                         processing.add(loc);
-                        line = getPreprocessedSource(resourceStr, preprocessed, processing, resourceManager, options);
+                        line = processIncludes(resourceStr, preprocessed, processing, options);
                         processing.remove(loc);
                         preprocessed.add(loc);
                     }

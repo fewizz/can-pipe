@@ -40,7 +40,7 @@ public class Framebuffer extends RenderTarget {
         super(false /* useDepth */);
         this.colorAttachements = colorAttachements;
         this.depthAttachement = depthAttachement;
-        createBuffers(0, 0, false);
+        createBuffers(0, 0);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class Framebuffer extends RenderTarget {
     }
 
     @Override
-    public void createBuffers(int w, int h, boolean bl) {
+    public void createBuffers(int w, int h) {
         var firstColor = colorAttachements.size() > 0 ? colorAttachements.get(0) : null;
 
         Vector3i extent = new Vector3i();
@@ -120,20 +120,20 @@ public class Framebuffer extends RenderTarget {
     }
 
     @Override
-    public void clear(boolean ignoreGLError) {
+    public void clear() {
         RenderSystem.assertOnRenderThreadOrInit();
         this.bindWrite(true);
 
         if (this.depthAttachement != null) {
             GlStateManager._clearDepth(depthAttachement.clearDepth);
-            GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT, ignoreGLError);
+            GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
         }
 
         for (int i = 0; i < this.colorAttachements.size(); ++i) {
             var a = this.colorAttachements.get(i);
             GL33C.glDrawBuffer(GL33C.GL_COLOR_ATTACHMENT0 + i);
             GlStateManager._clearColor(a.clearColor.x, a.clearColor.y, a.clearColor.z, a.clearColor.w);
-            GlStateManager._clear(GL33C.GL_COLOR_BUFFER_BIT, ignoreGLError);
+            GlStateManager._clear(GL33C.GL_COLOR_BUFFER_BIT);
         }
 
         GL33C.glDrawBuffers(IntStream.range(0, colorAttachements.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());

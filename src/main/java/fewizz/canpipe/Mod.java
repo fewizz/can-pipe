@@ -3,12 +3,15 @@ package fewizz.canpipe;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -18,10 +21,14 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.SimpleResourceReloadListener;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
@@ -35,15 +42,43 @@ public class Mod implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleResourceReloadListener<Map<ResourceLocation, Resource>>() {
+
+            @Override
+            public ResourceLocation getFabricId() {
+                return ResourceLocation.fromNamespaceAndPath(MOD_ID, "pipelines");
+            }
+
+            @Override
+            public CompletableFuture<Map<ResourceLocation, Resource>> load(
+                ResourceManager manager,
+                Executor executor
+            ) {
+                return CompletableFuture.supplyAsync(() -> {
+                    return onResourceListenerPrepare(manager);
+                }, executor);
+            }
+
+            @Override
+            public CompletableFuture<Void> apply(
+                Map<ResourceLocation, Resource> data,
+                ResourceManager manager,
+                Executor executor
+            ) {
+                return CompletableFuture.runAsync(() -> {
+                    onResourceListenerApply(manager, data);
+                }, executor);
+            }
+            
+        });
     }
 
     public static @Nullable Pipeline getCurrentPipeline() {
         return currentPipeline;
     }
 
-    public static void onGameRendererReourceListenerPrepare(
-        ResourceManager instance,
-        Map<ResourceLocation, Resource> toParse
+    private static Map<ResourceLocation, Resource> onResourceListenerPrepare(
+        ResourceManager instance
     ) {
         Map<ResourceLocation, Resource> pipelines = instance.listResources(
             "pipelines",
@@ -61,11 +96,13 @@ public class Mod implements ClientModInitializer {
             }
         );
 
-        toParse.putAll(pipelines);
-        toParse.putAll(materials);
+        return new ImmutableMap.Builder<ResourceLocation, Resource>()
+            .putAll(pipelines)
+            .putAll(materials)
+            .build();
     }
 
-    public static void onGameRendererResourceListenerApply(
+    private static void onResourceListenerApply(
         ResourceManager manager,
         Map<ResourceLocation, Resource> pipelineRawJsons
     ) {
@@ -112,20 +149,9 @@ public class Mod implements ClientModInitializer {
         }
     }
 
-    public static ShaderInstance tryGetMaterialProgramReplacement(String programName) {
-        if (currentPipeline != null) {
-            if (programName.equals("rendertype_solid")) {
-                return currentPipeline.materialPrograms.get(RenderType.solid().name);
-            }
-            if (programName.equals("rendertype_cutout_mipped")) {
-                return currentPipeline.materialPrograms.get(RenderType.cutoutMipped().name);
-            }
-            if (programName.equals("rendertype_cutout")) {
-                return currentPipeline.materialPrograms.get(RenderType.cutout().name);
-            }
-            if (programName.equals("rendertype_translucent")) {
-                return currentPipeline.materialPrograms.get(RenderType.translucent().name);
-            }
+    public static CompiledShaderProgram tryGetMaterialProgramReplacement(ShaderProgram shaderProgram) {
+        if(currentPipeline != null) {
+            return currentPipeline.materialPrograms.get(shaderProgram);
         }
         return null;
     }

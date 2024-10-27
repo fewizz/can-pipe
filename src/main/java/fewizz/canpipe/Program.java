@@ -1,40 +1,23 @@
 package fewizz.canpipe;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
-import blue.endless.jankson.JsonArray;
-import blue.endless.jankson.JsonObject;
-import blue.endless.jankson.JsonPrimitive;
+import net.minecraft.client.renderer.ShaderManager.CompilationException;
+import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.resources.ResourceLocation;
 
 
-public class Program extends CanpipeProgram {
+public class Program extends ProgramBase {
 
-    static final List<JsonObject> DEFAULT_UNIFORMS = new ArrayList<>() {{
-        add(new JsonObject() {{
-            put("name", new JsonPrimitive("frxu_size"));
-            put("type", new JsonPrimitive("int"));
-            put("count", new JsonPrimitive(2));
-            put("values", new JsonArray(List.of(0, 0), Mod.JANKSON.getMarshaller()));
-        }});
-        add(new JsonObject() {{
-            put("name", new JsonPrimitive("frxu_lod"));
-            put("type", new JsonPrimitive("int"));
-            put("count", new JsonPrimitive(1));
-            put("values", new JsonArray(List.of(0), Mod.JANKSON.getMarshaller()));
-        }});
-        add(new JsonObject() {{
-            put("name", new JsonPrimitive("frxu_frameProjectionMatrix"));
-            put("type", new JsonPrimitive("matrix4x4"));
-            put("count", new JsonPrimitive(16));
-            put("values", new JsonArray(List.of(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0), Mod.JANKSON.getMarshaller()));
-        }});
-    }};
+    static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+        new ShaderProgramConfig.Uniform("frxu_size", "int", 2, List.of(0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frxu_lod", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frxu_frameProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F))
+    );
 
     final Uniform FRXU_SIZE;
     final Uniform FRXU_LOD;
@@ -42,10 +25,10 @@ public class Program extends CanpipeProgram {
 
     public Program(
         ResourceLocation location,
-        List<String> samplers,
-        CanvasShader vertexShader,
-        CanvasShader fragmentShader
-    ) throws IOException {
+        List<ShaderProgramConfig.Sampler> samplers,
+        Shader vertexShader,
+        Shader fragmentShader
+    ) throws IOException, CompilationException {
         super(
             location,
             DefaultVertexFormat.POSITION_TEX,

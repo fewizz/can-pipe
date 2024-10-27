@@ -1,5 +1,8 @@
 accessWidener v2 named
 
+accessible  method  net/minecraft/client/renderer/CompiledShaderProgram <init> (I)V
+accessible  field  net/minecraft/client/renderer/CompiledShaderProgram samplers Ljava/util/List;
+accessible  method  com/mojang/blaze3d/shaders/CompiledShader <init> (ILnet/minecraft/resources/ResourceLocation;)V
 accessible  class  com/mojang/blaze3d/platform/GlStateManager$TextureState
 accessible  field  net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
 mutable     field  net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;

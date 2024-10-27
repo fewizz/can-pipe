@@ -27,7 +27,7 @@ public class Pass {
 
         @Override
         void apply(Matrix4f view, Matrix4f projection) {
-            framebuffer.clear(true);
+            framebuffer.clear();
         }
 
     };
@@ -62,7 +62,7 @@ public class Pass {
         RenderSystem.viewport(0, 0, (int) w, (int) h);
 
         for (int i = 0; i < samplers.size(); ++i) {
-            program.setSampler(program.samplers.get(i), samplers.get(i));
+            program.bindSampler(program.samplers.get(i).name(), samplers.get(i).getId());
         }
 
         if (program.PROJECTION_MATRIX != null) {

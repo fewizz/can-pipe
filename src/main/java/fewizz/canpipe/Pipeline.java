@@ -14,6 +14,8 @@ import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 
+import com.mojang.blaze3d.shaders.CompiledShader.Type;
+
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
@@ -21,7 +23,10 @@ import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
 import it.unimi.dsi.fastutil.ints.IntIntImmutablePair;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.CoreShaders;
+import net.minecraft.client.renderer.ShaderManager.CompilationException;
+import net.minecraft.client.renderer.ShaderProgram;
+import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -41,7 +46,7 @@ public class Pipeline implements AutoCloseable {
     public final String cloudsFramebufferName;
     public final String translucentParticlesFramebufferName;
 
-    final Map<String, CanvasShader> shaders = new HashMap<>();
+    final Map<String, Shader> shaders = new HashMap<>();
     final Map<String, Program> programs = new HashMap<>();
     final Map<String, Texture> textures = new HashMap<>();
     public final Map<String, Framebuffer> framebuffers = new HashMap<>();
@@ -49,7 +54,7 @@ public class Pipeline implements AutoCloseable {
     final List<Pass> beforeWorldRender = new ArrayList<>();
     final List<Pass> fabulous = new ArrayList<>();
     final List<Pass> afterRenderHand = new ArrayList<>();
-    public final Map<String, MaterialProgram> materialPrograms = new HashMap<>();
+    public final Map<ShaderProgram, MaterialProgram> materialPrograms = new HashMap<>();
 
     public Framebuffer getDefaultFramebuffer() {
         return this.framebuffers.get(this.defaultFramebufferName);
@@ -88,7 +93,7 @@ public class Pipeline implements AutoCloseable {
         ResourceManager manager,
         ResourceLocation location,
         JsonObject pipelineJson
-    ) throws IOException, SyntaxError {
+    ) throws IOException, SyntaxError, CompilationException {
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
         boolean hasSkyShadows = pipelineJson.containsKey("skyShadows");
@@ -153,16 +158,16 @@ public class Pipeline implements AutoCloseable {
             p.options.put(includeToken, new Option(includeToken, elements));
         }
 
-        for (var rt : List.of(
-            RenderType.solid(),
-            RenderType.cutoutMipped(),
-            RenderType.cutout(),
-            RenderType.translucent())
-        ) {
+        for (var ps : List.of(
+            CoreShaders.RENDERTYPE_SOLID,
+            CoreShaders.RENDERTYPE_CUTOUT_MIPPED,
+            CoreShaders.RENDERTYPE_CUTOUT,
+            CoreShaders.RENDERTYPE_TRANSLUCENT
+        )) {
             var program = MaterialProgram.create(
-                rt, glslVersion, enablePBR, hasSkyShadows, location, materialVertex, materialFragment, p.options
+                ps, glslVersion, enablePBR, hasSkyShadows, location, materialVertex, materialFragment, p.options
             );
-            p.materialPrograms.put(rt.name, program);
+            p.materialPrograms.put(ps, program);
         }
 
         for (var textureE : (JsonArray) pipelineJson.get("images")) {
@@ -288,17 +293,19 @@ public class Pipeline implements AutoCloseable {
             JsonObject programO = (JsonObject) programE;
             String name = programO.get(String.class, "name");
 
-            List<String> samplers = List.of();
+            List<ShaderProgramConfig.Sampler> samplers = List.of();
             var samplersA = programO.get(JsonArray.class, "samplers");
             if (samplersA != null) {
-                samplers = samplersA.stream().map(s -> ((JsonPrimitive)s).asString()).toList();
+                samplers = samplersA.stream().map(
+                    s -> new ShaderProgramConfig.Sampler(((JsonPrimitive)s).asString())
+                ).toList();
             }
 
             var vertexLoc = ResourceLocation.parse(programO.get(String.class, "vertexSource"));
             var fragmentLoc = ResourceLocation.parse(programO.get(String.class, "fragmentSource"));
 
-            CanvasShader vertex = CanvasShader.create(com.mojang.blaze3d.shaders.Program.Type.VERTEX, vertexLoc, glslVersion, IOUtils.toString(manager.openAsReader(vertexLoc)), manager, p.options);
-            CanvasShader fragment = CanvasShader.create(com.mojang.blaze3d.shaders.Program.Type.FRAGMENT, fragmentLoc, glslVersion, IOUtils.toString(manager.openAsReader(fragmentLoc)), manager, p.options);
+            Shader vertex = Shader.compile(vertexLoc, Type.VERTEX, glslVersion, p.options, IOUtils.toString(manager.openAsReader(vertexLoc)));
+            Shader fragment = Shader.compile(fragmentLoc, Type.FRAGMENT, glslVersion, p.options, IOUtils.toString(manager.openAsReader(fragmentLoc)));
 
             Program program = new Program(location.withSuffix("-"+name), samplers, vertex, fragment);
             p.programs.put(name, program);
@@ -355,7 +362,7 @@ public class Pipeline implements AutoCloseable {
             t.onWindowSizeChanged(w, h);
         });
         this.framebuffers.forEach((n, f) -> {
-            f.resize(w, h, false);
+            f.resize(w, h);
         });
     }
 
@@ -374,16 +381,5 @@ public class Pipeline implements AutoCloseable {
             p.close();
         });
     }
-
-    /*public MaterialProgram createMaterialProgram(RenderType renderType) throws FileNotFoundException, IOException {
-        return MaterialProgram.create(
-            renderType,
-            this.glslVersion,
-            this.location,
-            this.materialVertexShaderLocation,
-            this.materialFragmentShaderLocation,
-            this.options
-        );
-    }*/
 
 }

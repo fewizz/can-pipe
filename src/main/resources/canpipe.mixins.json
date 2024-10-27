@@ -4,10 +4,9 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"GameRendererMixin",
-		"GameRendererReloadListenerMixin",
 		"GLStateManagerAccessor",
 		"LevelRendererMixin",
-		"ShaderInstanceMixin"
+		"ShaderManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

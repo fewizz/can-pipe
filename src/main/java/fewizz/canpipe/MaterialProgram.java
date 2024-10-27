@@ -7,27 +7,33 @@ import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 
-import com.mojang.blaze3d.shaders.Program;
+import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.CoreShaders;
+import net.minecraft.client.renderer.ShaderManager.CompilationException;
+import net.minecraft.client.renderer.ShaderProgram;
+import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-public class MaterialProgram extends CanpipeProgram {
+public class MaterialProgram extends ProgramBase {
 
     MaterialProgram(
         ResourceLocation location,
         VertexFormat vertexFormat,
-        CanvasShader vertexShader,
-        CanvasShader fragmentShader
-    ) throws IOException {
+        Shader vertexShader,
+        Shader fragmentShader
+    ) throws IOException, CompilationException {
         super(
             location,
             vertexFormat,
-            List.of("frxs_baseColor", "frxs_lightmap"),
+            List.of(
+                new ShaderProgramConfig.Sampler("frxs_baseColor"),
+                new ShaderProgramConfig.Sampler("frxs_lightmap")
+            ),
             List.of(),
             vertexShader,
             fragmentShader
@@ -35,7 +41,7 @@ public class MaterialProgram extends CanpipeProgram {
     }
 
     public static MaterialProgram create(
-        RenderType renderType,
+        ShaderProgram shaderProgram,
         int glslVersion,
         boolean enablePBR,
         boolean shadowsEnabled,
@@ -43,14 +49,16 @@ public class MaterialProgram extends CanpipeProgram {
         ResourceLocation vertexLoc,
         ResourceLocation fragmentLoc,
         Map<ResourceLocation, Option> options
-    ) throws FileNotFoundException, IOException {
+    ) throws FileNotFoundException, IOException, CompilationException {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
 
         String vertexSrc = IOUtils.toString(manager.getResourceOrThrow(vertexLoc).openAsReader());
         String fragmentSrc = IOUtils.toString(manager.getResourceOrThrow(fragmentLoc).openAsReader());
 
+        String typeName = shaderProgram.configId().getPath().replace("core/", "");
+
         vertexSrc =
-            "#define _RENDER_TYPE_"+renderType.name.toUpperCase()+"\n\n"+
+            "#define _"+typeName.toUpperCase()+"\n\n"+
             """
             in vec3 in_vertex;  // Position
             in vec4 in_color;  // Color
@@ -83,10 +91,10 @@ public class MaterialProgram extends CanpipeProgram {
 
         fragmentSrc =
             "#extension GL_ARB_conservative_depth: enable\n\n"+
-            "#define _RENDER_TYPE_"+renderType.name.toUpperCase()+"\n\n"+
+            "#define _"+typeName.toUpperCase()+"\n\n"+
             (enablePBR ? "#define PBR_ENABLED\n\n" : "") +
             (shadowsEnabled ? "#define SHADOW_MAP_PRESENT\n\n" : "") +
-            "const bool frx_renderTargetSolid = " + (renderType == RenderType.solid() ? "true" : "false") + ";\n\n" +
+            "const bool frx_renderTargetSolid = " + (shaderProgram == CoreShaders.RENDERTYPE_SOLID ? "true" : "false") + ";\n\n" +
             """
 
             layout (depth_unchanged) out float gl_FragDepth;
@@ -193,13 +201,13 @@ public class MaterialProgram extends CanpipeProgram {
 
                 frx_fragColor = frx_sampleColor * frx_vertexColor;
 
-                #ifdef _RENDER_TYPE_CUTOUT_MIPPED
+                #ifdef _RENDERTYPE_CUTOUT_MIPPED
                 if (frx_fragColor.a < 0.5) {
                     discard;
                 }
                 #endif
 
-                #ifdef _RENDER_TYPE_CUTOUT
+                #ifdef _RENDERTYPE_CUTOUT
                 if (frx_fragColor.a < 0.1) {
                     discard;
                 }
@@ -211,25 +219,25 @@ public class MaterialProgram extends CanpipeProgram {
             }
             """;
 
-        var vert = CanvasShader.create(Program.Type.VERTEX, vertexLoc, glslVersion, vertexSrc, manager, options);
-        var frag = CanvasShader.create(Program.Type.FRAGMENT, fragmentLoc, glslVersion, fragmentSrc, manager, options);
+        var vert = Shader.compile(vertexLoc, Type.VERTEX, glslVersion, options, vertexSrc);
+        var frag = Shader.compile(fragmentLoc, Type.FRAGMENT, glslVersion, options, fragmentSrc);
 
-        return new MaterialProgram(pipelineLocation.withSuffix("-"+renderType.name), renderType.format(), vert, frag);
+        return new MaterialProgram(pipelineLocation.withSuffix("-"+typeName), shaderProgram.vertexFormat(), vert, frag);
     }
 
     @Override
     public Uniform getUniform(String name) {
-        if (name.equals("ChunkOffset")) { name = "frx_modelToCamera_3"; }
+        if (name.equals("ModelOffset")) { name = "frx_modelToCamera_3"; }
 
         return super.getUniform(name);
     }
 
     @Override
-    public void setSampler(String name, Object object) {
+    public void bindSampler(String name, int id) {
         if (name.equals("Sampler0")) { name = "frxs_baseColor"; }
         if (name.equals("Sampler2")) { name = "frxs_lightmap"; }
 
-        super.setSampler(name, object);
+        super.bindSampler(name, id);
     }
 
 }

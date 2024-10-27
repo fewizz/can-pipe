@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 
 import fewizz.canpipe.Mod;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
@@ -20,8 +20,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.server.packs.resources.ResourceProvider;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererAccessor {
@@ -39,23 +37,6 @@ public class GameRendererMixin implements GameRendererAccessor {
         return canpipe_frame;
     }
 
-    @WrapOperation(
-        method = "reloadShaders", 
-        at = @At(value = "NEW", target = "Lnet/minecraft/client/renderer/ShaderInstance;")
-    )
-    ShaderInstance onReloadShaderMaterialProgramCreation(
-        ResourceProvider resourceProvider,
-        String name,
-        VertexFormat vertexFormat,
-        Operation<ShaderInstance> original
-    ) {
-        ShaderInstance result = Mod.tryGetMaterialProgramReplacement(name);
-        if (result == null) {
-            result = original.call(resourceProvider, name, vertexFormat);
-        }
-        return result;
-    }
-
     @Inject(method = "render", at=@At("HEAD"))
     void onBeforeRender(CallbackInfo ci) {
         canpipe_frame += 1;
@@ -71,6 +52,7 @@ public class GameRendererMixin implements GameRendererAccessor {
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel("+
+                "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
                 "Lnet/minecraft/client/Camera;"+
@@ -83,6 +65,7 @@ public class GameRendererMixin implements GameRendererAccessor {
     )
     void levelRendererRenderLevelWrapper(
         LevelRenderer instance,
+        GraphicsResourceAllocator resourcePool,
         DeltaTracker deltaTracker,
         boolean bl,
         Camera camera,
@@ -98,7 +81,7 @@ public class GameRendererMixin implements GameRendererAccessor {
         Mod.onBeforeWorldRender(view, projection);
         this.minecraft.mainRenderTarget.bindWrite(false);
 
-        original.call(instance, deltaTracker, bl, camera, gameRenderer, lightTexture, view, projection);
+        original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, lightTexture, view, projection);
 
         Mod.onAfterWorldRender(view, projection);
         this.minecraft.mainRenderTarget.bindWrite(false);

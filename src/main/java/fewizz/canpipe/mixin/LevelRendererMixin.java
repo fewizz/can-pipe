@@ -1,86 +1,61 @@
 package fewizz.canpipe.mixin;
 
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
+import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 
 import fewizz.canpipe.Mod;
 import fewizz.canpipe.Pipeline;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.PostChain;
 
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
 
     @Shadow
-    private PostChain entityEffect;
-    @Shadow
-    private PostChain transparencyChain;
+    @Final
+    private Minecraft minecraft;
 
     @Shadow
-    private RenderTarget translucentTarget;
-    @Shadow
-    private RenderTarget itemEntityTarget;
-    @Shadow
-    private RenderTarget particlesTarget;
-    @Shadow
-    private RenderTarget weatherTarget;
-    @Shadow
-    private RenderTarget cloudsTarget;
+    @Final
+    private LevelTargetBundle targets = new LevelTargetBundle();
 
-    @Inject(
-        method = "initTransparency",
-        cancellable = true,
-        at = @At(
-            value = "NEW",
-            target = "Lnet/minecraft/client/renderer/PostChain;"
-        )
-    )
-    void onPostChainCreation(CallbackInfo ci) {
-        Pipeline p = Mod.getCurrentPipeline();
-        if (p == null) {
-            return;  // initialise post chain normally
-        }
-
-        ci.cancel();  // don't create post chain
-
-        this.translucentTarget = p.framebuffers.get(p.translucentTerrainFramebufferName);
-        this.itemEntityTarget = p.framebuffers.get(p.translucentEntityFramebufferName);
-        this.particlesTarget = p.framebuffers.get(p.translucentParticlesFramebufferName);
-        this.weatherTarget = p.framebuffers.get(p.weatherFramebufferName);
-        this.cloudsTarget = p.framebuffers.get(p.cloudsFramebufferName);
-    }
-
-    /* Replacing if (transparency != null) */
-    @ModifyExpressionValue(
+    @WrapOperation(
         method = "renderLevel",
         at = @At(
-            value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;transparencyChain:Lnet/minecraft/client/renderer/PostChain;"
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;getTransparencyChain()Lnet/minecraft/client/renderer/PostChain;"
         )
     )
-    PostChain onTransparencyCheck(PostChain transparency) {
+    PostChain onPostChainCreation(
+        LevelRenderer instance,
+        Operation<PostChain> original,
+        @Local RenderTargetDescriptor renderTargetDescriptor,
+        @Local FrameGraphBuilder frameGraphBuilder
+    ) {
         Pipeline p = Mod.getCurrentPipeline();
-        if (p != null) {
-            // Expecting that entityEffect is always non-null
-            return entityEffect;
+        if (p == null) {
+            return original.call(instance);  // initialise post chain normally
         }
-        return transparency;
-    }
 
-    @WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/PostChain;process(F)V"))
-    void onPostChainProcess(PostChain instance, float f, Operation<Void> original) {
-        if (instance == null) {  // Pipeline is active
-            return;
-        }
-        original.call(instance, f);
+        // don't create post chain
+
+        this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.framebuffers.get(p.translucentTerrainFramebufferName));
+        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.framebuffers.get(p.translucentEntityFramebufferName));
+        this.targets.particles = frameGraphBuilder.importExternal("particles", p.framebuffers.get(p.translucentParticlesFramebufferName));
+        this.targets.weather = frameGraphBuilder.importExternal("weather", p.framebuffers.get(p.weatherFramebufferName));
+        this.targets.clouds = frameGraphBuilder.importExternal("clouds", p.framebuffers.get(p.cloudsFramebufferName));
+
+        return null;
     }
 
 }
