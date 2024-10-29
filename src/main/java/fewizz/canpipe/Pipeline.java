@@ -1,6 +1,7 @@
 package fewizz.canpipe;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -93,7 +94,7 @@ public class Pipeline implements AutoCloseable {
         ResourceManager manager,
         ResourceLocation location,
         JsonObject pipelineJson
-    ) throws IOException, SyntaxError, CompilationException {
+    ) throws IOException, SyntaxError, CompilationException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
         boolean hasSkyShadows = pipelineJson.containsKey("skyShadows");
@@ -170,6 +171,14 @@ public class Pipeline implements AutoCloseable {
             p.materialPrograms.put(ps, program);
         }
 
+        class GLConstantCode {
+            static int fromName(String name) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+                Field f = GL33C.class.getField("GL_"+name);
+                int code = f.getInt(null);
+                return code;
+            }
+        }
+
         for (var textureE : (JsonArray) pipelineJson.get("images")) {
             JsonObject textureO = (JsonObject) textureE;
             String name = textureO.get(String.class, "name");
@@ -179,63 +188,17 @@ public class Pipeline implements AutoCloseable {
             int width = textureO.getInt("width", size);
             int height = textureO.getInt("height", size);
 
-            int target = new HashMap<String, Integer>() {{
-                put("TEXTURE_2D", GL33C.GL_TEXTURE_2D);
-                put("TEXTURE_2D_ARRAY", GL33C.GL_TEXTURE_2D_ARRAY);
-                put("TEXTURE_CUBE_MAP", GL33C.GL_TEXTURE_CUBE_MAP);
-            }}.computeIfAbsent(textureO.get(String.class, "target"), n -> {throw new NotImplementedException(n);});
-            int internalFormat = new HashMap<String, Integer>() {{
-                put("R32F", GL33C.GL_R32F);
-                put("RG16", GL33C.GL_RG16);
-                put("RGB", GL33C.GL_RGB);
-                put("RGB8", GL33C.GL_RGB8);
-                put("RGB16", GL33C.GL_RGB16);
-                put("RGB16F", GL33C.GL_RGB16F);
-                put("RGB32UI", GL33C.GL_RGB32UI);
-                put("R11F_G11F_B10F", GL33C.GL_R11F_G11F_B10F);
-                put("RGBA8", GL33C.GL_RGBA8);
-                put("RGBA16F", GL33C.GL_RGBA16F);
-                put("DEPTH_COMPONENT", GL33C.GL_DEPTH_COMPONENT);
-                put("DEPTH_COMPONENT32", GL33C.GL_DEPTH_COMPONENT32);
-            }}.computeIfAbsent(textureO.get(String.class, "internalFormat"), n -> {throw new NotImplementedException(n);});
-            int pixelFormat = new HashMap<String, Integer>() {{
-                put("RED", GL33C.GL_RED);
-                put("RG", GL33C.GL_RG);
-                put("RGB", GL33C.GL_RGB);
-                put("RGBA", GL33C.GL_RGBA);
-                put("RGB_INTEGER", GL33C.GL_RGB_INTEGER);
-                put("DEPTH_COMPONENT", GL33C.GL_DEPTH_COMPONENT);
-            }}.computeIfAbsent(textureO.get(String.class, "pixelFormat"), n -> {throw new NotImplementedException(n);});
-            int pixelDataType = new HashMap<String, Integer>() {{
-                put("UNSIGNED_BYTE", GL33C.GL_UNSIGNED_BYTE);
-                put("UNSIGNED_INT", GL33C.GL_UNSIGNED_INT);
-                put("FLOAT", GL33C.GL_FLOAT);
-            }}.computeIfAbsent(textureO.get(String.class, "pixelDataType"), n -> {throw new NotImplementedException(n);});
+            int target = GLConstantCode.fromName(textureO.get(String.class, "target"));
+            int internalFormat = GLConstantCode.fromName(textureO.get(String.class, "internalFormat"));
+            int pixelFormat = GLConstantCode.fromName(textureO.get(String.class, "pixelFormat"));
+            int pixelDataType = GLConstantCode.fromName(textureO.get(String.class, "pixelDataType"));
 
             List<IntIntPair> params = new ArrayList<>();
 
             for (var paramsE : textureO.get(JsonArray.class, "texParams")) {
                 JsonObject paramsO = (JsonObject) paramsE;
-                int name0 = new HashMap<String, Integer>() {{
-                    put("TEXTURE_MIN_FILTER", GL33C.GL_TEXTURE_MIN_FILTER);
-                    put("TEXTURE_MAG_FILTER", GL33C.GL_TEXTURE_MAG_FILTER);
-                    put("TEXTURE_WRAP_S", GL33C.GL_TEXTURE_WRAP_S);
-                    put("TEXTURE_WRAP_T", GL33C.GL_TEXTURE_WRAP_T);
-                    put("TEXTURE_WRAP_R", GL33C.GL_TEXTURE_WRAP_R);
-                    put("TEXTURE_COMPARE_MODE", GL33C.GL_TEXTURE_COMPARE_MODE);
-                    put("TEXTURE_COMPARE_FUNC", GL33C.GL_TEXTURE_COMPARE_FUNC);
-                }}.computeIfAbsent(paramsO.get(String.class, "name"), n -> {throw new NotImplementedException(n);});
-                int value = new HashMap<String, Integer>() {{
-                    put("NONE", GL33C.GL_NONE);
-                    put("NEAREST", GL33C.GL_NEAREST);
-                    put("LINEAR", GL33C.GL_LINEAR);
-                    put("NEAREST_MIPMAP_NEAREST", GL33C.GL_NEAREST_MIPMAP_NEAREST);
-                    put("LINEAR_MIPMAP_NEAREST", GL33C.GL_LINEAR_MIPMAP_NEAREST);
-                    put("LINEAR_MIPMAP_LINEAR", GL33C.GL_LINEAR_MIPMAP_LINEAR);
-                    put("CLAMP_TO_EDGE", GL33C.GL_CLAMP_TO_EDGE);
-                    put("COMPARE_REF_TO_TEXTURE", GL33C.GL_COMPARE_REF_TO_TEXTURE);
-                    put("LEQUAL", GL33C.GL_LEQUAL);
-                }}.computeIfAbsent(paramsO.get(String.class, "val"), n -> {throw new NotImplementedException(n);});
+                int name0 = GLConstantCode.fromName(paramsO.get(String.class, "name"));
+                int value = GLConstantCode.fromName(paramsO.get(String.class, "val"));
                 params.add(IntIntImmutablePair.of(name0, value));
             }
 

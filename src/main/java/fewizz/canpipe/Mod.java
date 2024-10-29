@@ -25,7 +25,6 @@ import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleResourceReloadListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
@@ -38,39 +37,80 @@ public class Mod implements ClientModInitializer {
     public static final Jankson JANKSON = Jankson.builder().build();
 
     private static final Map<ResourceLocation, JsonObject> RAW_PIPELINES = new HashMap<>();
+    private static final Map<ResourceLocation, JsonObject> RAW_MATERIALS = new HashMap<>();
     private static Pipeline currentPipeline = null;
 
     @Override
     public void onInitializeClient() {
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleResourceReloadListener<Map<ResourceLocation, Resource>>() {
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+            new SimpleResourceReloadListener<Map<ResourceLocation, Resource>>() {
 
-            @Override
-            public ResourceLocation getFabricId() {
-                return ResourceLocation.fromNamespaceAndPath(MOD_ID, "pipelines");
-            }
+                @Override
+                public ResourceLocation getFabricId() {
+                    return ResourceLocation.fromNamespaceAndPath(MOD_ID, "pipelines");
+                }
 
-            @Override
-            public CompletableFuture<Map<ResourceLocation, Resource>> load(
-                ResourceManager manager,
-                Executor executor
-            ) {
-                return CompletableFuture.supplyAsync(() -> {
-                    return onResourceListenerPrepare(manager);
-                }, executor);
-            }
+                @Override
+                public CompletableFuture<Map<ResourceLocation, Resource>> load(
+                    ResourceManager manager,
+                    Executor executor
+                ) {
+                    return CompletableFuture.supplyAsync(() -> {
+                        return onResourceListenerPrepare(manager);
+                    }, executor);
+                }
 
-            @Override
-            public CompletableFuture<Void> apply(
-                Map<ResourceLocation, Resource> data,
-                ResourceManager manager,
-                Executor executor
-            ) {
-                return CompletableFuture.runAsync(() -> {
-                    onResourceListenerApply(manager, data);
-                }, executor);
+                @Override
+                public CompletableFuture<Void> apply(
+                    Map<ResourceLocation, Resource> data,
+                    ResourceManager manager,
+                    Executor executor
+                ) {
+                    return CompletableFuture.runAsync(() -> {
+                        onResourceListenerApply(manager, data);
+                    }, executor);
+                }
+
             }
-            
-        });
+        );
+
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+            new SimpleResourceReloadListener<Map<ResourceLocation, Resource>>() {
+
+                @Override
+                public ResourceLocation getFabricId() {
+                    return ResourceLocation.fromNamespaceAndPath(MOD_ID, "materials");
+                }
+
+                @Override
+                public CompletableFuture<Map<ResourceLocation, Resource>> load(
+                    ResourceManager manager,
+                    Executor executor
+                ) {
+                    return CompletableFuture.supplyAsync(() -> {
+                        return manager.listResources(
+                            "materials",
+                            (ResourceLocation rl) -> {
+                                String pathStr = rl.getPath();
+                                return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
+                            }
+                        );
+                    }, executor);
+                }
+
+                @Override
+                public CompletableFuture<Void> apply(
+                    Map<ResourceLocation, Resource> data,
+                    ResourceManager manager,
+                    Executor executor
+                ) {
+                    return CompletableFuture.runAsync(() -> {
+                        
+                    }, executor);
+                }
+
+            }
+        );
     }
 
     public static @Nullable Pipeline getCurrentPipeline() {
