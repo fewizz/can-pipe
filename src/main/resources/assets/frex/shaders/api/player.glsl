@@ -4,8 +4,6 @@ const vec4 frx_heldLight = vec4(0.0);  // TODO define
 const float frx_heldLightInnerRadius = 0.0;  // TODO define
 const float frx_heldLightOuterRadius = 0.0;  // TODO define
 
-const vec3 frx_eyePos = vec3(0.0);  // TODO define
-
 const int frx_effectSpeed = 0; // TODO define
 const int frx_effectSlowness = 0; // TODO define
 const int frx_effectHast = 0; // TODO define
@@ -41,4 +39,24 @@ const int frx_effectHeroOfTheVillage = 0; // TODO define
 const int frx_effectDarkness = 0; // TODO define
 
 
-const vec2 frx_smoothedEyeBrightness = vec2(1.0);  // TODO define
+const int frx_playerEyeInFluid = 0;
+const int frx_playerEyeInWater = 0;
+const int frx_playerEyeInLava = 0;
+const int frx_playerSneaking = 0;
+const int frx_playerSwimming = 0;
+const int frx_playerSneakingPose = 0;
+const int frx_playerSwimmingPose = 0;
+const int frx_playerCreative = 0;
+const int frx_playerSpectator = 0;
+const int frx_playerRiding = 0;
+const int frx_playerOnFire = 0;
+const int frx_playerSleeping = 0;
+const int frx_playerSprinting = 0;
+const int frx_playerWet = 0;
+const int frx_playerEyeInSnow = 0;
+const int frx_playerIsFreezing = 0;
+
+const float frx_playerMood = 1.0;
+const vec3 frx_eyePos = vec3(0.0);
+const vec2 frx_eyeBrightness = vec2(1.0);
+const vec2 frx_smoothedEyeBrightness = vec2(1.0);

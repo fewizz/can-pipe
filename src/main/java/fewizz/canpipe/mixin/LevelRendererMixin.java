@@ -12,7 +12,7 @@ import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 
 import fewizz.canpipe.Mod;
-import fewizz.canpipe.Pipeline;
+import fewizz.canpipe.pipeline.Pipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
@@ -44,16 +44,16 @@ public class LevelRendererMixin {
     ) {
         Pipeline p = Mod.getCurrentPipeline();
         if (p == null) {
-            return original.call(instance);  // initialise post chain normally
+            return original.call(instance);  // Initialise post chain normally
         }
+        // Don't create post chain, selected pipeline will handle that
 
-        // don't create post chain
-
-        this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.framebuffers.get(p.translucentTerrainFramebufferName));
-        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.framebuffers.get(p.translucentEntityFramebufferName));
-        this.targets.particles = frameGraphBuilder.importExternal("particles", p.framebuffers.get(p.translucentParticlesFramebufferName));
-        this.targets.weather = frameGraphBuilder.importExternal("weather", p.framebuffers.get(p.weatherFramebufferName));
-        this.targets.clouds = frameGraphBuilder.importExternal("clouds", p.framebuffers.get(p.cloudsFramebufferName));
+        this.targets.main = frameGraphBuilder.importExternal("main", p.solidTerrainFramebuffer);
+        this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.translucentTerrainFramebuffer);
+        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.translucentEntityFramebuffer);
+        this.targets.particles = frameGraphBuilder.importExternal("particles", p.translucentParticlesFramebuffer);
+        this.targets.weather = frameGraphBuilder.importExternal("weather", p.weatherFramebuffer);
+        this.targets.clouds = frameGraphBuilder.importExternal("clouds", p.cloudsFramebuffer);
 
         return null;
     }

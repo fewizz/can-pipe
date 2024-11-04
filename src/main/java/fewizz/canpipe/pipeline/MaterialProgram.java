@@ -1,54 +1,78 @@
-package fewizz.canpipe;
+package fewizz.canpipe.pipeline;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
+import fewizz.canpipe.Mod;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.client.renderer.ShaderProgramConfig;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public class MaterialProgram extends ProgramBase {
 
+    final List<AbstractTexture> samplerImages;
+
     MaterialProgram(
         ResourceLocation location,
         VertexFormat vertexFormat,
         Shader vertexShader,
-        Shader fragmentShader
+        Shader fragmentShader,
+        List<ShaderProgramConfig.Sampler> samplers,
+        List<AbstractTexture> samplerImages,
+        boolean shadowsEnabled
     ) throws IOException, CompilationException {
         super(
             location,
             vertexFormat,
-            List.of(
-                new ShaderProgramConfig.Sampler("frxs_baseColor"),
-                new ShaderProgramConfig.Sampler("frxs_lightmap")
-            ),
+            Stream.concat(
+                (
+                    shadowsEnabled ?
+                    List.of(
+                        new ShaderProgramConfig.Sampler("frxs_baseColor"),
+                        new ShaderProgramConfig.Sampler("frxs_lightmap"),
+                        new ShaderProgramConfig.Sampler("frxs_shadowMap"),
+                        new ShaderProgramConfig.Sampler("frxs_shadowMapTexture")
+                    ) :
+                    List.of(
+                        new ShaderProgramConfig.Sampler("frxs_baseColor"),
+                        new ShaderProgramConfig.Sampler("frxs_lightmap")
+                    )
+                ).stream(),
+                samplers.stream()
+            ).toList(),
             List.of(),
             vertexShader,
-            fragmentShader
+            fragmentShader,
+            samplers.stream().map(s -> s.name()).toList()
         );
+        this.samplerImages = samplerImages;
     }
 
     public static MaterialProgram create(
         ShaderProgram shaderProgram,
         int glslVersion,
         boolean enablePBR,
-        boolean shadowsEnabled,
+        @Nullable Framebuffer shadowFramebuffer,
         ResourceLocation pipelineLocation,
         ResourceLocation vertexLoc,
         ResourceLocation fragmentLoc,
-        Map<ResourceLocation, Option> options
+        Map<ResourceLocation, Option> options,
+        List<ShaderProgramConfig.Sampler> samplers,
+        List<AbstractTexture> samplerImages
     ) throws FileNotFoundException, IOException, CompilationException {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
 
@@ -57,14 +81,24 @@ public class MaterialProgram extends ProgramBase {
 
         String typeName = shaderProgram.configId().getPath().replace("core/", "");
 
+        String shadowMapDefs = "";
+        if (shadowFramebuffer != null && shadowFramebuffer.depthAttachement != null) {
+            var depthArray = shadowFramebuffer.depthAttachement.texture();
+            shadowMapDefs =
+                "#define SHADOW_MAP_PRESENT\n"+
+                "#define SHADOW_MAP_SIZE "+depthArray.extent.x+"\n\n";
+        }
+
         vertexSrc =
             "#define _"+typeName.toUpperCase()+"\n\n"+
+            shadowMapDefs+
             """
             in vec3 in_vertex;  // Position
             in vec4 in_color;  // Color
             in vec2 in_uv;  // UV0
             in ivec2 in_lightmap;  // UV2
             in vec3 in_normal;  // Normal
+            in float in_ao;
 
             out vec4 frx_vertex;
             out vec2 frx_texcoord;
@@ -73,6 +107,7 @@ public class MaterialProgram extends ProgramBase {
             // out vec4 frx_vertexTangent;
             out vec3 frx_vertexLight;
             out float frx_distance;
+            out vec4 frx_vertexTangent;
 
             """
             + vertexSrc +
@@ -83,7 +118,11 @@ public class MaterialProgram extends ProgramBase {
                 frx_texcoord = in_uv;
                 frx_vertexColor = in_color;
                 frx_vertexNormal = in_normal;
-                frx_vertexLight = vec3(clamp(in_lightmap / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)), 1.0);
+                frx_vertexLight = vec3(
+                    clamp(in_lightmap / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)),
+                    in_ao//((floatBitsToUint(in_vertex.x) & 15u) | ((floatBitsToUint(in_vertex.y) & 15u) << 4u)) / 255.0
+                );
+                frx_vertexTangent = vec4(1.0, 0.0, 0.0, 0.0);
 
                 frx_pipelineVertex();
             }
@@ -93,8 +132,8 @@ public class MaterialProgram extends ProgramBase {
             "#extension GL_ARB_conservative_depth: enable\n\n"+
             "#define _"+typeName.toUpperCase()+"\n\n"+
             (enablePBR ? "#define PBR_ENABLED\n\n" : "") +
-            (shadowsEnabled ? "#define SHADOW_MAP_PRESENT\n\n" : "") +
-            "const bool frx_renderTargetSolid = " + (shaderProgram == CoreShaders.RENDERTYPE_SOLID ? "true" : "false") + ";\n\n" +
+            shadowMapDefs+
+            "const bool frx_renderTargetSolid = false;\n\n"+// + (shaderProgram == CoreShaders.RENDERTYPE_SOLID ? "true" : "false") + ";\n\n" +
             """
 
             layout (depth_unchanged) out float gl_FragDepth;
@@ -108,8 +147,7 @@ public class MaterialProgram extends ProgramBase {
             in vec3 frx_vertexNormal;
             in vec3 frx_vertexLight;
             in float frx_distance;
-
-            vec4 frx_vertexTangent = vec4(0.0);
+            in vec4 frx_vertexTangent;
 
             vec4 frx_sampleColor = vec4(0.0);
             vec4 frx_fragColor = vec4(0.0);
@@ -164,37 +202,6 @@ public class MaterialProgram extends ProgramBase {
                 frx_fragEnableAo = frx_matDisableAo == 0;
                 frx_fragEnableDiffuse = frx_matDisableDiffuse == 0;
 
-                mat2 M = mat2(
-                    dFdx(frx_texcoord.x), -dFdx(frx_texcoord.y),
-                    dFdy(frx_texcoord.x), -dFdy(frx_texcoord.y)
-                );
-
-                vec2 dZ = vec2(dFdx(gl_FragCoord.z), dFdy(gl_FragCoord.z));
-
-                vec3 p0 =
-                    gl_FragCoord.xyz *
-                    vec3(1.0/frx_viewWidth, 1.0/frx_viewHeight, 1.0);
-                p0 = p0*2.0 - 1.0;
-
-                vec2 advance = inverse(M)*vec2(0.0, 1.0);
-
-                vec3 p1 =
-                    (gl_FragCoord.xyz + normalize(vec3(advance, advance.x*dZ.x+advance.y*dZ.y))) *
-                    vec3(1.0/frx_viewWidth, 1.0/frx_viewHeight, 1.0);
-                p1 = p1*2.0 - 1.0;
-
-                vec4 _p0 = frx_inverseProjectionMatrix * vec4(p0, 1.0);
-                vec4 _p1 = frx_inverseProjectionMatrix * vec4(p1, 1.0);
-
-                vec3 normal = mat3(frx_viewMatrix) * normalize(frx_vertexNormal.xyz);
-                vec3 tangent = normalize(
-                    cross(
-                        _p1.xyz/_p1.w - _p0.xyz/_p0.w,
-                        normal
-                    )
-                );
-                frx_vertexTangent.xyz = mat3(frx_inverseViewMatrix) * tangent;
-
                 #ifdef PBR_ENABLED
                     // TODO
                 #endif
@@ -222,7 +229,15 @@ public class MaterialProgram extends ProgramBase {
         var vert = Shader.compile(vertexLoc, Type.VERTEX, glslVersion, options, vertexSrc);
         var frag = Shader.compile(fragmentLoc, Type.FRAGMENT, glslVersion, options, fragmentSrc);
 
-        return new MaterialProgram(pipelineLocation.withSuffix("-"+typeName), shaderProgram.vertexFormat(), vert, frag);
+        return new MaterialProgram(
+            pipelineLocation.withSuffix("-"+typeName),
+            shaderProgram.vertexFormat(),
+            vert,
+            frag,
+            samplers,
+            samplerImages,
+            shadowFramebuffer != null
+        );
     }
 
     @Override
@@ -230,6 +245,21 @@ public class MaterialProgram extends ProgramBase {
         if (name.equals("ModelOffset")) { name = "frx_modelToCamera_3"; }
 
         return super.getUniform(name);
+    }
+
+    @Override
+    public void apply() {
+        var p = Mod.getCurrentPipeline();
+        if (p != null && p.skyShadows != null) {
+            var fb = p.framebuffers.get(p.skyShadows.framebufferName());
+            var tex = fb.depthAttachement.texture();
+            bindSampler("frxs_shadowMap", tex);
+            bindSampler("frxs_shadowMapTexture", tex);
+        }
+
+        bindExpectedSamplers(samplerImages);
+
+        super.apply();
     }
 
     @Override

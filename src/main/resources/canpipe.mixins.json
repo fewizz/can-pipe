@@ -6,7 +6,11 @@
 		"GameRendererMixin",
 		"GLStateManagerAccessor",
 		"LevelRendererMixin",
-		"ShaderManagerMixin"
+		"ShaderManagerMixin",
+		"AbstractBlockRenderContextMixin",
+		"AbstractBlockRenderContextAccessor",
+		"AbstractRenderContextMixin",
+		"CompiledShaderProgramMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

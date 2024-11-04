@@ -20,6 +20,7 @@ import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
+import fewizz.canpipe.pipeline.Pipeline;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleResourceReloadListener;
@@ -37,7 +38,9 @@ public class Mod implements ClientModInitializer {
     public static final Jankson JANKSON = Jankson.builder().build();
 
     private static final Map<ResourceLocation, JsonObject> RAW_PIPELINES = new HashMap<>();
-    private static final Map<ResourceLocation, JsonObject> RAW_MATERIALS = new HashMap<>();
+    /*private static final Map<ResourceLocation, JsonObject> RAW_MATERIALS = new HashMap<>();*/
+
+    private static final Map<ResourceLocation, Material> MATERIALS = new HashMap<>();
     private static Pipeline currentPipeline = null;
 
     @Override
@@ -105,7 +108,7 @@ public class Mod implements ClientModInitializer {
                     Executor executor
                 ) {
                     return CompletableFuture.runAsync(() -> {
-                        
+                        MATERIALS.clear();
                     }, executor);
                 }
 
@@ -173,7 +176,7 @@ public class Mod implements ClientModInitializer {
         if (RAW_PIPELINES.size() > 0) {
             try {
                 var raw = RAW_PIPELINES.entrySet().iterator().next();
-                currentPipeline = Pipeline.createFromData(manager, raw.getKey(), raw.getValue());
+                currentPipeline = new Pipeline(manager, raw.getKey(), raw.getValue());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -182,7 +185,7 @@ public class Mod implements ClientModInitializer {
         Minecraft mc = Minecraft.getInstance();
 
         if (currentPipeline != null) {
-            mc.mainRenderTarget = currentPipeline.getDefaultFramebuffer();
+            mc.mainRenderTarget = currentPipeline.defaultFramebuffer;
         }
         else if (!(mc.mainRenderTarget instanceof MainTarget)) {
             mc.mainRenderTarget = new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
@@ -194,12 +197,6 @@ public class Mod implements ClientModInitializer {
             return currentPipeline.materialPrograms.get(shaderProgram);
         }
         return null;
-    }
-
-    public static void onGameRendererResize(int w, int h) {
-        if (currentPipeline != null) {
-            currentPipeline.onWindowSizeChanged(w, h);
-        }
     }
 
     private static void processIncludes(
@@ -250,30 +247,27 @@ public class Mod implements ClientModInitializer {
         }
     }
 
+    public static void onGameRendererResize(int w, int h) {
+        Pipeline p = getCurrentPipeline();
+        if (p == null) return;
+        p.onWindowSizeChanged(w, h);
+    }
+
     public static void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
         Pipeline p = getCurrentPipeline();
         if (p == null) return;
-
-        for (Pass pass : p.beforeWorldRender) {
-            pass.apply(view, projection);
-        }
+        p.onBeforeWorldRender(view, projection);
     }
 
     public static void onAfterWorldRender(Matrix4f view, Matrix4f projection) {
         Pipeline p = getCurrentPipeline();
         if (p == null) return;
-
-        for (Pass pass : p.fabulous) {
-            pass.apply(view, projection);
-        }
+        p.onAfterWorldRender(view, projection);
     }
 
     public static void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
         Pipeline p = getCurrentPipeline();
         if (p == null) return;
-
-        for (Pass pass : p.afterRenderHand) {
-            pass.apply(view, projection);
-        }
+        p.onAfterRenderHand(view, projection);
     }
 }

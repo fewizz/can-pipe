@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.pipeline;
 
 import java.util.Map;
 

@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -6,6 +6,7 @@ import java.nio.IntBuffer;
 
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.KHRDebug;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -14,6 +15,7 @@ import fewizz.canpipe.mixin.GLStateManagerAccessor;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 
@@ -25,10 +27,11 @@ public class Texture extends AbstractTexture {
     final int pixelFormat;
     final int pixelDataType;
     final int maxLod;
-    final boolean widthWindowSizeDependent;
-    final boolean heightWindowSizeDependent;
+    final boolean isWidthWindowSizeDependent;
+    final boolean isHeightWindowSizeDependent;
 
     public Texture(
+        ResourceLocation pipelineLocation,
         String name,
         Vector3i extent,
         int target,
@@ -45,14 +48,14 @@ public class Texture extends AbstractTexture {
         this.pixelFormat = pixelFormat;
         this.pixelDataType = pixeDataType;
         this.maxLod = maxLod;
-        this.widthWindowSizeDependent = extent.x == 0;
-        this.heightWindowSizeDependent = extent.y == 0;
+        this.isWidthWindowSizeDependent = extent.x == 0;
+        this.isHeightWindowSizeDependent = extent.y == 0;
 
         Minecraft mc = Minecraft.getInstance();
-        if (widthWindowSizeDependent) {
+        if (isWidthWindowSizeDependent) {
             extent.x = mc.getWindow().getWidth();
         }
-        if (heightWindowSizeDependent) {
+        if (isHeightWindowSizeDependent) {
             extent.y = mc.getWindow().getHeight();
         }
 
@@ -70,6 +73,7 @@ public class Texture extends AbstractTexture {
         }
 
         allocate();
+        KHRDebug.glObjectLabel(GL33C.GL_TEXTURE, getId(), pipelineLocation.toString()+"-"+name);
     }
 
     private void allocate() {
@@ -91,26 +95,29 @@ public class Texture extends AbstractTexture {
     }
 
     public void onWindowSizeChanged(int w, int h) {
-        if (widthWindowSizeDependent) {
+        if (isWidthWindowSizeDependent) {
             this.extent.x = w;
         }
-        if (heightWindowSizeDependent) {
+        if (isHeightWindowSizeDependent) {
             this.extent.y = h;
         }
-        if (widthWindowSizeDependent || heightWindowSizeDependent) {
+        if (isWidthWindowSizeDependent || isHeightWindowSizeDependent) {
             allocate();
         }
     }
 
-    public void bind() {
+    public static void bind(int id, int target) {
         RenderSystem.assertOnRenderThreadOrInit();
-        int id = this.getId();
         var TEXTURES = GLStateManagerAccessor.canpipe_getTEXTURES();
         int active  = GLStateManagerAccessor.canpipe_getActiveTexture();
         if (id != TEXTURES[active].binding) {
             TEXTURES[active].binding = id;
             GL33C.glBindTexture(target, id);
         }
+    }
+
+    public void bind() {
+        bind(getId(), target);
     }
 
     @Override

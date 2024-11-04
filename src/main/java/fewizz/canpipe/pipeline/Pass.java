@@ -1,8 +1,9 @@
-package fewizz.canpipe;
+package fewizz.canpipe.pipeline;
 
 import java.util.List;
 
 import org.joml.Matrix4f;
+import org.joml.Vector2i;
 import org.lwjgl.opengl.GL33C;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -19,15 +20,15 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 public class Pass {
 
 
-    static class FrexClear extends Pass {
+    static class FREXClear extends Pass {
 
-        FrexClear(String name, Framebuffer framebuffer) {
-            super(name, framebuffer, null, null, -1, -1);
+        FREXClear(String name, Framebuffer framebuffer) {
+            super(name, framebuffer, null, null, null, -1, -1);
         }
 
         @Override
         void apply(Matrix4f view, Matrix4f projection) {
-            framebuffer.clear();
+            framebuffer.clearFully();
         }
 
     };
@@ -36,6 +37,7 @@ public class Pass {
     final Framebuffer framebuffer;
     final Program program;
     final List<AbstractTexture> samplers;
+    final Vector2i extent;
     final int lod;
     final int layer;
 
@@ -44,26 +46,33 @@ public class Pass {
         Framebuffer framebuffer,
         Program program,
         List<AbstractTexture> samplers,
+        Vector2i extent,
         int lod, int layer
     ) {
         this.name = name;
         this.framebuffer = framebuffer;
         this.program = program;
         this.samplers = samplers;
+        this.extent = extent;
         this.lod = lod;
         this.layer = layer;
     }
 
     void apply(Matrix4f view, Matrix4f projection) {
         Minecraft mc = Minecraft.getInstance();
-        float w = mc.getMainRenderTarget().width >> lod;
-        float h = mc.getMainRenderTarget().height >> lod;
+
+        int w = this.extent.x;
+        int h = this.extent.y;
+
+        if (w == 0) w = mc.getMainRenderTarget().width;
+        if (h == 0) h = mc.getMainRenderTarget().height;
+
+        w >>= this.lod;
+        h >>= this.lod;
 
         RenderSystem.viewport(0, 0, (int) w, (int) h);
 
-        for (int i = 0; i < samplers.size(); ++i) {
-            program.bindSampler(program.samplers.get(i).name(), samplers.get(i).getId());
-        }
+        program.bindExpectedSamplers(samplers);
 
         if (program.PROJECTION_MATRIX != null) {
             program.PROJECTION_MATRIX.set(projection);

@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.pipeline;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -9,10 +9,13 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.KHRDebug;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+
+import net.minecraft.resources.ResourceLocation;
 
 public class Framebuffer extends RenderTarget {
 
@@ -34,6 +37,8 @@ public class Framebuffer extends RenderTarget {
     @Nullable final DepthAttachment depthAttachement;
 
     public Framebuffer(
+        ResourceLocation pipelineLocation,
+        String name,
         List<ColorAttachment> colorAttachements,
         @Nullable DepthAttachment depthAttachement
     ) {
@@ -41,6 +46,11 @@ public class Framebuffer extends RenderTarget {
         this.colorAttachements = colorAttachements;
         this.depthAttachement = depthAttachement;
         createBuffers(0, 0);
+        KHRDebug.glObjectLabel(
+            GL33C.GL_FRAMEBUFFER,
+            this.frameBufferId,
+            pipelineLocation.toString()+"-"+name
+        );
     }
 
     @Override
@@ -119,14 +129,26 @@ public class Framebuffer extends RenderTarget {
         this.unbindRead();
     }
 
-    @Override
-    public void clear() {
+    /**
+     * Called by <code>frex_clear</code>-type passes<p>
+     * Note that {@link RenderTarget#clear} clears only first color and depth attachemnts
+     */
+    public void clearFully() {
         RenderSystem.assertOnRenderThreadOrInit();
         this.bindWrite(true);
 
         if (this.depthAttachement != null) {
             GlStateManager._clearDepth(depthAttachement.clearDepth);
-            GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
+
+            if (depthAttachement.lod != 0 && colorAttachements.size() == 0) {
+                for (int lod = depthAttachement.lod; lod >= 0; --lod) {
+                    GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthAttachement.texture.getId(), lod, depthAttachement.layer);
+                    GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
+                }
+            }
+            else {
+                GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
+            }
         }
 
         for (int i = 0; i < this.colorAttachements.size(); ++i) {

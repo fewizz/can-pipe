@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,7 +35,8 @@ public class Program extends ProgramBase {
             samplers,
             DEFAULT_UNIFORMS,
             vertexShader,
-            fragmentShader
+            fragmentShader,
+            samplers.stream().map(s -> s.name()).toList()
         );
         this.FRXU_SIZE = getUniform("frxu_size");
         this.FRXU_LOD = getUniform("frxu_lod");
