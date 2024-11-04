@@ -1,6 +1,6 @@
 uniform float frx_renderSeconds;  // aka GameTime
-uniform int _frx_renderFrames;
-#define frx_renderFrames uint(_frx_renderFrames)
+uniform int canpipe_renderFrames;
+#define frx_renderFrames uint(canpipe_renderFrames)
 const float frx_worldDay = 0.0;  // TODO
 const float frx_worldTime = 0.0;  // TODO
 const float frx_moonSize = 1.0;  // TODO
@@ -28,4 +28,3 @@ const int frx_worldIsRaining = 0;  // TODO
 const int frx_worldIsThundering = 0;  // TODO
 const int frx_worldIsSkyDarkened = 0;  // TODO
 const int frx_worldIsMoonlit = 0;  // TODO
-// #define frx_conditionTest(conditionIndex) _cv_testConditioni(conditionIndex)

@@ -12,13 +12,12 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
-import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 
 public class Pass {
-
 
     static class FREXClear extends Pass {
 
@@ -72,32 +71,8 @@ public class Pass {
 
         RenderSystem.viewport(0, 0, (int) w, (int) h);
 
+        program.setDefaultUniforms(view, projection, w, h, this.lod);
         program.bindExpectedSamplers(samplers);
-
-        if (program.PROJECTION_MATRIX != null) {
-            program.PROJECTION_MATRIX.set(projection);
-        }
-        if (program.MODEL_VIEW_MATRIX != null) {
-            program.MODEL_VIEW_MATRIX.set(view);
-        }
-
-        // program.setDefaultUniforms(null, null, null, null);
-        if (program.FRXU_SIZE != null) {
-            program.FRXU_SIZE.set((int) w, (int) h);
-        }
-        if (program.FRXU_LOD != null) {
-            program.FRXU_LOD.set(lod);
-        }
-        if (program.FRXU_FRAME_PROJECTION_MATRIX != null) {
-            program.FRXU_FRAME_PROJECTION_MATRIX.set(new Matrix4f().ortho2D(0, w, 0, h));
-        }
-
-        if (program.FRX_RENDER_FRAMES != null) {
-            program.FRX_RENDER_FRAMES.set(
-                ((GameRendererAccessor) mc.gameRenderer).canpipe_getFrame()
-            );
-        }
-
         program.apply();
 
         framebuffer.bindWrite(false);

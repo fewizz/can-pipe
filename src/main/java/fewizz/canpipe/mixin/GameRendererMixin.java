@@ -1,6 +1,7 @@
 package fewizz.canpipe.mixin;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,9 +29,16 @@ public class GameRendererMixin implements GameRendererAccessor {
     @Final
     Minecraft minecraft;
 
+    @Shadow
+    @Final
+    private Camera mainCamera;
+
     private int canpipe_frame = -1;
+    private Vector3f canpipe_lastCameraPos = new Vector3f();
     private Matrix4f canpipe_projection = new Matrix4f();
-    private Matrix4f canpipe_view = new Matrix4f();;
+    private Matrix4f canpipe_lastProjection = new Matrix4f();
+    private Matrix4f canpipe_view = new Matrix4f();
+    private Matrix4f canpipe_lastView = new Matrix4f();
 
     @Override
     public int canpipe_getFrame() {
@@ -75,6 +83,9 @@ public class GameRendererMixin implements GameRendererAccessor {
         Matrix4f projection,
         Operation<Void> original
     ) {
+        canpipe_lastView = canpipe_view;
+        canpipe_lastProjection = canpipe_projection;
+
         canpipe_view = view;
         canpipe_projection = projection;
 
@@ -90,6 +101,26 @@ public class GameRendererMixin implements GameRendererAccessor {
     @Inject(method = "renderLevel", at = @At("TAIL"))
     void onAfterRenderLevel(CallbackInfo ci) {
         Mod.onAfterRenderHand(canpipe_view, canpipe_projection);
+    }
+
+    @Inject(method = "tick", at = @At("HEAD"))
+    void onBeforeTick(CallbackInfo ci) {
+        canpipe_lastCameraPos = this.mainCamera.getPosition().toVector3f();
+    }
+
+    @Override
+    public Vector3f canpipe_getLastCameraPos() {
+        return this.canpipe_lastCameraPos;
+    }
+
+    @Override
+    public Matrix4f canpipe_getLastViewMatrix() {
+        return this.canpipe_lastView;
+    }
+
+    @Override
+    public Matrix4f canpipe_getLastProjectionMatrix() {
+        return this.canpipe_lastProjection;
     }
 
 }

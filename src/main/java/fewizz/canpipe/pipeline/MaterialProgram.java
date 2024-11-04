@@ -8,10 +8,13 @@ import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import fewizz.canpipe.Mod;
 import net.minecraft.client.Minecraft;
@@ -242,7 +245,7 @@ public class MaterialProgram extends ProgramBase {
 
     @Override
     public Uniform getUniform(String name) {
-        if (name.equals("ModelOffset")) { name = "frx_modelToCamera_3"; }
+        if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
 
         return super.getUniform(name);
     }
@@ -268,6 +271,12 @@ public class MaterialProgram extends ProgramBase {
         if (name.equals("Sampler2")) { name = "frxs_lightmap"; }
 
         super.bindSampler(name, id);
+    }
+
+    @Override
+    public void setDefaultUniforms(Mode mode, Matrix4f matrix4f, Matrix4f matrix4f2, Window window) {
+        super.setDefaultUniforms(mode, matrix4f, matrix4f2, window);
+
     }
 
 }

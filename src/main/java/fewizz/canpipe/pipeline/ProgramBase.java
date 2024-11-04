@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.KHRDebug;
 
@@ -26,18 +27,27 @@ import net.minecraft.resources.ResourceLocation;
 public class ProgramBase extends CompiledShaderProgram {
 
     static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+        new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_lastCameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_viewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("frx_lastViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_projectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_modelToCamera_3", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_lastProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+
+        new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogStart", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogEnd", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogColor", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("_screenSize", "float", 2, List.of(0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_screenSize", "float", 2, List.of(0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_renderSeconds", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("_frx_renderFrames", "int", 1, List.of(0.0F))
+        new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F))
     );
 
     final Uniform FRX_RENDER_FRAMES;
+    final Uniform FRX_CAMERA_POS;
+    final Uniform FRX_LAST_CAMERA_POS;
+    final Uniform FRX_LAST_VIEW_MATRIX;
+    final Uniform FRX_LAST_PROJECTION_MATRIX;
     final Map<Integer, Integer> samplerTargets = new Int2IntArrayMap();
     final List<String> expectedSamplers;
 
@@ -53,11 +63,18 @@ public class ProgramBase extends CompiledShaderProgram {
         super(CompiledShaderProgram.link(vertexShader, fragmentShader, vertexFormat).getProgramId());
 
         setupUniforms(
-            Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList(),
+            Streams.concat(
+                DEFAULT_UNIFORMS.stream(),
+                uniforms.stream()
+            ).toList(),
             samplers
         );
 
-        this.FRX_RENDER_FRAMES = getUniform("_frx_renderFrames");
+        this.FRX_RENDER_FRAMES = getUniform("canpipe_renderFrames");
+        this.FRX_CAMERA_POS = getUniform("frx_cameraPos");
+        this.FRX_LAST_CAMERA_POS = getUniform("frx_lastCameraPos");
+        this.FRX_LAST_VIEW_MATRIX = getUniform("frx_lastViewMatrix");
+        this.FRX_LAST_PROJECTION_MATRIX = getUniform("frx_lastProjectionMatrix");
 
         this.expectedSamplers = expectedSamplers;
 
@@ -72,7 +89,7 @@ public class ProgramBase extends CompiledShaderProgram {
         if (name.equals("FogStart")) { name = "frx_fogStart"; }
         if (name.equals("FogEnd")) { name = "frx_fogEnd"; }
         if (name.equals("FogColor")) { name = "frx_fogColor"; }
-        if (name.equals("ScreenSize")) { name = "_screenSize"; }
+        if (name.equals("ScreenSize")) { name = "canpipe_screenSize"; }
         if (name.equals("GameTime")) { name = "frx_renderSeconds"; }
 
         return super.getUniform(name);
@@ -96,15 +113,27 @@ public class ProgramBase extends CompiledShaderProgram {
     }
 
     @Override
-    public void setDefaultUniforms(Mode mode, Matrix4f matrix4f, Matrix4f matrix4f2, Window window) {
-        super.setDefaultUniforms(mode, matrix4f, matrix4f2, window);
+    public void setDefaultUniforms(Mode mode, Matrix4f view, Matrix4f projection, Window window) {
+        super.setDefaultUniforms(mode, view, projection, window);
 
         Minecraft mc = Minecraft.getInstance();
 
+        GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
+
         if (this.FRX_RENDER_FRAMES != null) {
-            this.FRX_RENDER_FRAMES.set(
-                ((GameRendererAccessor) mc.gameRenderer).canpipe_getFrame()
-            );
+            this.FRX_RENDER_FRAMES.set(gra.canpipe_getFrame());
+        }
+        if (this.FRX_CAMERA_POS != null) {
+            this.FRX_CAMERA_POS.set(mc.gameRenderer.getMainCamera().getPosition().toVector3f());
+        }
+        if (this.FRX_LAST_CAMERA_POS != null) {
+            this.FRX_LAST_CAMERA_POS.set(gra.canpipe_getLastCameraPos());
+        }
+        if (this.FRX_LAST_VIEW_MATRIX != null) {
+            this.FRX_LAST_VIEW_MATRIX.set(gra.canpipe_getLastViewMatrix());
+        }
+        if (this.FRX_LAST_PROJECTION_MATRIX != null) {
+            this.FRX_LAST_PROJECTION_MATRIX.set(gra.canpipe_getLastProjectionMatrix());
         }
     }
 
