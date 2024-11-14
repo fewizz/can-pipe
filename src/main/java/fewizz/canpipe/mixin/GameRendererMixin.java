@@ -55,6 +55,11 @@ public class GameRendererMixin implements GameRendererAccessor {
         Mod.onGameRendererResize(w, h);
     }
 
+    @Inject(method = "renderLevel", at = @At("HEAD"))
+    void onBeforeRenderLevel(CallbackInfo ci) {
+        canpipe_lastCameraPos = this.mainCamera.getPosition().toVector3f();
+    }
+
     @WrapOperation(
         method = "renderLevel",
         at = @At(
@@ -101,11 +106,6 @@ public class GameRendererMixin implements GameRendererAccessor {
     @Inject(method = "renderLevel", at = @At("TAIL"))
     void onAfterRenderLevel(CallbackInfo ci) {
         Mod.onAfterRenderHand(canpipe_view, canpipe_projection);
-    }
-
-    @Inject(method = "tick", at = @At("HEAD"))
-    void onBeforeTick(CallbackInfo ci) {
-        canpipe_lastCameraPos = this.mainCamera.getPosition().toVector3f();
     }
 
     @Override

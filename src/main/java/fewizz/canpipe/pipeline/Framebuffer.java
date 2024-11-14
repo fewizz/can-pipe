@@ -129,6 +129,20 @@ public class Framebuffer extends RenderTarget {
         this.unbindRead();
     }
 
+    @Override
+    public void clear() {
+        RenderSystem.assertOnRenderThreadOrInit();
+        this.bindWrite(false);
+
+        GL33C.glDrawBuffer(GL33C.GL_COLOR_ATTACHMENT0);
+
+        super.clear();
+
+        this.bindWrite(false);
+        GL33C.glDrawBuffers(IntStream.range(0, colorAttachements.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
+        this.unbindWrite();
+    }
+
     /**
      * Called by <code>frex_clear</code>-type passes<p>
      * Note that {@link RenderTarget#clear} clears only first color and depth attachemnts

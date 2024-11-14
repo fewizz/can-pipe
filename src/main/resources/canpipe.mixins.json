@@ -10,7 +10,9 @@
 		"AbstractBlockRenderContextMixin",
 		"AbstractBlockRenderContextAccessor",
 		"AbstractRenderContextMixin",
-		"CompiledShaderProgramMixin"
+		"CompiledShaderProgramMixin",
+		"BufferBuilderMixin",
+		"MinecraftMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

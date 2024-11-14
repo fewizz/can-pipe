@@ -4,6 +4,8 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -13,10 +15,14 @@ import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 
 import fewizz.canpipe.Mod;
 import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.pipeline.ProgramBase;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.PostChain;
+import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
+import net.minecraft.core.BlockPos;
 
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
@@ -56,6 +62,25 @@ public class LevelRendererMixin {
         this.targets.clouds = frameGraphBuilder.importExternal("clouds", p.cloudsFramebuffer);
 
         return null;
+    }
+
+    @Inject(
+        method = "renderSectionLayer",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/VertexBuffer;bind()V"
+        )
+    )
+    void beforeSectionLayerDraw(
+        CallbackInfo ci,
+        @Local CompiledShaderProgram program,
+        @Local SectionRenderDispatcher.RenderSection section
+    ) {
+        if (program instanceof ProgramBase pb && pb.FRX_MODEL_TO_WORLD != null) {
+            BlockPos pos = section.getOrigin();
+            pb.FRX_MODEL_TO_WORLD.set(pos.getX(), pos.getY(),pos.getZ(), 1.0F);
+            pb.FRX_MODEL_TO_WORLD.upload();
+        }
     }
 
 }

@@ -1,8 +1,10 @@
-uniform float frx_renderSeconds;  // aka GameTime
 uniform int canpipe_renderFrames;
+uniform float canpipe_gameTime;
+
+#define frx_renderSeconds (canpipe_gameTime*20.0*60.0)
 #define frx_renderFrames uint(canpipe_renderFrames)
-const float frx_worldDay = 0.0;  // TODO
-const float frx_worldTime = 0.0;  // TODO
+uniform float frx_worldDay;  // but why float?
+#define frx_worldTime canpipe_gameTime;
 const float frx_moonSize = 1.0;  // TODO
 
 const float frx_skyAngleRadians = 0.0;  // TODO

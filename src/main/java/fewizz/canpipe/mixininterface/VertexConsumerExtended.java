@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.mixininterface;
 
 import org.joml.Vector3f;
 

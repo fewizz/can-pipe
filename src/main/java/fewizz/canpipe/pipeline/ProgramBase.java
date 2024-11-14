@@ -20,34 +20,48 @@ import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
-import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.ShaderProgramConfig;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 
 public class ProgramBase extends CompiledShaderProgram {
 
     static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+        // view.glsl
         new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_lastCameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_modelToWorld", "float", 4, List.of(0.0F, 0.0F, 0.0F)),
+        // new ShaderProgramConfig.Uniform("frx_modelToCamera", "float", 4, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),  // takes it's value from vanilla uniform, "ModelOffset"
         new ShaderProgramConfig.Uniform("frx_viewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_lastViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_projectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_lastProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-
-        new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogStart", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogEnd", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogColor", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_screenSize", "float", 2, List.of(0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_renderSeconds", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F))
+        new ShaderProgramConfig.Uniform("frx_viewDistance", "float", 1, List.of(0.0F)),
+
+        // player.glsl
+        new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+
+        // world.glsl
+        new ShaderProgramConfig.Uniform("canpipe_gameTime", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F))
     );
 
+    public final Uniform FRX_MODEL_TO_WORLD;
     final Uniform FRX_RENDER_FRAMES;
     final Uniform FRX_CAMERA_POS;
     final Uniform FRX_LAST_CAMERA_POS;
     final Uniform FRX_LAST_VIEW_MATRIX;
     final Uniform FRX_LAST_PROJECTION_MATRIX;
+    final Uniform FRX_VIEW_DISTANCE;
+    final Uniform FRX_EYE_POS;
+    final Uniform FRX_WORLD_DAY;
+
     final Map<Integer, Integer> samplerTargets = new Int2IntArrayMap();
     final List<String> expectedSamplers;
 
@@ -70,11 +84,15 @@ public class ProgramBase extends CompiledShaderProgram {
             samplers
         );
 
+        this.FRX_MODEL_TO_WORLD = getUniform("frx_modelToWorld");
         this.FRX_RENDER_FRAMES = getUniform("canpipe_renderFrames");
         this.FRX_CAMERA_POS = getUniform("frx_cameraPos");
         this.FRX_LAST_CAMERA_POS = getUniform("frx_lastCameraPos");
         this.FRX_LAST_VIEW_MATRIX = getUniform("frx_lastViewMatrix");
         this.FRX_LAST_PROJECTION_MATRIX = getUniform("frx_lastProjectionMatrix");
+        this.FRX_VIEW_DISTANCE = getUniform("frx_viewDistance");
+        this.FRX_EYE_POS = getUniform("frx_eyePos");
+        this.FRX_WORLD_DAY = getUniform("frx_worldDay");
 
         this.expectedSamplers = expectedSamplers;
 
@@ -90,7 +108,8 @@ public class ProgramBase extends CompiledShaderProgram {
         if (name.equals("FogEnd")) { name = "frx_fogEnd"; }
         if (name.equals("FogColor")) { name = "frx_fogColor"; }
         if (name.equals("ScreenSize")) { name = "canpipe_screenSize"; }
-        if (name.equals("GameTime")) { name = "frx_renderSeconds"; }
+        if (name.equals("GameTime")) { name = "canpipe_gameTime"; }
+        if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
 
         return super.getUniform(name);
     }
@@ -134,6 +153,20 @@ public class ProgramBase extends CompiledShaderProgram {
         }
         if (this.FRX_LAST_PROJECTION_MATRIX != null) {
             this.FRX_LAST_PROJECTION_MATRIX.set(gra.canpipe_getLastProjectionMatrix());
+        }
+        if (this.FRX_VIEW_DISTANCE != null) {
+            this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
+        }
+        if (this.FRX_EYE_POS != null) {
+            this.FRX_EYE_POS.set(mc.player.position().toVector3f());
+        }
+        if (this.FRX_WORLD_DAY != null) {
+            this.FRX_WORLD_DAY.set(mc.level != null ? mc.level.getGameTime() / 24000.0F : 0.0F);
+        }
+        if (this.FRX_MODEL_TO_WORLD != null) {
+            // will be re-set for terrain in LevelRenderer.renderSectionLayer
+            // should be zero for everything else
+            this.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F);
         }
     }
 

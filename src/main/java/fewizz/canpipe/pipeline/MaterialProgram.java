@@ -14,9 +14,11 @@ import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import fewizz.canpipe.Mod;
+import fewizz.canpipe.VertexFormatElements;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
@@ -92,22 +94,26 @@ public class MaterialProgram extends ProgramBase {
                 "#define SHADOW_MAP_SIZE "+depthArray.extent.x+"\n\n";
         }
 
+        var format = shaderProgram.vertexFormat();
+
+        int location = 0;
+
         vertexSrc =
             "#define _"+typeName.toUpperCase()+"\n\n"+
             shadowMapDefs+
+            "layout(location = "+(location++)+") in vec3 in_vertex;  // Position\n"+
+            "layout(location = "+(location++)+") in vec4 in_color;  // Color\n"+
+            "layout(location = "+(location++)+") in vec2 in_uv;  // UV0\n"+
+            (format.contains(VertexFormatElement.UV1) ? "layout(location = "+(location++)+") in ivec2 in_uv1" : "const ivec2 in_v1 = ivec2(0)") + ";\n"+
+            "layout(location = "+(location++)+") in ivec2 in_lightmap;  // UV2\n"+
+            "layout(location = "+(location++)+") in vec3 in_normal;  // Normal\n"+
+            (format.contains(VertexFormatElements.AO) ? "layout(location = "+(location++)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
             """
-            in vec3 in_vertex;  // Position
-            in vec4 in_color;  // Color
-            in vec2 in_uv;  // UV0
-            in ivec2 in_lightmap;  // UV2
-            in vec3 in_normal;  // Normal
-            in float in_ao;
 
             out vec4 frx_vertex;
             out vec2 frx_texcoord;
             out vec4 frx_vertexColor;
             out vec3 frx_vertexNormal;
-            // out vec4 frx_vertexTangent;
             out vec3 frx_vertexLight;
             out float frx_distance;
             out vec4 frx_vertexTangent;
@@ -122,8 +128,12 @@ public class MaterialProgram extends ProgramBase {
                 frx_vertexColor = in_color;
                 frx_vertexNormal = in_normal;
                 frx_vertexLight = vec3(
-                    clamp(in_lightmap / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)),
-                    in_ao//((floatBitsToUint(in_vertex.x) & 15u) | ((floatBitsToUint(in_vertex.y) & 15u) << 4u)) / 255.0
+                    clamp(
+                        in_lightmap / 256.0,
+                        vec2(0.5 / 16.0),
+                        vec2(15.5 / 16.0)
+                    ),
+                    in_ao
                 );
                 frx_vertexTangent = vec4(1.0, 0.0, 0.0, 0.0);
 
@@ -170,13 +180,13 @@ public class MaterialProgram extends ProgramBase {
             uniform sampler2D frxs_baseColor;  // aka Sampler0
 
             vec2 frx_mapNormalizedUV(vec2 coord) {
-                // TODO
-                return vec2(0.0); //_cvv_spriteBounds.xy + coord * _cvv_spriteBounds.zw;
+                // TODO wrong, temp.
+                return coord * vec2(textureSize(frxs_baseColor, 0));
             }
 
             vec2 frx_normalizeMappedUV(vec2 coord) {
-                // TODO
-                return vec2(0.0); // _cvv_spriteBounds.z == 0.0 ? coord : (coord - _cvv_spriteBounds.xy) / _cvv_spriteBounds.zw;
+                // TODO wrong, temp.
+                return coord / vec2(textureSize(frxs_baseColor, 0));
             }
 
             #ifdef VANILLA_LIGHTING
@@ -234,20 +244,13 @@ public class MaterialProgram extends ProgramBase {
 
         return new MaterialProgram(
             pipelineLocation.withSuffix("-"+typeName),
-            shaderProgram.vertexFormat(),
+            format,
             vert,
             frag,
             samplers,
             samplerImages,
             shadowFramebuffer != null
         );
-    }
-
-    @Override
-    public Uniform getUniform(String name) {
-        if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
-
-        return super.getUniform(name);
     }
 
     @Override

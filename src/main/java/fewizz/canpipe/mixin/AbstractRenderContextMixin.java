@@ -12,6 +12,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.VertexFormats;
+import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
@@ -40,13 +41,13 @@ public class AbstractRenderContextMixin {
         ) {
             if (((Object) this) instanceof AbstractBlockRenderContext brc) {
                 AoCalculator aoCalc = ((AbstractBlockRenderContextAccessor) brc).canpipe_getAoCalc();
-                bb.setAO(aoCalc.ao[quadVertexIndex]);
+                ((VertexConsumerExtended) bb).setAO(aoCalc.ao[quadVertexIndex]);
             }
             else {
-                bb.setAO(1.0F);
+                ((VertexConsumerExtended) bb).setAO(1.0F);
             }
-            bb.setMaterial(0);
-            bb.setTangent(new Vector3f(1.0F, 0.0F, 0.0F));
+            ((VertexConsumerExtended) bb).setMaterial(0);
+            ((VertexConsumerExtended) bb).setTangent(new Vector3f(1.0F, 0.0F, 0.0F));
         }
 
     }

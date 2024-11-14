@@ -1,8 +1,8 @@
-const float frx_effectModifier = 0.0;  // TODO define
-const float frx_darknessEffectFactor = 0.0;  // TODO define
-const vec4 frx_heldLight = vec4(0.0);  // TODO define
-const float frx_heldLightInnerRadius = 0.0;  // TODO define
-const float frx_heldLightOuterRadius = 0.0;  // TODO define
+const float frx_effectModifier = 0.0;
+const float frx_darknessEffectFactor = 0.0;
+const vec4 frx_heldLight = vec4(0.0);
+const float frx_heldLightInnerRadius = 0.0;
+const float frx_heldLightOuterRadius = 0.0;
 
 const int frx_effectSpeed = 0; // TODO define
 const int frx_effectSlowness = 0; // TODO define
@@ -57,6 +57,6 @@ const int frx_playerEyeInSnow = 0;
 const int frx_playerIsFreezing = 0;
 
 const float frx_playerMood = 1.0;
-const vec3 frx_eyePos = vec3(0.0);
+uniform vec3 frx_eyePos;
 const vec2 frx_eyeBrightness = vec2(1.0);
 const vec2 frx_smoothedEyeBrightness = vec2(1.0);
