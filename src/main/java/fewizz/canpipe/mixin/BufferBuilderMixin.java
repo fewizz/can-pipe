@@ -14,7 +14,7 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
-import fewizz.canpipe.VertexFormatElements;
+import fewizz.canpipe.CanPipeVertexFormatElements;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 
 @Mixin(BufferBuilder.class)
@@ -56,13 +56,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private void endLastVertex() {
         if (this.vertices != 0) {
             if (this.elementsToFill != 0) {
-                if ((elementsToFill & VertexFormatElements.AO.mask()) != 0) {
+                if ((elementsToFill & CanPipeVertexFormatElements.AO.mask()) != 0) {
                     setAO(1.0F);  // .
                 }
-                if ((elementsToFill & VertexFormatElements.MATERIAL.mask()) != 0) {
+                if ((elementsToFill & CanPipeVertexFormatElements.MATERIAL.mask()) != 0) {
                     setMaterial(-1);  // .
                 }
-                if ((elementsToFill & VertexFormatElements.TANGENT.mask()) != 0) {
+                if ((elementsToFill & CanPipeVertexFormatElements.TANGENT.mask()) != 0) {
                     setTangent(new Vector3f(1.0F, 0.0F, 0.0F));  // .
                 }
                 if (elementsToFill != 0) {  // .
@@ -81,19 +81,19 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Override
     public void setAO(float ao) {
-        long offset = this.beginElement(VertexFormatElements.AO);
+        long offset = this.beginElement(CanPipeVertexFormatElements.AO);
         MemoryUtil.memPutFloat(offset, ao);
     }
 
     @Override
     public void setMaterial(int material) {
-        long offset = this.beginElement(VertexFormatElements.MATERIAL);
+        long offset = this.beginElement(CanPipeVertexFormatElements.MATERIAL);
         MemoryUtil.memPutInt(offset, material);
     }
 
     @Override
     public void setTangent(Vector3f tangent) {
-        long offset = this.beginElement(VertexFormatElements.TANGENT);
+        long offset = this.beginElement(CanPipeVertexFormatElements.TANGENT);
         MemoryUtil.memPutByte(offset+0, normalIntValue(tangent.x));
         MemoryUtil.memPutByte(offset+1, normalIntValue(tangent.y));
         MemoryUtil.memPutByte(offset+2, normalIntValue(tangent.z));

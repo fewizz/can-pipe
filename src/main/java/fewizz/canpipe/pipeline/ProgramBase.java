@@ -31,6 +31,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_lastCameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_modelToWorld", "float", 4, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_originType", "int", 1, List.of(0.0F)),
         // new ShaderProgramConfig.Uniform("frx_modelToCamera", "float", 4, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),  // takes it's value from vanilla uniform, "ModelOffset"
         new ShaderProgramConfig.Uniform("frx_viewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
@@ -56,6 +57,7 @@ public class ProgramBase extends CompiledShaderProgram {
     final Uniform FRX_RENDER_FRAMES;
     final Uniform FRX_CAMERA_POS;
     final Uniform FRX_LAST_CAMERA_POS;
+    public final Uniform CANPIPE_ORIGIN_TYPE;
     final Uniform FRX_LAST_VIEW_MATRIX;
     final Uniform FRX_LAST_PROJECTION_MATRIX;
     final Uniform FRX_VIEW_DISTANCE;
@@ -88,6 +90,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_RENDER_FRAMES = getUniform("canpipe_renderFrames");
         this.FRX_CAMERA_POS = getUniform("frx_cameraPos");
         this.FRX_LAST_CAMERA_POS = getUniform("frx_lastCameraPos");
+        this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");
         this.FRX_LAST_VIEW_MATRIX = getUniform("frx_lastViewMatrix");
         this.FRX_LAST_PROJECTION_MATRIX = getUniform("frx_lastProjectionMatrix");
         this.FRX_VIEW_DISTANCE = getUniform("frx_viewDistance");

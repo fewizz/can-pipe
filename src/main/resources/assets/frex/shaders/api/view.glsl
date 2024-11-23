@@ -6,13 +6,14 @@ uniform vec3 frx_lastCameraPos;
 uniform vec4 frx_modelToWorld;
 uniform vec3 canpipe_modelToCamera;
 #define frx_modelToCamera vec4(canpipe_modelToCamera, 1.0)
-const bool frx_modelOriginScreen = false;  // TODO define
-const bool frx_modelOriginRegion = false;  // TODO define
+uniform int canpipe_originType;
+#define frx_modelOriginCamera (canpipe_originType == 0 || canpipe_originType == 3)
+#define frx_modelOriginRegion (canpipe_originType == 1)
+#define frx_modelOriginScreen (canpipe_originType == 2)
+#define frx_isHand (canpipe_originType == 3)
+#define frx_isGui frx_modelOriginScreen
 
-const bool frx_isHand = false; // TODO define
-const bool frx_isGui = frx_modelOriginScreen;
-
-const mat4 frx_guiViewProjectionMatrix = mat4(1.0);  // TODO define
+#define frx_guiViewProjectionMatrix frx_viewProjectionMatrix
 const mat3 frx_normalModelMatrix = mat3(1.0);  // TODO define
 
 uniform mat4 frx_viewMatrix;  // aka ModelViewMat

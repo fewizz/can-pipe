@@ -3,7 +3,7 @@ package fewizz.canpipe;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
-public class VertexFormats {
+public class CanPipeVertexFormats {
 
     public static final VertexFormat BLOCK = VertexFormat.builder()
         .add("Position", VertexFormatElement.POSITION)
@@ -12,9 +12,9 @@ public class VertexFormats {
         .add("UV2", VertexFormatElement.UV2)
         .add("Normal", VertexFormatElement.NORMAL)
         .padding(1)
-        .add("AO", VertexFormatElements.AO)
-        .add("Material", VertexFormatElements.MATERIAL)
-        .add("Tangent", VertexFormatElements.TANGENT)
+        .add("AO", CanPipeVertexFormatElements.AO)
+        .add("Material", CanPipeVertexFormatElements.MATERIAL)
+        .add("Tangent", CanPipeVertexFormatElements.TANGENT)
         .padding(1)
         .build();
 

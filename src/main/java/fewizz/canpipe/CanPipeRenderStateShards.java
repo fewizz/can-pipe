@@ -4,7 +4,7 @@ import fewizz.canpipe.pipeline.Pipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
 
-public class RenderStateShards {
+public class CanPipeRenderStateShards {
 
     public static final RenderStateShard.OutputStateShard SOLID_TARGET = new RenderStateShard.OutputStateShard(
         "solid_target", () -> {

@@ -13,12 +13,15 @@ import org.joml.Matrix4f;
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import fewizz.canpipe.Mod;
-import fewizz.canpipe.VertexFormatElements;
+import fewizz.canpipe.CanPipeRenderTypes;
+import fewizz.canpipe.CanPipeVertexFormatElements;
+import fewizz.canpipe.CanPipeVertexFormats;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
@@ -95,6 +98,12 @@ public class MaterialProgram extends ProgramBase {
         }
 
         var format = shaderProgram.vertexFormat();
+        if (format == DefaultVertexFormat.BLOCK) {
+            format = CanPipeVertexFormats.BLOCK;
+        }
+        if (format == DefaultVertexFormat.NEW_ENTITY) {
+            format = CanPipeVertexFormats.NEW_ENTITY;
+        }
 
         int location = 0;
 
@@ -107,7 +116,7 @@ public class MaterialProgram extends ProgramBase {
             (format.contains(VertexFormatElement.UV1) ? "layout(location = "+(location++)+") in ivec2 in_uv1" : "const ivec2 in_v1 = ivec2(0)") + ";\n"+
             "layout(location = "+(location++)+") in ivec2 in_lightmap;  // UV2\n"+
             "layout(location = "+(location++)+") in vec3 in_normal;  // Normal\n"+
-            (format.contains(VertexFormatElements.AO) ? "layout(location = "+(location++)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
+            (format.contains(CanPipeVertexFormatElements.AO) ? "layout(location = "+(location++)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
             """
 
             out vec4 frx_vertex;

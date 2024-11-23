@@ -12,7 +12,11 @@
 		"AbstractRenderContextMixin",
 		"CompiledShaderProgramMixin",
 		"BufferBuilderMixin",
-		"MinecraftMixin"
+		"MinecraftMixin",
+		"RenderTypeMixin",
+		"RenderSectionMixin",
+		"SectionBufferBuilderPackMixin",
+		"SectionCompilerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

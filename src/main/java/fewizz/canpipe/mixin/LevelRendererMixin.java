@@ -76,10 +76,18 @@ public class LevelRendererMixin {
         @Local CompiledShaderProgram program,
         @Local SectionRenderDispatcher.RenderSection section
     ) {
-        if (program instanceof ProgramBase pb && pb.FRX_MODEL_TO_WORLD != null) {
-            BlockPos pos = section.getOrigin();
-            pb.FRX_MODEL_TO_WORLD.set(pos.getX(), pos.getY(),pos.getZ(), 1.0F);
-            pb.FRX_MODEL_TO_WORLD.upload();
+        if (program instanceof ProgramBase pb) {
+            if (pb.FRX_MODEL_TO_WORLD != null) {
+                BlockPos pos = section.getOrigin();
+                pb.FRX_MODEL_TO_WORLD.set(pos.getX(), pos.getY(),pos.getZ(), 1.0F);
+                pb.FRX_MODEL_TO_WORLD.upload();
+                pb.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F, 1.0F);
+            }
+            if (pb.CANPIPE_ORIGIN_TYPE != null) {
+                pb.CANPIPE_ORIGIN_TYPE.set(1); // region
+                pb.CANPIPE_ORIGIN_TYPE.upload();
+                pb.CANPIPE_ORIGIN_TYPE.set(0);  // camera
+            }
         }
     }
 

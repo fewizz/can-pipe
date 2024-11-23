@@ -380,6 +380,12 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
+        for (MaterialProgram p : this.materialPrograms.values()) {
+            if (p.CANPIPE_ORIGIN_TYPE != null) {
+                p.CANPIPE_ORIGIN_TYPE.set(0);  // camera
+            }
+        }
+
         if (this.runInitPasses) {
             for (Pass pass : this.onInit) {
                 pass.apply(view, projection);
@@ -409,6 +415,12 @@ public class Pipeline implements AutoCloseable {
 
         Minecraft mc = Minecraft.getInstance();
         RenderSystem.viewport(0, 0, mc.getMainRenderTarget().width, mc.getMainRenderTarget().height);
+
+        for (MaterialProgram p : this.materialPrograms.values()) {
+            if (p.CANPIPE_ORIGIN_TYPE != null) {
+                p.CANPIPE_ORIGIN_TYPE.set(3);  // hand
+            }
+        }
     }
 
     public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
@@ -418,6 +430,12 @@ public class Pipeline implements AutoCloseable {
 
         Minecraft mc = Minecraft.getInstance();
         RenderSystem.viewport(0, 0, mc.getMainRenderTarget().width, mc.getMainRenderTarget().height);
+
+        for (MaterialProgram p : this.materialPrograms.values()) {
+            if (p.CANPIPE_ORIGIN_TYPE != null) {
+                p.CANPIPE_ORIGIN_TYPE.set(2);  // screen
+            }
+        }
     }
 
     @Override

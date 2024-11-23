@@ -12,7 +12,7 @@ const vec3 frx_skyLightVector = vec3(0.0, 1.0, 0.0);  // TODO
 const vec3 frx_skyLightColor = vec3(1.0);  // TODO
 const float frx_skyLightIlluminance = 1.0;  // TOOD
 const vec3 frx_skyLightAtmosphericColor = vec3(1.0);  // TOOD
-const float frx_skyLightTransitionFactor = 1.0;  // TODO
+#define frx_skyLightTransitionFactor _frx_skyLightTransitionFactor()
 const float frx_skyFlashStrength = 0.0;  // TODO
 
 const float frx_ambientIntensity = 1.0;  // TODO
@@ -30,3 +30,25 @@ const int frx_worldIsRaining = 0;  // TODO
 const int frx_worldIsThundering = 0;  // TODO
 const int frx_worldIsSkyDarkened = 0;  // TODO
 const int frx_worldIsMoonlit = 0;  // TODO
+
+
+float _frx_skyLightTransitionFactor() {
+    float t = canpipe_gameTime;
+    float f = 1.0;
+
+    if (t > 22.0) {
+        if (t < 23.0) {
+            f = 23.0 - t;
+        } else {
+            f = t - 23.0;
+        }
+    } else if (t > 12.0) {
+        if (t < 13.0) {
+            f = 13.0 - t;
+        } else {
+            f = t - 13.0;
+        }
+    }
+
+    return f;
+}

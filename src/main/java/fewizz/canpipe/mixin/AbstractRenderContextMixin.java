@@ -11,7 +11,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.VertexFormats;
+import fewizz.canpipe.CanPipeVertexFormats;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
@@ -37,7 +37,7 @@ public class AbstractRenderContextMixin {
     ) {
         if (
             vertexConsumer instanceof BufferBuilder bb &&
-            bb.format == VertexFormats.BLOCK
+            bb.format == CanPipeVertexFormats.BLOCK
         ) {
             if (((Object) this) instanceof AbstractBlockRenderContext brc) {
                 AoCalculator aoCalc = ((AbstractBlockRenderContextAccessor) brc).canpipe_getAoCalc();
