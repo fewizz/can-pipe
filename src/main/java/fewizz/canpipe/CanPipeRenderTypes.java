@@ -13,28 +13,20 @@ import net.minecraft.util.TriState;
 public class CanPipeRenderTypes {
 
     public static RenderType replaced(RenderType rt) {
-        if (rt == RenderType.SOLID) {
-            return SOLID;
-        }
-        if (rt == RenderType.CUTOUT_MIPPED) {
-            return CUTOUT_MIPPED;
-        }
-        if (rt == RenderType.CUTOUT) {
-            return CUTOUT;
-        }
+        if (rt == RenderType.SOLID) { return SOLID; }
+        if (rt == RenderType.CUTOUT_MIPPED) { return CUTOUT_MIPPED; }
+        if (rt == RenderType.CUTOUT) { return CUTOUT; }
+        if (rt == RenderType.TRANSLUCENT) { return TRANSLUCENT; }
+
         return rt;
     }
 
     public static RenderType unreplaced(RenderType rt) {
-        if (rt == SOLID) {
-            return RenderType.SOLID;
-        }
-        if (rt == CUTOUT_MIPPED) {
-            return RenderType.CUTOUT_MIPPED;
-        }
-        if (rt == CUTOUT) {
-            return RenderType.CUTOUT;
-        }
+        if (rt == SOLID) { return RenderType.SOLID; }
+        if (rt == CUTOUT_MIPPED) { return RenderType.CUTOUT_MIPPED; }
+        if (rt == CUTOUT) { return RenderType.CUTOUT; }
+        if (rt == TRANSLUCENT) { return RenderType.TRANSLUCENT; }
+
         return rt;
     }
 
@@ -81,6 +73,16 @@ public class CanPipeRenderTypes {
             .setTextureState(RenderStateShard.BLOCK_SHEET)
             .setOutputState(CanPipeRenderStateShards.SOLID_TARGET)
             .createCompositeState(true)
+    );
+
+    public static final RenderType TRANSLUCENT = RenderType.create(
+        "translucent",
+        CanPipeVertexFormats.BLOCK,
+        RenderType.TRANSLUCENT.mode(),
+        RenderType.TRANSLUCENT.bufferSize(),
+        RenderType.TRANSLUCENT.affectsCrumbling(),
+        RenderType.TRANSLUCENT.sortOnUpload(),
+        RenderType.translucentState(RenderType.RENDERTYPE_TRANSLUCENT_SHADER)
     );
 
     public static final Function<ResourceLocation, RenderType> ENTITY_SOLID = Util.memoize((resourceLocation) -> {

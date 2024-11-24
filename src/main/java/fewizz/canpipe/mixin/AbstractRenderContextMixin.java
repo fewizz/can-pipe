@@ -23,6 +23,21 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderCont
 @Mixin(value=AbstractRenderContext.class, remap = false)
 public class AbstractRenderContextMixin {
 
+    @Inject(method = "bufferQuad", at = @At("HEAD"))
+    void precomputeTangent(
+        MutableQuadViewImpl quad,
+        VertexConsumer vertexConsumer,
+        CallbackInfo ci
+    ) {
+        if (
+            vertexConsumer instanceof BufferBuilder bb
+            && bb.format.contains(CanPipeVertexFormatElements.TANGENT)
+            && quad instanceof MutableQuadViewImplExtended mq
+        ) {
+            mq.computeTangent();
+        }
+    }
+
     @Inject(
         method = "bufferQuad",
         at = @At(
@@ -37,9 +52,7 @@ public class AbstractRenderContextMixin {
         CallbackInfo ci,
         @Local(ordinal = 0) int quadVertexIndex
     ) {
-        if (
-            vertexConsumer instanceof BufferBuilder bb
-        ) {
+        if (vertexConsumer instanceof BufferBuilder bb) {
             if (bb.format.contains(CanPipeVertexFormatElements.AO)) {
                 if (((Object) this) instanceof AbstractBlockRenderContext brc) {
                     AoCalculator aoCalc = ((AbstractBlockRenderContextAccessor) brc).canpipe_getAoCalc();

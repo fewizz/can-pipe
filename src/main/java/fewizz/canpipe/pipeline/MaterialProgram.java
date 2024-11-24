@@ -120,6 +120,7 @@ public class MaterialProgram extends ProgramBase {
             "layout(location = "+(location++)+") in vec3 in_normal;  // Normal\n"+
             (format.contains(CanPipeVertexFormatElements.AO) ? "layout(location = "+(location++)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
             (format.contains(CanPipeVertexFormatElements.SPRITE_INDEX) ? "layout(location = "+(location++)+") in int in_spriteIndex" : "const int in_spriteIndex = -1") + ";\n"+
+            (format.contains(CanPipeVertexFormatElements.TANGENT) ? "layout(location = "+(location++)+") in vec4 in_vertexTangent" : "const vec4 in_vertexTangent = vec4(1.0)") + ";\n"+
             """
 
             out vec4 frx_vertex;
@@ -149,7 +150,7 @@ public class MaterialProgram extends ProgramBase {
                     ),
                     in_ao
                 );
-                frx_vertexTangent = vec4(1.0, 0.0, 0.0, 0.0);
+                frx_vertexTangent = in_vertexTangent;
                 canpipe_spriteIndex = in_spriteIndex;
 
                 frx_pipelineVertex();

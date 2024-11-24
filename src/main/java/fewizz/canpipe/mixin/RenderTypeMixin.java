@@ -31,6 +31,11 @@ public class RenderTypeMixin {
         return Mod.getCurrentPipeline() != null ? CanPipeRenderTypes.CUTOUT : original;
     }
 
+    @ModifyReturnValue(method = "translucent", at = @At("RETURN"))
+    private static RenderType replaceTranslucent(RenderType original) {
+        return Mod.getCurrentPipeline() != null ? CanPipeRenderTypes.TRANSLUCENT : original;
+    }
+
     @ModifyReturnValue(method = "entitySolid", at = @At("RETURN"))
     private static RenderType replaceEntitySolid(RenderType original, ResourceLocation loc) {
         return Mod.getCurrentPipeline() != null ? CanPipeRenderTypes.ENTITY_SOLID.apply(loc) : original;
