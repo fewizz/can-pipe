@@ -10,23 +10,23 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 
-import fewizz.canpipe.Mod;
-import fewizz.canpipe.CanPipeRenderTypes;
 import fewizz.canpipe.CanPipeVertexFormatElements;
 import fewizz.canpipe.CanPipeVertexFormats;
+import fewizz.canpipe.Mod;
+import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 
@@ -51,12 +51,14 @@ public class MaterialProgram extends ProgramBase {
                     shadowsEnabled ?
                     List.of(
                         new ShaderProgramConfig.Sampler("frxs_baseColor"),
+                        new ShaderProgramConfig.Sampler("canpipe_spritesExtents"),
                         new ShaderProgramConfig.Sampler("frxs_lightmap"),
                         new ShaderProgramConfig.Sampler("frxs_shadowMap"),
                         new ShaderProgramConfig.Sampler("frxs_shadowMapTexture")
                     ) :
                     List.of(
                         new ShaderProgramConfig.Sampler("frxs_baseColor"),
+                        new ShaderProgramConfig.Sampler("canpipe_spritesExtents"),
                         new ShaderProgramConfig.Sampler("frxs_lightmap")
                     )
                 ).stream(),
@@ -117,6 +119,7 @@ public class MaterialProgram extends ProgramBase {
             "layout(location = "+(location++)+") in ivec2 in_lightmap;  // UV2\n"+
             "layout(location = "+(location++)+") in vec3 in_normal;  // Normal\n"+
             (format.contains(CanPipeVertexFormatElements.AO) ? "layout(location = "+(location++)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
+            (format.contains(CanPipeVertexFormatElements.SPRITE_INDEX) ? "layout(location = "+(location++)+") in int in_spriteIndex" : "const int in_spriteIndex = -1") + ";\n"+
             """
 
             out vec4 frx_vertex;
@@ -126,6 +129,8 @@ public class MaterialProgram extends ProgramBase {
             out vec3 frx_vertexLight;
             out float frx_distance;
             out vec4 frx_vertexTangent;
+
+            flat out int canpipe_spriteIndex;
 
             """
             + vertexSrc +
@@ -145,6 +150,7 @@ public class MaterialProgram extends ProgramBase {
                     in_ao
                 );
                 frx_vertexTangent = vec4(1.0, 0.0, 0.0, 0.0);
+                canpipe_spriteIndex = in_spriteIndex;
 
                 frx_pipelineVertex();
             }
@@ -154,7 +160,7 @@ public class MaterialProgram extends ProgramBase {
             "#extension GL_ARB_conservative_depth: enable\n\n"+
             "#define _"+typeName.toUpperCase()+"\n\n"+
             (enablePBR ? "#define PBR_ENABLED\n\n" : "") +
-            shadowMapDefs+
+            shadowMapDefs +
             "const bool frx_renderTargetSolid = false;\n\n"+// + (shaderProgram == CoreShaders.RENDERTYPE_SOLID ? "true" : "false") + ";\n\n" +
             """
 
@@ -170,6 +176,7 @@ public class MaterialProgram extends ProgramBase {
             in vec3 frx_vertexLight;
             in float frx_distance;
             in vec4 frx_vertexTangent;
+            flat in int canpipe_spriteIndex;
 
             vec4 frx_sampleColor = vec4(0.0);
             vec4 frx_fragColor = vec4(0.0);
@@ -187,15 +194,27 @@ public class MaterialProgram extends ProgramBase {
             #endif // PBR
 
             uniform sampler2D frxs_baseColor;  // aka Sampler0
+            uniform sampler2D canpipe_spritesExtents;
 
             vec2 frx_mapNormalizedUV(vec2 coord) {
-                // TODO wrong, temp.
-                return coord * vec2(textureSize(frxs_baseColor, 0));
+                vec4 extents = texelFetch(
+                    canpipe_spritesExtents,
+                    ivec2(canpipe_spriteIndex % 1024, canpipe_spriteIndex / 1024),
+                    0
+                );
+                return extents.xy + coord * (extents.zw - extents.xy);
             }
 
             vec2 frx_normalizeMappedUV(vec2 coord) {
-                // TODO wrong, temp.
-                return coord / vec2(textureSize(frxs_baseColor, 0));
+                if (canpipe_spriteIndex == -1) {
+                    return coord;
+                }
+                vec4 extents = texelFetch(
+                    canpipe_spritesExtents,
+                    ivec2(canpipe_spriteIndex % 1024, canpipe_spriteIndex / 1024),
+                    0
+                );
+                return (coord - extents.xy) / (extents.zw - extents.xy); // (coord / vec2(textureSize(frxs_baseColor, 0))) - extents.xy;
             }
 
             #ifdef VANILLA_LIGHTING
@@ -279,7 +298,19 @@ public class MaterialProgram extends ProgramBase {
 
     @Override
     public void bindSampler(String name, int id) {
-        if (name.equals("Sampler0")) { name = "frxs_baseColor"; }
+        if (name.equals("Sampler0")) {
+            name = "frxs_baseColor";
+
+            // cursed, as always :)
+            var mc = Minecraft.getInstance();
+            for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
+                var atlas = mc.getModelManager().getAtlas(atlasLoc);
+                if (atlas.getId() == id) {
+                    super.bindSampler("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).getSpriteData().getId());
+                }
+            }
+        }
+
         if (name.equals("Sampler2")) { name = "frxs_lightmap"; }
 
         super.bindSampler(name, id);

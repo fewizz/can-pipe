@@ -13,7 +13,7 @@ public class CanPipeVertexFormats {
         .add("Normal", VertexFormatElement.NORMAL)
         .padding(1)
         .add("AO", CanPipeVertexFormatElements.AO)
-        .add("Material", CanPipeVertexFormatElements.MATERIAL)
+        .add("SpriteIndex", CanPipeVertexFormatElements.SPRITE_INDEX)
         .add("Tangent", CanPipeVertexFormatElements.TANGENT)
         .padding(1)
         .build();

@@ -16,7 +16,9 @@
 		"RenderTypeMixin",
 		"RenderSectionMixin",
 		"SectionBufferBuilderPackMixin",
-		"SectionCompilerMixin"
+		"SectionCompilerMixin",
+		"TextureAtlasMixin",
+		"MutableQuadViewImplMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

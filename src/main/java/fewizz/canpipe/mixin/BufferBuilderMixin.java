@@ -2,7 +2,6 @@ package fewizz.canpipe.mixin;
 
 import java.util.stream.Collectors;
 
-import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -59,11 +58,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 if ((elementsToFill & CanPipeVertexFormatElements.AO.mask()) != 0) {
                     setAO(1.0F);  // .
                 }
-                if ((elementsToFill & CanPipeVertexFormatElements.MATERIAL.mask()) != 0) {
-                    setMaterial(-1);  // .
+                if ((elementsToFill & CanPipeVertexFormatElements.SPRITE_INDEX.mask()) != 0) {
+                    setSpriteIndex(-1);  // .
                 }
                 if ((elementsToFill & CanPipeVertexFormatElements.TANGENT.mask()) != 0) {
-                    setTangent(new Vector3f(1.0F, 0.0F, 0.0F));  // .
+                    setTangent(0);  // .
                 }
                 if (elementsToFill != 0) {  // .
                     String string = (String)VertexFormatElement.elementsFromMask(this.elementsToFill).map(this.format::getElementName).collect(Collectors.joining(", "));
@@ -86,17 +85,15 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
-    public void setMaterial(int material) {
-        long offset = this.beginElement(CanPipeVertexFormatElements.MATERIAL);
-        MemoryUtil.memPutInt(offset, material);
+    public void setSpriteIndex(int index) {
+        long offset = this.beginElement(CanPipeVertexFormatElements.SPRITE_INDEX);
+        MemoryUtil.memPutInt(offset, index);
     }
 
     @Override
-    public void setTangent(Vector3f tangent) {
+    public void setTangent(int tangentPacked) {
         long offset = this.beginElement(CanPipeVertexFormatElements.TANGENT);
-        MemoryUtil.memPutByte(offset+0, normalIntValue(tangent.x));
-        MemoryUtil.memPutByte(offset+1, normalIntValue(tangent.y));
-        MemoryUtil.memPutByte(offset+2, normalIntValue(tangent.z));
+        MemoryUtil.memPutInt(offset, tangentPacked);
     }
 
 }

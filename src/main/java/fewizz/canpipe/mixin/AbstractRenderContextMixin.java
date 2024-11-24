@@ -11,7 +11,9 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import fewizz.canpipe.CanPipeVertexFormatElements;
 import fewizz.canpipe.CanPipeVertexFormats;
+import fewizz.canpipe.mixininterface.MutableQuadViewImplExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
@@ -36,18 +38,27 @@ public class AbstractRenderContextMixin {
         @Local(ordinal = 0) int quadVertexIndex
     ) {
         if (
-            vertexConsumer instanceof BufferBuilder bb &&
-            bb.format == CanPipeVertexFormats.BLOCK
+            vertexConsumer instanceof BufferBuilder bb
         ) {
-            if (((Object) this) instanceof AbstractBlockRenderContext brc) {
-                AoCalculator aoCalc = ((AbstractBlockRenderContextAccessor) brc).canpipe_getAoCalc();
-                ((VertexConsumerExtended) bb).setAO(aoCalc.ao[quadVertexIndex]);
+            if (bb.format.contains(CanPipeVertexFormatElements.AO)) {
+                if (((Object) this) instanceof AbstractBlockRenderContext brc) {
+                    AoCalculator aoCalc = ((AbstractBlockRenderContextAccessor) brc).canpipe_getAoCalc();
+                    ((VertexConsumerExtended) bb).setAO(aoCalc.ao[quadVertexIndex]);
+                }
+                else {
+                    ((VertexConsumerExtended) bb).setAO(1.0F);
+                }
             }
-            else {
-                ((VertexConsumerExtended) bb).setAO(1.0F);
+
+            if (bb.format.contains(CanPipeVertexFormatElements.SPRITE_INDEX)) {
+                int index = ((MutableQuadViewImplExtended)quad).getSpriteIndex();
+                ((VertexConsumerExtended) bb).setSpriteIndex(index);
             }
-            ((VertexConsumerExtended) bb).setMaterial(0);
-            ((VertexConsumerExtended) bb).setTangent(new Vector3f(1.0F, 0.0F, 0.0F));
+
+            if (bb.format.contains(CanPipeVertexFormatElements.TANGENT)) {
+                int tangent = ((MutableQuadViewImplExtended)quad).getTangent();
+                ((VertexConsumerExtended) bb).setTangent(tangent);
+            }
         }
 
     }

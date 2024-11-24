@@ -18,3 +18,4 @@ accessible  field  net/minecraft/client/renderer/RenderType  ENTITY_SOLID_Z_OFFS
 accessible  field  net/minecraft/client/renderer/RenderType  ENTITY_CUTOUT  Ljava/util/function/Function;
 accessible  field  net/minecraft/client/renderer/RenderType  ENTITY_CUTOUT_NO_CULL  Ljava/util/function/BiFunction;
 accessible  field  net/minecraft/client/renderer/RenderType  ENTITY_CUTOUT_NO_CULL_Z_OFFSET  Ljava/util/function/BiFunction;
+accessible  field  net/minecraft/client/resources/model/ModelManager VANILLA_ATLASES  Ljava/util/Map;
