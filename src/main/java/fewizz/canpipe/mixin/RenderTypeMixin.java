@@ -13,8 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 @Mixin(RenderType.class)
 public class RenderTypeMixin {
 
-    // For now just replacing, but i think it would be better to replace them locally, at the needed places
-    // TODO
+    // For now just replacing, but i think it would be better to replace them locally, TODO?
 
     @ModifyReturnValue(method = "solid", at = @At("RETURN"))
     private static RenderType replaceSolid(RenderType original) {

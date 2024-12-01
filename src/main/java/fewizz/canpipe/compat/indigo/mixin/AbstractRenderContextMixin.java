@@ -1,4 +1,4 @@
-package fewizz.canpipe.mixin;
+package fewizz.canpipe.compat.indigo.mixin;
 
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +13,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipeVertexFormatElements;
 import fewizz.canpipe.CanPipeVertexFormats;
-import fewizz.canpipe.mixininterface.MutableQuadViewImplExtended;
+import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewImplExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;

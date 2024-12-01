@@ -23,6 +23,10 @@
 		{
 			"config": "canpipe.mixins.json",
 			"environment": "client"
+		},
+		{
+			"config": "canpipe.indigo.mixins.json",
+			"environment": "client"
 		}
 	],
 	"accessWidener" : "canpipe.accesswidener",

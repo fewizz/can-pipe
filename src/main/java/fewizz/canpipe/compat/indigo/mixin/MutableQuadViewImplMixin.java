@@ -1,4 +1,4 @@
-package fewizz.canpipe.mixin;
+package fewizz.canpipe.compat.indigo.mixin;
 
 import java.util.Arrays;
 
@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import fewizz.canpipe.Mod;
-import fewizz.canpipe.mixininterface.MutableQuadViewImplExtended;
+import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewImplExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
 import net.fabricmc.fabric.impl.client.indigo.renderer.helper.NormalHelper;

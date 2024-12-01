@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 
-import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;

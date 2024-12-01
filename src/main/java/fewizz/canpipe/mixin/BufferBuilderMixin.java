@@ -48,7 +48,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     protected static byte normalIntValue(float f){return 0;}
 
     /**
-     * @reason no reason
+     * @reason laziness, TODO
      * @author fewizz
      * */
     @Overwrite

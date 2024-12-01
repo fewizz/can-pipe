@@ -1,4 +1,4 @@
-package fewizz.canpipe.mixin;
+package fewizz.canpipe.compat.indigo.mixin;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -9,7 +9,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 
 import fewizz.canpipe.Mod;
-import fewizz.canpipe.mixininterface.MutableQuadViewImplExtended;
+import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewImplExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
