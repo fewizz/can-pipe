@@ -54,13 +54,8 @@ public class AbstractRenderContextMixin {
     ) {
         if (vertexConsumer instanceof BufferBuilder bb) {
             if (bb.format.contains(CanPipeVertexFormatElements.AO)) {
-                if (((Object) this) instanceof AbstractBlockRenderContext brc) {
-                    AoCalculator aoCalc = ((AbstractBlockRenderContextAccessor) brc).canpipe_getAoCalc();
-                    ((VertexConsumerExtended) bb).setAO(aoCalc.ao[quadVertexIndex]);
-                }
-                else {
-                    ((VertexConsumerExtended) bb).setAO(1.0F);
-                }
+                float ao = ((MutableQuadViewImplExtended)quad).getAO(quadVertexIndex);
+                ((VertexConsumerExtended) bb).setAO(ao);
             }
 
             if (bb.format.contains(CanPipeVertexFormatElements.SPRITE_INDEX)) {

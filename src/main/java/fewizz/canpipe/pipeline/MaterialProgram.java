@@ -133,8 +133,8 @@ public class MaterialProgram extends ProgramBase {
 
             flat out int canpipe_spriteIndex;
 
-            """
-            + vertexSrc +
+            """ +
+            vertexSrc +
             """
 
             void main() {
@@ -231,8 +231,8 @@ public class MaterialProgram extends ProgramBase {
 
             #include frex:shaders/api/material.glsl
 
-            """
-            + fragmentSrc +
+            """ +
+            fragmentSrc +
             """
 
             #include frex:shaders/api/view.glsl
