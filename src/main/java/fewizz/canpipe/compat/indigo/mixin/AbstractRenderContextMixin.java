@@ -1,6 +1,5 @@
 package fewizz.canpipe.compat.indigo.mixin;
 
-import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,19 +11,18 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipeVertexFormatElements;
-import fewizz.canpipe.CanPipeVertexFormats;
-import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewImplExtended;
+import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
-import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
-import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
-import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext;
 
-@Mixin(value=AbstractRenderContext.class, remap = false)
+@Mixin(
+    targets="net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext",
+    remap = false
+)
 public class AbstractRenderContextMixin {
 
     @Inject(method = "bufferQuad", at = @At("HEAD"))
-    void precomputeTangent(
+    void computeTangentIfNeeded(
         MutableQuadViewImpl quad,
         VertexConsumer vertexConsumer,
         CallbackInfo ci
@@ -32,7 +30,7 @@ public class AbstractRenderContextMixin {
         if (
             vertexConsumer instanceof BufferBuilder bb
             && bb.format.contains(CanPipeVertexFormatElements.TANGENT)
-            && quad instanceof MutableQuadViewImplExtended mq
+            && quad instanceof MutableQuadViewExtended mq
         ) {
             mq.computeTangent();
         }
@@ -46,26 +44,24 @@ public class AbstractRenderContextMixin {
         ),
         locals = LocalCapture.CAPTURE_FAILHARD
     )
-    void setExtendedVertexExelements(
+    void setExtendedVertexElements(
         MutableQuadViewImpl quad,
         VertexConsumer vertexConsumer,
         CallbackInfo ci,
         @Local(ordinal = 0) int quadVertexIndex
     ) {
-        if (vertexConsumer instanceof BufferBuilder bb) {
+        if (
+            vertexConsumer instanceof BufferBuilder bb &&
+            quad instanceof MutableQuadViewExtended q
+        ) {
             if (bb.format.contains(CanPipeVertexFormatElements.AO)) {
-                float ao = ((MutableQuadViewImplExtended)quad).getAO(quadVertexIndex);
-                ((VertexConsumerExtended) bb).setAO(ao);
+                ((VertexConsumerExtended) bb).setAO(q.getAO(quadVertexIndex));
             }
-
             if (bb.format.contains(CanPipeVertexFormatElements.SPRITE_INDEX)) {
-                int index = ((MutableQuadViewImplExtended)quad).getSpriteIndex();
-                ((VertexConsumerExtended) bb).setSpriteIndex(index);
+                ((VertexConsumerExtended) bb).setSpriteIndex(q.getSpriteIndex());
             }
-
             if (bb.format.contains(CanPipeVertexFormatElements.TANGENT)) {
-                int tangent = ((MutableQuadViewImplExtended)quad).getTangent();
-                ((VertexConsumerExtended) bb).setTangent(tangent);
+                ((VertexConsumerExtended) bb).setTangent(q.getTangent());
             }
         }
 

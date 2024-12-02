@@ -45,7 +45,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     abstract protected long beginElement(VertexFormatElement vertexFormatElement);
 
     @Shadow
-    protected static byte normalIntValue(float f){return 0;}
+    protected static byte normalIntValue(float f) {return 0;}
 
     /**
      * @reason laziness, TODO
@@ -62,7 +62,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                     setSpriteIndex(-1);  // .
                 }
                 if ((elementsToFill & CanPipeVertexFormatElements.TANGENT.mask()) != 0) {
-                    setTangent(0);  // .
+                    setTangent(1.0F, 0.0F, 0.0F);  // .
                 }
                 if (elementsToFill != 0) {  // .
                     String string = (String)VertexFormatElement.elementsFromMask(this.elementsToFill).map(this.format::getElementName).collect(Collectors.joining(", "));
@@ -91,9 +91,18 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
-    public void setTangent(int tangentPacked) {
+    public void setTangent(float x, float y, float z) {
         long offset = this.beginElement(CanPipeVertexFormatElements.TANGENT);
-        MemoryUtil.memPutInt(offset, tangentPacked);
+        MemoryUtil.memPutByte(offset+0, normalIntValue(x));
+        MemoryUtil.memPutByte(offset+1, normalIntValue(y));
+        MemoryUtil.memPutByte(offset+2, normalIntValue(z));
+        MemoryUtil.memPutByte(offset+3, (byte) 0);
+    }
+
+    @Override
+    public void setTangent(int tangent) {
+        long offset = this.beginElement(CanPipeVertexFormatElements.TANGENT);
+        MemoryUtil.memPutInt(offset, tangent);
     }
 
 }

@@ -20,10 +20,12 @@ public class ShaderManagerMixin {
 
     @WrapMethod(method = "getProgram")
     CompiledShaderProgram wrapGetProgram(ShaderProgram shaderProgram, Operation<CompiledShaderProgram> original) {
-        CompiledShaderProgram p = Mod.tryGetMaterialProgramReplacement(shaderProgram);
-
-        if (p != null) {
-            return p;
+        var pipeline = Mod.getCurrentPipeline();
+        if (pipeline != null) {
+            var p = pipeline.materialPrograms.get(shaderProgram);
+            if (p != null) {
+                return p;
+            }
         }
 
         return original.call(shaderProgram);

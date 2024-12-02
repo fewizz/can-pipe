@@ -41,3 +41,4 @@ replay_*.log
 
 src/main/java/com/*
 src/main/java/net/*
+src/main/resources/assets/minecraft/*

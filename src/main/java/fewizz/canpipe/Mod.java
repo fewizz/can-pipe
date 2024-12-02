@@ -8,7 +8,6 @@ import java.util.concurrent.Executor;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,10 +25,7 @@ import fewizz.canpipe.pipeline.Pipeline;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleResourceReloadListener;
-import net.fabricmc.fabric.impl.client.indigo.renderer.helper.NormalHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.CompiledShaderProgram;
-import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.Resource;
@@ -44,7 +40,7 @@ public class Mod implements ClientModInitializer {
     /*private static final Map<ResourceLocation, JsonObject> RAW_MATERIALS = new HashMap<>();*/
 
     private static final Map<ResourceLocation, Material> MATERIALS = new HashMap<>();
-    private static Pipeline currentPipeline = null;
+    private static volatile Pipeline currentPipeline = null;
 
     @Override
     public void onInitializeClient() {
@@ -195,13 +191,6 @@ public class Mod implements ClientModInitializer {
         }
     }
 
-    public static CompiledShaderProgram tryGetMaterialProgramReplacement(ShaderProgram shaderProgram) {
-        if(currentPipeline != null) {
-            return currentPipeline.materialPrograms.get(shaderProgram);
-        }
-        return null;
-    }
-
     private static void processIncludes(
         JsonObject object,
         Map<String, JsonObject> includes,
@@ -310,6 +299,30 @@ public class Mod implements ClientModInitializer {
         // final boolean inverted = BdotTcN < 0f;
 
         return new Vector3f(tx, ty, tz);
+    }
+
+    public static Vector3f computeNormal(
+        float x0, float y0, float z0,
+        float x1, float y1, float z1,
+        float x2, float y2, float z2
+    ) {
+        final float dx0 = x0 - x1;
+        final float dy0 = y0 - y1;
+        final float dz0 = z0 - z1;
+        final float dx1 = x2 - x1;
+        final float dy1 = y2 - y1;
+        final float dz1 = z2 - z1;
+
+        float nx = dy0 * dz1 - dz0 * dy1;
+        float ny = dz0 * dx1 - dx0 * dz1;
+        float nz = dx0 * dy1 - dy0 * dx1;
+
+        float l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+        nx /= l;
+        ny /= l;
+        nz /= l;
+
+        return new Vector3f(nx, ny, nz);
     }
 
 }

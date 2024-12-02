@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import fewizz.canpipe.Mod;
-import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewImplExtended;
+import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
 import net.fabricmc.fabric.impl.client.indigo.renderer.helper.NormalHelper;
@@ -20,11 +20,7 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.core.Direction;
 
 @Mixin(value = MutableQuadViewImpl.class, remap = false)
-public abstract class MutableQuadViewImplMixin implements MutableQuadViewImplExtended {
-
-    float[] ao = new float[4];
-    private int spriteIndex;
-    private int tangent;
+public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin implements MutableQuadViewExtended {
 
     @Inject(method = "clear", at = @At("TAIL"))
     void onClear(CallbackInfo ci) {
@@ -42,29 +38,18 @@ public abstract class MutableQuadViewImplMixin implements MutableQuadViewImplExt
         at = @At("TAIL")
     )
     private void onFromVanilla(BakedQuad quad, RenderMaterial mat, Direction d, CallbackInfoReturnable<MutableQuadViewImpl> ci) {
-        var mc = Minecraft.getInstance();
-        var as = mc.getModelManager().getAtlas(quad.getSprite().atlasLocation());
-        this.spriteIndex = ((TextureAtlasExtended) as).indexBySprite(quad.getSprite());
+        if (Mod.getCurrentPipeline() != null) {
+            Arrays.fill(this.ao, 1.0F);
+
+            var mc = Minecraft.getInstance();
+            var as = mc.getModelManager().getAtlas(quad.getSprite().atlasLocation());
+            this.spriteIndex = ((TextureAtlasExtended) as).indexBySprite(quad.getSprite());
+        }
     }
 
     @Override
     public void setSpriteIndex(int index) {
         this.spriteIndex = index;
-    }
-
-    @Override
-    public int getSpriteIndex() {
-        return this.spriteIndex;
-    }
-
-    @Override
-    public int getTangent() {
-        return this.tangent;
-    }
-
-    @Override
-    public float getAO(int index) {
-        return this.ao[index];
     }
 
     @Override

@@ -6,6 +6,8 @@ public interface VertexConsumerExtended extends VertexConsumer {
 
     void setAO(float ao);
     void setSpriteIndex(int material);
-    void setTangent(int tangentPacked);
+
+    void setTangent(float x, float y, float z);
+    void setTangent(int tangent);
 
 }

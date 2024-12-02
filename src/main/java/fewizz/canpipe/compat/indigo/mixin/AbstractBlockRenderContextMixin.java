@@ -9,7 +9,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 
 import fewizz.canpipe.Mod;
-import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewImplExtended;
+import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
@@ -36,7 +36,7 @@ public class AbstractBlockRenderContextMixin {
     ) {
         // don't set color, set AO instead
         if (Mod.getCurrentPipeline() != null) {
-            ((MutableQuadViewImplExtended) instance).setAO(vertexIndex, this.aoCalc.ao[vertexIndex]);
+            ((MutableQuadViewExtended) instance).setAO(vertexIndex, this.aoCalc.ao[vertexIndex]);
             return null;
         }
         return original.call(instance, vertexIndex, newColor);
