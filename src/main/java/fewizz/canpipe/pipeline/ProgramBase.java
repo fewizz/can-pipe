@@ -26,6 +26,8 @@ import net.minecraft.resources.ResourceLocation;
 public class ProgramBase extends CompiledShaderProgram {
 
     static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+        new ShaderProgramConfig.Uniform("canpipe_light0Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_light1Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         // view.glsl
         new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_lastCameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
@@ -112,6 +114,8 @@ public class ProgramBase extends CompiledShaderProgram {
         if (name.equals("ScreenSize")) { name = "canpipe_screenSize"; }
         if (name.equals("GameTime")) { name = "canpipe_gameTime"; }
         if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
+        if (name.equals("Light0_Direction")) { name = "canpipe_light0Direction"; }
+        if (name.equals("Light1_Direction")) { name = "canpipe_light1Direction"; }
 
         return super.getUniform(name);
     }

@@ -46,3 +46,11 @@ const int frx_cameraInFluid = 0;  // TODO define
 const int frx_cameraInWater = 0;  // TODO define
 const int frx_cameraInLava = 0;  // TODO define
 const int frx_cameraInSnow = 0;  // TODO define
+
+const bool frx_renderTargetSolid =
+    #if defined _RENDERTYPE_SOLID || defined _RENDERTYPE_CUTOUT || defined _RENDERTYPE_CUTOUT_MIPPED || defined _RENDERTYPE_ENTITY_SOLID || defined _RENDERTYPE_ENTITY_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL
+        true
+    #else
+        false
+    #endif
+    ;

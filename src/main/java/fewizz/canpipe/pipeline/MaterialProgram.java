@@ -133,9 +133,14 @@ public class MaterialProgram extends ProgramBase {
 
             flat out int canpipe_spriteIndex;
 
+            uniform vec3 canpipe_light0Direction;  // aka Light0_Direction
+            uniform vec3 canpipe_light1Direction;  // aka Light1_Direction
+
             """ +
             vertexSrc +
             """
+
+            #include frex:shaders/view.glsl
 
             void main() {
                 frx_vertex = vec4(in_vertex, 1.0);
@@ -153,6 +158,16 @@ public class MaterialProgram extends ProgramBase {
                 frx_vertexTangent = in_vertexTangent;
                 canpipe_spriteIndex = in_spriteIndex;
 
+                if (frx_modelOriginScreen) {
+                    // from minecraft:shaders/include/light.glsl
+                    const float MINECRAFT_LIGHT_POWER = 0.6;
+                    const float MINECRAFT_AMBIENT_LIGHT = 0.4;
+                    float light0 = max(0.0, dot(canpipe_light0Direction, frx_vertexNormal));
+                    float light1 = max(0.0, dot(canpipe_light1Direction, frx_vertexNormal));
+                    float lightAccum = min(1.0, (light0 + light1) * MINECRAFT_LIGHT_POWER + MINECRAFT_AMBIENT_LIGHT);
+                    frx_vertexColor = vec4(frx_vertexColor.rgb * lightAccum, frx_vertexColor.a);
+                }
+
                 frx_pipelineVertex();
             }
             """;
@@ -162,7 +177,6 @@ public class MaterialProgram extends ProgramBase {
             "#define _"+typeName.toUpperCase()+"\n\n"+
             (enablePBR ? "#define PBR_ENABLED\n\n" : "") +
             shadowMapDefs +
-            "const bool frx_renderTargetSolid = false;\n\n"+// + (shaderProgram == CoreShaders.RENDERTYPE_SOLID ? "true" : "false") + ";\n\n" +
             """
 
             layout (depth_unchanged) out float gl_FragDepth;
