@@ -19,7 +19,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipeVertexFormatElements;
 import fewizz.canpipe.CanPipeVertexFormats;
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
@@ -298,7 +298,7 @@ public class MaterialProgram extends ProgramBase {
 
     @Override
     public void apply() {
-        var p = Mod.getCurrentPipeline();
+        var p = Pipelines.getCurrent();
         if (p != null && p.skyShadows != null) {
             var fb = p.framebuffers.get(p.skyShadows.framebufferName());
             var tex = fb.depthAttachement.texture();

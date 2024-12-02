@@ -14,7 +14,7 @@ uniform int canpipe_originType;
 #define frx_isGui frx_modelOriginScreen
 
 #define frx_guiViewProjectionMatrix frx_viewProjectionMatrix
-const mat3 frx_normalModelMatrix = mat3(1.0);  // TODO define
+#define frx_normalModelMatrix mat3(frx_viewMatrix)
 
 uniform mat4 frx_viewMatrix;  // aka ModelViewMat
 #define frx_inverseViewMatrix inverse(frx_viewMatrix)

@@ -14,7 +14,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;
@@ -33,7 +33,7 @@ public class LiquidBlockRendererMixin {
         )
     )
     void wrapVertexConsumerIfNeeded(CallbackInfo ci , @Local LocalRef<VertexConsumer> vc, @Local LocalRef<TextureAtlasSprite[]> sprites) {
-        if (Mod.getCurrentPipeline() != null && vc.get() instanceof VertexConsumerExtended vce) {
+        if (Pipelines.getCurrent() != null && vc.get() instanceof VertexConsumerExtended vce) {
             vc.set(new VertexConsumerWrapper(vce, sprites.get()));
         }
     }
@@ -73,7 +73,7 @@ public class LiquidBlockRendererMixin {
                     spriteIndex = this.spriteIndicies[1];  // flowing
                 }
 
-                Vector3f tangent = Mod.computeTangent(
+                Vector3f tangent = Pipelines.computeTangent(
                     veritices[0].x, veritices[0].y, veritices[0].z, uvs[0].x, uvs[0].y,
                     veritices[1].x, veritices[1].y, veritices[1].z, uvs[1].x, uvs[1].y,
                     veritices[2].x, veritices[2].y, veritices[2].z, uvs[2].x, uvs[2].y

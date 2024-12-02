@@ -5,7 +5,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.compat.indigo.mixininterface.QuadViewExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.QuadViewImpl;
 
@@ -34,7 +34,7 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
     @ModifyReturnValue(method = "hasShade", at = @At("RETURN"))
     boolean hasShade(boolean original) {
         // diffuse lighting is handled by pipeline
-        if (Mod.getCurrentPipeline() != null) {
+        if (Pipelines.getCurrent() != null) {
             return false;
         }
         return original;

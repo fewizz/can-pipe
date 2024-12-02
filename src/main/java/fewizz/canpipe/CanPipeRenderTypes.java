@@ -145,7 +145,7 @@ public class CanPipeRenderTypes {
 
     public static final List<RenderType> chunkBufferLayers() {
         return RenderType.chunkBufferLayers().stream().map(
-            rt -> Mod.getCurrentPipeline() != null ? replaced(rt) : rt
+            rt -> Pipelines.getCurrent() != null ? replaced(rt) : rt
         ).toList();
     }
 

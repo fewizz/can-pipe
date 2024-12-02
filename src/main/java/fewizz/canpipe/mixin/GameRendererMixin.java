@@ -13,7 +13,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -52,7 +52,7 @@ public class GameRendererMixin implements GameRendererAccessor {
 
     @Inject(method = "resize", at = @At("HEAD"))
     void onResize(int w, int h, CallbackInfo ci) {
-        Mod.onGameRendererResize(w, h);
+        Pipelines.onGameRendererResize(w, h);
     }
 
     @Inject(method = "renderLevel", at = @At("HEAD"))
@@ -94,18 +94,18 @@ public class GameRendererMixin implements GameRendererAccessor {
         canpipe_view = view;
         canpipe_projection = projection;
 
-        Mod.onBeforeWorldRender(view, projection);
+        Pipelines.onBeforeWorldRender(view, projection);
         this.minecraft.mainRenderTarget.bindWrite(false);
 
         original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, lightTexture, view, projection);
 
-        Mod.onAfterWorldRender(view, projection);
+        Pipelines.onAfterWorldRender(view, projection);
         this.minecraft.mainRenderTarget.bindWrite(false);
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
     void onAfterRenderLevel(CallbackInfo ci) {
-        Mod.onAfterRenderHand(canpipe_view, canpipe_projection);
+        Pipelines.onAfterRenderHand(canpipe_view, canpipe_projection);
     }
 
     @Override

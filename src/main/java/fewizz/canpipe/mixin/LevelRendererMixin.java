@@ -13,7 +13,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.ProgramBase;
 import net.minecraft.client.Minecraft;
@@ -48,7 +48,7 @@ public class LevelRendererMixin {
         @Local RenderTargetDescriptor renderTargetDescriptor,
         @Local FrameGraphBuilder frameGraphBuilder
     ) {
-        Pipeline p = Mod.getCurrentPipeline();
+        Pipeline p = Pipelines.getCurrent();
         if (p == null) {
             return original.call(instance);  // Initialise post chain normally
         }

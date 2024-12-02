@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
@@ -35,7 +35,7 @@ public class AbstractBlockRenderContextMixin {
         Operation<MutableQuadViewImpl> original
     ) {
         // don't set color, set AO instead
-        if (Mod.getCurrentPipeline() != null) {
+        if (Pipelines.getCurrent() != null) {
             ((MutableQuadViewExtended) instance).setAO(vertexIndex, this.aoCalc.ao[vertexIndex]);
             return null;
         }

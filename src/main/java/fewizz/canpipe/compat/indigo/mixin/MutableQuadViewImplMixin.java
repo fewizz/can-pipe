@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
@@ -38,7 +38,7 @@ public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin impleme
         at = @At("TAIL")
     )
     private void onFromVanilla(BakedQuad quad, RenderMaterial mat, Direction d, CallbackInfoReturnable<MutableQuadViewImpl> ci) {
-        if (Mod.getCurrentPipeline() != null) {
+        if (Pipelines.getCurrent() != null) {
             Arrays.fill(this.ao, 1.0F);
 
             var mc = Minecraft.getInstance();
@@ -59,7 +59,7 @@ public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin impleme
 
     @Override
     public void computeTangent() {
-        Vector3f t = Mod.computeTangent(
+        Vector3f t = Pipelines.computeTangent(
             x(0), y(0), z(0), u(0), v(0),
             x(1), y(1), z(1), u(1), v(1),
             x(2), y(2), z(2), u(2), v(2)

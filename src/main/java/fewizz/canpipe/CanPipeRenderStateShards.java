@@ -8,7 +8,7 @@ public class CanPipeRenderStateShards {
 
     public static final RenderStateShard.OutputStateShard SOLID_TARGET = new RenderStateShard.OutputStateShard(
         "solid_target", () -> {
-            Pipeline p = Mod.getCurrentPipeline();
+            Pipeline p = Pipelines.getCurrent();
             if (p != null) {
                 p.solidTerrainFramebuffer.bindWrite(false);
             }
