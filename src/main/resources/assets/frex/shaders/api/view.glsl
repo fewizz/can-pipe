@@ -49,7 +49,7 @@ const int frx_cameraInLava = 0;  // TODO
 const int frx_cameraInSnow = 0;  // TODO
 
 const bool frx_renderTargetSolid =
-    #if defined _RENDERTYPE_SOLID || defined _RENDERTYPE_CUTOUT || defined _RENDERTYPE_CUTOUT_MIPPED || defined _RENDERTYPE_ENTITY_SOLID || defined _RENDERTYPE_ENTITY_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL
+    #if defined _RENDERTYPE_SOLID || defined _RENDERTYPE_CUTOUT || defined _RENDERTYPE_CUTOUT_MIPPED || defined _RENDERTYPE_ENTITY_SOLID || defined _RENDERTYPE_ENTITY_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL || defined _RENDERTYPE_ENTITY_TRANSLUCENT
         true
     #else
         false

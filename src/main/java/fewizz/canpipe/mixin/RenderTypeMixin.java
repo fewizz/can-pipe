@@ -40,6 +40,11 @@ public class RenderTypeMixin {
         return Pipelines.getCurrent() != null ? CanPipeRenderTypes.ENTITY_SOLID.apply(loc) : original;
     }
 
+    @ModifyReturnValue(method = "entitySolidZOffsetForward", at = @At("RETURN"))
+    private static RenderType replaceEntitySolidZOffsetForward(RenderType original, ResourceLocation loc) {
+        return Pipelines.getCurrent() != null ? CanPipeRenderTypes.ENTITY_SOLID_Z_OFFSET_FORWARD.apply(loc) : original;
+    }
+
     @ModifyReturnValue(method = "entityCutout", at = @At("RETURN"))
     private static RenderType replaceEntityCutout(RenderType original, ResourceLocation loc) {
         return Pipelines.getCurrent() != null ? CanPipeRenderTypes.ENTITY_CUTOUT.apply(loc) : original;
@@ -48,6 +53,11 @@ public class RenderTypeMixin {
     @ModifyReturnValue(method = "entityCutoutNoCull", at = @At("RETURN"))
     private static RenderType replaceEntityCutoutNoCull(RenderType original, ResourceLocation loc, boolean b) {
         return Pipelines.getCurrent() != null ? CanPipeRenderTypes.ENTITY_CUTOUT_NO_CULL.apply(loc, b) : original;
+    }
+
+    @ModifyReturnValue(method = "entityTranslucent", at = @At("RETURN"))
+    private static RenderType replaceEntityTranslucent(RenderType original, ResourceLocation loc, boolean b) {
+        return Pipelines.getCurrent() != null ? CanPipeRenderTypes.ENTITY_TRANSLUCENT.apply(loc, b) : original;
     }
 
 }

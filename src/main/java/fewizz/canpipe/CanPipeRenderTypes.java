@@ -85,7 +85,7 @@ public class CanPipeRenderTypes {
         RenderType.translucentState(RenderType.RENDERTYPE_TRANSLUCENT_SHADER)
     );
 
-    public static final Function<ResourceLocation, RenderType> ENTITY_SOLID = Util.memoize((resourceLocation) -> {
+    public static final Function<ResourceLocation, RenderType> ENTITY_SOLID = Util.memoize(resourceLocation -> {
         return RenderType.create(
             "entity_solid",
             CanPipeVertexFormats.NEW_ENTITY,
@@ -104,7 +104,7 @@ public class CanPipeRenderTypes {
         );
     });
 
-    public static final Function<ResourceLocation, RenderType> ENTITY_CUTOUT = Util.memoize((resourceLocation) -> {
+    public static final Function<ResourceLocation, RenderType> ENTITY_CUTOUT = Util.memoize(resourceLocation -> {
         return RenderType.create(
             "entity_cutout",
             CanPipeVertexFormats.NEW_ENTITY,
@@ -123,6 +123,25 @@ public class CanPipeRenderTypes {
         );
     });
 
+    public static final Function<ResourceLocation, RenderType> ENTITY_SOLID_Z_OFFSET_FORWARD = Util.memoize(resourceLocation -> {
+        return RenderType.create(
+            "entity_solid_z_offset_forward",
+            CanPipeVertexFormats.NEW_ENTITY,
+            RenderType.ENTITY_SOLID_Z_OFFSET_FORWARD.apply(resourceLocation).mode(),
+            RenderType.ENTITY_SOLID_Z_OFFSET_FORWARD.apply(resourceLocation).bufferSize(),
+            RenderType.ENTITY_SOLID_Z_OFFSET_FORWARD.apply(resourceLocation).affectsCrumbling(),
+            RenderType.ENTITY_SOLID_Z_OFFSET_FORWARD.apply(resourceLocation).sortOnUpload(),
+            RenderType.CompositeState.builder()
+                .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_SOLID_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(resourceLocation, TriState.FALSE, false))
+                .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
+                .setLightmapState(RenderStateShard.LIGHTMAP)
+                .setOverlayState(RenderStateShard.OVERLAY)
+                .setLayeringState(RenderStateShard.VIEW_OFFSET_Z_LAYERING_FORWARD)
+                .createCompositeState(true)
+        );
+    });
+
     public static final BiFunction<ResourceLocation, Boolean, RenderType> ENTITY_CUTOUT_NO_CULL = Util.memoize((resourceLocation, b) -> {
         return RenderType.create(
             "entity_cutout_no_cull",
@@ -135,6 +154,26 @@ public class CanPipeRenderTypes {
                 .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_CUTOUT_NO_CULL_SHADER)
                 .setTextureState(new RenderStateShard.TextureStateShard(resourceLocation, TriState.FALSE, false))
                 .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
+                .setCullState(RenderStateShard.NO_CULL)
+                .setLightmapState(RenderStateShard.LIGHTMAP)
+                .setOverlayState(RenderStateShard.OVERLAY)
+                .setOutputState(CanPipeRenderStateShards.SOLID_TARGET)
+                .createCompositeState(b)
+        );
+    });
+
+    public static final BiFunction<ResourceLocation, Boolean, RenderType> ENTITY_TRANSLUCENT = Util.memoize((resourceLocation, b) -> {
+        return RenderType.create(
+            "entity_translucent",
+            CanPipeVertexFormats.NEW_ENTITY,
+            RenderType.ENTITY_TRANSLUCENT.apply(resourceLocation, b).mode(),
+            RenderType.ENTITY_TRANSLUCENT.apply(resourceLocation, b).bufferSize(),
+            RenderType.ENTITY_TRANSLUCENT.apply(resourceLocation, b).affectsCrumbling(),
+            RenderType.ENTITY_TRANSLUCENT.apply(resourceLocation, b).sortOnUpload(),
+            RenderType.CompositeState.builder()
+                .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(resourceLocation, TriState.FALSE, false))
+                .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                 .setCullState(RenderStateShard.NO_CULL)
                 .setLightmapState(RenderStateShard.LIGHTMAP)
                 .setOverlayState(RenderStateShard.OVERLAY)

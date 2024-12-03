@@ -186,23 +186,18 @@ public class Pipelines implements PreparableReloadListener {
         float x1, float y1, float z1,
         float x2, float y2, float z2
     ) {
-        final float dx0 = x0 - x1;
-        final float dy0 = y0 - y1;
-        final float dz0 = z0 - z1;
-        final float dx1 = x2 - x1;
-        final float dy1 = y2 - y1;
-        final float dz1 = z2 - z1;
+        final float dx0 = x2 - x1;
+        final float dy0 = y2 - y1;
+        final float dz0 = z2 - z1;
+        final float dx1 = x0 - x1;
+        final float dy1 = y0 - y1;
+        final float dz1 = z0 - z1;
 
         float nx = dy0 * dz1 - dz0 * dy1;
         float ny = dz0 * dx1 - dx0 * dz1;
         float nz = dx0 * dy1 - dy0 * dx1;
 
-        float l = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-        nx /= l;
-        ny /= l;
-        nz /= l;
-
-        return new Vector3f(nx, ny, nz);
+        return new Vector3f(nx, ny, nz).normalize();
     }
 
 }

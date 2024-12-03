@@ -82,6 +82,12 @@ public class LiquidBlockRendererMixin {
             if (vertexIndex == 4) {
                 boolean still = true;
 
+                Vector3f normal = Pipelines.computeNormal(
+                    veritices[0].x, veritices[0].y, veritices[0].z,
+                    veritices[1].x, veritices[1].y, veritices[1].z,
+                    veritices[2].x, veritices[2].y, veritices[2].z
+                );
+
                 if (
                     uvs[0].x >= sprites[1].getU0() && uvs[0].y >= sprites[1].getV0() &&
                     uvs[1].x <= sprites[1].getU1() && uvs[1].y <= sprites[1].getV1()
@@ -104,7 +110,7 @@ public class LiquidBlockRendererMixin {
                     original.setColor(colors[i].x, colors[i].y, colors[i].z, colors[i].w);
                     original.setUv(uvs[i].x, uvs[i].y);
                     original.setUv2(uv2s[i].x, uv2s[i].y);
-                    original.setNormal(normals[i].x, normals[i].y, normals[i].z);
+                    original.setNormal(normal.x, normal.y, normal.z);// normals[i].x, normals[i].y, normals[i].z);  TODO
                     original.setTangent(tangent.x, tangent.y, tangent.z);
                     original.setSpriteIndex(this.spriteIndicies[still ? 0 : 1]);
                     if (material != null) {
