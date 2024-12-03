@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import fewizz.canpipe.MaterialMaps;
 import fewizz.canpipe.Materials;
 import fewizz.canpipe.Pipelines;
 import net.minecraft.client.resources.model.ModelManager;
@@ -23,6 +24,7 @@ public abstract class ReloadableResourceManagerMixin {
         // register before models
         if (listener instanceof ModelManager) {
             registerReloadListener(new Materials());
+            registerReloadListener(new MaterialMaps());
             registerReloadListener(new Pipelines());
         }
     }

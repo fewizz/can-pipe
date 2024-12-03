@@ -27,6 +27,7 @@ public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin impleme
         Arrays.fill(this.ao, 1.0F);
         this.spriteIndex = -1;
         this.tangent = 0x00000000;
+        this.material = null;
     }
 
     @Inject(

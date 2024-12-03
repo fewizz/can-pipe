@@ -58,6 +58,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 if ((elementsToFill & CanPipeVertexFormatElements.AO.mask()) != 0) {
                     setAO(1.0F);  // .
                 }
+                if ((elementsToFill & CanPipeVertexFormatElements.MATERIAL_INDEX.mask()) != 0) {
+                    setMaterialIndex(-1);  // .
+                }
                 if ((elementsToFill & CanPipeVertexFormatElements.SPRITE_INDEX.mask()) != 0) {
                     setSpriteIndex(-1);  // .
                 }
@@ -87,6 +90,12 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Override
     public void setSpriteIndex(int index) {
         long offset = this.beginElement(CanPipeVertexFormatElements.SPRITE_INDEX);
+        MemoryUtil.memPutInt(offset, index);
+    }
+
+    @Override
+    public void setMaterialIndex(int index) {
+        long offset = this.beginElement(CanPipeVertexFormatElements.MATERIAL_INDEX);
         MemoryUtil.memPutInt(offset, index);
     }
 

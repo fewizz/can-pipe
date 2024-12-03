@@ -1,5 +1,10 @@
 package fewizz.canpipe;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import org.apache.commons.io.IOUtils;
+
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.annotation.Nullable;
@@ -8,31 +13,36 @@ import net.minecraft.server.packs.resources.ResourceManager;
 
 public class Material {
 
-    @Nullable final ResourceLocation vertexShaderSourceLocation;
-    @Nullable final ResourceLocation fragmentShaderSourceLocation;
+    public final ResourceLocation location;
+    @Nullable public final String vertexShaderSource;
+    @Nullable public final String fragmentShaderSource;
 
     Material(
         ResourceManager manager,
         ResourceLocation location,
         JsonObject materialJson
-    ) {
+    ) throws FileNotFoundException, IOException {
+        this.location = location;
+
         var layers = (JsonArray) materialJson.get("layers");
         if (layers.size() > 0) {
             JanksonUtils.mergeJsonObjectB2A(materialJson, (JsonObject) layers.get(0));
         }
 
         if (materialJson.containsKey("vertexSource")) {
-            this.vertexShaderSourceLocation = ResourceLocation.parse(materialJson.get(String.class, "vertexSource"));
+            var loc = ResourceLocation.parse(materialJson.get(String.class, "vertexSource"));
+            this.vertexShaderSource = IOUtils.toString(manager.getResourceOrThrow(loc).openAsReader());
         }
         else {
-            this.vertexShaderSourceLocation = null;
+            this.vertexShaderSource = null;
         }
 
         if (materialJson.containsKey("fragmentSource")) {
-            this.fragmentShaderSourceLocation = ResourceLocation.parse(materialJson.get(String.class, "fragmentSource"));
+            var loc = ResourceLocation.parse(materialJson.get(String.class, "fragmentSource"));
+            this.fragmentShaderSource = IOUtils.toString(manager.getResourceOrThrow(loc).openAsReader());
         }
         else {
-            this.fragmentShaderSourceLocation = null;
+            this.fragmentShaderSource = null;
         }
 
     }

@@ -1,0 +1,63 @@
+package fewizz.canpipe;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+
+import blue.endless.jankson.JsonObject;
+import blue.endless.jankson.api.SyntaxError;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+
+public class MaterialMaps implements PreparableReloadListener {
+
+    public static final Map<ResourceLocation, MaterialMap> FLUIDS = new HashMap<>();
+
+    @Override
+    public CompletableFuture<Void> reload(
+        PreparationBarrier preparationBarrier,
+        ResourceManager resourceManager,
+        Executor loadExecutor,
+        Executor applyExecutor
+    ) {
+        return CompletableFuture.supplyAsync(() -> {
+                return resourceManager.listResources(
+                    "materialmaps",
+                    (ResourceLocation rl) -> {
+                        String pathStr = rl.getPath();
+                        return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
+                    }
+                );
+            },
+            loadExecutor
+        ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
+            (Map<ResourceLocation, Resource> materialMapsJson) -> {
+                for (var e : materialMapsJson.entrySet()) {
+                    ResourceLocation location = e.getKey();
+                    String path = location.getPath();
+                    path = path.substring("materialmaps/".length());
+
+                    String type = path.substring(0, path.indexOf("/"));
+                    String subpath = path.substring((type + "/").length());
+                    subpath = subpath.replace(".json", "").replace(".json5", "");
+
+                    try {
+                        if (type.equals("fluid")) {
+                            JsonObject materialMapJson = Mod.JANKSON.load(e.getValue().open());
+                            MaterialMap materialMap = new MaterialMap(materialMapJson);
+                            FLUIDS.put(location.withPath(subpath), materialMap);
+                        }
+                    } catch (IOException | SyntaxError ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            },
+            applyExecutor
+        );
+    }
+
+}

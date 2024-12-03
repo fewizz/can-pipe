@@ -14,12 +14,19 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import fewizz.canpipe.Material;
+import fewizz.canpipe.MaterialMap;
+import fewizz.canpipe.MaterialMaps;
+import fewizz.canpipe.Materials;
 import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.LiquidBlockRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 
 @Mixin(LiquidBlockRenderer.class)
 public class LiquidBlockRendererMixin {
@@ -32,9 +39,14 @@ public class LiquidBlockRendererMixin {
             ordinal = 0
         )
     )
-    void wrapVertexConsumerIfNeeded(CallbackInfo ci , @Local LocalRef<VertexConsumer> vc, @Local LocalRef<TextureAtlasSprite[]> sprites) {
+    void wrapVertexConsumerIfNeeded(
+        CallbackInfo ci,
+        @Local FluidState fs,
+        @Local LocalRef<VertexConsumer> vc,
+        @Local LocalRef<TextureAtlasSprite[]> sprites
+    ) {
         if (Pipelines.getCurrent() != null && vc.get() instanceof VertexConsumerExtended vce) {
-            vc.set(new VertexConsumerWrapper(vce, sprites.get()));
+            vc.set(new VertexConsumerWrapper(vce, sprites.get(), fs));
         }
     }
 
@@ -43,6 +55,7 @@ public class LiquidBlockRendererMixin {
         final VertexConsumerExtended original;
         final TextureAtlasSprite sprites[];
         final int spriteIndicies[] = new int[2];
+        final FluidState fluidState;
 
         int vertexIndex = 0;
         final Vector3f[] veritices = new Vector3f[]{new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()};
@@ -51,9 +64,10 @@ public class LiquidBlockRendererMixin {
         final Vector2i[] uv2s = new Vector2i[]{new Vector2i(), new Vector2i(), new Vector2i(), new Vector2i()};
         final Vector3f[] normals = new Vector3f[]{new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()};
 
-        VertexConsumerWrapper(VertexConsumerExtended original, TextureAtlasSprite[] sprites) {
+        VertexConsumerWrapper(VertexConsumerExtended original, TextureAtlasSprite[] sprites, FluidState fs) {
             this.original = original;
             this.sprites = sprites;
+            this.fluidState = fs;
 
             var mc = Minecraft.getInstance();
             var atlas0 = mc.getModelManager().getAtlas(sprites[0].atlasLocation());
@@ -64,14 +78,21 @@ public class LiquidBlockRendererMixin {
 
         void kick() {
             vertexIndex += 1;
+
             if (vertexIndex == 4) {
-                int spriteIndex = this.spriteIndicies[0];  // still
+                boolean still = true;
+
                 if (
                     uvs[0].x >= sprites[1].getU0() && uvs[0].y >= sprites[1].getV0() &&
                     uvs[1].x <= sprites[1].getU1() && uvs[1].y <= sprites[1].getV1()
                 ) {
-                    spriteIndex = this.spriteIndicies[1];  // flowing
+                    still = false;
                 }
+                ResourceKey<Fluid> key = fluidState.holder().unwrapKey().get();
+
+                MaterialMap materialMap = MaterialMaps.FLUIDS.get(key.location());
+
+                Material material = materialMap != null ? materialMap.defaultMaterial : null;
 
                 Vector3f tangent = Pipelines.computeTangent(
                     veritices[0].x, veritices[0].y, veritices[0].z, uvs[0].x, uvs[0].y,
@@ -85,7 +106,10 @@ public class LiquidBlockRendererMixin {
                     original.setUv2(uv2s[i].x, uv2s[i].y);
                     original.setNormal(normals[i].x, normals[i].y, normals[i].z);
                     original.setTangent(tangent.x, tangent.y, tangent.z);
-                    original.setSpriteIndex(spriteIndex);
+                    original.setSpriteIndex(this.spriteIndicies[still ? 0 : 1]);
+                    if (material != null) {
+                        original.setMaterialIndex(Materials.id(material));
+                    }
                 }
                 vertexIndex = 0;
             }

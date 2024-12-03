@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
@@ -19,8 +20,12 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipeVertexFormatElements;
 import fewizz.canpipe.CanPipeVertexFormats;
+import fewizz.canpipe.Material;
+import fewizz.canpipe.Materials;
 import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
@@ -91,12 +96,13 @@ public class MaterialProgram extends ProgramBase {
 
         String typeName = shaderProgram.configId().getPath().replace("core/", "");
 
-        String shadowMapDefs = "";
+        String shadowMapDefinitions = null;
+
         if (shadowFramebuffer != null && shadowFramebuffer.depthAttachement != null) {
             var depthArray = shadowFramebuffer.depthAttachement.texture();
-            shadowMapDefs =
+            shadowMapDefinitions =
                 "#define SHADOW_MAP_PRESENT\n"+
-                "#define SHADOW_MAP_SIZE "+depthArray.extent.x+"\n\n";
+                "#define SHADOW_MAP_SIZE "+depthArray.extent.x;
         }
 
         var format = shaderProgram.vertexFormat();
@@ -107,11 +113,23 @@ public class MaterialProgram extends ProgramBase {
             format = CanPipeVertexFormats.NEW_ENTITY;
         }
 
+        String materialsVertexSrc = "";
+        IntList usedMaterialIDs = new IntArrayList();
+        for (Material m : Materials.MATERIALS.values()) {
+            if (m.vertexShaderSource == null) {
+                continue;
+            }
+            int id = Materials.id(m);
+            String src = m.vertexShaderSource.replace("frx_materialVertex", "_material_"+id);
+            materialsVertexSrc += src + "\n\n";
+            usedMaterialIDs.add(id);
+        }
+
         int location = 0;
 
         vertexSrc =
             "#define _"+typeName.toUpperCase()+"\n\n"+
-            shadowMapDefs+
+            (shadowMapDefinitions != null ? shadowMapDefinitions + "\n\n" : "")+
             "layout(location = "+(location++)+") in vec3 in_vertex;  // Position\n"+
             "layout(location = "+(location++)+") in vec4 in_color;  // Color\n"+
             "layout(location = "+(location++)+") in vec2 in_uv;  // UV0\n"+
@@ -120,6 +138,7 @@ public class MaterialProgram extends ProgramBase {
             "layout(location = "+(location++)+") in vec3 in_normal;  // Normal\n"+
             (format.contains(CanPipeVertexFormatElements.AO) ? "layout(location = "+(location++)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
             (format.contains(CanPipeVertexFormatElements.SPRITE_INDEX) ? "layout(location = "+(location++)+") in int in_spriteIndex" : "const int in_spriteIndex = -1") + ";\n"+
+            (format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX) ? "layout(location = "+(location++)+") in int in_materialIndex" : "const int in_materialIndex = -1") + ";\n"+
             (format.contains(CanPipeVertexFormatElements.TANGENT) ? "layout(location = "+(location++)+") in vec4 in_vertexTangent" : "const vec4 in_vertexTangent = vec4(1.0)") + ";\n"+
             """
 
@@ -131,12 +150,19 @@ public class MaterialProgram extends ProgramBase {
             out float frx_distance;
             out vec4 frx_vertexTangent;
 
+            out vec4 frx_var0;
+            out vec4 frx_var1;
+            out vec4 frx_var2;
+            out vec4 frx_var3;
+
             flat out int canpipe_spriteIndex;
+            flat out int canpipe_materialIndex;
 
             uniform vec3 canpipe_light0Direction;  // aka Light0_Direction
             uniform vec3 canpipe_light1Direction;  // aka Light1_Direction
 
             """ +
+            materialsVertexSrc +
             vertexSrc +
             """
 
@@ -157,6 +183,7 @@ public class MaterialProgram extends ProgramBase {
                 );
                 frx_vertexTangent = in_vertexTangent;
                 canpipe_spriteIndex = in_spriteIndex;
+                canpipe_materialIndex = in_materialIndex;
 
                 if (frx_modelOriginScreen) {
                     // from minecraft:shaders/include/light.glsl
@@ -168,15 +195,33 @@ public class MaterialProgram extends ProgramBase {
                     frx_vertexColor = vec4(frx_vertexColor.rgb * lightAccum, frx_vertexColor.a);
                 }
 
+            """+
+            "    switch (in_materialIndex) {\n" +
+            usedMaterialIDs.intStream().mapToObj(id -> "    case "+id+": _material_"+id+"(); break;\n").collect(Collectors.joining()) +
+            "    default: ;\n"+
+            "    }\n\n"+
+            """
                 frx_pipelineVertex();
             }
             """;
+
+        String materialsFragmentSrc = "";
+        usedMaterialIDs.clear();
+        for (Material m : Materials.MATERIALS.values()) {
+            if (m.fragmentShaderSource == null) {
+                continue;
+            }
+            int id = Materials.id(m);
+            String src = m.fragmentShaderSource.replace("frx_materialFragment", "_material_"+id);
+            materialsFragmentSrc += src + "\n\n";
+            usedMaterialIDs.add(id);
+        }
 
         fragmentSrc =
             "#extension GL_ARB_conservative_depth: enable\n\n"+
             "#define _"+typeName.toUpperCase()+"\n\n"+
             (enablePBR ? "#define PBR_ENABLED\n\n" : "") +
-            shadowMapDefs +
+            (shadowMapDefinitions != null ? shadowMapDefinitions + "\n\n" : "") +
             """
 
             layout (depth_unchanged) out float gl_FragDepth;
@@ -192,6 +237,12 @@ public class MaterialProgram extends ProgramBase {
             in float frx_distance;
             in vec4 frx_vertexTangent;
             flat in int canpipe_spriteIndex;
+            flat in int canpipe_materialIndex;
+
+            in vec4 frx_var0;
+            in vec4 frx_var1;
+            in vec4 frx_var2;
+            in vec4 frx_var3;
 
             vec4 frx_sampleColor = vec4(0.0);
             vec4 frx_fragColor = vec4(0.0);
@@ -246,6 +297,7 @@ public class MaterialProgram extends ProgramBase {
             #include frex:shaders/api/material.glsl
 
             """ +
+            materialsFragmentSrc +
             fragmentSrc +
             """
 
@@ -276,7 +328,12 @@ public class MaterialProgram extends ProgramBase {
                 }
                 #endif
 
-                // TODO handle materials here
+                """+
+            "    switch (canpipe_materialIndex) {\n" +
+            usedMaterialIDs.intStream().mapToObj(id -> "    case "+id+": _material_"+id+"(); break;\n").collect(Collectors.joining()) +
+            "    default: ;\n"+
+            "    }\n\n"+
+            """
 
                 frx_pipelineFragment();
             }
