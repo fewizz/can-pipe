@@ -166,7 +166,7 @@ public class MaterialProgram extends ProgramBase {
             vertexSrc +
             """
 
-            #include frex:shaders/view.glsl
+            #include frex:shaders/api/view.glsl
 
             void main() {
                 frx_vertex = vec4(in_vertex, 1.0);

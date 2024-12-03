@@ -48,9 +48,7 @@ public class Pipelines implements PreparableReloadListener {
             },
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
-            (Map<ResourceLocation, Resource> pipelineRawJsons) -> {
-                RenderSystem.assertOnRenderThread();
-
+            (Map<ResourceLocation, Resource> jsons) -> {
                 if (currentPipeline != null) {
                     currentPipeline.close();
                     currentPipeline = null;
@@ -58,7 +56,7 @@ public class Pipelines implements PreparableReloadListener {
 
                 RAW_PIPELINES.clear();
 
-                pipelineRawJsons.forEach((loc, pipelineRawJson) -> {
+                jsons.forEach((loc, pipelineRawJson) -> {
                     if (!loc.getPath().startsWith("pipelines/")) {
                         return;
                     }
