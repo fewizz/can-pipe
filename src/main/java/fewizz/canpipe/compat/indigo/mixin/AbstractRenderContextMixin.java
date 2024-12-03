@@ -21,7 +21,13 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 )
 public class AbstractRenderContextMixin {
 
-    @Inject(method = "bufferQuad", at = @At("HEAD"))
+    @Inject(
+        method = "bufferQuad("+
+            "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
+            "Lcom/mojang/blaze3d/vertex/VertexConsumer;"+
+        ")V",
+        at = @At("HEAD")
+    )
     void computeTangentIfNeeded(
         MutableQuadViewImpl quad,
         VertexConsumer vertexConsumer,
@@ -37,7 +43,10 @@ public class AbstractRenderContextMixin {
     }
 
     @Inject(
-        method = "bufferQuad",
+        method = "bufferQuad("+
+            "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
+            "Lcom/mojang/blaze3d/vertex/VertexConsumer;"+
+        ")V",
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;setNormal(FFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;"

@@ -70,7 +70,6 @@ public class GameRendererMixin implements GameRendererAccessor {
                 "Z"+
                 "Lnet/minecraft/client/Camera;"+
                 "Lnet/minecraft/client/renderer/GameRenderer;"+
-                "Lnet/minecraft/client/renderer/LightTexture;"+
                 "Lorg/joml/Matrix4f;"+
                 "Lorg/joml/Matrix4f;"+
             ")V"
@@ -83,7 +82,6 @@ public class GameRendererMixin implements GameRendererAccessor {
         boolean bl,
         Camera camera,
         GameRenderer gameRenderer,
-        LightTexture lightTexture,
         Matrix4f view,
         Matrix4f projection,
         Operation<Void> original
@@ -97,7 +95,7 @@ public class GameRendererMixin implements GameRendererAccessor {
         Pipelines.onBeforeWorldRender(view, projection);
         this.minecraft.mainRenderTarget.bindWrite(false);
 
-        original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, lightTexture, view, projection);
+        original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, view, projection);
 
         Pipelines.onAfterWorldRender(view, projection);
         this.minecraft.mainRenderTarget.bindWrite(false);

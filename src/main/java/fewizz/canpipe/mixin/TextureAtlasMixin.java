@@ -1,6 +1,5 @@
 package fewizz.canpipe.mixin;
 
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +21,6 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 @Mixin(TextureAtlas.class)
 public class TextureAtlasMixin implements TextureAtlasExtended {
@@ -70,9 +68,6 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
                     GL33C.glTexImage2D(GL33C.GL_TEXTURE_2D, 0, GL33C.GL_RGBA32F, width, height, 0, GL33C.GL_RGBA, GL33C.GL_FLOAT, buff);
                     KHRDebug.glObjectLabel(GL33C.GL_TEXTURE, getId(), location.toString()+"-sprites-extents");
                 }
-
-                @Override
-                public void load(ResourceManager resourceManager) throws IOException {}
             };
         } finally {
             MemoryUtil.memFree(buff);

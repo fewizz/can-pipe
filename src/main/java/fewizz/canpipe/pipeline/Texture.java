@@ -1,6 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -16,7 +15,6 @@ import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 
 public class Texture extends AbstractTexture {
@@ -118,11 +116,6 @@ public class Texture extends AbstractTexture {
 
     public void bind() {
         bind(getId(), target);
-    }
-
-    @Override
-    public void load(ResourceManager resourceManager) throws IOException {
-        // do nothing
     }
 
     @Override
