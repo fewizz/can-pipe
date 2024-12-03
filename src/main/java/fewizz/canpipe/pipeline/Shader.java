@@ -34,7 +34,8 @@ public class Shader extends CompiledShader {
         Type type,
         int version,
         Map<ResourceLocation, Option> options,
-        String source
+        String source,
+        Map<ResourceLocation, String> cache
     ) throws CompilationException, IOException {
         String preprocessedSource =
             "#version " + version + "\n\n" +
@@ -48,7 +49,7 @@ public class Shader extends CompiledShader {
         Set<ResourceLocation> processing = new HashSet<>();
         Set<String> definitions = new HashSet<>();
 
-        preprocessedSource = processIncludes(preprocessedSource, preprocessed, processing, options, definitions);
+        preprocessedSource = processIncludes(preprocessedSource, location, preprocessed, processing, options, definitions, cache);
 
         try {
             return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location);
@@ -67,27 +68,26 @@ public class Shader extends CompiledShader {
 
     private static String processIncludes(
         String source,
+        ResourceLocation sourceLocation,
         Set<ResourceLocation> preprocessed,
         Set<ResourceLocation> processing,
         Map<ResourceLocation, Option> options,
-        Set<String> definitions
+        Set<String> definitions,
+        Map<ResourceLocation, String> cache
     ) throws IOException {
-        Minecraft mc = Minecraft.getInstance();
-        ResourceManager resourceManager = mc.getResourceManager();
-
         StringBuilder preprocessedSource = new StringBuilder();
+
+        boolean prevLineIsCommented = false;
 
         Iterable<String> lines = () -> source.lines().iterator();
 
-        boolean prevWasComment = false;
-
         for (var line : lines) {
-            final var initialLine = line;
-            final var initialPrevWasComment = prevWasComment;
-            int singleLineCommentIndex = line.indexOf("//");
+            final String initialLine = line;
+            final boolean initialPrevLineIsCommented = prevLineIsCommented;
+            final int singleLineCommentIndexStart = line.indexOf("//");
 
-            Int2BooleanFunction isMultilineComment = index -> {
-                boolean comment = initialPrevWasComment;
+            Int2BooleanFunction isMultilineCommentedAt = index -> {
+                boolean comment = initialPrevLineIsCommented;
                 for (int i = 0; i < Math.min(index, initialLine.length()-2); ++i) {
                     if (comment && initialLine.startsWith("*/", i)) {
                         comment = false;
@@ -101,29 +101,29 @@ public class Shader extends CompiledShader {
                 return comment;
             };
 
-            Int2BooleanFunction isComment = index -> {
-                if (singleLineCommentIndex != -1 && index > singleLineCommentIndex) {
+            Int2BooleanFunction isCommentedAt = index -> {
+                if (singleLineCommentIndexStart != -1 && index > singleLineCommentIndexStart) {
                     return true;
                 }
-                return isMultilineComment.get(index);
+                return isMultilineCommentedAt.get(index);
             };
 
             var definitionMatcher = DEFINITION_PATTERN.matcher(line);
-            if (definitionMatcher.find() && !isComment.get(definitionMatcher.start(1))) {
+            if (definitionMatcher.find() && !isCommentedAt.get(definitionMatcher.start(1))) {
                 String definitionName = definitionMatcher.group(1);
                 boolean redefine = !definitions.add(definitionName);
                 if (redefine) {
-                    line = "#undef "+definitionName+"// canpipe: `undef`ined\n"+line;
+                    line = "#undef "+definitionName+"  // canpipe\n" + line;
                 }
             }
 
             var includeMatcher = INCLUDE_PATTERN.matcher(line);
-            if (includeMatcher.find() && !isComment.get(includeMatcher.start(1))) {
-                String locStr = includeMatcher.group(1);
-                var loc = ResourceLocation.parse(locStr);
+            if (includeMatcher.find() && !isCommentedAt.get(includeMatcher.start(1))) {
+                String locationStr = includeMatcher.group(1);
+                var location = ResourceLocation.parse(locationStr);
 
-                if (!preprocessed.contains(loc)) {
-                    Option option = options.get(loc);
+                if (!preprocessed.contains(location)) {
+                    Option option = options.get(location);
                     if (option != null) {
                         StringBuilder optionsDefs = new StringBuilder();
                         for (var e : option.elements.entrySet()) {
@@ -148,17 +148,29 @@ public class Shader extends CompiledShader {
                         }
                         line = optionsDefs.toString();
                     }
-                    else if (!processing.contains(loc)) {
-                        var resource = resourceManager.getResource(loc);
-                        if (!resource.isEmpty()) {
-                            String resourceStr = resource.get().openAsReader().lines().collect(Collectors.joining("\n"));
-                            processing.add(loc);
-                            line = processIncludes(resourceStr, preprocessed, processing, options, definitions);
-                            processing.remove(loc);
-                            preprocessed.add(loc);
+                    else if (!processing.contains(location)) {
+                        if (!cache.containsKey(location)) {
+                            Minecraft mc = Minecraft.getInstance();
+                            ResourceManager resourceManager = mc.getResourceManager();
+                            var resource = resourceManager.getResource(location);
+                            if (!resource.isEmpty()) {
+                                cache.put(location, resource.get().openAsReader().lines().collect(Collectors.joining("\n")));
+                            }
+                            else {
+                                cache.put(location, null);
+                            }
+                        }
+
+                        String resourceStr = cache.get(location);
+
+                        if (resourceStr != null) {
+                            processing.add(location);
+                            line = processIncludes(resourceStr, location, preprocessed, processing, options, definitions, cache);
+                            processing.remove(location);
+                            preprocessed.add(location);
                         }
                         else {
-                            Mod.LOGGER.warn("Couldn't include " + loc);
+                            Mod.LOGGER.warn(sourceLocation+": couldn't include " + location);
                             line = "";
                         }
                     }
@@ -173,7 +185,7 @@ public class Shader extends CompiledShader {
             }
 
             preprocessedSource.append(line).append("\n");
-            prevWasComment = isMultilineComment.get(initialLine.length()-1);
+            prevLineIsCommented = isMultilineCommentedAt.get(initialLine.length());
         }
 
         return preprocessedSource.toString();

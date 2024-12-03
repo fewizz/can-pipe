@@ -226,6 +226,8 @@ public class Pipeline implements AutoCloseable {
         this.weatherFramebuffer = this.framebuffers.get(targetsO.get(String.class, "weather"));
         this.cloudsFramebuffer = this.framebuffers.get(targetsO.get(String.class, "clouds"));
 
+        Map<ResourceLocation, String> shaderSourceCache = new HashMap<>();
+
         // "programs"
         for (var programE : (JsonArray) Objects.requireNonNullElse(pipelineJson.get("programs"), new JsonArray())) {
             JsonObject programO = (JsonObject) programE;
@@ -245,7 +247,12 @@ public class Pipeline implements AutoCloseable {
             class Shaders { Shader getOrLoad(ResourceLocation location, Type type) throws CompilationException, IOException {
                 Shader shader = shaders.get(location);
                 if (shader == null) {
-                    shader = Shader.compile(location, type, glslVersion, options, IOUtils.toString(manager.openAsReader(location)));
+                    String source = shaderSourceCache.get(location);
+                    if (source == null) {
+                        source = IOUtils.toString(manager.openAsReader(location));
+                        shaderSourceCache.put(location, source);
+                    }
+                    shader = Shader.compile(location, type, glslVersion, options, source, shaderSourceCache);
                     shaders.put(location, shader);
                 }
                 return shader;
@@ -344,7 +351,7 @@ public class Pipeline implements AutoCloseable {
             }
         }
 
-        for (var sp : new ShaderProgram[] {
+        for (var shaderProgram : new ShaderProgram[] {
             CoreShaders.RENDERTYPE_SOLID,
             CoreShaders.RENDERTYPE_CUTOUT_MIPPED,
             CoreShaders.RENDERTYPE_CUTOUT,
@@ -354,7 +361,7 @@ public class Pipeline implements AutoCloseable {
             CoreShaders.RENDERTYPE_ENTITY_CUTOUT_NO_CULL
         }) {
             var program = MaterialProgram.create(
-                sp,
+                shaderProgram,
                 glslVersion,
                 enablePBR,
                 skyShadows != null ? this.framebuffers.get(skyShadows.framebufferName) : null,
@@ -363,9 +370,10 @@ public class Pipeline implements AutoCloseable {
                 materialFragment,
                 this.options,
                 materialSamplers,
-                materialSamplerImages
+                materialSamplerImages,
+                shaderSourceCache
             );
-            this.materialPrograms.put(sp, program);
+            this.materialPrograms.put(shaderProgram, program);
         }
     }
 

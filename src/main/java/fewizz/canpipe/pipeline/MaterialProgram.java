@@ -87,7 +87,8 @@ public class MaterialProgram extends ProgramBase {
         ResourceLocation fragmentLoc,
         Map<ResourceLocation, Option> options,
         List<ShaderProgramConfig.Sampler> samplers,
-        List<AbstractTexture> samplerImages
+        List<AbstractTexture> samplerImages,
+        Map<ResourceLocation, String> shaderSourceCache
     ) throws FileNotFoundException, IOException, CompilationException {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
 
@@ -339,8 +340,8 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
-        var vert = Shader.compile(vertexLoc, Type.VERTEX, glslVersion, options, vertexSrc);
-        var frag = Shader.compile(fragmentLoc, Type.FRAGMENT, glslVersion, options, fragmentSrc);
+        var vert = Shader.compile(vertexLoc, Type.VERTEX, glslVersion, options, vertexSrc, shaderSourceCache);
+        var frag = Shader.compile(fragmentLoc, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache);
 
         return new MaterialProgram(
             pipelineLocation.withSuffix("-"+typeName),
