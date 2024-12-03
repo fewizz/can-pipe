@@ -128,6 +128,32 @@ public class MaterialProgram extends ProgramBase {
 
         int location = 0;
 
+        String uvMapping =
+            """
+            uniform sampler2D canpipe_spritesExtents;
+
+            vec2 frx_mapNormalizedUV(vec2 coord) {
+                vec4 extents = texelFetch(
+                    canpipe_spritesExtents,
+                    ivec2(canpipe_spriteIndex % 1024, canpipe_spriteIndex / 1024),
+                    0
+                );
+                return extents.xy + coord * (extents.zw - extents.xy);
+            }
+
+            vec2 frx_normalizeMappedUV(vec2 coord) {
+                if (canpipe_spriteIndex == -1) {
+                    return coord;
+                }
+                vec4 extents = texelFetch(
+                    canpipe_spritesExtents,
+                    ivec2(canpipe_spriteIndex % 1024, canpipe_spriteIndex / 1024),
+                    0
+                );
+                return (coord - extents.xy) / (extents.zw - extents.xy); // (coord / vec2(textureSize(frxs_baseColor, 0))) - extents.xy;
+            }
+            """;
+
         vertexSrc =
             "#define _"+typeName.toUpperCase()+"\n\n"+
             (shadowMapDefinitions != null ? shadowMapDefinitions + "\n\n" : "")+
@@ -163,6 +189,7 @@ public class MaterialProgram extends ProgramBase {
             uniform vec3 canpipe_light1Direction;  // aka Light1_Direction
 
             """ +
+            uvMapping +
             materialsVertexSrc +
             vertexSrc +
             """
@@ -186,14 +213,8 @@ public class MaterialProgram extends ProgramBase {
                 canpipe_spriteIndex = in_spriteIndex;
                 canpipe_materialIndex = in_materialIndex;
 
-                if (frx_modelOriginScreen) {
-                    // from minecraft:shaders/include/light.glsl
-                    const float MINECRAFT_LIGHT_POWER = 0.6;
-                    const float MINECRAFT_AMBIENT_LIGHT = 0.4;
-                    float light0 = max(0.0, dot(canpipe_light0Direction, frx_vertexNormal));
-                    float light1 = max(0.0, dot(canpipe_light1Direction, frx_vertexNormal));
-                    float lightAccum = min(1.0, (light0 + light1) * MINECRAFT_LIGHT_POWER + MINECRAFT_AMBIENT_LIGHT);
-                    frx_vertexColor = vec4(frx_vertexColor.rgb * lightAccum, frx_vertexColor.a);
+                if (frx_isGui && !frx_isHand) {
+                    frx_vertexNormal.y *= -1.0;  // compat
                 }
 
             """+
@@ -261,28 +282,6 @@ public class MaterialProgram extends ProgramBase {
             #endif // PBR
 
             uniform sampler2D frxs_baseColor;  // aka Sampler0
-            uniform sampler2D canpipe_spritesExtents;
-
-            vec2 frx_mapNormalizedUV(vec2 coord) {
-                vec4 extents = texelFetch(
-                    canpipe_spritesExtents,
-                    ivec2(canpipe_spriteIndex % 1024, canpipe_spriteIndex / 1024),
-                    0
-                );
-                return extents.xy + coord * (extents.zw - extents.xy);
-            }
-
-            vec2 frx_normalizeMappedUV(vec2 coord) {
-                if (canpipe_spriteIndex == -1) {
-                    return coord;
-                }
-                vec4 extents = texelFetch(
-                    canpipe_spritesExtents,
-                    ivec2(canpipe_spriteIndex % 1024, canpipe_spriteIndex / 1024),
-                    0
-                );
-                return (coord - extents.xy) / (extents.zw - extents.xy); // (coord / vec2(textureSize(frxs_baseColor, 0))) - extents.xy;
-            }
 
             #ifdef VANILLA_LIGHTING
                 uniform sampler2D frxs_lightmap;  // aka Sampler2
@@ -298,6 +297,7 @@ public class MaterialProgram extends ProgramBase {
             #include frex:shaders/api/material.glsl
 
             """ +
+            uvMapping +
             materialsFragmentSrc +
             fragmentSrc +
             """

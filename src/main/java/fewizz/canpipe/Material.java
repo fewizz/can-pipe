@@ -24,9 +24,9 @@ public class Material {
     ) throws FileNotFoundException, IOException {
         this.location = location;
 
-        var layers = (JsonArray) materialJson.get("layers");
-        if (layers.size() > 0) {
-            JanksonUtils.mergeJsonObjectB2A(materialJson, (JsonObject) layers.get(0));
+        var layers = materialJson.get("layers");
+        if (layers instanceof JsonArray layersArray && layersArray.size() > 0) {
+            JanksonUtils.mergeJsonObjectB2A(materialJson, (JsonObject) layersArray.get(0));
         }
 
         if (materialJson.containsKey("vertexSource")) {

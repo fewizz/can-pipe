@@ -88,7 +88,7 @@ public class Shader extends CompiledShader {
 
             Int2BooleanFunction isMultilineCommentedAt = index -> {
                 boolean comment = initialPrevLineIsCommented;
-                for (int i = 0; i < Math.min(index, initialLine.length()-2); ++i) {
+                for (int i = 0; i < index; ++i) {
                     if (comment && initialLine.startsWith("*/", i)) {
                         comment = false;
                         ++i;

@@ -7,9 +7,9 @@ uniform vec4 frx_modelToWorld;
 uniform vec3 canpipe_modelToCamera;
 #define frx_modelToCamera vec4(canpipe_modelToCamera, 1.0)
 uniform int canpipe_originType;
-#define frx_modelOriginCamera (canpipe_originType == 0 || canpipe_originType == 3)
+#define frx_modelOriginCamera (canpipe_originType == 0)
 #define frx_modelOriginRegion (canpipe_originType == 1)
-#define frx_modelOriginScreen (canpipe_originType == 2)
+#define frx_modelOriginScreen (canpipe_originType == 2 || canpipe_originType == 3)
 #define frx_isHand (canpipe_originType == 3)
 #define frx_isGui frx_modelOriginScreen
 
@@ -28,24 +28,25 @@ uniform mat4 frx_lastProjectionMatrix;
 #define frx_inverseViewProjectionMatrix inverse(frx_viewProjectionMatrix)
 #define frx_lastViewProjectionMatrix (frx_lastProjectionMatrix*frx_lastViewMatrix)
 
-const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO define
-const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
+const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO
+const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO
 
-#define frx_shadowViewMatrix mat4(1.0)  // TODO define
-#define frx_shadowProjectionMatrix(index) mat4(1.0)  // TODO define
-#define frx_shadowViewProjectionMatrix(index) mat4(1.0)  // TODO define
-#define frx_shadowCenter(index) vec4(0.0)  // TODO define
+#define frx_shadowViewMatrix mat4(1.0)  // TODO
+#define frx_shadowProjectionMatrix(index) mat4(1.0)  // TODO
+#define frx_shadowViewProjectionMatrix(index) mat4(1.0)  // TODO
+#define frx_shadowCenter(index) vec4(0.0)  // TODO
 
 uniform vec2 canpipe_screenSize;  // aka ScreenSize
 #define frx_viewWidth (canpipe_screenSize.x)
 #define frx_viewHeight (canpipe_screenSize.y)
+const float frx_viewBrightness = 1.0; // TODO
 
 uniform float frx_viewDistance;
 
-const int frx_cameraInFluid = 0;  // TODO define
-const int frx_cameraInWater = 0;  // TODO define
-const int frx_cameraInLava = 0;  // TODO define
-const int frx_cameraInSnow = 0;  // TODO define
+const int frx_cameraInFluid = 0;  // TODO
+const int frx_cameraInWater = 0;  // TODO
+const int frx_cameraInLava = 0;  // TODO
+const int frx_cameraInSnow = 0;  // TODO
 
 const bool frx_renderTargetSolid =
     #if defined _RENDERTYPE_SOLID || defined _RENDERTYPE_CUTOUT || defined _RENDERTYPE_CUTOUT_MIPPED || defined _RENDERTYPE_ENTITY_SOLID || defined _RENDERTYPE_ENTITY_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL
@@ -54,3 +55,14 @@ const bool frx_renderTargetSolid =
         false
     #endif
     ;
+
+const bool frx_renderTargetTranslucent =
+    #if defined _RENDERTYPE_TRANSLUCENT
+        true
+    #else
+        false
+    #endif
+    ;
+
+const bool frx_renderTargetEntity = false;  // TODO
+const bool frx_renderTargetParticles = false;  // TODO

@@ -120,25 +120,30 @@ public class Pipeline implements AutoCloseable {
         for (var optionsE : (JsonArray) pipelineJson.get("options")) {
             JsonObject optionO = (JsonObject) optionsE;
             ResourceLocation includeToken = ResourceLocation.parse(optionO.get(String.class, "includeToken"));
-
-            Map<String, Option.Element> elements = new HashMap<>();
-            for (var elementE : optionO.getObject("elements").entrySet()) {
-                String name = elementE.getKey();
-                JsonObject elementO = (JsonObject) elementE.getValue();
-                var defaultValue = elementO.get(JsonPrimitive.class, "default");
-                elements.put(name, new Option.Element(defaultValue));
+            var elementsO = optionO.getObject("elements");
+            // compat
+            if (elementsO == null) {
+                elementsO = optionO.getObject("options");
             }
-
-            this.options.put(includeToken, new Option(includeToken, elements));
+            if (elementsO != null) {
+                Map<String, Option.Element> elements = new HashMap<>();
+                for (var elementE : elementsO.entrySet()) {
+                    String name = elementE.getKey();
+                    JsonObject elementO = (JsonObject) elementE.getValue();
+                    var defaultValue = elementO.get(JsonPrimitive.class, "default");
+                    elements.put(name, new Option.Element(defaultValue));
+                }
+                this.options.put(includeToken, new Option(includeToken, elements));
+            }
         }
 
+        // "images"
         class GLConstantCode {
             static int fromName(String name) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
                 return GL33C.class.getField("GL_"+name).getInt(null);
             }
         }
 
-        // "images"
         for (var textureE : (JsonArray) pipelineJson.get("images")) {
             JsonObject textureO = (JsonObject) textureE;
             String name = textureO.get(String.class, "name");
@@ -148,10 +153,17 @@ public class Pipeline implements AutoCloseable {
             int width = textureO.getInt("width", size);
             int height = textureO.getInt("height", size);
 
-            int target = GLConstantCode.fromName(textureO.get(String.class, "target"));
-            int internalFormat = GLConstantCode.fromName(textureO.get(String.class, "internalFormat"));
-            int pixelFormat = GLConstantCode.fromName(textureO.get(String.class, "pixelFormat"));
-            int pixelDataType = GLConstantCode.fromName(textureO.get(String.class, "pixelDataType"));
+            String targetStr = textureO.get(String.class, "target");
+            int target = targetStr != null ? GLConstantCode.fromName(targetStr) : GL33C.GL_TEXTURE_2D;
+
+            String internalFormatStr = textureO.get(String.class, "internalFormat");
+            int internalFormat = internalFormatStr != null ? GLConstantCode.fromName(internalFormatStr) : GL33C.GL_RGBA8;
+
+            String pixelFormatStr = textureO.get(String.class, "pixelFormat");
+            int pixelFormat = pixelFormatStr != null ? GLConstantCode.fromName(pixelFormatStr) : GL33C.GL_RGBA;
+
+            String pixelDataTypeStr = textureO.get(String.class, "pixelDataType");
+            int pixelDataType = pixelDataTypeStr != null ? GLConstantCode.fromName(pixelDataTypeStr) : GL33C.GL_UNSIGNED_BYTE;
 
             List<IntIntPair> params = new ArrayList<>();
 
@@ -289,12 +301,15 @@ public class Pipeline implements AutoCloseable {
                     JsonArray samplersA = passO.get(JsonArray.class, "samplerImages");
                     List<AbstractTexture> samplers = new ArrayList<>();
                     for (String s : samplersA.stream().map(e -> ((JsonPrimitive)e).asString()).toList()) {
+                        AbstractTexture t = null;
                         if (s.contains(":")) {
-                            samplers.add(new SimpleTexture(ResourceLocation.parse(s)));
+                            t = new SimpleTexture(ResourceLocation.parse(s));
                         }
                         else {
-                            samplers.add(this.textures.get(s));
+                            t = this.textures.get(s);
                         }
+                        Objects.requireNonNull(t, "Couldn't find sampler image \""+s+"\"");
+                        samplers.add(t);
                     }
 
                     int size = passO.getInt("size", 0);
