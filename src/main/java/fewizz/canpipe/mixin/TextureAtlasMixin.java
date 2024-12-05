@@ -16,14 +16,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 
-import fewizz.canpipe.mixininterface.TextureAtlasExtended;
+import fewizz.canpipe.mixininterface.TextureAtlasAccessor;
+import fewizz.canpipe.mixininterface.TextureAtlasSpriteAccessor;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 
 @Mixin(TextureAtlas.class)
-public class TextureAtlasMixin implements TextureAtlasExtended {
+public class TextureAtlasMixin implements TextureAtlasAccessor {
 
     @Shadow
     private ResourceLocation location;
@@ -32,28 +33,24 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
     private Map<ResourceLocation, TextureAtlasSprite> texturesByName;
 
     @Unique
-    Map<TextureAtlasSprite, Integer> spriteToIndex;
-
-    @Unique
     AbstractTexture spritesData;
 
     @Inject(method = "upload", at = @At("TAIL"))
     void onUploadEnd(CallbackInfo ci) {
-        this.spriteToIndex = new HashMap<>(texturesByName.size());
 
         int width = 1024;
         int height = Math.ceilDiv(texturesByName.size(), width);
         FloatBuffer buff = MemoryUtil.memAllocFloat(width*height*4);
 
         {
-            int i = 0;
+            int index = 0;
             for (TextureAtlasSprite s : texturesByName.values()) {
-                spriteToIndex.put(s, i);
-                buff.put(i*4+0, s.getU0());
-                buff.put(i*4+1, s.getV0());
-                buff.put(i*4+2, s.getU1());
-                buff.put(i*4+3, s.getV1());
-                i += 1;
+                ((TextureAtlasSpriteAccessor) s).setIndex(index);
+                buff.put(index*4+0, s.getU0());
+                buff.put(index*4+1, s.getV0());
+                buff.put(index*4+2, s.getU1());
+                buff.put(index*4+3, s.getV1());
+                index += 1;
             }
         }
 
@@ -84,11 +81,6 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
     @Override
     public AbstractTexture getSpriteData() {
         return this.spritesData;
-    }
-
-    @Override
-    public int indexBySprite(TextureAtlasSprite sprite) {
-        return this.spriteToIndex.get(sprite);
     }
 
 }

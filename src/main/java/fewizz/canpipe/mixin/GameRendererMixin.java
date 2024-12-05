@@ -20,7 +20,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererAccessor {
@@ -35,10 +34,10 @@ public class GameRendererMixin implements GameRendererAccessor {
 
     private int canpipe_frame = -1;
     private Vector3f canpipe_lastCameraPos = new Vector3f();
-    private Matrix4f canpipe_projection = new Matrix4f();
-    private Matrix4f canpipe_lastProjection = new Matrix4f();
-    private Matrix4f canpipe_view = new Matrix4f();
-    private Matrix4f canpipe_lastView = new Matrix4f();
+    private Matrix4f canpipe_projectionMatrix = new Matrix4f();
+    private Matrix4f canpipe_lastProjectionMatrix = new Matrix4f();
+    private Matrix4f canpipe_viewMatrix = new Matrix4f();
+    private Matrix4f canpipe_lastViewMatrix = new Matrix4f();
 
     @Override
     public int canpipe_getFrame() {
@@ -82,28 +81,28 @@ public class GameRendererMixin implements GameRendererAccessor {
         boolean bl,
         Camera camera,
         GameRenderer gameRenderer,
-        Matrix4f view,
-        Matrix4f projection,
+        Matrix4f viewMatrix,
+        Matrix4f projectionMatrix,
         Operation<Void> original
     ) {
-        canpipe_lastView = canpipe_view;
-        canpipe_lastProjection = canpipe_projection;
+        canpipe_lastViewMatrix = canpipe_viewMatrix;
+        canpipe_lastProjectionMatrix = canpipe_projectionMatrix;
 
-        canpipe_view = view;
-        canpipe_projection = projection;
+        canpipe_viewMatrix = viewMatrix;
+        canpipe_projectionMatrix = projectionMatrix;
 
-        Pipelines.onBeforeWorldRender(view, projection);
+        Pipelines.onBeforeWorldRender(viewMatrix, projectionMatrix);
         this.minecraft.mainRenderTarget.bindWrite(false);
 
-        original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, view, projection);
+        original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, viewMatrix, projectionMatrix);
 
-        Pipelines.onAfterWorldRender(view, projection);
+        Pipelines.onAfterWorldRender(viewMatrix, projectionMatrix);
         this.minecraft.mainRenderTarget.bindWrite(false);
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
     void onAfterRenderLevel(CallbackInfo ci) {
-        Pipelines.onAfterRenderHand(canpipe_view, canpipe_projection);
+        Pipelines.onAfterRenderHand(canpipe_viewMatrix, canpipe_projectionMatrix);
     }
 
     @Override
@@ -113,12 +112,12 @@ public class GameRendererMixin implements GameRendererAccessor {
 
     @Override
     public Matrix4f canpipe_getLastViewMatrix() {
-        return this.canpipe_lastView;
+        return this.canpipe_lastViewMatrix;
     }
 
     @Override
     public Matrix4f canpipe_getLastProjectionMatrix() {
-        return this.canpipe_lastProjection;
+        return this.canpipe_lastProjectionMatrix;
     }
 
 }

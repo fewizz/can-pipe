@@ -10,13 +10,15 @@
         "LevelRendererMixin",
         "LiquidBlockRendererMixin",
         "MinecraftMixin",
+        "ModelBlockRendererMixin",
         "ReloadableResourceManagerMixin",
         "RenderSectionMixin",
         "RenderTypeMixin",
         "SectionBufferBuilderPackMixin",
         "SectionCompilerMixin",
         "ShaderManagerMixin",
-        "TextureAtlasMixin"
+        "TextureAtlasMixin",
+        "TextureAtlasSpriteMixin"
     ],
     "injectors": {
         "defaultRequire": 1

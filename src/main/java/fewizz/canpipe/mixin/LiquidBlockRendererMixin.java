@@ -19,13 +19,12 @@ import fewizz.canpipe.MaterialMap;
 import fewizz.canpipe.MaterialMaps;
 import fewizz.canpipe.Materials;
 import fewizz.canpipe.Pipelines;
-import fewizz.canpipe.mixininterface.TextureAtlasExtended;
+import fewizz.canpipe.mixininterface.TextureAtlasSpriteAccessor;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.LiquidBlockRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.material.Fluid;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.FluidState;
 
 @Mixin(LiquidBlockRenderer.class)
@@ -54,7 +53,6 @@ public class LiquidBlockRendererMixin {
     static class VertexConsumerWrapper implements VertexConsumer {
         final VertexConsumerExtended original;
         final TextureAtlasSprite sprites[];
-        final int spriteIndicies[] = new int[2];
         final FluidState fluidState;
 
         int vertexIndex = 0;
@@ -68,12 +66,6 @@ public class LiquidBlockRendererMixin {
             this.original = original;
             this.sprites = sprites;
             this.fluidState = fs;
-
-            var mc = Minecraft.getInstance();
-            var atlas0 = mc.getModelManager().getAtlas(sprites[0].atlasLocation());
-            var atlas1 = mc.getModelManager().getAtlas(sprites[1].atlasLocation());
-            this.spriteIndicies[0] = ((TextureAtlasExtended) atlas0).indexBySprite(sprites[0]);
-            this.spriteIndicies[1] = ((TextureAtlasExtended) atlas1).indexBySprite(sprites[1]);
         }
 
         void kick() {
@@ -94,28 +86,29 @@ public class LiquidBlockRendererMixin {
                 ) {
                     still = false;
                 }
-                ResourceKey<Fluid> key = fluidState.holder().unwrapKey().get();
-
-                MaterialMap materialMap = MaterialMaps.FLUIDS.get(key.location());
+                ResourceLocation rl = BuiltInRegistries.FLUID.getKey(fluidState.getType());
+                MaterialMap materialMap = MaterialMaps.FLUIDS.get(rl);
 
                 Material material = materialMap != null ? materialMap.defaultMaterial : null;
+                original.setSharedMaterialIndex(material != null ? Materials.id(material) : -1);
 
                 Vector3f tangent = Pipelines.computeTangent(
                     veritices[0].x, veritices[0].y, veritices[0].z, uvs[0].x, uvs[0].y,
                     veritices[1].x, veritices[1].y, veritices[1].z, uvs[1].x, uvs[1].y,
                     veritices[2].x, veritices[2].y, veritices[2].z, uvs[2].x, uvs[2].y
                 );
+                original.setSharedTangent(tangent.x, tangent.y, tangent.z);
+                original.setSharedSpriteIndex(((TextureAtlasSpriteAccessor) this.sprites[still ? 0 : 1]).getIndex());
+
                 for (int i = 0; i < 4; ++i ) {
                     original.addVertex(veritices[i]);
                     original.setColor(colors[i].x, colors[i].y, colors[i].z, colors[i].w);
                     original.setUv(uvs[i].x, uvs[i].y);
                     original.setUv2(uv2s[i].x, uv2s[i].y);
-                    original.setNormal(normal.x, normal.y, normal.z);// normals[i].x, normals[i].y, normals[i].z);  TODO
-                    original.setTangent(tangent.x, tangent.y, tangent.z);
-                    original.setSpriteIndex(this.spriteIndicies[still ? 0 : 1]);
-                    if (material != null) {
-                        original.setMaterialIndex(Materials.id(material));
-                    }
+                    original.setNormal(normal.x, normal.y, normal.z);  // TODO
+                    original.inheritTangent();
+                    original.inheritMaterialIndex();
+                    original.inheritSpriteIndex();
                 }
                 vertexIndex = 0;
             }

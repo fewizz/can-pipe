@@ -16,6 +16,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public class MaterialMaps implements PreparableReloadListener {
 
     public static final Map<ResourceLocation, MaterialMap> FLUIDS = new HashMap<>();
+    public static final Map<ResourceLocation, MaterialMap> BLOCKS = new HashMap<>();
 
     @Override
     public CompletableFuture<Void> reload(
@@ -46,10 +47,14 @@ public class MaterialMaps implements PreparableReloadListener {
                     subpath = subpath.replace(".json", "").replace(".json5", "");
 
                     try {
+                        JsonObject materialMapJson = Mod.JANKSON.load(e.getValue().open());
+                        MaterialMap materialMap = new MaterialMap(materialMapJson);
+
                         if (type.equals("fluid")) {
-                            JsonObject materialMapJson = Mod.JANKSON.load(e.getValue().open());
-                            MaterialMap materialMap = new MaterialMap(materialMapJson);
                             FLUIDS.put(location.withPath(subpath), materialMap);
+                        }
+                        if (type.equals("block")) {
+                            BLOCKS.put(location.withPath(subpath), materialMap);
                         }
                     } catch (IOException | SyntaxError ex) {
                         ex.printStackTrace();

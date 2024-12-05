@@ -1,5 +1,5 @@
 package fewizz.canpipe.compat.indigo.mixin;
-
+/*
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,9 +18,9 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 @Mixin(
     targets="net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext",
     remap = false
-)
+)*/
 public class AbstractRenderContextMixin {
-
+/*
     @Inject(
         method = "bufferQuad("+
             "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
@@ -75,5 +75,5 @@ public class AbstractRenderContextMixin {
         }
 
     }
-
+*/
 }

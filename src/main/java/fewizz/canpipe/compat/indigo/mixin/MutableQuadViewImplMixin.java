@@ -1,5 +1,5 @@
 package fewizz.canpipe.compat.indigo.mixin;
-
+/*
 import java.util.Arrays;
 
 import org.joml.Vector3f;
@@ -19,9 +19,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.core.Direction;
 
-@Mixin(value = MutableQuadViewImpl.class, remap = false)
-public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin implements MutableQuadViewExtended {
-
+@Mixin(value = MutableQuadViewImpl.class, remap = false)*/
+public abstract class MutableQuadViewImplMixin /*extends QuadViewImplMixin implements MutableQuadViewExtended*/ {
+/*
     @Inject(method = "clear", at = @At("TAIL"))
     void onClear(CallbackInfo ci) {
         Arrays.fill(this.ao, 1.0F);
@@ -67,5 +67,5 @@ public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin impleme
         );
         this.tangent = NormalHelper.packNormal(t.x, t.y, t.z);
     }
-
+*/
 }

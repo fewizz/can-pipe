@@ -1,8 +1,8 @@
 package fewizz.canpipe.compat.indigo.mixininterface;
 
-import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
+// import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 
-public interface MutableQuadViewExtended extends MutableQuadView, QuadViewExtended {
+public interface MutableQuadViewExtended /*extends MutableQuadView, QuadViewExtended*/ {
 
     void setAO(int index, float value);
 

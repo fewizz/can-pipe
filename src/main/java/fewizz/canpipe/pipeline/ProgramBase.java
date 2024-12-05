@@ -138,8 +138,8 @@ public class ProgramBase extends CompiledShaderProgram {
     }
 
     @Override
-    public void setDefaultUniforms(Mode mode, Matrix4f view, Matrix4f projection, Window window) {
-        super.setDefaultUniforms(mode, view, projection, window);
+    public void setDefaultUniforms(Mode mode, Matrix4f viewMatrix, Matrix4f projectionMatrix, Window window) {
+        super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, window);
 
         Minecraft mc = Minecraft.getInstance();
 

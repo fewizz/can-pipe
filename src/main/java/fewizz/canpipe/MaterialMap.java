@@ -1,15 +1,22 @@
 package fewizz.canpipe;
 
 import blue.endless.jankson.JsonObject;
+import blue.endless.jankson.annotation.Nullable;
 import net.minecraft.resources.ResourceLocation;
 
 public class MaterialMap {
 
-    public final Material defaultMaterial;
+    @Nullable public final Material defaultMaterial;
 
     MaterialMap(JsonObject json) {
-        ResourceLocation materialLocation = ResourceLocation.parse(json.get(String.class, "defaultMaterial"));
-        this.defaultMaterial = Materials.MATERIALS.get(materialLocation);
+        String defaultMaterialStr = json.get(String.class, "defaultMaterial");
+        if (defaultMaterialStr != null) {
+            ResourceLocation materialLocation = ResourceLocation.parse(defaultMaterialStr);
+            this.defaultMaterial = Materials.MATERIALS.get(materialLocation);
+        }
+        else {
+            this.defaultMaterial = null;
+        }
     }
 
 }
