@@ -50,13 +50,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     protected static byte normalIntValue(float f) {return 0;}
 
     @Unique
-    final Vector3f sharedTangent = new Vector3f();
+    final Vector3f sharedTangent = new Vector3f(1.0F, 0.0F, 0.0F);
 
     @Unique
-    int sharedMaterialIndex;
+    int sharedMaterialIndex = -1;
 
     @Unique
-    int sharedSpriteIndex;
+    int sharedSpriteIndex = -1;
 
     /**
      * @reason laziness, TODO

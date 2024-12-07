@@ -1,7 +1,6 @@
 package fewizz.canpipe.mixin;
 
 import java.nio.FloatBuffer;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.lwjgl.opengl.GL33C;

@@ -7,6 +7,9 @@
         "CompiledShaderProgramMixin",
         "GameRendererMixin",
         "GLStateManagerAccessor",
+        "ItemModelResolverMixin",
+        "ItemStackLayerRenderStateMixin",
+        "ItemStackRenderStateMixin",
         "LevelRendererMixin",
         "LiquidBlockRendererMixin",
         "MinecraftMixin",
@@ -17,6 +20,7 @@
         "SectionBufferBuilderPackMixin",
         "SectionCompilerMixin",
         "ShaderManagerMixin",
+        "SheetsMixin",
         "TextureAtlasMixin",
         "TextureAtlasSpriteMixin"
     ],

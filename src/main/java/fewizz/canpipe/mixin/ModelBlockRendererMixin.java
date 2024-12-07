@@ -1,8 +1,8 @@
 package fewizz.canpipe.mixin;
 
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -12,7 +12,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipeVertexFormatElements;
-import fewizz.canpipe.Material;
 import fewizz.canpipe.MaterialMap;
 import fewizz.canpipe.MaterialMaps;
 import fewizz.canpipe.Materials;
@@ -20,6 +19,7 @@ import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -62,39 +62,43 @@ public class ModelBlockRendererMixin {
         float r, float g, float b, float a, int ao0, int ao1, int ao2, int ao3, int overlay,
         CallbackInfo ci
     ) {
-        var pipeline = Pipelines.getCurrent();
-        if (pipeline != null && vc instanceof BufferBuilder bb && bb.format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX)) {
-            ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
-            MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
-            Material material = materialMap != null ? materialMap.defaultMaterial : null;
-            ((VertexConsumerExtended) bb).setSharedMaterialIndex(material != null ? Materials.id(material) : -1);
+        if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX)) {
+            int index = -1;
+            if (bs != null) {
+                ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
+                MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
+                if (materialMap != null && materialMap.defaultMaterial != null) {
+                    index = Materials.id(materialMap.defaultMaterial);
+                }
+            }
+            ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
+            return;
         }
     }
 
     @Inject(
-        method = "putQuadData",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData("+
-                "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
-                "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-                "[FFFFF[IIZ"+
-            ")V",
-            shift = Shift.AFTER
-        )
+        method = "renderModel",
+        at = @At("HEAD")
     )
-    void onAfterData(
-        BlockAndTintGetter blockAndTintGetter,
-        BlockState bs,
-        BlockPos bp,
-        VertexConsumer vc,
+    void onBeforeSingleBlockData(
         PoseStack.Pose pose,
-        BakedQuad bakedQuad,
-        float r, float g, float b, float a, int ao0, int ao1, int ao2, int ao3, int overlay,
+        VertexConsumer vc,
+        @Nullable BlockState bs,
+        BakedModel bakedModel,
+        float r, float g, float b, int light, int overlay,
         CallbackInfo ci
     ) {
-        if (vc instanceof VertexConsumerExtended vce) {
-            vce.setSharedMaterialIndex(-1);
+        if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX)) {
+            int index = -1;
+            if (bs != null) {
+                ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
+                MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
+                if (materialMap != null && materialMap.defaultMaterial != null) {
+                    index = Materials.id(materialMap.defaultMaterial);
+                }
+            }
+            ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
+            return;
         }
     }
 

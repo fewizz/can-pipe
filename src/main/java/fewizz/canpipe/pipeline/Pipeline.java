@@ -329,7 +329,7 @@ public class Pipeline implements AutoCloseable {
         parsePasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
         parsePasses.accept("fabulous", this.fabulousPasses);
         parsePasses.accept("afterRenderHand", this.afterRenderHandPasses);
-        parsePasses.accept("afterRenderHand", this.onResizePasses);
+        parsePasses.accept("onResize", this.onResizePasses);
 
         if (skyShadows != null) {
             this.beforeWorldRenderPasses.addFirst(new Pass.FREXClear(

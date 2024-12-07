@@ -27,6 +27,9 @@ public class CanPipeVertexFormats {
         .add("UV2", VertexFormatElement.UV2)
         .add("Normal", VertexFormatElement.NORMAL)
         .padding(1)
+        .add("SpriteIndex", CanPipeVertexFormatElements.SPRITE_INDEX)
+        .add("MaterialIndex", CanPipeVertexFormatElements.MATERIAL_INDEX)
+        .add("Tangent", CanPipeVertexFormatElements.TANGENT)
         .build();
 
 }
