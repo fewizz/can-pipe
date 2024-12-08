@@ -16,7 +16,6 @@ public class CanPipeVertexFormats {
         .add("SpriteIndex", CanPipeVertexFormatElements.SPRITE_INDEX)
         .add("MaterialIndex", CanPipeVertexFormatElements.MATERIAL_INDEX)
         .add("Tangent", CanPipeVertexFormatElements.TANGENT)
-        .padding(1)
         .build();
 
     public static final VertexFormat NEW_ENTITY = VertexFormat.builder()
