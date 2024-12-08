@@ -54,6 +54,9 @@ public class MaterialMaps implements PreparableReloadListener {
                             FLUIDS.put(location.withPath(subpath), materialMap);
                         }
                         if (type.equals("block")) {
+                            if (subpath.equals("grass")) {
+                                subpath = "short_grass"; // compat
+                            }
                             BLOCKS.put(location.withPath(subpath), materialMap);
                         }
                     } catch (IOException | SyntaxError ex) {

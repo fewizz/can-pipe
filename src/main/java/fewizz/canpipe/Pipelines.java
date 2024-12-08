@@ -10,9 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.pipeline.MainTarget;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;

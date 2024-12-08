@@ -32,4 +32,16 @@ public class CanPipeVertexFormats {
         .add("Tangent", CanPipeVertexFormatElements.TANGENT)
         .build();
 
+    public static final VertexFormat PARTICLE = VertexFormat.builder()
+        .add("Position", VertexFormatElement.POSITION)
+        .add("Color", VertexFormatElement.COLOR)
+        .add("UV0", VertexFormatElement.UV0)
+        .add("UV2", VertexFormatElement.UV2)
+        .add("Normal", VertexFormatElement.NORMAL)
+        .padding(1)
+        .add("SpriteIndex", CanPipeVertexFormatElements.SPRITE_INDEX)
+        .add("MaterialIndex", CanPipeVertexFormatElements.MATERIAL_INDEX)
+        .add("Tangent", CanPipeVertexFormatElements.TANGENT)
+        .build();
+
 }

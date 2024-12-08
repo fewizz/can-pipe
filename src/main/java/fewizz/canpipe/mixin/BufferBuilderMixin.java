@@ -66,6 +66,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private void endLastVertex() {
         if (this.vertices != 0) {
             if (this.elementsToFill != 0) {
+                /*if ((elementsToFill & VertexFormatElement.NORMAL.mask()) != 0) {
+                    
+                }*/
                 if ((elementsToFill & CanPipeVertexFormatElements.AO.mask()) != 0) {
                     setAO(1.0F);
                 }
