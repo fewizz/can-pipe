@@ -113,6 +113,9 @@ public class MaterialProgram extends ProgramBase {
         if (format == DefaultVertexFormat.NEW_ENTITY) {
             format = CanPipeVertexFormats.NEW_ENTITY;
         }
+        if (format == DefaultVertexFormat.PARTICLE) {
+            format = CanPipeVertexFormats.PARTICLE;
+        }
 
         String materialsVertexSrc = "";
         IntList usedMaterialIDs = new IntArrayList();
@@ -125,8 +128,6 @@ public class MaterialProgram extends ProgramBase {
             materialsVertexSrc += src + "\n\n";
             usedMaterialIDs.add(id);
         }
-
-        int location = 0;
 
         String uvMapping =
             """
@@ -157,16 +158,16 @@ public class MaterialProgram extends ProgramBase {
         vertexSrc =
             "#define _"+typeName.toUpperCase()+"\n\n"+
             (shadowMapDefinitions != null ? shadowMapDefinitions + "\n\n" : "")+
-            "layout(location = "+(location++)+") in vec3 in_vertex;  // Position\n"+
-            "layout(location = "+(location++)+") in vec4 in_color;  // Color\n"+
-            "layout(location = "+(location++)+") in vec2 in_uv;  // UV0\n"+
-            (format.contains(VertexFormatElement.UV1) ? "layout(location = "+(location++)+") in ivec2 in_uv1" : "const ivec2 in_v1 = ivec2(0)") + ";\n"+
-            "layout(location = "+(location++)+") in ivec2 in_lightmap;  // UV2\n"+
-            "layout(location = "+(location++)+") in vec3 in_normal;  // Normal\n"+
-            (format.contains(CanPipeVertexFormatElements.AO) ? "layout(location = "+(location++)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
-            (format.contains(CanPipeVertexFormatElements.SPRITE_INDEX) ? "layout(location = "+(location++)+") in int in_spriteIndex" : "const int in_spriteIndex = -1") + ";\n"+
-            (format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX) ? "layout(location = "+(location++)+") in int in_materialIndex" : "const int in_materialIndex = -1") + ";\n"+
-            (format.contains(CanPipeVertexFormatElements.TANGENT) ? "layout(location = "+(location++)+") in vec4 in_vertexTangent" : "const vec4 in_vertexTangent = vec4(1.0)") + ";\n"+
+            "layout(location = "+format.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
+            "layout(location = "+format.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
+            "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
+            (format.contains(VertexFormatElement.UV1) ? "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_uv1" : "const ivec2 in_v1 = ivec2(0)") + ";\n"+
+            "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV2)+") in ivec2 in_lightmap;  // UV2\n"+
+            (format.contains(VertexFormatElement.NORMAL) ? "layout(location = "+format.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" : "const vec3 in_normal = vec3(0.0, 1.0, 0.0)") + ";  // Normal\n"+
+            (format.contains(CanPipeVertexFormatElements.AO) ? "layout(location = "+format.getElements().indexOf(CanPipeVertexFormatElements.AO)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
+            (format.contains(CanPipeVertexFormatElements.SPRITE_INDEX) ? "layout(location = "+format.getElements().indexOf(CanPipeVertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex" : "const int in_spriteIndex = -1") + ";\n"+
+            (format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX) ? "layout(location = "+format.getElements().indexOf(CanPipeVertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex" : "const int in_materialIndex = -1") + ";\n"+
+            (format.contains(CanPipeVertexFormatElements.TANGENT) ? "layout(location = "+format.getElements().indexOf(CanPipeVertexFormatElements.TANGENT)+") in vec4 in_vertexTangent" : "const vec4 in_vertexTangent = vec4(1.0)") + ";\n"+
             """
 
             out vec4 frx_vertex;

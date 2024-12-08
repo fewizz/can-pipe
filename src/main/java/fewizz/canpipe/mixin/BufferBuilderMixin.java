@@ -1,21 +1,23 @@
 package fewizz.canpipe.mixin;
 
-import java.util.stream.Collectors;
-
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipeVertexFormatElements;
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 
 @Mixin(BufferBuilder.class)
@@ -44,6 +46,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private int vertexSize;
 
     @Shadow
+    @Final
+    private int[] offsetsByElement;
+
+    @Shadow
+    private long vertexPointer = -1L;
+
+    @Shadow
     abstract protected long beginElement(VertexFormatElement vertexFormatElement);
 
     @Shadow
@@ -58,43 +67,56 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique
     int sharedSpriteIndex = -1;
 
-    /**
-     * @reason laziness, TODO
-     * @author fewizz
-     * */
-    @Overwrite
-    private void endLastVertex() {
-        if (this.vertices != 0) {
-            if (this.elementsToFill != 0) {
-                /*if ((elementsToFill & VertexFormatElement.NORMAL.mask()) != 0) {
-                    
-                }*/
-                if ((elementsToFill & CanPipeVertexFormatElements.AO.mask()) != 0) {
-                    setAO(1.0F);
-                }
-                if ((elementsToFill & CanPipeVertexFormatElements.MATERIAL_INDEX.mask()) != 0) {
-                    setSharedMaterialIndex(-1);
-                    inheritMaterialIndex();
-                }
-                if ((elementsToFill & CanPipeVertexFormatElements.SPRITE_INDEX.mask()) != 0) {
-                    setSharedSpriteIndex(-1);
-                    inheritSpriteIndex();
-                }
-                if ((elementsToFill & CanPipeVertexFormatElements.TANGENT.mask()) != 0) {
-                    setSharedTangent(1.0F, 0.0F, 0.0F);
-                    inheritTangent();
-                }
-                if (elementsToFill != 0) {
-                    String string = (String)VertexFormatElement.elementsFromMask(this.elementsToFill).map(this.format::getElementName).collect(Collectors.joining(", "));
-                    throw new IllegalStateException("Missing elements in vertex: " + string);
-                }
-            } else {
-                if (this.mode == VertexFormat.Mode.LINES || this.mode == VertexFormat.Mode.LINE_STRIP) {
-                    long l = this.buffer.reserve(this.vertexSize);
-                    MemoryUtil.memCopy(l - (long)this.vertexSize, l, (long)this.vertexSize);
-                    this.vertices++;
-                }
+    @Inject(method = "endLastVertex", at = @At("HEAD"))
+    private void endLastVertex(CallbackInfo ci) {
+        if ((elementsToFill & VertexFormatElement.NORMAL.mask()) != 0) {
+            if (this.mode == Mode.QUADS && vertices % 4 == 3) {
+                int posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
+                int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
+                long o = this.vertexPointer - this.vertexSize*3;
+                Vector3f normal = Pipelines.computeNormal(
+                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+1*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+2*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+1*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+2*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+1*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+2*Float.BYTES)
+                );
+                MemoryUtil.memPutByte(o+this.vertexSize*0+normalOffset+0, normalIntValue(normal.x));
+                MemoryUtil.memPutByte(o+this.vertexSize*0+normalOffset+1, normalIntValue(normal.y));
+                MemoryUtil.memPutByte(o+this.vertexSize*0+normalOffset+2, normalIntValue(normal.z));
+                MemoryUtil.memPutByte(o+this.vertexSize*1+normalOffset+0, normalIntValue(normal.x));
+                MemoryUtil.memPutByte(o+this.vertexSize*1+normalOffset+1, normalIntValue(normal.y));
+                MemoryUtil.memPutByte(o+this.vertexSize*1+normalOffset+2, normalIntValue(normal.z));
+                MemoryUtil.memPutByte(o+this.vertexSize*2+normalOffset+0, normalIntValue(normal.x));
+                MemoryUtil.memPutByte(o+this.vertexSize*2+normalOffset+1, normalIntValue(normal.y));
+                MemoryUtil.memPutByte(o+this.vertexSize*2+normalOffset+2, normalIntValue(normal.z));
+                MemoryUtil.memPutByte(o+this.vertexSize*3+normalOffset+0, normalIntValue(normal.x));
+                MemoryUtil.memPutByte(o+this.vertexSize*3+normalOffset+1, normalIntValue(normal.y));
+                MemoryUtil.memPutByte(o+this.vertexSize*3+normalOffset+2, normalIntValue(normal.z));
+                this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
             }
+            else {
+                setNormal(0.0F, 1.0F, 0.0F);
+            }
+        }
+        if ((elementsToFill & CanPipeVertexFormatElements.AO.mask()) != 0) {
+            setAO(1.0F);
+        }
+        if ((elementsToFill & CanPipeVertexFormatElements.MATERIAL_INDEX.mask()) != 0) {
+            setSharedMaterialIndex(-1);
+            inheritMaterialIndex();
+        }
+        if ((elementsToFill & CanPipeVertexFormatElements.SPRITE_INDEX.mask()) != 0) {
+            setSharedSpriteIndex(-1);
+            inheritSpriteIndex();
+        }
+        if ((elementsToFill & CanPipeVertexFormatElements.TANGENT.mask()) != 0) {
+            setSharedTangent(1.0F, 0.0F, 0.0F);
+            inheritTangent();
         }
     }
 

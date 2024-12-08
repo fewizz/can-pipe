@@ -9,6 +9,8 @@ accessible  class   com/mojang/blaze3d/platform/GlStateManager$TextureState
 
 accessible  field   com/mojang/blaze3d/vertex/BufferBuilder format Lcom/mojang/blaze3d/vertex/VertexFormat;
 
+accessible  field   com/mojang/blaze3d/vertex/ByteBufferBuilder  pointer J
+
 accessible  field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
 mutable     field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
 

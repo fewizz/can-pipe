@@ -34,8 +34,8 @@ public class CanPipeVertexFormats {
 
     public static final VertexFormat PARTICLE = VertexFormat.builder()
         .add("Position", VertexFormatElement.POSITION)
-        .add("Color", VertexFormatElement.COLOR)
         .add("UV0", VertexFormatElement.UV0)
+        .add("Color", VertexFormatElement.COLOR)
         .add("UV2", VertexFormatElement.UV2)
         .add("Normal", VertexFormatElement.NORMAL)
         .padding(1)

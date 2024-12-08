@@ -32,7 +32,6 @@ public class RenderStateShardMixin {
                 setup.run();
                 Pipeline p = Pipelines.getCurrent();
                 if (p != null) {
-                    /*System.out.println("BINDING "+this.toString());*/
                     p.solidTerrainFramebuffer.bindWrite(false);
                 }
             };

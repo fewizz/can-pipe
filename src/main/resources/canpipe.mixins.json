@@ -19,7 +19,6 @@
         "RenderTypeMixin",
         "SectionCompilerMixin",
         "ShaderManagerMixin",
-        "SheetsMixin",
         "TextureAtlasMixin",
         "TextureAtlasSpriteMixin"
     ],

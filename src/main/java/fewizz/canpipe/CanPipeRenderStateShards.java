@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.RenderStateShard;
 
 public class CanPipeRenderStateShards {
 
+    // Unused TODO
     public static final RenderStateShard.OutputStateShard SOLID_TARGET = new RenderStateShard.OutputStateShard(
         "solid_target", () -> {
             Pipeline p = Pipelines.getCurrent();
