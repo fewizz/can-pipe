@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
@@ -85,18 +86,18 @@ public class GameRendererMixin implements GameRendererAccessor {
         Matrix4f projectionMatrix,
         Operation<Void> original
     ) {
-        canpipe_lastViewMatrix = canpipe_viewMatrix;
-        canpipe_lastProjectionMatrix = canpipe_projectionMatrix;
+        canpipe_lastViewMatrix.set(canpipe_viewMatrix);
+        canpipe_lastProjectionMatrix.set(canpipe_projectionMatrix);
 
-        canpipe_viewMatrix = viewMatrix;
-        canpipe_projectionMatrix = projectionMatrix;
+        canpipe_viewMatrix.set(viewMatrix);
+        canpipe_projectionMatrix.set(projectionMatrix);
 
-        Pipelines.onBeforeWorldRender(viewMatrix, projectionMatrix);
+        Pipelines.onBeforeWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
         this.minecraft.mainRenderTarget.bindWrite(false);
 
         original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, viewMatrix, projectionMatrix);
 
-        Pipelines.onAfterWorldRender(viewMatrix, projectionMatrix);
+        Pipelines.onAfterWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
         this.minecraft.mainRenderTarget.bindWrite(false);
     }
 

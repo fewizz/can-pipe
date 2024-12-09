@@ -378,6 +378,7 @@ public class Pipeline implements AutoCloseable {
             CoreShaders.RENDERTYPE_ENTITY_CUTOUT_NO_CULL_Z_OFFSET,
             CoreShaders.RENDERTYPE_ENTITY_TRANSLUCENT,
             CoreShaders.RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE,
+            CoreShaders.RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL,
             CoreShaders.PARTICLE
         }) {
             var program = MaterialProgram.create(

@@ -220,7 +220,9 @@ public class MaterialProgram extends ProgramBase {
 
             """+
             "    switch (in_materialIndex) {\n" +
-            usedMaterialIDs.intStream().mapToObj(id -> "    case "+id+": _material_"+id+"(); break;\n").collect(Collectors.joining()) +
+            usedMaterialIDs.intStream().mapToObj(id ->
+            "        case "+id+": _material_"+id+"(); break;\n"
+            ).collect(Collectors.joining()) +
             "    default: ;\n"+
             "    }\n\n"+
             """
@@ -289,10 +291,8 @@ public class MaterialProgram extends ProgramBase {
             #endif
 
             #ifdef SHADOW_MAP_PRESENT
-                #ifdef FRAGMENT_SHADER
-                    uniform sampler2DArrayShadow frxs_shadowMap;  // TODO define
-                    uniform sampler2DArray frxs_shadowMapTexture;  // TODO define
-                #endif
+                uniform sampler2DArrayShadow frxs_shadowMap;  // TODO define
+                uniform sampler2DArray frxs_shadowMapTexture;  // TODO define
             #endif
 
             #include frex:shaders/api/material.glsl
@@ -318,13 +318,13 @@ public class MaterialProgram extends ProgramBase {
 
                 frx_fragColor = frx_sampleColor * frx_vertexColor;
 
-                #ifdef _RENDERTYPE_CUTOUT_MIPPED
+                #if defined _RENDERTYPE_CUTOUT_MIPPED
                 if (frx_fragColor.a < 0.5) {
                     discard;
                 }
                 #endif
 
-                #ifdef _RENDERTYPE_CUTOUT
+                #if defined _RENDERTYPE_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL_Z_OFFSET || defined _PARTICLE || defined _RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL
                 if (frx_fragColor.a < 0.1) {
                     discard;
                 }
@@ -332,7 +332,9 @@ public class MaterialProgram extends ProgramBase {
 
                 """+
             "    switch (canpipe_materialIndex) {\n" +
-            usedMaterialIDs.intStream().mapToObj(id -> "    case "+id+": _material_"+id+"(); break;\n").collect(Collectors.joining()) +
+            usedMaterialIDs.intStream().mapToObj(id ->
+            "        case "+id+": _material_"+id+"(); break;\n"
+            ).collect(Collectors.joining()) +
             "    default: ;\n"+
             "    }\n\n"+
             """

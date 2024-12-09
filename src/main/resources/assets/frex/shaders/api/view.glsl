@@ -25,7 +25,7 @@ uniform mat4 frx_projectionMatrix;  // aka ProjMat
 uniform mat4 frx_lastProjectionMatrix;
 
 #define frx_viewProjectionMatrix (frx_projectionMatrix*frx_viewMatrix)
-#define frx_inverseViewProjectionMatrix inverse(frx_viewProjectionMatrix)
+#define frx_inverseViewProjectionMatrix (frx_inverseViewMatrix*frx_inverseProjectionMatrix)
 #define frx_lastViewProjectionMatrix (frx_lastProjectionMatrix*frx_lastViewMatrix)
 
 const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO
@@ -50,19 +50,28 @@ const int frx_cameraInSnow = 0;  // TODO
 
 const bool frx_renderTargetSolid =
     #if defined _RENDERTYPE_SOLID || defined _RENDERTYPE_CUTOUT || defined _RENDERTYPE_CUTOUT_MIPPED || defined _RENDERTYPE_ENTITY_SOLID || defined _RENDERTYPE_ENTITY_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL || defined _RENDERTYPE_ENTITY_TRANSLUCENT
-        true
+        true;
     #else
-        false
+        false;
     #endif
-    ;
 
 const bool frx_renderTargetTranslucent =
     #if defined _RENDERTYPE_TRANSLUCENT
-        true
+        true;
     #else
-        false
+        false;
     #endif
-    ;
 
-const bool frx_renderTargetEntity = false;  // TODO
-const bool frx_renderTargetParticles = false;  // TODO
+const bool frx_renderTargetEntity =
+    #if defined _RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL
+        true;
+    #else
+        false;
+    #endif
+
+const bool frx_renderTargetParticles =
+    #if defined _PARTICLES
+        true;
+    #else
+        false;
+    #endif

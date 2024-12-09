@@ -1,6 +1,7 @@
 package fewizz.canpipe.mixin;
 
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipeVertexFormatElements;
@@ -70,10 +70,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Inject(method = "endLastVertex", at = @At("HEAD"))
     private void endLastVertex(CallbackInfo ci) {
         if ((elementsToFill & VertexFormatElement.NORMAL.mask()) != 0) {
-            if (this.mode == Mode.QUADS && vertices % 4 == 3) {
+            if (!this.mode.connectedPrimitives && this.vertices > 0 && (this.vertices % this.mode.primitiveLength) == 0) {
                 int posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
                 int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
-                long o = this.vertexPointer - this.vertexSize*3;
+                long o = this.vertexPointer - this.vertexSize*(this.mode.primitiveLength - 1);
                 Vector3f normal = Pipelines.computeNormal(
                     MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+0*Float.BYTES),
                     MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+1*Float.BYTES),
@@ -85,22 +85,53 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                     MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+1*Float.BYTES),
                     MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+2*Float.BYTES)
                 );
-                MemoryUtil.memPutByte(o+this.vertexSize*0+normalOffset+0, normalIntValue(normal.x));
-                MemoryUtil.memPutByte(o+this.vertexSize*0+normalOffset+1, normalIntValue(normal.y));
-                MemoryUtil.memPutByte(o+this.vertexSize*0+normalOffset+2, normalIntValue(normal.z));
-                MemoryUtil.memPutByte(o+this.vertexSize*1+normalOffset+0, normalIntValue(normal.x));
-                MemoryUtil.memPutByte(o+this.vertexSize*1+normalOffset+1, normalIntValue(normal.y));
-                MemoryUtil.memPutByte(o+this.vertexSize*1+normalOffset+2, normalIntValue(normal.z));
-                MemoryUtil.memPutByte(o+this.vertexSize*2+normalOffset+0, normalIntValue(normal.x));
-                MemoryUtil.memPutByte(o+this.vertexSize*2+normalOffset+1, normalIntValue(normal.y));
-                MemoryUtil.memPutByte(o+this.vertexSize*2+normalOffset+2, normalIntValue(normal.z));
-                MemoryUtil.memPutByte(o+this.vertexSize*3+normalOffset+0, normalIntValue(normal.x));
-                MemoryUtil.memPutByte(o+this.vertexSize*3+normalOffset+1, normalIntValue(normal.y));
-                MemoryUtil.memPutByte(o+this.vertexSize*3+normalOffset+2, normalIntValue(normal.z));
+                for (int i = 0; i < this.mode.primitiveLength; ++i) {
+                    MemoryUtil.memPutByte(o+this.vertexSize*i+normalOffset+0, normalIntValue(normal.x));
+                    MemoryUtil.memPutByte(o+this.vertexSize*i+normalOffset+1, normalIntValue(normal.y));
+                    MemoryUtil.memPutByte(o+this.vertexSize*i+normalOffset+2, normalIntValue(normal.z));
+                }
                 this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
             }
             else {
                 setNormal(0.0F, 1.0F, 0.0F);
+            }
+        }
+        if ((elementsToFill & CanPipeVertexFormatElements.TANGENT.mask()) != 0) {
+            if (!this.mode.connectedPrimitives && this.vertices > 0 && (this.vertices % this.mode.primitiveLength) == 0) {
+                int posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
+                int uvOffset = this.offsetsByElement[VertexFormatElement.UV0.id()];
+                int tangentOffset = this.offsetsByElement[CanPipeVertexFormatElements.TANGENT.id()];
+                long o = this.vertexPointer - this.vertexSize*(this.mode.primitiveLength - 1);
+                Vector3f tangent = Pipelines.computeTangent(
+                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+1*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+2*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + uvOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + uvOffset+1*Float.BYTES),
+
+                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+1*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+2*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + uvOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + uvOffset+1*Float.BYTES),
+
+                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+1*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+2*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + uvOffset+0*Float.BYTES),
+                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + uvOffset+1*Float.BYTES)
+                );
+                for (int i = 0; i < this.mode.primitiveLength; ++i) {
+                    MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+0, normalIntValue(tangent.x));
+                    MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+1, normalIntValue(tangent.y));
+                    MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+2, normalIntValue(tangent.z));
+                    MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+3, (byte) 0);
+                }
+                this.elementsToFill &= ~CanPipeVertexFormatElements.TANGENT.mask();
+            }
+            else {
+                setSharedTangent(1.0F, 0.0F, 0.0F);
+                inheritTangent();
             }
         }
         if ((elementsToFill & CanPipeVertexFormatElements.AO.mask()) != 0) {
@@ -113,10 +144,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         if ((elementsToFill & CanPipeVertexFormatElements.SPRITE_INDEX.mask()) != 0) {
             setSharedSpriteIndex(-1);
             inheritSpriteIndex();
-        }
-        if ((elementsToFill & CanPipeVertexFormatElements.TANGENT.mask()) != 0) {
-            setSharedTangent(1.0F, 0.0F, 0.0F);
-            inheritTangent();
         }
     }
 
