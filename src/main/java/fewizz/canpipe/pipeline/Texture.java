@@ -104,6 +104,10 @@ public class Texture extends AbstractTexture {
         }
     }
 
+    /**
+     * Same as {@link com.mojang.blaze3d.systems.RenderSystem#bindTexture RenderSystem.bindTexture},
+     * but additionally supports targets other than {@link org.lwjgl.opengl.GL11#GL_TEXTURE_2D GL_TEXTURE_2D}
+    */
     public static void bind(int id, int target) {
         RenderSystem.assertOnRenderThreadOrInit();
         var TEXTURES = GLStateManagerAccessor.canpipe_getTEXTURES();

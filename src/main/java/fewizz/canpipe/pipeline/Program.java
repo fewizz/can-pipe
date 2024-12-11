@@ -27,24 +27,27 @@ public class Program extends ProgramBase {
     final Uniform FRXU_LOD;
     final Uniform FRXU_FRAME_PROJECTION_MATRIX;
 
+    final List<String> samplers;
+
     public Program(
         ResourceLocation location,
-        List<ShaderProgramConfig.Sampler> samplers,
+        List<String> samplers,
         Shader vertexShader,
         Shader fragmentShader
     ) throws IOException, CompilationException {
         super(
             location,
             DefaultVertexFormat.POSITION_TEX,
+            List.of(),
             samplers,
             DEFAULT_UNIFORMS,
             vertexShader,
-            fragmentShader,
-            samplers.stream().map(s -> s.name()).toList()
+            fragmentShader
         );
         this.FRXU_SIZE = getUniform("frxu_size");
         this.FRXU_LOD = getUniform("frxu_lod");
         this.FRXU_FRAME_PROJECTION_MATRIX = getUniform("frxu_frameProjectionMatrix");
+        this.samplers = samplers;
     }
 
     public void setDefaultUniforms(

@@ -120,7 +120,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                     MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+2*Float.BYTES),
                     MemoryUtil.memGetFloat(o+this.vertexSize*2 + uvOffset+0*Float.BYTES),
                     MemoryUtil.memGetFloat(o+this.vertexSize*2 + uvOffset+1*Float.BYTES)
-                );
+                ).normalize();
                 for (int i = 0; i < this.mode.primitiveLength; ++i) {
                     MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+0, normalIntValue(tangent.x));
                     MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+1, normalIntValue(tangent.y));

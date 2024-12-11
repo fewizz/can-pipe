@@ -48,30 +48,20 @@ const int frx_cameraInWater = 0;  // TODO
 const int frx_cameraInLava = 0;  // TODO
 const int frx_cameraInSnow = 0;  // TODO
 
-const bool frx_renderTargetSolid =
-    #if defined _RENDERTYPE_SOLID || defined _RENDERTYPE_CUTOUT || defined _RENDERTYPE_CUTOUT_MIPPED || defined _RENDERTYPE_ENTITY_SOLID || defined _RENDERTYPE_ENTITY_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL || defined _RENDERTYPE_ENTITY_TRANSLUCENT
-        true;
-    #else
-        false;
-    #endif
+int canpipe_renderTarget() {
+    if (!(frx_isGui && !frx_isHand)) {
+        #if defined _RENDERTYPE_TRANSLUCENT
+            return 1;  // translucent
+        #elif defined _RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL
+            return 2;  // entity
+        #elif defined _PARTICLES
+            return 3;  // particle
+        #endif
+    }
+    return 0;  // solid
+}
 
-const bool frx_renderTargetTranslucent =
-    #if defined _RENDERTYPE_TRANSLUCENT
-        true;
-    #else
-        false;
-    #endif
-
-const bool frx_renderTargetEntity =
-    #if defined _RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL
-        true;
-    #else
-        false;
-    #endif
-
-const bool frx_renderTargetParticles =
-    #if defined _PARTICLES
-        true;
-    #else
-        false;
-    #endif
+#define frx_renderTargetSolid       (canpipe_renderTarget() == 0)
+#define frx_renderTargetTranslucent (canpipe_renderTarget() == 1)
+#define frx_renderTargetEntity      (canpipe_renderTarget() == 2)
+#define frx_renderTargetParticles   (canpipe_renderTarget() == 3)

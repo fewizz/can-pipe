@@ -1,7 +1,10 @@
 package fewizz.canpipe;
 
+import java.util.List;
+
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
+import blue.endless.jankson.JsonPrimitive;
 
 public class JanksonUtils {
 
@@ -30,6 +33,22 @@ public class JanksonUtils {
 
             a.put(k, bv);
         }
+    }
+
+    public static List<String> listOfStrings(JsonObject o, String name) {
+        JsonArray a = o.get(JsonArray.class, name);
+        if (a == null) {
+            return List.of();
+        }
+        return a.stream().map(s -> ((JsonPrimitive)s).asString()).toList();
+    }
+
+    public static List<JsonObject> listOfObjects(JsonObject o, String name) {
+        JsonArray a = o.get(JsonArray.class, name);
+        if (a == null) {
+            return List.of();
+        }
+        return a.stream().map(s -> (JsonObject)s).toList();
     }
 
 }

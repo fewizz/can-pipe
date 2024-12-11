@@ -25,8 +25,12 @@ public class Shader extends CompiledShader {
     static final Pattern DEFINITION_PATTERN = Pattern.compile("^\\s*#define\\s+([[a-z][A-Z][0-9]_]+)");
     static final Pattern INCLUDE_PATTERN = Pattern.compile("^\\s*#include\\s+([[a-z][0-9]._]+:[[a-z][0-9]._/]+)");
 
-    private Shader(int id, ResourceLocation resourceLocation) {
+    @SuppressWarnings("unused")
+    private final String source;  // for debug
+
+    private Shader(int id, ResourceLocation resourceLocation, String source) {
         super(id, resourceLocation);
+        this.source = source;
     }
 
     public static Shader compile(
@@ -52,7 +56,7 @@ public class Shader extends CompiledShader {
         preprocessedSource = processIncludes(preprocessedSource, location, preprocessed, processing, options, definitions, cache);
 
         try {
-            return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location);
+            return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location, preprocessedSource);
         } catch (CompilationException e) {
             StringBuilder sourceWithLineNumbers = new StringBuilder();
             var lines = preprocessedSource.lines().collect(Collectors.toCollection(ArrayList::new));

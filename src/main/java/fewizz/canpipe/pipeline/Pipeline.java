@@ -11,6 +11,7 @@ import java.util.function.BiConsumer;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
@@ -25,13 +26,13 @@ import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.annotation.Nullable;
+import fewizz.canpipe.JanksonUtils;
 import it.unimi.dsi.fastutil.ints.IntIntImmutablePair;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
-import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -53,18 +54,18 @@ public class Pipeline implements AutoCloseable {
     public final Framebuffer weatherFramebuffer;
     public final Framebuffer cloudsFramebuffer;
 
-    final Map<ResourceLocation, Shader> shaders = new HashMap<>();
+    final Map<Pair<ResourceLocation, Type>, Shader> shaders = new HashMap<>();
     final Map<String, Program> programs = new HashMap<>();
     final Map<String, Texture> textures = new HashMap<>();
     public final Map<String, Framebuffer> framebuffers = new HashMap<>();
     final Map<ResourceLocation, Option> options = new HashMap<>();
     public final Map<ShaderProgram, MaterialProgram> materialPrograms = new HashMap<>();
 
-    private final List<Pass> onInit = new ArrayList<>();
-    private final List<Pass> beforeWorldRenderPasses = new ArrayList<>();
-    private final List<Pass> fabulousPasses = new ArrayList<>();
-    private final List<Pass> afterRenderHandPasses = new ArrayList<>();
-    private final List<Pass> onResizePasses = new ArrayList<>();
+    private final List<PassBase> onInit = new ArrayList<>();
+    private final List<PassBase> beforeWorldRenderPasses = new ArrayList<>();
+    private final List<PassBase> fabulousPasses = new ArrayList<>();
+    private final List<PassBase> afterRenderHandPasses = new ArrayList<>();
+    private final List<PassBase> onResizePasses = new ArrayList<>();
     private boolean runInitPasses = true;
     private boolean runResizePasses = true;
 
@@ -103,7 +104,6 @@ public class Pipeline implements AutoCloseable {
         }}
         SkipDynamicOptions.doSkip(pipelineJson);
 
-
         this.location = location;
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
@@ -117,8 +117,7 @@ public class Pipeline implements AutoCloseable {
         }
 
         // "options"
-        for (var optionsE : (JsonArray) pipelineJson.get("options")) {
-            JsonObject optionO = (JsonObject) optionsE;
+        for (var optionO : JanksonUtils.listOfObjects(pipelineJson, "options")) {
             ResourceLocation includeToken = ResourceLocation.parse(optionO.get(String.class, "includeToken"));
             var elementsO = optionO.getObject("elements");
             // compat
@@ -144,8 +143,7 @@ public class Pipeline implements AutoCloseable {
             }
         }
 
-        for (var textureE : (JsonArray) pipelineJson.get("images")) {
-            JsonObject textureO = (JsonObject) textureE;
+        for (var textureO : JanksonUtils.listOfObjects(pipelineJson, "images")) {
             String name = textureO.get(String.class, "name");
             int maxLod = textureO.getInt("lod", 0);
             int depth = textureO.getInt("depth", 0);
@@ -167,8 +165,7 @@ public class Pipeline implements AutoCloseable {
 
             List<IntIntPair> params = new ArrayList<>();
 
-            for (var paramsE : textureO.get(JsonArray.class, "texParams")) {
-                JsonObject paramsO = (JsonObject) paramsE;
+            for (var paramsO : JanksonUtils.listOfObjects(textureO, "texParams")) {
                 int name0 = GLConstantCode.fromName(paramsO.get(String.class, "name"));
                 int value = GLConstantCode.fromName(paramsO.get(String.class, "val"));
                 params.add(IntIntImmutablePair.of(name0, value));
@@ -184,13 +181,11 @@ public class Pipeline implements AutoCloseable {
         }
 
         // "framebuffers"
-        for (var framebufferE : pipelineJson.get(JsonArray.class, "framebuffers")) {
-            var framebufferO = (JsonObject) framebufferE;
+        for (var framebufferO : JanksonUtils.listOfObjects(pipelineJson, "framebuffers")) {
             String name = framebufferO.get(String.class, "name");
             List<Framebuffer.ColorAttachment> colorAttachements = new ArrayList<>();
 
-            for (var colorAttachmentE : Objects.requireNonNullElse(framebufferO.get(JsonArray.class, "colorAttachments"), new JsonArray())) {
-                var colorAttachementO = (JsonObject) colorAttachmentE;
+            for (var colorAttachementO : JanksonUtils.listOfObjects(framebufferO, "colorAttachments")) {
                 String textureName = colorAttachementO.get(String.class, "image");
                 int lod = colorAttachementO.getInt("lod", 0);
                 int layer = colorAttachementO.getInt("layer", 0);
@@ -241,23 +236,17 @@ public class Pipeline implements AutoCloseable {
         Map<ResourceLocation, String> shaderSourceCache = new HashMap<>();
 
         // "programs"
-        for (var programE : (JsonArray) Objects.requireNonNullElse(pipelineJson.get("programs"), new JsonArray())) {
-            JsonObject programO = (JsonObject) programE;
+        for (var programO : JanksonUtils.listOfObjects(pipelineJson, "programs")) {
             String name = programO.get(String.class, "name");
 
-            List<ShaderProgramConfig.Sampler> samplers = List.of();
-            var samplersA = programO.get(JsonArray.class, "samplers");
-            if (samplersA != null) {
-                samplers = samplersA.stream().map(
-                    s -> new ShaderProgramConfig.Sampler(((JsonPrimitive)s).asString())
-                ).toList();
-            }
+            List<String> samplers = JanksonUtils.listOfStrings(programO, "samplers");
 
             var vertexLoc = ResourceLocation.parse(programO.get(String.class, "vertexSource"));
             var fragmentLoc = ResourceLocation.parse(programO.get(String.class, "fragmentSource"));
 
             class Shaders { Shader getOrLoad(ResourceLocation location, Type type) throws CompilationException, IOException {
-                Shader shader = shaders.get(location);
+                var p = Pair.of(location, type);
+                Shader shader = shaders.get(p);
                 if (shader == null) {
                     String source = shaderSourceCache.get(location);
                     if (source == null) {
@@ -265,7 +254,7 @@ public class Pipeline implements AutoCloseable {
                         shaderSourceCache.put(location, source);
                     }
                     shader = Shader.compile(location, type, glslVersion, options, source, shaderSourceCache);
-                    shaders.put(location, shader);
+                    shaders.put(p, shader);
                 }
                 return shader;
             }}
@@ -278,29 +267,27 @@ public class Pipeline implements AutoCloseable {
         }
 
         // passes
-        BiConsumer<String, List<Pass>> parsePasses = (name, passes) -> {
+        BiConsumer<String, List<PassBase>> parsePasses = (name, passes) -> {
             JsonObject passesJson = pipelineJson.getObject(name);
             if (passesJson == null) {
                 return;
             }
-            for (var passE : passesJson.get(JsonArray.class, "passes")) {
-                JsonObject passO = (JsonObject) passE;
-
+            for (var passO : JanksonUtils.listOfObjects(passesJson, "passes")) {
                 String passName = passO.get(String.class, "name");
                 Framebuffer framebuffer = this.framebuffers.get(passO.get(String.class, "framebuffer"));
                 String programName = passO.get(String.class, "program");
 
-                Pass pass;
+                PassBase pass;
 
                 if (programName.equals("frex_clear")) {
                     pass = new Pass.FREXClear(passName, framebuffer);
                 }
                 else {
                     Program program = this.programs.get(programName);
+                    Objects.nonNull(program);
 
-                    JsonArray samplersA = passO.get(JsonArray.class, "samplerImages");
-                    List<AbstractTexture> samplers = new ArrayList<>();
-                    for (String s : samplersA.stream().map(e -> ((JsonPrimitive)e).asString()).toList()) {
+                    List<AbstractTexture> textures = new ArrayList<>();
+                    for (String s : JanksonUtils.listOfStrings(passO, "samplerImages")) {
                         AbstractTexture t = null;
                         if (s.contains(":")) {
                             t = new SimpleTexture(ResourceLocation.parse(s));
@@ -308,8 +295,7 @@ public class Pipeline implements AutoCloseable {
                         else {
                             t = this.textures.get(s);
                         }
-                        Objects.requireNonNull(t, "Couldn't find sampler image \""+s+"\"");
-                        samplers.add(t);
+                        textures.add(t);
                     }
 
                     int size = passO.getInt("size", 0);
@@ -318,7 +304,7 @@ public class Pipeline implements AutoCloseable {
                     int lod = passO.getInt("lod", 0);
                     int layer = passO.getInt("layer", 0);
 
-                    pass = new Pass(passName, framebuffer, program, samplers, new Vector2i(width, height), lod, layer);
+                    pass = new Pass(passName, framebuffer, program, textures, new Vector2i(width, height), lod, layer);
                 }
 
                 passes.add(pass);
@@ -326,10 +312,11 @@ public class Pipeline implements AutoCloseable {
         };
 
         parsePasses.accept("onInit", this.onInit);
+        parsePasses.accept("onResize", this.onResizePasses);
+
         parsePasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
         parsePasses.accept("fabulous", this.fabulousPasses);
         parsePasses.accept("afterRenderHand", this.afterRenderHandPasses);
-        parsePasses.accept("onResize", this.onResizePasses);
 
         if (skyShadows != null) {
             this.beforeWorldRenderPasses.addFirst(new Pass.FREXClear(
@@ -344,27 +331,17 @@ public class Pipeline implements AutoCloseable {
         var materialVertex = ResourceLocation.parse(materailProgramO.get(String.class, "vertexSource"));
         var materialFragment = ResourceLocation.parse(materailProgramO.get(String.class, "fragmentSource"));
 
-        List<ShaderProgramConfig.Sampler> materialSamplers = new ArrayList<>();
-
-        var materialSamplersA = materailProgramO.get(JsonArray.class, "samplers");
-        if (materialSamplersA != null) {
-            materialSamplers = materialSamplersA.stream().map(
-                s -> new ShaderProgramConfig.Sampler(((JsonPrimitive)s).asString())
-            ).toList();
-        }
-
-        List<AbstractTexture> materialSamplerImages = new ArrayList<>();
-        var materialSamplerImagesA = materailProgramO.get(JsonArray.class, "samplerImages");
-        if (materialSamplerImagesA != null) {
-            for (String s : materialSamplerImagesA.stream().map(e -> ((JsonPrimitive)e).asString()).toList()) {
-                if (s.contains(":")) {
-                    materialSamplerImages.add(new SimpleTexture(ResourceLocation.parse(s)));
+        List<String> samplers = JanksonUtils.listOfStrings(materailProgramO, "samplers");
+        List<? extends AbstractTexture> samplerImages = new ArrayList<>() {{
+            for (String textureName : JanksonUtils.listOfStrings(materailProgramO, "samplerImages")) {
+                if (textureName.contains(":")) {
+                    add(new SimpleTexture(ResourceLocation.parse(textureName)));
                 }
                 else {
-                    materialSamplerImages.add(this.textures.get(s));
+                    add(textures.get(textureName));
                 }
             }
-        }
+        }};
 
         for (var shaderProgram : new ShaderProgram[] {
             CoreShaders.RENDERTYPE_SOLID,
@@ -390,8 +367,8 @@ public class Pipeline implements AutoCloseable {
                 materialVertex,
                 materialFragment,
                 this.options,
-                materialSamplers,
-                materialSamplerImages,
+                samplers,
+                samplerImages,
                 shaderSourceCache
             );
             this.materialPrograms.put(shaderProgram, program);
@@ -416,20 +393,20 @@ public class Pipeline implements AutoCloseable {
         }
 
         if (this.runInitPasses) {
-            for (Pass pass : this.onInit) {
+            for (PassBase pass : this.onInit) {
                 pass.apply(view, projection);
             }
             this.runInitPasses = false;
         }
 
         if (this.runResizePasses) {
-            for (Pass pass : this.onResizePasses) {
+            for (PassBase pass : this.onResizePasses) {
                 pass.apply(view, projection);
             }
             this.runResizePasses = false;
         }
 
-        for (Pass pass : this.beforeWorldRenderPasses) {
+        for (PassBase pass : this.beforeWorldRenderPasses) {
             pass.apply(view, projection);
         }
 
@@ -438,7 +415,7 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onAfterWorldRender(Matrix4f view, Matrix4f projection) {
-        for (Pass pass : this.fabulousPasses) {
+        for (PassBase pass : this.fabulousPasses) {
             pass.apply(view, projection);
         }
 
@@ -453,7 +430,7 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
-        for (Pass pass : this.afterRenderHandPasses) {
+        for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply(view, projection);
         }
 

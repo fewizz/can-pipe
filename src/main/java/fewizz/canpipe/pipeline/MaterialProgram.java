@@ -5,31 +5,28 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
-import com.mojang.blaze3d.platform.Window;
+import com.google.common.collect.Streams;
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipeVertexFormatElements;
 import fewizz.canpipe.CanPipeVertexFormats;
 import fewizz.canpipe.Material;
 import fewizz.canpipe.Materials;
-import fewizz.canpipe.Pipelines;
+import fewizz.canpipe.Mod;
 import fewizz.canpipe.mixininterface.TextureAtlasAccessor;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
-import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
@@ -37,44 +34,40 @@ import net.minecraft.server.packs.resources.ResourceManager;
 
 public class MaterialProgram extends ProgramBase {
 
-    final List<AbstractTexture> samplerImages;
-
     MaterialProgram(
         ResourceLocation location,
         VertexFormat vertexFormat,
         Shader vertexShader,
         Shader fragmentShader,
-        List<ShaderProgramConfig.Sampler> samplers,
-        List<AbstractTexture> samplerImages,
-        boolean shadowsEnabled
+        List<String> samplers,
+        List<? extends AbstractTexture> textures
     ) throws IOException, CompilationException {
         super(
             location,
             vertexFormat,
-            Stream.concat(
-                (
-                    shadowsEnabled ?
-                    List.of(
-                        new ShaderProgramConfig.Sampler("frxs_baseColor"),
-                        new ShaderProgramConfig.Sampler("canpipe_spritesExtents"),
-                        new ShaderProgramConfig.Sampler("frxs_lightmap"),
-                        new ShaderProgramConfig.Sampler("frxs_shadowMap"),
-                        new ShaderProgramConfig.Sampler("frxs_shadowMapTexture")
-                    ) :
-                    List.of(
-                        new ShaderProgramConfig.Sampler("frxs_baseColor"),
-                        new ShaderProgramConfig.Sampler("canpipe_spritesExtents"),
-                        new ShaderProgramConfig.Sampler("frxs_lightmap")
-                    )
-                ).stream(),
-                samplers.stream()
-            ).toList(),
+            List.of("frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"),
+            samplers,
             List.of(),
             vertexShader,
-            fragmentShader,
-            samplers.stream().map(s -> s.name()).toList()
+            fragmentShader
         );
-        this.samplerImages = samplerImages;
+        if (samplers.size() > textures.size()) {
+            Mod.LOGGER.warn("Material program "+location+" has more samplers than textures");
+        }
+        if (samplers.size() < textures.size()) {
+            Mod.LOGGER.warn("Material program "+location+" has less samplers than textures");
+        }
+        for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
+            String sampler = samplers.get(i);
+            AbstractTexture texture = textures.get(i);
+            if (texture == null) {
+                if (!this.samplerExists(sampler)) {
+                    continue;
+                }
+                throw new NullPointerException("Couldn't find texture for sampler \"" + sampler + "\"");
+            }
+            bindSampler(sampler, texture);
+        }
     }
 
     public static MaterialProgram create(
@@ -86,8 +79,8 @@ public class MaterialProgram extends ProgramBase {
         ResourceLocation vertexLoc,
         ResourceLocation fragmentLoc,
         Map<ResourceLocation, Option> options,
-        List<ShaderProgramConfig.Sampler> samplers,
-        List<AbstractTexture> samplerImages,
+        List<String> samplers,
+        List<? extends AbstractTexture> textures,
         Map<ResourceLocation, String> shaderSourceCache
     ) throws FileNotFoundException, IOException, CompilationException {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
@@ -101,6 +94,16 @@ public class MaterialProgram extends ProgramBase {
 
         if (shadowFramebuffer != null && shadowFramebuffer.depthAttachement != null) {
             var depthArray = shadowFramebuffer.depthAttachement.texture();
+
+            samplers = Streams.concat(
+                samplers.stream(),
+                List.of("frxs_shadowMap", "frxs_shadowMapTexture").stream()
+            ).toList();
+            textures = Streams.concat(
+                textures.stream(),
+                List.of(depthArray, depthArray).stream()
+            ).toList();
+
             shadowMapDefinitions =
                 "#define SHADOW_MAP_PRESENT\n"+
                 "#define SHADOW_MAP_SIZE "+depthArray.extent.x;
@@ -343,35 +346,20 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
-        var vert = Shader.compile(vertexLoc, Type.VERTEX, glslVersion, options, vertexSrc, shaderSourceCache);
-        var frag = Shader.compile(fragmentLoc, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache);
+        var vertexShader = Shader.compile(vertexLoc, Type.VERTEX, glslVersion, options, vertexSrc, shaderSourceCache);
+        var fragmentShader = Shader.compile(fragmentLoc, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache);
 
         return new MaterialProgram(
             pipelineLocation.withSuffix("-"+typeName),
             format,
-            vert,
-            frag,
+            vertexShader,
+            fragmentShader,
             samplers,
-            samplerImages,
-            shadowFramebuffer != null
+            textures
         );
     }
 
-    @Override
-    public void apply() {
-        var p = Pipelines.getCurrent();
-        if (p != null && p.skyShadows != null) {
-            var fb = p.framebuffers.get(p.skyShadows.framebufferName());
-            var tex = fb.depthAttachement.texture();
-            bindSampler("frxs_shadowMap", tex);
-            bindSampler("frxs_shadowMapTexture", tex);
-        }
-
-        bindExpectedSamplers(samplerImages);
-
-        super.apply();
-    }
-
+    @SuppressWarnings("deprecation")
     @Override
     public void bindSampler(String name, int id) {
         if (name.equals("Sampler0")) {
@@ -382,20 +370,13 @@ public class MaterialProgram extends ProgramBase {
             for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
                 var atlas = mc.getModelManager().getAtlas(atlasLoc);
                 if (atlas.getId() == id) {
-                    super.bindSampler("canpipe_spritesExtents", ((TextureAtlasAccessor) atlas).getSpriteData().getId());
+                    super.bindSampler("canpipe_spritesExtents", ((TextureAtlasAccessor) atlas).getSpriteData());
                 }
             }
         }
-
         if (name.equals("Sampler2")) { name = "frxs_lightmap"; }
 
         super.bindSampler(name, id);
-    }
-
-    @Override
-    public void setDefaultUniforms(Mode mode, Matrix4f matrix4f, Matrix4f matrix4f2, Window window) {
-        super.setDefaultUniforms(mode, matrix4f, matrix4f2, window);
-
     }
 
 }

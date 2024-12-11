@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.KHRDebug;
 
 import com.google.common.collect.Streams;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
@@ -25,7 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public class ProgramBase extends CompiledShaderProgram {
 
-    static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+    private static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
         new ShaderProgramConfig.Uniform("canpipe_light0Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_light1Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         // view.glsl
@@ -33,8 +35,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_lastCameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_modelToWorld", "float", 4, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_originType", "int", 1, List.of(0.0F)),
-        // new ShaderProgramConfig.Uniform("frx_modelToCamera", "float", 4, List.of(0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),  // takes it's value from vanilla uniform, "ModelOffset"
+        new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_viewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_lastViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_projectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
@@ -54,37 +55,35 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F))
     );
 
-    public final Uniform FRX_MODEL_TO_WORLD;
-    final Uniform FRX_RENDER_FRAMES;
-    final Uniform FRX_CAMERA_POS;
-    final Uniform FRX_LAST_CAMERA_POS;
-    public final Uniform CANPIPE_ORIGIN_TYPE;
-    final Uniform FRX_LAST_VIEW_MATRIX;
-    final Uniform FRX_LAST_PROJECTION_MATRIX;
-    final Uniform FRX_VIEW_DISTANCE;
-    final Uniform FRX_EYE_POS;
-    final Uniform FRX_WORLD_DAY;
-
-    final Map<Integer, Integer> samplerTargets = new Int2IntArrayMap();
-    final List<String> expectedSamplers;
+    final ResourceLocation location;
+    final Map<Integer, Integer> samplerTargetByID = new Int2IntArrayMap();
+    public final Uniform
+        FRX_MODEL_TO_WORLD,
+        FRX_RENDER_FRAMES,
+        FRX_CAMERA_POS,
+        FRX_LAST_CAMERA_POS,
+        CANPIPE_ORIGIN_TYPE,
+        FRX_LAST_VIEW_MATRIX,
+        FRX_LAST_PROJECTION_MATRIX,
+        FRX_VIEW_DISTANCE,
+        FRX_EYE_POS,
+        FRX_WORLD_DAY;
 
     ProgramBase(
         ResourceLocation location,
         VertexFormat vertexFormat,
-        List<ShaderProgramConfig.Sampler> samplers,
+        List<String> internalSamplers,
+        List<String> samplers,
         List<ShaderProgramConfig.Uniform> uniforms,
         Shader vertexShader,
-        Shader fragmentShader,
-        List<String> expectedSamplers
+        Shader fragmentShader
     ) throws CompilationException, IOException {
         super(CompiledShaderProgram.link(vertexShader, fragmentShader, vertexFormat).getProgramId());
+        this.location = location;
 
         setupUniforms(
-            Streams.concat(
-                DEFAULT_UNIFORMS.stream(),
-                uniforms.stream()
-            ).toList(),
-            samplers
+            Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList(),
+            Streams.concat(internalSamplers.stream(), samplers.stream()).map(s -> new ShaderProgramConfig.Sampler(s)).toList()
         );
 
         this.FRX_MODEL_TO_WORLD = getUniform("frx_modelToWorld");
@@ -97,8 +96,6 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_VIEW_DISTANCE = getUniform("frx_viewDistance");
         this.FRX_EYE_POS = getUniform("frx_eyePos");
         this.FRX_WORLD_DAY = getUniform("frx_worldDay");
-
-        this.expectedSamplers = expectedSamplers;
 
         KHRDebug.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
     }
@@ -118,23 +115,6 @@ public class ProgramBase extends CompiledShaderProgram {
         if (name.equals("Light1_Direction")) { name = "canpipe_light1Direction"; }
 
         return super.getUniform(name);
-    }
-
-    public void bindSampler(String name, AbstractTexture texture) {
-        this.bindSampler(name, texture.getId());
-        int target = GL33C.GL_TEXTURE_2D;
-        if (texture instanceof Texture t) {
-            target = t.target;
-        }
-        this.samplerTargets.put(texture.getId(), target);
-    }
-
-    public void bindExpectedSamplers(List<AbstractTexture> textures) {
-        for (int i = 0; i < Math.min(expectedSamplers.size(), textures.size()); ++i) {
-            String name = expectedSamplers.get(i);
-            AbstractTexture texture = textures.get(i);
-            this.bindSampler(name, texture);
-        }
     }
 
     @Override
@@ -176,11 +156,43 @@ public class ProgramBase extends CompiledShaderProgram {
         }
     }
 
-    public void onTexureBind(int id) {
+    protected boolean samplerExists(String sampler) {
+        for (int i = 0; i < this.samplers.size(); ++i) {
+            if (this.samplers.get(i).name().equals(sampler)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Doesn't know about texture targets.
+     * Use {@link ProgramBase#bindSampler(String, AbstractTexture)} instead.
+     * */
+    @Deprecated
+    @Override
+    public void bindSampler(String sampler, int textureID) {
+        super.bindSampler(sampler, textureID);
+    }
+
+    public void bindSampler(String sampler, AbstractTexture texture) {
+        this.bindSampler(sampler, texture.getId());
+        int target = GL33C.GL_TEXTURE_2D;
+        if (texture instanceof Texture t) {
+            target = t.target;
+        }
+        this.samplerTargetByID.put(texture.getId(), target);
+    }
+
+    /**
+     * Replaces {@link RenderSystem#bindTexture} on {@link CompiledShaderProgram#apply},
+     * because vanilla supports only {@link GL11#GL_TEXTURE_2D} texture target
+    */
+    public void onApplyTextureBind(int textureID) {
         for (int target : List.of(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_2D_ARRAY, GL33C.GL_TEXTURE_CUBE_MAP, GL33C.GL_TEXTURE_3D)) {
             Texture.bind(0, target);  // Stupid AF, TODO
         }
-        Texture.bind(id, this.samplerTargets.getOrDefault(id, GL33C.GL_TEXTURE_2D));
+        Texture.bind(textureID, this.samplerTargetByID.getOrDefault(textureID, GL33C.GL_TEXTURE_2D));
     }
 
 }

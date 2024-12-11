@@ -19,9 +19,9 @@ public class CompiledShaderProgramMixin {
             target = "Lcom/mojang/blaze3d/systems/RenderSystem;bindTexture(I)V"
         )
     )
-    void onTexutreBindOnApply(int id, Operation<Void> original) {
+    void onApplyTexureBind(int id, Operation<Void> original) {
         if (((Object) this) instanceof ProgramBase pb) {
-            pb.onTexureBind(id);
+            pb.onApplyTextureBind(id);
         }
         else {
             original.call(id);
