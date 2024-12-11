@@ -34,17 +34,22 @@ import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 
 public class Pipeline implements AutoCloseable {
 
-    static record SkyShadows(String framebufferName) {}
+    static record SkyShadows(
+        String framebufferName
+    ) {}
+
+    static record Sky(
+        float defaultZenithAngle
+    ) {}
 
     public final ResourceLocation location;
     @Nullable public final SkyShadows skyShadows;
+    @Nullable public final Sky sky;
 
     public final Framebuffer defaultFramebuffer;
     public final Framebuffer solidTerrainFramebuffer;
@@ -70,7 +75,6 @@ public class Pipeline implements AutoCloseable {
     private boolean runResizePasses = true;
 
     public Pipeline(
-        ResourceManager manager,
         ResourceLocation location,
         JsonObject pipelineJson
     ) throws
@@ -82,13 +86,12 @@ public class Pipeline implements AutoCloseable {
         IllegalArgumentException,
         IllegalAccessException
     {
+        var mc = Minecraft.getInstance();
+
         // Skipping dynamic options for now... (choosing defaults)
         class SkipDynamicOptions { static JsonElement doSkip(JsonElement e) {
             if (e instanceof JsonObject vo) {
-                if (
-                    vo.size() == 2 && vo.containsKey("default") &&
-                    vo.containsKey("optionMap")
-                ) {
+                if (vo.size() == 2 && vo.containsKey("default") && (vo.containsKey("optionMap") || vo.containsKey("option"))) {
                     return (JsonPrimitive) vo.get("default");
                 }
                 for (var kv : vo.entrySet()) {
@@ -103,18 +106,6 @@ public class Pipeline implements AutoCloseable {
             return e;
         }}
         SkipDynamicOptions.doSkip(pipelineJson);
-
-        this.location = location;
-        int glslVersion = pipelineJson.getInt("glslVersion", 330);
-        boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
-        JsonObject skyShadowsO = pipelineJson.getObject("skyShadows");
-
-        if (skyShadowsO != null) {
-            this.skyShadows = new SkyShadows(skyShadowsO.get(String.class, "framebuffer"));
-        }
-        else {
-            this.skyShadows = null;
-        }
 
         // "options"
         for (var optionO : JanksonUtils.listOfObjects(pipelineJson, "options")) {
@@ -134,6 +125,30 @@ public class Pipeline implements AutoCloseable {
                 }
                 this.options.put(includeToken, new Option(includeToken, elements));
             }
+        }
+
+        this.location = location;
+        int glslVersion = pipelineJson.getInt("glslVersion", 330);
+        boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
+        JsonObject skyShadowsO = pipelineJson.getObject("skyShadows");
+
+        if (skyShadowsO != null) {
+            this.skyShadows = new SkyShadows(
+                skyShadowsO.get(String.class, "framebuffer")
+            );
+        }
+        else {
+            this.skyShadows = null;
+        }
+
+        JsonObject skyO = pipelineJson.getObject("sky");
+        if (skyO != null) {
+            this.sky = new Sky(
+                (float) Math.toRadians(skyO.getFloat("defaultZenithAngle", 0.0F))
+            );
+        }
+        else {
+            this.sky = null;
         }
 
         // "images"
@@ -250,7 +265,7 @@ public class Pipeline implements AutoCloseable {
                 if (shader == null) {
                     String source = shaderSourceCache.get(location);
                     if (source == null) {
-                        source = IOUtils.toString(manager.openAsReader(location));
+                        source = IOUtils.toString(mc.getResourceManager().openAsReader(location));
                         shaderSourceCache.put(location, source);
                     }
                     shader = Shader.compile(location, type, glslVersion, options, source, shaderSourceCache);
@@ -290,7 +305,7 @@ public class Pipeline implements AutoCloseable {
                     for (String s : JanksonUtils.listOfStrings(passO, "samplerImages")) {
                         AbstractTexture t = null;
                         if (s.contains(":")) {
-                            t = new SimpleTexture(ResourceLocation.parse(s));
+                            t = mc.getTextureManager().getTexture(ResourceLocation.parse(s));
                         }
                         else {
                             t = this.textures.get(s);
@@ -335,7 +350,7 @@ public class Pipeline implements AutoCloseable {
         List<? extends AbstractTexture> samplerImages = new ArrayList<>() {{
             for (String textureName : JanksonUtils.listOfStrings(materailProgramO, "samplerImages")) {
                 if (textureName.contains(":")) {
-                    add(new SimpleTexture(ResourceLocation.parse(textureName)));
+                    add(mc.getTextureManager().getTexture(ResourceLocation.parse(textureName)));
                 }
                 else {
                     add(textures.get(textureName));

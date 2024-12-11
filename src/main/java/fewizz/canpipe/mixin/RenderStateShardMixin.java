@@ -22,9 +22,10 @@ public class RenderStateShardMixin {
     )
     private static Runnable replaceSetup(Runnable setup, @Local String name) {
         Set<String> solidTargets = Set.of(
-            "solid", "cutout", "cutout_mipped", "entity_solid",
-            "entity_solid_z_offset_forward", "entity_cutout", "entity_cutout_no_cull",
-            "entity_cutout_no_cull_z_offset", "entity_smooth_cutout"
+            "solid", "cutout_mipped", "cutout",
+            "entity_solid", "entity_solid_z_offset_forward",
+            "entity_cutout", "entity_cutout_no_cull", "entity_cutout_no_cull_z_offset",
+            "entity_smooth_cutout"
         );
 
         if (solidTargets.contains(name)) {

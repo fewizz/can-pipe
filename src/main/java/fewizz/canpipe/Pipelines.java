@@ -72,7 +72,7 @@ public class Pipelines implements PreparableReloadListener {
                 if (RAW_PIPELINES.size() > 0) {
                     try {
                         var raw = RAW_PIPELINES.entrySet().iterator().next();
-                        currentPipeline = new Pipeline(resourceManager, raw.getKey(), raw.getValue());
+                        currentPipeline = new Pipeline(raw.getKey(), raw.getValue());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

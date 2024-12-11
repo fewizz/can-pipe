@@ -8,7 +8,7 @@ uniform float frx_worldDay;  // but why float?
 const float frx_moonSize = 1.0;  // TODO
 
 const float frx_skyAngleRadians = 0.0;  // TODO
-const vec3 frx_skyLightVector = vec3(0.0, 1.0, 0.0);  // TODO
+uniform vec3 frx_skyLightVector;
 const vec3 frx_skyLightColor = vec3(1.0);  // TODO
 const float frx_skyLightIlluminance = 1.0;  // TOOD
 const vec3 frx_skyLightAtmosphericColor = vec3(1.0);  // TOOD

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.joml.Matrix3d;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
@@ -15,7 +17,9 @@ import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import com.mojang.math.MatrixUtil;
 
+import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Minecraft;
@@ -52,7 +56,8 @@ public class ProgramBase extends CompiledShaderProgram {
         // world.glsl
         new ShaderProgramConfig.Uniform("canpipe_gameTime", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F))
+        new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_skyLightVector", "float", 3, List.of(0.0F, 1.0F, 0.0F))
     );
 
     final ResourceLocation location;
@@ -67,7 +72,8 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_LAST_PROJECTION_MATRIX,
         FRX_VIEW_DISTANCE,
         FRX_EYE_POS,
-        FRX_WORLD_DAY;
+        FRX_WORLD_DAY,
+        FRX_SKY_LIGHT_VECTOR;
 
     ProgramBase(
         ResourceLocation location,
@@ -96,6 +102,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_VIEW_DISTANCE = getUniform("frx_viewDistance");
         this.FRX_EYE_POS = getUniform("frx_eyePos");
         this.FRX_WORLD_DAY = getUniform("frx_worldDay");
+        this.FRX_SKY_LIGHT_VECTOR = getUniform("frx_skyLightVector");
 
         KHRDebug.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
     }
@@ -122,6 +129,7 @@ public class ProgramBase extends CompiledShaderProgram {
         super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, window);
 
         Minecraft mc = Minecraft.getInstance();
+        Pipeline p = Pipelines.getCurrent();
 
         GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
 
@@ -153,6 +161,17 @@ public class ProgramBase extends CompiledShaderProgram {
             // will be re-set for terrain in LevelRenderer.renderSectionLayer
             // should be zero for everything else
             this.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F);
+        }
+        if (this.FRX_SKY_LIGHT_VECTOR != null) {
+            // 0.0 - noon, 0.5 - midnight
+            float hourAngle = mc.level.getTimeOfDay(0.0F) * (float) (Math.PI * 2.0);
+            float zenithAngle = p.skyShadows != null ? p.sky.defaultZenithAngle() : 0.0F;
+
+            this.FRX_SKY_LIGHT_VECTOR.set(
+                (float) (-Math.sin(hourAngle)),
+                (float) ( Math.cos(hourAngle) *  Math.cos(zenithAngle)),
+                (float) ( Math.cos(hourAngle) * -Math.sin(zenithAngle))
+            );
         }
     }
 

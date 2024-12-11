@@ -1,7 +1,6 @@
 package fewizz.canpipe.mixin;
 
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
