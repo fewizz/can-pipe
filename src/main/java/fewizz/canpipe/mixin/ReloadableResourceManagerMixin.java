@@ -6,9 +6,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import fewizz.canpipe.MaterialMaps;
-import fewizz.canpipe.Materials;
-import fewizz.canpipe.Pipelines;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.material.Materials;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;

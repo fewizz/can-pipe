@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.material;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -8,6 +8,7 @@ import java.util.concurrent.Executor;
 
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
+import fewizz.canpipe.CanPipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
@@ -47,7 +48,7 @@ public class MaterialMaps implements PreparableReloadListener {
                     subpath = subpath.replace(".json", "").replace(".json5", "");
 
                     try {
-                        JsonObject materialMapJson = Mod.JANKSON.load(e.getValue().open());
+                        JsonObject materialMapJson = CanPipe.JANKSON.load(e.getValue().open());
                         MaterialMap materialMap = new MaterialMap(materialMapJson);
 
                         if (type.equals("fluid")) {

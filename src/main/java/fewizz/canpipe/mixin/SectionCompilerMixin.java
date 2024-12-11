@@ -6,8 +6,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-import fewizz.canpipe.Pipelines;
-import fewizz.canpipe.CanPipeVertexFormats;
+import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.chunk.SectionCompiler;
 
 @Mixin(SectionCompiler.class)
@@ -21,7 +21,7 @@ public class SectionCompilerMixin {
         )
     )
     VertexFormat replaceFormatOnBufferBuilderCreation(VertexFormat original) {
-        return Pipelines.getCurrent() != null ? CanPipeVertexFormats.BLOCK : original;
+        return Pipelines.getCurrent() != null ? CanPipe.VertexFormats.BLOCK : original;
     }
 
 }

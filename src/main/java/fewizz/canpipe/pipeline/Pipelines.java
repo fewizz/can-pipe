@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -7,7 +7,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.pipeline.MainTarget;
@@ -16,7 +15,9 @@ import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
-import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -26,7 +27,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public class Pipelines implements PreparableReloadListener {
 
     private static final Map<ResourceLocation, JsonObject> RAW_PIPELINES = new HashMap<>();
-    private static volatile Pipeline currentPipeline = null;
+    private static volatile Pipeline current = null;
 
     @Override
     public CompletableFuture<Void> reload(
@@ -47,9 +48,9 @@ public class Pipelines implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<ResourceLocation, Resource> jsons) -> {
-                if (currentPipeline != null) {
-                    currentPipeline.close();
-                    currentPipeline = null;
+                if (current != null) {
+                    current.close();
+                    current = null;
                 }
 
                 RAW_PIPELINES.clear();
@@ -60,7 +61,7 @@ public class Pipelines implements PreparableReloadListener {
                     }
 
                     try {
-                        JsonObject o = Mod.JANKSON.load(pipelineRawJson.open());
+                        JsonObject o = CanPipe.JANKSON.load(pipelineRawJson.open());
                         Map<String, JsonObject> includes = new HashMap<>();
                         processIncludes(o, includes, resourceManager);
                         RAW_PIPELINES.put(loc, o);
@@ -72,7 +73,7 @@ public class Pipelines implements PreparableReloadListener {
                 if (RAW_PIPELINES.size() > 0) {
                     try {
                         var raw = RAW_PIPELINES.entrySet().iterator().next();
-                        currentPipeline = new Pipeline(raw.getKey(), raw.getValue());
+                        current = new Pipeline(raw.getKey(), raw.getValue());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -80,8 +81,9 @@ public class Pipelines implements PreparableReloadListener {
 
                 Minecraft mc = Minecraft.getInstance();
 
-                if (currentPipeline != null) {
-                    mc.mainRenderTarget = currentPipeline.defaultFramebuffer;
+                if (current != null) {
+                    mc.mainRenderTarget = current.defaultFramebuffer;
+                    ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
                 }
                 else if (!(mc.mainRenderTarget instanceof MainTarget)) {
                     mc.mainRenderTarget = new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
@@ -104,7 +106,7 @@ public class Pipelines implements PreparableReloadListener {
             JsonObject toInclude = includes.getOrDefault(path, null);
             if (toInclude == null) {
                 String pathStr = ((JsonPrimitive) path).asString();
-                toInclude = Mod.JANKSON.load(manager.open(ResourceLocation.parse(pathStr)));
+                toInclude = CanPipe.JANKSON.load(manager.open(ResourceLocation.parse(pathStr)));
                 processIncludes(toInclude, includes, manager);
                 includes.put(pathStr, toInclude);
             }
@@ -114,31 +116,7 @@ public class Pipelines implements PreparableReloadListener {
 
 
     public static @Nullable Pipeline getCurrent() {
-        return currentPipeline;
-    }
-
-    public static void onGameRendererResize(int w, int h) {
-        Pipeline p = getCurrent();
-        if (p == null) return;
-        p.onWindowSizeChanged(w, h);
-    }
-
-    public static void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
-        Pipeline p = getCurrent();
-        if (p == null) return;
-        p.onBeforeWorldRender(view, projection);
-    }
-
-    public static void onAfterWorldRender(Matrix4f view, Matrix4f projection) {
-        Pipeline p = getCurrent();
-        if (p == null) return;
-        p.onAfterWorldRender(view, projection);
-    }
-
-    public static void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
-        Pipeline p = getCurrent();
-        if (p == null) return;
-        p.onAfterRenderHand(view, projection);
+        return current;
     }
 
     public static Vector3f computeTangent(

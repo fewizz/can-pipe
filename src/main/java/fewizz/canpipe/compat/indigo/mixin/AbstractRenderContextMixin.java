@@ -10,7 +10,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.CanPipeVertexFormatElements;
+import fewizz.canpipe.CanPipe.VertexFormatElements;
 import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
@@ -35,7 +35,7 @@ public class AbstractRenderContextMixin {
     ) {
         if (
             vertexConsumer instanceof BufferBuilder bb
-            && bb.format.contains(CanPipeVertexFormatElements.TANGENT)
+            && bb.format.contains(CanPipe.VertexFormatElements.TANGENT)
             && quad instanceof MutableQuadViewExtended mq
         ) {
             mq.computeTangent();
@@ -63,13 +63,13 @@ public class AbstractRenderContextMixin {
             vertexConsumer instanceof BufferBuilder bb &&
             quad instanceof MutableQuadViewExtended q
         ) {
-            if (bb.format.contains(CanPipeVertexFormatElements.AO)) {
+            if (bb.format.contains(CanPipe.VertexFormatElements.AO)) {
                 ((VertexConsumerExtended) bb).setAO(q.getAO(quadVertexIndex));
             }
-            if (bb.format.contains(CanPipeVertexFormatElements.SPRITE_INDEX)) {
+            if (bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
                 ((VertexConsumerExtended) bb).setSpriteIndex(q.getSpriteIndex());
             }
-            if (bb.format.contains(CanPipeVertexFormatElements.TANGENT)) {
+            if (bb.format.contains(CanPipe.VertexFormatElements.TANGENT)) {
                 ((VertexConsumerExtended) bb).setTangent(q.getTangent());
             }
         }

@@ -13,7 +13,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.CanPipe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 
@@ -55,10 +55,10 @@ public class Pass extends PassBase {
         int layer
     ) {
         if (program.samplers.size() > textures.size()) {
-            Mod.LOGGER.warn("Program "+program.location+" has more samplers than textures provided by pass "+name);
+            CanPipe.LOGGER.warn("Program "+program.location+" has more samplers than textures provided by pass "+name);
         }
         if (program.samplers.size() < textures.size()) {
-            Mod.LOGGER.warn("Program "+program.location+" has less samplers than textures provided by pass "+name);
+            CanPipe.LOGGER.warn("Program "+program.location+" has less samplers than textures provided by pass "+name);
         }
         for (int i = 0; i < Math.min(program.samplers.size(), textures.size()); ++i) {
             String sampler = program.samplers.get(i);

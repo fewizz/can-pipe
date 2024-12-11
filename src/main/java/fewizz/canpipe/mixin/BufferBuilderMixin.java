@@ -15,9 +15,9 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
-import fewizz.canpipe.CanPipeVertexFormatElements;
-import fewizz.canpipe.Pipelines;
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import fewizz.canpipe.pipeline.Pipelines;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
@@ -95,11 +95,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 setNormal(0.0F, 1.0F, 0.0F);
             }
         }
-        if ((elementsToFill & CanPipeVertexFormatElements.TANGENT.mask()) != 0) {
+        if ((elementsToFill & CanPipe.VertexFormatElements.TANGENT.mask()) != 0) {
             if (!this.mode.connectedPrimitives && this.vertices > 0 && (this.vertices % this.mode.primitiveLength) == 0) {
                 int posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
                 int uvOffset = this.offsetsByElement[VertexFormatElement.UV0.id()];
-                int tangentOffset = this.offsetsByElement[CanPipeVertexFormatElements.TANGENT.id()];
+                int tangentOffset = this.offsetsByElement[CanPipe.VertexFormatElements.TANGENT.id()];
                 long o = this.vertexPointer - this.vertexSize*(this.mode.primitiveLength - 1);
                 Vector3f tangent = Pipelines.computeTangent(
                     MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+0*Float.BYTES),
@@ -126,21 +126,21 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                     MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+2, normalIntValue(tangent.z));
                     MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+3, (byte) 0);
                 }
-                this.elementsToFill &= ~CanPipeVertexFormatElements.TANGENT.mask();
+                this.elementsToFill &= ~CanPipe.VertexFormatElements.TANGENT.mask();
             }
             else {
                 setSharedTangent(1.0F, 0.0F, 0.0F);
                 inheritTangent();
             }
         }
-        if ((elementsToFill & CanPipeVertexFormatElements.AO.mask()) != 0) {
+        if ((elementsToFill & CanPipe.VertexFormatElements.AO.mask()) != 0) {
             setAO(1.0F);
         }
-        if ((elementsToFill & CanPipeVertexFormatElements.MATERIAL_INDEX.mask()) != 0) {
+        if ((elementsToFill & CanPipe.VertexFormatElements.MATERIAL_INDEX.mask()) != 0) {
             setSharedMaterialIndex(-1);
             inheritMaterialIndex();
         }
-        if ((elementsToFill & CanPipeVertexFormatElements.SPRITE_INDEX.mask()) != 0) {
+        if ((elementsToFill & CanPipe.VertexFormatElements.SPRITE_INDEX.mask()) != 0) {
             setSharedSpriteIndex(-1);
             inheritSpriteIndex();
         }
@@ -148,7 +148,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Override
     public void setAO(float ao) {
-        long offset = this.beginElement(CanPipeVertexFormatElements.AO);
+        long offset = this.beginElement(CanPipe.VertexFormatElements.AO);
         MemoryUtil.memPutFloat(offset, ao);
     }
 
@@ -159,7 +159,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Override
     public void inheritSpriteIndex() {
-        long offset = this.beginElement(CanPipeVertexFormatElements.SPRITE_INDEX);
+        long offset = this.beginElement(CanPipe.VertexFormatElements.SPRITE_INDEX);
         MemoryUtil.memPutInt(offset, this.sharedSpriteIndex);
     }
 
@@ -170,13 +170,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Override
     public void inheritMaterialIndex() {
-        long offset = this.beginElement(CanPipeVertexFormatElements.MATERIAL_INDEX);
+        long offset = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX);
         MemoryUtil.memPutInt(offset, this.sharedMaterialIndex);
     }
 
     @Override
     public void inheritTangent() {
-        long offset = this.beginElement(CanPipeVertexFormatElements.TANGENT);
+        long offset = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
         MemoryUtil.memPutByte(offset+0, normalIntValue(this.sharedTangent.x));
         MemoryUtil.memPutByte(offset+1, normalIntValue(this.sharedTangent.y));
         MemoryUtil.memPutByte(offset+2, normalIntValue(this.sharedTangent.z));

@@ -14,11 +14,6 @@
 	"license": "CC0-1.0",
 	"icon": "assets/canpipe/icon.png",
 	"environment": "*",
-	"entrypoints": {
-		"client": [
-			"fewizz.canpipe.Mod"
-		]
-	},
 	"mixins": [
 		{
 			"config": "canpipe.mixins.json",

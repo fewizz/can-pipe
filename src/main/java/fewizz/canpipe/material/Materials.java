@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.material;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -8,6 +8,7 @@ import java.util.concurrent.Executor;
 
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
+import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.resources.ResourceLocation;
@@ -50,7 +51,7 @@ public class Materials implements PreparableReloadListener {
                             fullLocation.getPath().substring("materials/".length())
                             .replace(".json", "").replace(".json5", "")
                         );
-                        JsonObject materialJson = Mod.JANKSON.load(e.getValue().open());
+                        JsonObject materialJson = CanPipe.JANKSON.load(e.getValue().open());
                         Material material = new Material(
                             resourceManager,
                             location,

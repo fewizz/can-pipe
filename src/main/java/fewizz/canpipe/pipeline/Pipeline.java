@@ -86,26 +86,8 @@ public class Pipeline implements AutoCloseable {
         IllegalArgumentException,
         IllegalAccessException
     {
+        this.location = location;
         var mc = Minecraft.getInstance();
-
-        // Skipping dynamic options for now... (choosing defaults)
-        class SkipDynamicOptions { static JsonElement doSkip(JsonElement e) {
-            if (e instanceof JsonObject vo) {
-                if (vo.size() == 2 && vo.containsKey("default") && (vo.containsKey("optionMap") || vo.containsKey("option"))) {
-                    return (JsonPrimitive) vo.get("default");
-                }
-                for (var kv : vo.entrySet()) {
-                    kv.setValue(doSkip(kv.getValue()));
-                }
-            }
-            if (e instanceof JsonArray va) {
-                for (int i = 0; i < va.size(); ++i) {
-                    va.set(i, doSkip(va.get(i)));
-                }
-            }
-            return e;
-        }}
-        SkipDynamicOptions.doSkip(pipelineJson);
 
         // "options"
         for (var optionO : JanksonUtils.listOfObjects(pipelineJson, "options")) {
@@ -127,7 +109,25 @@ public class Pipeline implements AutoCloseable {
             }
         }
 
-        this.location = location;
+        // Skipping dynamic options for now... (choosing defaults)
+        class SkipDynamicOptions { static JsonElement doSkip(JsonElement e) {
+            if (e instanceof JsonObject vo) {
+                if (vo.size() == 2 && vo.containsKey("default") && (vo.containsKey("optionMap") || vo.containsKey("option"))) {
+                    return (JsonPrimitive) vo.get("default");
+                }
+                for (var kv : vo.entrySet()) {
+                    kv.setValue(doSkip(kv.getValue()));
+                }
+            }
+            if (e instanceof JsonArray va) {
+                for (int i = 0; i < va.size(); ++i) {
+                    va.set(i, doSkip(va.get(i)));
+                }
+            }
+            return e;
+        }}
+        SkipDynamicOptions.doSkip(pipelineJson);
+
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
         JsonObject skyShadowsO = pipelineJson.getObject("skyShadows");

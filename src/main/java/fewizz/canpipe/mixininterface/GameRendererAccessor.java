@@ -9,5 +9,7 @@ public interface GameRendererAccessor {
     public Vector3f canpipe_getLastCameraPos();
     public Matrix4f canpipe_getLastViewMatrix();
     public Matrix4f canpipe_getLastProjectionMatrix();
+    public void canpipe_onPipelineActivated();
+    public float canpipe_getRenderSeconds();
 
 }

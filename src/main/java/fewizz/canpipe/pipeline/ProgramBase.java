@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.joml.Matrix3d;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
@@ -17,9 +15,7 @@ import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
-import com.mojang.math.MatrixUtil;
 
-import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Minecraft;
@@ -54,9 +50,11 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
 
         // world.glsl
-        new ShaderProgramConfig.Uniform("canpipe_gameTime", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_timeOfDay", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_renderSeconds", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_worldTime", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_skyLightVector", "float", 3, List.of(0.0F, 1.0F, 0.0F))
     );
 
@@ -72,7 +70,10 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_LAST_PROJECTION_MATRIX,
         FRX_VIEW_DISTANCE,
         FRX_EYE_POS,
+        CANPIPE_TIME_OF_DAY,
+        FRX_RENDER_SECONDS,
         FRX_WORLD_DAY,
+        FRX_WORLD_TIME,
         FRX_SKY_LIGHT_VECTOR;
 
     ProgramBase(
@@ -101,7 +102,10 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_LAST_PROJECTION_MATRIX = getUniform("frx_lastProjectionMatrix");
         this.FRX_VIEW_DISTANCE = getUniform("frx_viewDistance");
         this.FRX_EYE_POS = getUniform("frx_eyePos");
+        this.CANPIPE_TIME_OF_DAY = getUniform("canpipe_timeOfDay");
+        this.FRX_RENDER_SECONDS = getUniform("frx_renderSeconds");
         this.FRX_WORLD_DAY = getUniform("frx_worldDay");
+        this.FRX_WORLD_TIME = getUniform("frx_worldTime");
         this.FRX_SKY_LIGHT_VECTOR = getUniform("frx_skyLightVector");
 
         KHRDebug.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
@@ -116,7 +120,6 @@ public class ProgramBase extends CompiledShaderProgram {
         if (name.equals("FogEnd")) { name = "frx_fogEnd"; }
         if (name.equals("FogColor")) { name = "frx_fogColor"; }
         if (name.equals("ScreenSize")) { name = "canpipe_screenSize"; }
-        if (name.equals("GameTime")) { name = "canpipe_gameTime"; }
         if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
         if (name.equals("Light0_Direction")) { name = "canpipe_light0Direction"; }
         if (name.equals("Light1_Direction")) { name = "canpipe_light1Direction"; }
@@ -133,9 +136,6 @@ public class ProgramBase extends CompiledShaderProgram {
 
         GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
 
-        if (this.FRX_RENDER_FRAMES != null) {
-            this.FRX_RENDER_FRAMES.set(gra.canpipe_getFrame());
-        }
         if (this.FRX_CAMERA_POS != null) {
             this.FRX_CAMERA_POS.set(mc.gameRenderer.getMainCamera().getPosition().toVector3f());
         }
@@ -154,8 +154,22 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_EYE_POS != null) {
             this.FRX_EYE_POS.set(mc.player.position().toVector3f());
         }
+
+        // world
+        if (this.FRX_RENDER_FRAMES != null) {
+            this.FRX_RENDER_FRAMES.set(gra.canpipe_getFrame());
+        }
+        if (this.FRX_RENDER_SECONDS != null) {
+            this.FRX_RENDER_SECONDS.set(gra.canpipe_getRenderSeconds());
+        }
+        if (this.CANPIPE_TIME_OF_DAY != null) {
+            this.CANPIPE_TIME_OF_DAY.set(mc.level != null ? mc.level.getTimeOfDay(0.0F): 0.0F);
+        }
         if (this.FRX_WORLD_DAY != null) {
-            this.FRX_WORLD_DAY.set(mc.level != null ? mc.level.getGameTime() / 24000.0F : 0.0F);
+            this.FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getGameTime() / 24000L) % 2147483647L : 0.0F);
+        }
+        if (this.FRX_WORLD_TIME != null) {
+            this.FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getGameTime() % 24000.0F) / 24000.0F : 0.0F);
         }
         if (this.FRX_MODEL_TO_WORLD != null) {
             // will be re-set for terrain in LevelRenderer.renderSectionLayer
@@ -164,7 +178,7 @@ public class ProgramBase extends CompiledShaderProgram {
         }
         if (this.FRX_SKY_LIGHT_VECTOR != null) {
             // 0.0 - noon, 0.5 - midnight
-            float hourAngle = mc.level.getTimeOfDay(0.0F) * (float) (Math.PI * 2.0);
+            float hourAngle = mc.level.getSunAngle(0.0F);
             float zenithAngle = p.skyShadows != null ? p.sky.defaultZenithAngle() : 0.0F;
 
             this.FRX_SKY_LIGHT_VECTOR.set(

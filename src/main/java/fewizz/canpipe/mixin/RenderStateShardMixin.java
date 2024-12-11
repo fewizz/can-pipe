@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import com.llamalad7.mixinextras.sugar.Local;
 
-import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.RenderStateShard;
 
 @Mixin(RenderStateShard.class)
@@ -25,7 +25,8 @@ public class RenderStateShardMixin {
             "solid", "cutout_mipped", "cutout",
             "entity_solid", "entity_solid_z_offset_forward",
             "entity_cutout", "entity_cutout_no_cull", "entity_cutout_no_cull_z_offset",
-            "entity_smooth_cutout"
+            "entity_smooth_cutout",
+            "entity_translucent"  // Ну окэээй...
         );
 
         if (solidTargets.contains(name)) {

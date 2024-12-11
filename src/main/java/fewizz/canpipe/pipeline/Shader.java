@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import com.mojang.blaze3d.shaders.CompiledShader;
 
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
@@ -174,7 +174,7 @@ public class Shader extends CompiledShader {
                             preprocessed.add(location);
                         }
                         else {
-                            Mod.LOGGER.warn(sourceLocation+": couldn't include " + location);
+                            CanPipe.LOGGER.warn(sourceLocation+": couldn't include " + location);
                             line = "";
                         }
                     }

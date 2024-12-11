@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.material;
 
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.annotation.Nullable;

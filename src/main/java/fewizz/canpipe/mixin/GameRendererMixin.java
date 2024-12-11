@@ -13,8 +13,9 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 
-import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -33,6 +34,8 @@ public class GameRendererMixin implements GameRendererAccessor {
     private Camera mainCamera;
 
     private int canpipe_frame = -1;
+    private long canpipe_renderStartNano = -1;
+    private long canpipe_renderNanos = -1;
     private Vector3f canpipe_lastCameraPos = new Vector3f();
     private Matrix4f canpipe_projectionMatrix = new Matrix4f();
     private Matrix4f canpipe_lastProjectionMatrix = new Matrix4f();
@@ -44,14 +47,28 @@ public class GameRendererMixin implements GameRendererAccessor {
         return canpipe_frame;
     }
 
+    @Override
+    public void canpipe_onPipelineActivated() {
+        this.canpipe_renderStartNano = System.nanoTime();
+        this.canpipe_renderNanos = -1;
+        this.canpipe_frame = -1;
+    }
+
+    @Override
+    public float canpipe_getRenderSeconds() {
+        return (float) (this.canpipe_renderNanos / 1000000000.0);
+    }
+
     @Inject(method = "render", at=@At("HEAD"))
     void onBeforeRender(CallbackInfo ci) {
         canpipe_frame += 1;
+        this.canpipe_renderNanos = System.nanoTime() - this.canpipe_renderStartNano;
     }
 
     @Inject(method = "resize", at = @At("HEAD"))
     void onResize(int w, int h, CallbackInfo ci) {
-        Pipelines.onGameRendererResize(w, h);
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) { p.onWindowSizeChanged(w, h); }
     }
 
     @Inject(method = "renderLevel", at = @At("HEAD"))
@@ -91,18 +108,26 @@ public class GameRendererMixin implements GameRendererAccessor {
         canpipe_viewMatrix.set(viewMatrix);
         canpipe_projectionMatrix.set(projectionMatrix);
 
-        Pipelines.onBeforeWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
-        this.minecraft.mainRenderTarget.bindWrite(false);
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            p.onBeforeWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
+            this.minecraft.mainRenderTarget.bindWrite(false);
+        }
 
         original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, viewMatrix, projectionMatrix);
 
-        Pipelines.onAfterWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
-        this.minecraft.mainRenderTarget.bindWrite(false);
+        if (p != null) {
+            p.onAfterWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
+            this.minecraft.mainRenderTarget.bindWrite(false);
+        }
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
     void onAfterRenderLevel(CallbackInfo ci) {
-        Pipelines.onAfterRenderHand(canpipe_viewMatrix, canpipe_projectionMatrix);
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            p.onAfterRenderHand(canpipe_viewMatrix, canpipe_projectionMatrix);
+        }
     }
 
     @Override

@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.material;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,6 +8,7 @@ import org.apache.commons.io.IOUtils;
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.annotation.Nullable;
+import fewizz.canpipe.JanksonUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 

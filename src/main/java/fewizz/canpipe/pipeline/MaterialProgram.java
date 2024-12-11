@@ -15,11 +15,9 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
-import fewizz.canpipe.CanPipeVertexFormatElements;
-import fewizz.canpipe.CanPipeVertexFormats;
-import fewizz.canpipe.Material;
-import fewizz.canpipe.Materials;
-import fewizz.canpipe.Mod;
+import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.material.Material;
+import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.TextureAtlasAccessor;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -51,10 +49,10 @@ public class MaterialProgram extends ProgramBase {
             fragmentShader
         );
         if (samplers.size() > textures.size()) {
-            Mod.LOGGER.warn("Material program "+location+" has more samplers than textures");
+            CanPipe.LOGGER.warn("Material program "+location+" has more samplers than textures");
         }
         if (samplers.size() < textures.size()) {
-            Mod.LOGGER.warn("Material program "+location+" has less samplers than textures");
+            CanPipe.LOGGER.warn("Material program "+location+" has less samplers than textures");
         }
         for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
             String sampler = samplers.get(i);
@@ -110,13 +108,13 @@ public class MaterialProgram extends ProgramBase {
 
         var format = shaderProgram.vertexFormat();
         if (format == DefaultVertexFormat.BLOCK) {
-            format = CanPipeVertexFormats.BLOCK;
+            format = CanPipe.VertexFormats.BLOCK;
         }
         if (format == DefaultVertexFormat.NEW_ENTITY) {
-            format = CanPipeVertexFormats.NEW_ENTITY;
+            format = CanPipe.VertexFormats.NEW_ENTITY;
         }
         if (format == DefaultVertexFormat.PARTICLE) {
-            format = CanPipeVertexFormats.PARTICLE;
+            format = CanPipe.VertexFormats.PARTICLE;
         }
 
         String materialsVertexSrc = "";
@@ -166,10 +164,10 @@ public class MaterialProgram extends ProgramBase {
             (format.contains(VertexFormatElement.UV1) ? "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_uv1" : "const ivec2 in_v1 = ivec2(0)") + ";\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV2)+") in ivec2 in_lightmap;  // UV2\n"+
             (format.contains(VertexFormatElement.NORMAL) ? "layout(location = "+format.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" : "const vec3 in_normal = vec3(0.0, 1.0, 0.0)") + ";  // Normal\n"+
-            (format.contains(CanPipeVertexFormatElements.AO) ? "layout(location = "+format.getElements().indexOf(CanPipeVertexFormatElements.AO)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
-            (format.contains(CanPipeVertexFormatElements.SPRITE_INDEX) ? "layout(location = "+format.getElements().indexOf(CanPipeVertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex" : "const int in_spriteIndex = -1") + ";\n"+
-            (format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX) ? "layout(location = "+format.getElements().indexOf(CanPipeVertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex" : "const int in_materialIndex = -1") + ";\n"+
-            (format.contains(CanPipeVertexFormatElements.TANGENT) ? "layout(location = "+format.getElements().indexOf(CanPipeVertexFormatElements.TANGENT)+") in vec4 in_vertexTangent" : "const vec4 in_vertexTangent = vec4(1.0)") + ";\n"+
+            (format.contains(CanPipe.VertexFormatElements.AO) ? "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
+            (format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ? "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex" : "const int in_spriteIndex = -1") + ";\n"+
+            (format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX) ? "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex" : "const int in_materialIndex = -1") + ";\n"+
+            (format.contains(CanPipe.VertexFormatElements.TANGENT) ? "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.TANGENT)+") in vec4 in_vertexTangent" : "const vec4 in_vertexTangent = vec4(1.0)") + ";\n"+
             """
 
             out vec4 frx_vertex;

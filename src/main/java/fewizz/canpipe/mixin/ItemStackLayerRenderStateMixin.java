@@ -8,11 +8,11 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.CanPipeVertexFormatElements;
-import fewizz.canpipe.Material;
-import fewizz.canpipe.MaterialMap;
-import fewizz.canpipe.MaterialMaps;
-import fewizz.canpipe.Materials;
+import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.material.Material;
+import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.ItemStackRenderStateAccessor;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -54,7 +54,7 @@ public class ItemStackLayerRenderStateMixin {
             public VertexConsumer getBuffer(RenderType renderType) {
                 var vc = source.getBuffer(renderType);
                 Item item = ((ItemStackRenderStateAccessor) this$0).getItem();
-                if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX)) {
+                if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
                     int index = -1;
                     if (item instanceof BlockItem bi) {
                         ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bi.getBlock());

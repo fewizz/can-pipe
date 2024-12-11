@@ -11,12 +11,12 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.CanPipeVertexFormatElements;
-import fewizz.canpipe.MaterialMap;
-import fewizz.canpipe.MaterialMaps;
-import fewizz.canpipe.Materials;
-import fewizz.canpipe.Pipelines;
+import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
@@ -62,7 +62,7 @@ public class ModelBlockRendererMixin {
         float r, float g, float b, float a, int ao0, int ao1, int ao2, int ao3, int overlay,
         CallbackInfo ci
     ) {
-        if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX)) {
+        if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             int index = -1;
             if (bs != null) {
                 ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
@@ -88,7 +88,7 @@ public class ModelBlockRendererMixin {
         float r, float g, float b, int light, int overlay,
         CallbackInfo ci
     ) {
-        if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipeVertexFormatElements.MATERIAL_INDEX)) {
+        if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             int index = -1;
             if (bs != null) {
                 ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());

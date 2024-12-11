@@ -10,7 +10,7 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
-import fewizz.canpipe.Pipelines;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.ShaderProgram;

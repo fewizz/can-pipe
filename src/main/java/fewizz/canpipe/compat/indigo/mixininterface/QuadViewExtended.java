@@ -1,7 +1,6 @@
 package fewizz.canpipe.compat.indigo.mixininterface;
 
-import fewizz.canpipe.Material;
-// import net.fabricmc.fabric.api.renderer.v1.mesh.QuadView;
+import fewizz.canpipe.material.Material;
 
 public interface QuadViewExtended /* extends QuadView */ {
 

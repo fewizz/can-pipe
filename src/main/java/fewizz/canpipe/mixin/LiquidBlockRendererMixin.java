@@ -14,13 +14,13 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.Material;
-import fewizz.canpipe.MaterialMap;
-import fewizz.canpipe.MaterialMaps;
-import fewizz.canpipe.Materials;
-import fewizz.canpipe.Pipelines;
+import fewizz.canpipe.material.Material;
+import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteAccessor;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.block.LiquidBlockRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.registries.BuiltInRegistries;

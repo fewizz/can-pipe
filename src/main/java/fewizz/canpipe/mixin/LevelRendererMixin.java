@@ -13,8 +13,8 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 
-import fewizz.canpipe.Pipelines;
 import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.pipeline.ProgramBase;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
