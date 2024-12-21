@@ -1,4 +1,2 @@
-#define _CV_VERTEX_DEFAULT
 #define VANILLA_LIGHTING
-#define ANIMATED_FOLIAGE
-#define MATERIAL_TARGET_UNKNOWN
+#define ANIMATED_FOLIAGE  // TODO control by options?

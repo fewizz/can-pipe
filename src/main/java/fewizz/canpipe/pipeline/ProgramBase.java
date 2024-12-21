@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.KHRDebug;
@@ -33,13 +34,22 @@ public class ProgramBase extends CompiledShaderProgram {
         // view.glsl
         new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_lastCameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_modelToWorld", "float", 4, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_modelToWorld", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("canpipe_originType", "int", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_viewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_lastViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_projectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_lastProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("frx_shadowViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_0", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_1", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_2", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_3", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_shadowCenter_0", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_shadowCenter_1", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_shadowCenter_2", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_shadowCenter_3", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_fogStart", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogEnd", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogColor", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
@@ -68,6 +78,15 @@ public class ProgramBase extends CompiledShaderProgram {
         CANPIPE_ORIGIN_TYPE,
         FRX_LAST_VIEW_MATRIX,
         FRX_LAST_PROJECTION_MATRIX,
+        FRX_SHADOW_VIEW_MATRIX,
+        CANPIPE_SHADOW_PROJECTION_MATRIX_0,
+        CANPIPE_SHADOW_PROJECTION_MATRIX_1,
+        CANPIPE_SHADOW_PROJECTION_MATRIX_2,
+        CANPIPE_SHADOW_PROJECTION_MATRIX_3,
+        CANPIPE_SHADOW_CENTER_0,
+        CANPIPE_SHADOW_CENTER_1,
+        CANPIPE_SHADOW_CENTER_2,
+        CANPIPE_SHADOW_CENTER_3,
         FRX_VIEW_DISTANCE,
         FRX_EYE_POS,
         CANPIPE_TIME_OF_DAY,
@@ -100,6 +119,15 @@ public class ProgramBase extends CompiledShaderProgram {
         this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");
         this.FRX_LAST_VIEW_MATRIX = getUniform("frx_lastViewMatrix");
         this.FRX_LAST_PROJECTION_MATRIX = getUniform("frx_lastProjectionMatrix");
+        this.FRX_SHADOW_VIEW_MATRIX = getUniform("frx_shadowViewMatrix");
+        this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 = getUniform("canpipe_shadowProjectionMatrix_0");
+        this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 = getUniform("canpipe_shadowProjectionMatrix_1");
+        this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 = getUniform("canpipe_shadowProjectionMatrix_2");
+        this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 = getUniform("canpipe_shadowProjectionMatrix_3");
+        this.CANPIPE_SHADOW_CENTER_0 = getUniform("canpipe_shadowCenter_0");
+        this.CANPIPE_SHADOW_CENTER_1 = getUniform("canpipe_shadowCenter_1");
+        this.CANPIPE_SHADOW_CENTER_2 = getUniform("canpipe_shadowCenter_2");
+        this.CANPIPE_SHADOW_CENTER_3 = getUniform("canpipe_shadowCenter_3");
         this.FRX_VIEW_DISTANCE = getUniform("frx_viewDistance");
         this.FRX_EYE_POS = getUniform("frx_eyePos");
         this.CANPIPE_TIME_OF_DAY = getUniform("canpipe_timeOfDay");
@@ -148,6 +176,33 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_LAST_PROJECTION_MATRIX != null) {
             this.FRX_LAST_PROJECTION_MATRIX.set(gra.canpipe_getLastProjectionMatrix());
         }
+        if (this.FRX_SHADOW_VIEW_MATRIX != null) {
+            this.FRX_SHADOW_VIEW_MATRIX.set(mc.levelRenderer.canpipe_shadowViewMatrix);
+        }
+        if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 != null) {
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(mc.levelRenderer.canpipe_shadowProjectionMatrix[0]);
+        }
+        if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 != null) {
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.set(mc.levelRenderer.canpipe_shadowProjectionMatrix[1]);
+        }
+        if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 != null) {
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.set(mc.levelRenderer.canpipe_shadowProjectionMatrix[2]);
+        }
+        if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 != null) {
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.set(mc.levelRenderer.canpipe_shadowProjectionMatrix[3]);
+        }
+        if (this.CANPIPE_SHADOW_CENTER_0 != null) {
+            this.CANPIPE_SHADOW_CENTER_0.set(mc.levelRenderer.canpipe_shadowCenters[0]);
+        }
+        if (this.CANPIPE_SHADOW_CENTER_1 != null) {
+            this.CANPIPE_SHADOW_CENTER_1.set(mc.levelRenderer.canpipe_shadowCenters[1]);
+        }
+        if (this.CANPIPE_SHADOW_CENTER_2 != null) {
+            this.CANPIPE_SHADOW_CENTER_2.set(mc.levelRenderer.canpipe_shadowCenters[2]);
+        }
+        if (this.CANPIPE_SHADOW_CENTER_3 != null) {
+            this.CANPIPE_SHADOW_CENTER_3.set(mc.levelRenderer.canpipe_shadowCenters[3]);
+        }
         if (this.FRX_VIEW_DISTANCE != null) {
             this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
         }
@@ -177,15 +232,7 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F);
         }
         if (this.FRX_SKY_LIGHT_VECTOR != null) {
-            // 0.0 - noon, 0.5 - midnight
-            float hourAngle = mc.level.getSunAngle(0.0F);
-            float zenithAngle = p.skyShadows != null ? p.sky.defaultZenithAngle() : 0.0F;
-
-            this.FRX_SKY_LIGHT_VECTOR.set(
-                (float) (-Math.sin(hourAngle)),
-                (float) ( Math.cos(hourAngle) *  Math.cos(zenithAngle)),
-                (float) ( Math.cos(hourAngle) * -Math.sin(zenithAngle))
-            );
+            this.FRX_SKY_LIGHT_VECTOR.set(p.getSunDir(mc.level, new Vector3f()));
         }
     }
 

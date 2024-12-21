@@ -11,6 +11,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.ShaderProgram;
@@ -21,8 +22,10 @@ public class ShaderManagerMixin {
     @WrapMethod(method = "getProgram")
     CompiledShaderProgram wrapGetProgram(ShaderProgram shaderProgram, Operation<CompiledShaderProgram> original) {
         var pipeline = Pipelines.getCurrent();
+
         if (pipeline != null) {
-            var p = pipeline.materialPrograms.get(shaderProgram);
+            var mc = Minecraft.getInstance();
+            var p = (mc.levelRenderer.canpipe_shadow ? pipeline.shadowPrograms : pipeline.materialPrograms).get(shaderProgram);
             if (p != null) {
                 return p;
             }

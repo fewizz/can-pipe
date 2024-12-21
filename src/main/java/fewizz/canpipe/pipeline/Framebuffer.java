@@ -1,6 +1,7 @@
 package fewizz.canpipe.pipeline;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -29,22 +30,22 @@ public class Framebuffer extends RenderTarget {
     public static record DepthAttachment(
         @NotNull Texture texture,
         @NotNull double clearDepth,
-        int lod,
-        int layer
+        Optional<Integer> lod,
+        Optional<Integer> layer
     ) {}
 
-    final List<ColorAttachment> colorAttachements;
-    @Nullable final DepthAttachment depthAttachement;
+    public final List<ColorAttachment> colorAttachments;
+    public @Nullable final DepthAttachment depthAttachment;
 
     public Framebuffer(
         ResourceLocation pipelineLocation,
         String name,
-        List<ColorAttachment> colorAttachements,
-        @Nullable DepthAttachment depthAttachement
+        List<ColorAttachment> colorAttachments,
+        @Nullable DepthAttachment depthAttachment
     ) {
         super(false /* useDepth */);
-        this.colorAttachements = colorAttachements;
-        this.depthAttachement = depthAttachement;
+        this.colorAttachments = colorAttachments;
+        this.depthAttachment = depthAttachment;
         createBuffers(0, 0);
         KHRDebug.glObjectLabel(
             GL33C.GL_FRAMEBUFFER,
@@ -71,19 +72,19 @@ public class Framebuffer extends RenderTarget {
 
     @Override
     public void createBuffers(int w, int h) {
-        var firstColor = colorAttachements.size() > 0 ? colorAttachements.get(0) : null;
+        var firstColor = colorAttachments.size() > 0 ? colorAttachments.get(0) : null;
 
         Vector3i extent = new Vector3i();
         int lod = 0;
         if (firstColor != null) {
             this.colorTextureId = firstColor.texture.getId();
-            extent = firstColor.texture.extent;
-            lod = firstColor.lod;
+            extent.max(firstColor.texture.extent);
+            lod = Math.max(lod, firstColor.lod);
         }
-        if (depthAttachement != null) {
-            this.depthBufferId = depthAttachement.texture.getId();
-            extent = depthAttachement.texture.extent;
-            lod = depthAttachement.lod;
+        if (depthAttachment != null) {
+            this.depthBufferId = depthAttachment.texture.getId();
+            extent.max(depthAttachment.texture.extent);
+            lod = Math.max(lod, depthAttachment.lod.orElse(0));
         }
 
         this.viewWidth = extent.x >> lod;
@@ -93,16 +94,16 @@ public class Framebuffer extends RenderTarget {
 
         this.frameBufferId = GlStateManager.glGenFramebuffers();
         GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, this.frameBufferId);
-        if (colorAttachements.size() > 0) {
-            GL33C.glDrawBuffers(IntStream.range(0, colorAttachements.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
+        if (colorAttachments.size() > 0) {
+            GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
         }
         else {
             GL33C.glDrawBuffer(GL33C.GL_NONE);
             GL33C.glReadBuffer(GL33C.GL_NONE);
         }
 
-        for (int i = 0; i < colorAttachements.size(); ++i) {
-            var a = colorAttachements.get(i);
+        for (int i = 0; i < colorAttachments.size(); ++i) {
+            var a = colorAttachments.get(i);
 
             if (a.texture.target == GL33C.GL_TEXTURE_2D) {
                 GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + i, a.texture.target, a.texture.getId(), a.lod);
@@ -115,18 +116,18 @@ public class Framebuffer extends RenderTarget {
             }
         }
 
-        if (depthAttachement != null) {
-            if (depthAttachement.texture.target == GL33C.GL_TEXTURE_2D) {
-                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthAttachement.texture.target, depthAttachement.texture.getId(), depthAttachement.lod);
-            } else if (depthAttachement.texture.target == GL33C.GL_TEXTURE_2D_ARRAY || depthAttachement.texture.target == GL33C.GL_TEXTURE_3D) {
-                GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthAttachement.texture.getId(), depthAttachement.lod, depthAttachement.layer);
+        if (depthAttachment != null) {
+            if (depthAttachment.texture.target == GL33C.GL_TEXTURE_2D) {
+                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthAttachment.texture.target, depthAttachment.texture.getId(), depthAttachment.lod.orElse(0));
+            } else if (depthAttachment.texture.target == GL33C.GL_TEXTURE_2D_ARRAY || depthAttachment.texture.target == GL33C.GL_TEXTURE_3D) {
+                GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthAttachment.texture.getId(), depthAttachment.lod.orElse(0), depthAttachment.layer.orElse(0));
             } else {
                 throw new NotImplementedException();
             }
         }
 
         this.checkStatus();
-        this.unbindRead();
+        this.unbindWrite();
     }
 
     @Override
@@ -139,7 +140,7 @@ public class Framebuffer extends RenderTarget {
         super.clear();
 
         this.bindWrite(false);
-        GL33C.glDrawBuffers(IntStream.range(0, colorAttachements.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
+        GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
         this.unbindWrite();
     }
 
@@ -151,13 +152,16 @@ public class Framebuffer extends RenderTarget {
         RenderSystem.assertOnRenderThreadOrInit();
         this.bindWrite(true);
 
-        if (this.depthAttachement != null) {
-            GlStateManager._clearDepth(depthAttachement.clearDepth);
+        if (this.depthAttachment != null) {
+            GlStateManager._clearDepth(depthAttachment.clearDepth);
+            Texture depthTexture = depthAttachment.texture;
 
-            if (depthAttachement.lod != 0 && colorAttachements.size() == 0) {
-                for (int lod = depthAttachement.lod; lod >= 0; --lod) {
-                    GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthAttachement.texture.getId(), lod, depthAttachement.layer);
-                    GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
+            if (depthTexture.target == GL33C.GL_TEXTURE_2D_ARRAY || depthTexture.target == GL33C.GL_TEXTURE_3D) {
+                for (int lod = depthAttachment.lod.orElse(depthTexture.maxLod); lod >= depthAttachment.lod.orElse(0); --lod) {
+                    for (int layer = depthAttachment.layer.orElse(depthTexture.extent.z-1); layer >= depthAttachment.layer.orElse(0); --layer) {
+                        GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthTexture.getId(), lod, layer);
+                        GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
+                    }
                 }
             }
             else {
@@ -165,14 +169,14 @@ public class Framebuffer extends RenderTarget {
             }
         }
 
-        for (int i = 0; i < this.colorAttachements.size(); ++i) {
-            var a = this.colorAttachements.get(i);
+        for (int i = 0; i < this.colorAttachments.size(); ++i) {
+            var a = this.colorAttachments.get(i);
             GL33C.glDrawBuffer(GL33C.GL_COLOR_ATTACHMENT0 + i);
             GlStateManager._clearColor(a.clearColor.x, a.clearColor.y, a.clearColor.z, a.clearColor.w);
             GlStateManager._clear(GL33C.GL_COLOR_BUFFER_BIT);
         }
 
-        GL33C.glDrawBuffers(IntStream.range(0, colorAttachements.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
+        GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
         this.unbindWrite();
     }
 

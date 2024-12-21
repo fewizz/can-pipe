@@ -43,6 +43,14 @@ public class JanksonUtils {
         return a.stream().map(s -> ((JsonPrimitive)s).asString()).toList();
     }
 
+    public static List<Integer> listOfIntegers(JsonObject o, String name) {
+        JsonArray a = o.get(JsonArray.class, name);
+        if (a == null) {
+            return List.of();
+        }
+        return a.stream().map(s -> (Integer) ((JsonPrimitive)s).asInt(0)).toList();
+    }
+
     public static List<JsonObject> listOfObjects(JsonObject o, String name) {
         JsonArray a = o.get(JsonArray.class, name);
         if (a == null) {

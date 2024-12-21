@@ -10,6 +10,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
 
 @Mixin(RenderStateShard.class)
@@ -26,7 +27,8 @@ public class RenderStateShardMixin {
             "entity_solid", "entity_solid_z_offset_forward",
             "entity_cutout", "entity_cutout_no_cull", "entity_cutout_no_cull_z_offset",
             "entity_smooth_cutout",
-            "entity_translucent"  // Ну окэээй...
+            "entity_translucent",
+            "opaque_particle"
         );
 
         if (solidTargets.contains(name)) {
@@ -34,7 +36,12 @@ public class RenderStateShardMixin {
                 setup.run();
                 Pipeline p = Pipelines.getCurrent();
                 if (p != null) {
-                    p.solidTerrainFramebuffer.bindWrite(false);
+                    var mc = Minecraft.getInstance();
+                    (
+                        mc.levelRenderer.canpipe_shadow ?
+                        p.framebuffers.get(p.skyShadows.framebufferName()) :
+                        p.solidTerrainFramebuffer
+                    ).bindWrite(false);
                 }
             };
         };

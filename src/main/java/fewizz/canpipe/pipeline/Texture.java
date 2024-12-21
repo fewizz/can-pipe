@@ -19,7 +19,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public class Texture extends AbstractTexture {
     final String name;
-    final Vector3i extent;
+    public final Vector3i extent;
     final int target;
     final int internalFormat;
     final int pixelFormat;

@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Streams;
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -24,12 +25,19 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
+import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public class MaterialProgram extends ProgramBase {
+
+    static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+        new ShaderProgramConfig.Uniform("frxu_cascade", "int", 1, List.of(0.0F))
+    );
+
+    public final Uniform FRXU_CASCADE;
 
     MaterialProgram(
         ResourceLocation location,
@@ -44,7 +52,7 @@ public class MaterialProgram extends ProgramBase {
             vertexFormat,
             List.of("frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"),
             samplers,
-            List.of(),
+            DEFAULT_UNIFORMS,
             vertexShader,
             fragmentShader
         );
@@ -54,6 +62,9 @@ public class MaterialProgram extends ProgramBase {
         if (samplers.size() < textures.size()) {
             CanPipe.LOGGER.warn("Material program "+location+" has less samplers than textures");
         }
+
+        this.FRXU_CASCADE = getUniform("frxu_cascade");
+
         for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
             String sampler = samplers.get(i);
             AbstractTexture texture = textures.get(i);
@@ -61,7 +72,7 @@ public class MaterialProgram extends ProgramBase {
                 if (!this.samplerExists(sampler)) {
                     continue;
                 }
-                throw new NullPointerException("Couldn't find texture for sampler \"" + sampler + "\"");
+                throw new NullPointerException("Couldn't find texture for sampler \""+sampler+"\"");
             }
             bindSampler(sampler, texture);
         }
@@ -73,8 +84,8 @@ public class MaterialProgram extends ProgramBase {
         boolean enablePBR,
         @Nullable Framebuffer shadowFramebuffer,
         ResourceLocation pipelineLocation,
-        ResourceLocation vertexLoc,
-        ResourceLocation fragmentLoc,
+        ResourceLocation vertexShaderLocation,
+        ResourceLocation fragmentShaderLocation,
         Map<ResourceLocation, Option> options,
         List<String> samplers,
         List<? extends AbstractTexture> textures,
@@ -82,15 +93,15 @@ public class MaterialProgram extends ProgramBase {
     ) throws FileNotFoundException, IOException, CompilationException {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
 
-        String vertexSrc = IOUtils.toString(manager.getResourceOrThrow(vertexLoc).openAsReader());
-        String fragmentSrc = IOUtils.toString(manager.getResourceOrThrow(fragmentLoc).openAsReader());
+        String vertexSrc = IOUtils.toString(manager.getResourceOrThrow(vertexShaderLocation).openAsReader());
+        String fragmentSrc = IOUtils.toString(manager.getResourceOrThrow(fragmentShaderLocation).openAsReader());
 
         String typeName = shaderProgram.configId().getPath().replace("core/", "");
 
         String shadowMapDefinitions = null;
 
-        if (shadowFramebuffer != null && shadowFramebuffer.depthAttachement != null) {
-            var depthArray = shadowFramebuffer.depthAttachement.texture();
+        if (shadowFramebuffer != null && shadowFramebuffer.depthAttachment != null) {
+            var depthArray = shadowFramebuffer.depthAttachment.texture();
 
             samplers = Streams.concat(
                 samplers.stream(),
@@ -161,13 +172,37 @@ public class MaterialProgram extends ProgramBase {
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
-            (format.contains(VertexFormatElement.UV1) ? "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_uv1" : "const ivec2 in_v1 = ivec2(0)") + ";\n"+
+            (
+                format.contains(VertexFormatElement.UV1) ?
+                "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_uv1" :
+                "const ivec2 in_v1 = ivec2(0)"
+            ) + ";\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV2)+") in ivec2 in_lightmap;  // UV2\n"+
-            (format.contains(VertexFormatElement.NORMAL) ? "layout(location = "+format.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" : "const vec3 in_normal = vec3(0.0, 1.0, 0.0)") + ";  // Normal\n"+
-            (format.contains(CanPipe.VertexFormatElements.AO) ? "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao" : "const float in_ao = 1.0") + ";\n"+
-            (format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ? "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex" : "const int in_spriteIndex = -1") + ";\n"+
-            (format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX) ? "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex" : "const int in_materialIndex = -1") + ";\n"+
-            (format.contains(CanPipe.VertexFormatElements.TANGENT) ? "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.TANGENT)+") in vec4 in_vertexTangent" : "const vec4 in_vertexTangent = vec4(1.0)") + ";\n"+
+            (
+                format.contains(VertexFormatElement.NORMAL) ?
+                "layout(location = "+format.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" :
+                "const vec3 in_normal = vec3(0.0, 1.0, 0.0)"
+            ) + ";  // Normal\n"+
+            (
+                format.contains(CanPipe.VertexFormatElements.AO) ?
+                "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao" :
+                "const float in_ao = 1.0"
+            ) + ";\n"+
+            (
+                format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ?
+                "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex" :
+                "const int in_spriteIndex = -1"
+            ) + ";\n"+
+            (
+                format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX) ?
+                "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex" :
+                "const int in_materialIndex = -1"
+            ) + ";\n"+
+            (
+                format.contains(CanPipe.VertexFormatElements.TANGENT) ?
+                "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.TANGENT)+") in vec4 in_tangent"
+                : "const vec4 in_tangent = vec4(1.0)"
+            ) + ";\n"+
             """
 
             out vec4 frx_vertex;
@@ -189,13 +224,13 @@ public class MaterialProgram extends ProgramBase {
             uniform vec3 canpipe_light0Direction;  // aka Light0_Direction
             uniform vec3 canpipe_light1Direction;  // aka Light1_Direction
 
+            #include frex:shaders/api/view.glsl
+
             """ +
             uvMapping +
             materialsVertexSrc +
             vertexSrc +
             """
-
-            #include frex:shaders/api/view.glsl
 
             void main() {
                 frx_vertex = vec4(in_vertex, 1.0);
@@ -210,7 +245,7 @@ public class MaterialProgram extends ProgramBase {
                     ),
                     in_ao
                 );
-                frx_vertexTangent = in_vertexTangent;
+                frx_vertexTangent = in_tangent;
                 canpipe_spriteIndex = in_spriteIndex;
                 canpipe_materialIndex = in_materialIndex;
 
@@ -223,7 +258,7 @@ public class MaterialProgram extends ProgramBase {
             usedMaterialIDs.intStream().mapToObj(id ->
             "        case "+id+": _material_"+id+"(); break;\n"
             ).collect(Collectors.joining()) +
-            "    default: ;\n"+
+            "        default: break;\n"+
             "    }\n\n"+
             """
                 frx_pipelineVertex();
@@ -285,10 +320,7 @@ public class MaterialProgram extends ProgramBase {
             #endif // PBR
 
             uniform sampler2D frxs_baseColor;  // aka Sampler0
-
-            #ifdef VANILLA_LIGHTING
-                uniform sampler2D frxs_lightmap;  // aka Sampler2
-            #endif
+            uniform sampler2D frxs_lightmap;  // aka Sampler2
 
             #ifdef SHADOW_MAP_PRESENT
                 uniform sampler2DArrayShadow frxs_shadowMap;  // TODO define
@@ -296,14 +328,13 @@ public class MaterialProgram extends ProgramBase {
             #endif
 
             #include frex:shaders/api/material.glsl
+            #include frex:shaders/api/view.glsl
 
             """ +
             uvMapping +
             materialsFragmentSrc +
             fragmentSrc +
             """
-
-            #include frex:shaders/api/view.glsl
 
             void main() {
                 frx_sampleColor = texture(frxs_baseColor, frx_texcoord, frx_matUnmipped * -4.0);
@@ -335,7 +366,7 @@ public class MaterialProgram extends ProgramBase {
             usedMaterialIDs.intStream().mapToObj(id ->
             "        case "+id+": _material_"+id+"(); break;\n"
             ).collect(Collectors.joining()) +
-            "    default: ;\n"+
+            "        default: break;\n"+
             "    }\n\n"+
             """
 
@@ -343,8 +374,8 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
-        var vertexShader = Shader.compile(vertexLoc, Type.VERTEX, glslVersion, options, vertexSrc, shaderSourceCache);
-        var fragmentShader = Shader.compile(fragmentLoc, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache);
+        var vertexShader = Shader.compile(vertexShaderLocation, Type.VERTEX, glslVersion, options, vertexSrc, shaderSourceCache);
+        var fragmentShader = Shader.compile(fragmentShaderLocation, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache);
 
         return new MaterialProgram(
             pipelineLocation.withSuffix("-"+typeName),

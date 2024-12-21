@@ -30,21 +30,27 @@ public class Material {
             JanksonUtils.mergeJsonObjectB2A(materialJson, (JsonObject) layersArray.get(0));
         }
 
+        String vertexShaderSource = null;
+        String fragmentShaderSource = null;
+
         if (materialJson.containsKey("vertexSource")) {
             var loc = ResourceLocation.parse(materialJson.get(String.class, "vertexSource"));
-            this.vertexShaderSource = IOUtils.toString(manager.getResourceOrThrow(loc).openAsReader());
-        }
-        else {
-            this.vertexShaderSource = null;
+            var resource = manager.getResource(loc);
+            if (resource.isPresent()) {
+                vertexShaderSource = IOUtils.toString(resource.get().openAsReader());
+            }
         }
 
         if (materialJson.containsKey("fragmentSource")) {
             var loc = ResourceLocation.parse(materialJson.get(String.class, "fragmentSource"));
-            this.fragmentShaderSource = IOUtils.toString(manager.getResourceOrThrow(loc).openAsReader());
+            var resource = manager.getResource(loc);
+            if (resource.isPresent()) {
+                fragmentShaderSource = IOUtils.toString(resource.get().openAsReader());
+            }
         }
-        else {
-            this.fragmentShaderSource = null;
-        }
+
+        this.vertexShaderSource = vertexShaderSource;
+        this.fragmentShaderSource = fragmentShaderSource;
 
     }
 

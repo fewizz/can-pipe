@@ -16,7 +16,6 @@ import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.pipeline.ProgramBase;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
@@ -29,10 +28,6 @@ public class LevelRendererMixin {
 
     @Shadow
     @Final
-    private Minecraft minecraft;
-
-    @Shadow
-    @Final
     private LevelTargetBundle targets = new LevelTargetBundle();
 
     @WrapOperation(
@@ -42,7 +37,7 @@ public class LevelRendererMixin {
             target = "Lnet/minecraft/client/renderer/LevelRenderer;getTransparencyChain()Lnet/minecraft/client/renderer/PostChain;"
         )
     )
-    PostChain onPostChainCreation(
+    PostChain onTransparencyPostChainCreation(
         LevelRenderer instance,
         Operation<PostChain> original,
         @Local RenderTargetDescriptor renderTargetDescriptor,
@@ -50,9 +45,9 @@ public class LevelRendererMixin {
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) {
-            return original.call(instance);  // Initialise post chain normally
+            return original.call(instance);  // Initialise transparency post chain normally
         }
-        // Don't create post chain, selected pipeline will handle that
+        // Don't create transparency post chain, will be handled by pipeline
 
         this.targets.main = frameGraphBuilder.importExternal("main", p.solidTerrainFramebuffer);
         this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.translucentTerrainFramebuffer);

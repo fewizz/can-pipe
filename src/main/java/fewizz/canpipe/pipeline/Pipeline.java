@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import org.apache.commons.io.IOUtils;
@@ -14,6 +15,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
+import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
@@ -35,15 +37,19 @@ import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 
 
 public class Pipeline implements AutoCloseable {
 
-    static record SkyShadows(
-        String framebufferName
+    public static record SkyShadows(
+        String framebufferName,
+        ResourceLocation vertexShaderLocation,
+        ResourceLocation fragmentShaderLocation,
+        List<Integer> cascadeRadius
     ) {}
 
-    static record Sky(
+    public static record Sky(
         float defaultZenithAngle
     ) {}
 
@@ -65,6 +71,7 @@ public class Pipeline implements AutoCloseable {
     public final Map<String, Framebuffer> framebuffers = new HashMap<>();
     final Map<ResourceLocation, Option> options = new HashMap<>();
     public final Map<ShaderProgram, MaterialProgram> materialPrograms = new HashMap<>();
+    public final Map<ShaderProgram, MaterialProgram> shadowPrograms = new HashMap<>();
 
     private final List<PassBase> onInit = new ArrayList<>();
     private final List<PassBase> beforeWorldRenderPasses = new ArrayList<>();
@@ -134,7 +141,10 @@ public class Pipeline implements AutoCloseable {
 
         if (skyShadowsO != null) {
             this.skyShadows = new SkyShadows(
-                skyShadowsO.get(String.class, "framebuffer")
+                skyShadowsO.get(String.class, "framebuffer"),
+                ResourceLocation.parse(skyShadowsO.get(String.class, "vertexSource")),
+                ResourceLocation.parse(skyShadowsO.get(String.class, "fragmentSource")),
+                JanksonUtils.listOfIntegers(skyShadowsO, "cascadeRadius")
             );
         }
         else {
@@ -231,7 +241,12 @@ public class Pipeline implements AutoCloseable {
                 var depthTexture = this.textures.get(depthAttachementO.get(String.class, "image"));
 
                 double clearDepth = depthAttachementO.getDouble("clearDepth", 1.0);
-                depthAttachement = new Framebuffer.DepthAttachment(depthTexture, clearDepth, 0, 0);
+                depthAttachement = new Framebuffer.DepthAttachment(
+                    depthTexture,
+                    clearDepth,
+                    Optional.ofNullable(depthAttachementO.get(Integer.class, "lod")),
+                    Optional.ofNullable(depthAttachementO.get(Integer.class, "layer"))
+                );
             }
             Framebuffer framebuffer = new Framebuffer(location, name, colorAttachements, depthAttachement);
             this.framebuffers.put(name, framebuffer);
@@ -343,8 +358,8 @@ public class Pipeline implements AutoCloseable {
         // "materialProgram"
         JsonObject materailProgramO = pipelineJson.getObject("materialProgram");
 
-        var materialVertex = ResourceLocation.parse(materailProgramO.get(String.class, "vertexSource"));
-        var materialFragment = ResourceLocation.parse(materailProgramO.get(String.class, "fragmentSource"));
+        var materialVertexShaderLocation = ResourceLocation.parse(materailProgramO.get(String.class, "vertexSource"));
+        var materialFragmentShaderLocation = ResourceLocation.parse(materailProgramO.get(String.class, "fragmentSource"));
 
         List<String> samplers = JanksonUtils.listOfStrings(materailProgramO, "samplers");
         List<? extends AbstractTexture> samplerImages = new ArrayList<>() {{
@@ -373,20 +388,42 @@ public class Pipeline implements AutoCloseable {
             CoreShaders.RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL,
             CoreShaders.PARTICLE
         }) {
-            var program = MaterialProgram.create(
+            Framebuffer shadowFramebuffer = skyShadows != null ? this.framebuffers.get(skyShadows.framebufferName) : null;
+            this.materialPrograms.put(
                 shaderProgram,
-                glslVersion,
-                enablePBR,
-                skyShadows != null ? this.framebuffers.get(skyShadows.framebufferName) : null,
-                location,
-                materialVertex,
-                materialFragment,
-                this.options,
-                samplers,
-                samplerImages,
-                shaderSourceCache
+                MaterialProgram.create(
+                    shaderProgram,
+                    glslVersion,
+                    enablePBR,
+                    shadowFramebuffer,
+                    location,
+                    materialVertexShaderLocation,
+                    materialFragmentShaderLocation,
+                    this.options,
+                    samplers,
+                    samplerImages,
+                    shaderSourceCache
+                )
             );
-            this.materialPrograms.put(shaderProgram, program);
+
+            if (this.skyShadows != null) {
+                this.shadowPrograms.put(
+                    shaderProgram,
+                    MaterialProgram.create(
+                        shaderProgram,
+                        glslVersion,
+                        enablePBR,
+                        shadowFramebuffer,
+                        location,
+                        this.skyShadows.vertexShaderLocation,
+                        this.skyShadows.fragmentShaderLocation,
+                        this.options,
+                        List.of(),
+                        List.of(),
+                        shaderSourceCache
+                    )
+                );
+            }
         }
     }
 
@@ -457,6 +494,18 @@ public class Pipeline implements AutoCloseable {
                 p.CANPIPE_ORIGIN_TYPE.set(2);  // screen
             }
         }
+    }
+
+    public Vector3f getSunDir(Level level, Vector3f result) {
+        // 0.0 - noon, 0.5 - midnight
+        float hourAngle = level.getSunAngle(0.0F);
+        float zenithAngle = this.sky != null ? this.sky.defaultZenithAngle() : 0.0F;
+
+        return result.set(
+            (float) (-Math.sin(hourAngle)),
+            (float) ( Math.cos(hourAngle) *  Math.cos(zenithAngle)),
+            (float) ( Math.cos(hourAngle) * -Math.sin(zenithAngle))
+        );
     }
 
     @Override

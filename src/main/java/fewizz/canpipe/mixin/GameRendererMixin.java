@@ -14,8 +14,10 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import fewizz.canpipe.pipeline.Texture;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -110,6 +112,22 @@ public class GameRendererMixin implements GameRendererAccessor {
 
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
+            /*if (p.skyShadows != null) {
+                float renderDistance = this.minecraft.gameRenderer.getRenderDistance();
+                Vector3f sunPos = p.getSunDir(this.minecraft.level, new Vector3f()).mul(renderDistance);
+                canpipe_shadowViewMatrix.setLookAt(
+                    sunPos.x, sunPos.y, sunPos.z,  // eye pos
+                    0.0F, 0.0F, 0.0F,              // center
+                    0.0F, 1.0F, 0.0F               // up
+                );
+                canpipe_shadowProjectionMatrix.setOrthoSymmetric(
+                    renderDistance*2.0F,  // w
+                    renderDistance*2.0F,  // h
+                    0.0F,                 // near
+                    renderDistance*2.0F   // far
+                );
+            }*/
+
             p.onBeforeWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
             this.minecraft.mainRenderTarget.bindWrite(false);
         }
@@ -144,5 +162,15 @@ public class GameRendererMixin implements GameRendererAccessor {
     public Matrix4f canpipe_getLastProjectionMatrix() {
         return this.canpipe_lastProjectionMatrix;
     }
+
+    /*@Override
+    public Matrix4f canpipe_getShadowViewMatrix() {
+        return this.canpipe_shadowViewMatrix;
+    }
+
+    @Override
+    public Matrix4f canpipe_getShadowProjectionMatrix() {
+        return this.canpipe_shadowProjectionMatrix;
+    }*/
 
 }
