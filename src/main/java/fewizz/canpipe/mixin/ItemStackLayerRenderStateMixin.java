@@ -13,7 +13,7 @@ import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
-import fewizz.canpipe.mixininterface.ItemStackRenderStateAccessor;
+import fewizz.canpipe.mixininterface.ItemStackRenderStateExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -53,7 +53,7 @@ public class ItemStackLayerRenderStateMixin {
             @Override
             public VertexConsumer getBuffer(RenderType renderType) {
                 var vc = source.getBuffer(renderType);
-                Item item = ((ItemStackRenderStateAccessor) this$0).getItem();
+                Item item = ((ItemStackRenderStateExtended) this$0).getItem();
                 if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
                     int index = -1;
                     if (item instanceof BlockItem bi) {

@@ -10,6 +10,7 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
+import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
@@ -25,7 +26,7 @@ public class ShaderManagerMixin {
 
         if (pipeline != null) {
             var mc = Minecraft.getInstance();
-            var p = (mc.levelRenderer.canpipe_shadow ? pipeline.shadowPrograms : pipeline.materialPrograms).get(shaderProgram);
+            var p = (((LevelRendererExtended) mc.levelRenderer).getIsRenderingShadow() ? pipeline.shadowPrograms : pipeline.materialPrograms).get(shaderProgram);
             if (p != null) {
                 return p;
             }

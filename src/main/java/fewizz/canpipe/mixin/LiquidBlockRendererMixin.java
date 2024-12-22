@@ -18,7 +18,7 @@ import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
-import fewizz.canpipe.mixininterface.TextureAtlasSpriteAccessor;
+import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.block.LiquidBlockRenderer;
@@ -98,7 +98,7 @@ public class LiquidBlockRendererMixin {
                     veritices[2].x, veritices[2].y, veritices[2].z, uvs[2].x, uvs[2].y
                 );
                 original.setSharedTangent(tangent.x, tangent.y, tangent.z);
-                original.setSharedSpriteIndex(((TextureAtlasSpriteAccessor) this.sprites[still ? 0 : 1]).getIndex());
+                original.setSharedSpriteIndex(((TextureAtlasSpriteExtended) this.sprites[still ? 0 : 1]).getIndex());
 
                 for (int i = 0; i < 4; ++i ) {
                     original.addVertex(veritices[i]);

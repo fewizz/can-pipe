@@ -15,15 +15,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 
-import fewizz.canpipe.mixininterface.TextureAtlasAccessor;
-import fewizz.canpipe.mixininterface.TextureAtlasSpriteAccessor;
+import fewizz.canpipe.mixininterface.TextureAtlasExtended;
+import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 
 @Mixin(TextureAtlas.class)
-public class TextureAtlasMixin implements TextureAtlasAccessor {
+public class TextureAtlasMixin implements TextureAtlasExtended {
 
     @Shadow
     private ResourceLocation location;
@@ -44,7 +44,7 @@ public class TextureAtlasMixin implements TextureAtlasAccessor {
         {
             int index = 0;
             for (TextureAtlasSprite s : texturesByName.values()) {
-                ((TextureAtlasSpriteAccessor) s).setIndex(index);
+                ((TextureAtlasSpriteExtended) s).setIndex(index);
                 buff.put(index*4+0, s.getU0());
                 buff.put(index*4+1, s.getV0());
                 buff.put(index*4+2, s.getU1());

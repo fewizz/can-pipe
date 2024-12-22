@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import com.llamalad7.mixinextras.sugar.Local;
 
+import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
@@ -38,7 +39,7 @@ public class RenderStateShardMixin {
                 if (p != null) {
                     var mc = Minecraft.getInstance();
                     (
-                        mc.levelRenderer.canpipe_shadow ?
+                        ((LevelRendererExtended) mc.levelRenderer).getIsRenderingShadow() ?
                         p.framebuffers.get(p.skyShadows.framebufferName()) :
                         p.solidTerrainFramebuffer
                     ).bindWrite(false);

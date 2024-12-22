@@ -18,6 +18,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
@@ -163,6 +164,7 @@ public class ProgramBase extends CompiledShaderProgram {
         Pipeline p = Pipelines.getCurrent();
 
         GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
+        LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
 
         if (this.FRX_CAMERA_POS != null) {
             this.FRX_CAMERA_POS.set(mc.gameRenderer.getMainCamera().getPosition().toVector3f());
@@ -177,31 +179,31 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_LAST_PROJECTION_MATRIX.set(gra.canpipe_getLastProjectionMatrix());
         }
         if (this.FRX_SHADOW_VIEW_MATRIX != null) {
-            this.FRX_SHADOW_VIEW_MATRIX.set(mc.levelRenderer.canpipe_shadowViewMatrix);
+            this.FRX_SHADOW_VIEW_MATRIX.set(lre.getShadowViewMatrix());
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(mc.levelRenderer.canpipe_shadowProjectionMatrix[0]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(lre.getShadowProjectionMatrices()[0]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.set(mc.levelRenderer.canpipe_shadowProjectionMatrix[1]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.set(lre.getShadowProjectionMatrices()[1]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.set(mc.levelRenderer.canpipe_shadowProjectionMatrix[2]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.set(lre.getShadowProjectionMatrices()[2]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.set(mc.levelRenderer.canpipe_shadowProjectionMatrix[3]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.set(lre.getShadowProjectionMatrices()[3]);
         }
         if (this.CANPIPE_SHADOW_CENTER_0 != null) {
-            this.CANPIPE_SHADOW_CENTER_0.set(mc.levelRenderer.canpipe_shadowCenters[0]);
+            this.CANPIPE_SHADOW_CENTER_0.set(lre.getShadowCenters()[0]);
         }
         if (this.CANPIPE_SHADOW_CENTER_1 != null) {
-            this.CANPIPE_SHADOW_CENTER_1.set(mc.levelRenderer.canpipe_shadowCenters[1]);
+            this.CANPIPE_SHADOW_CENTER_1.set(lre.getShadowCenters()[1]);
         }
         if (this.CANPIPE_SHADOW_CENTER_2 != null) {
-            this.CANPIPE_SHADOW_CENTER_2.set(mc.levelRenderer.canpipe_shadowCenters[2]);
+            this.CANPIPE_SHADOW_CENTER_2.set(lre.getShadowCenters()[2]);
         }
         if (this.CANPIPE_SHADOW_CENTER_3 != null) {
-            this.CANPIPE_SHADOW_CENTER_3.set(mc.levelRenderer.canpipe_shadowCenters[3]);
+            this.CANPIPE_SHADOW_CENTER_3.set(lre.getShadowCenters()[3]);
         }
         if (this.FRX_VIEW_DISTANCE != null) {
             this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);

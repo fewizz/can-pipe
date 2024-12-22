@@ -1,6 +1,6 @@
 package fewizz.canpipe.mixininterface;
 
-public interface TextureAtlasSpriteAccessor {
+public interface TextureAtlasSpriteExtended {
 
     int getIndex();
     void setIndex(int index);

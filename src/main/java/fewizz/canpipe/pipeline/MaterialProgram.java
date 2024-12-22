@@ -19,7 +19,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
-import fewizz.canpipe.mixininterface.TextureAtlasAccessor;
+import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.Minecraft;
@@ -398,7 +398,7 @@ public class MaterialProgram extends ProgramBase {
             for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
                 var atlas = mc.getModelManager().getAtlas(atlasLoc);
                 if (atlas.getId() == id) {
-                    super.bindSampler("canpipe_spritesExtents", ((TextureAtlasAccessor) atlas).getSpriteData());
+                    super.bindSampler("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).getSpriteData());
                 }
             }
         }

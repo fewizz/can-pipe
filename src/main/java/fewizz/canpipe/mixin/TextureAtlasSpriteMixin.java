@@ -3,11 +3,11 @@ package fewizz.canpipe.mixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-import fewizz.canpipe.mixininterface.TextureAtlasSpriteAccessor;
+import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 @Mixin(TextureAtlasSprite.class)
-public class TextureAtlasSpriteMixin implements TextureAtlasSpriteAccessor {
+public class TextureAtlasSpriteMixin implements TextureAtlasSpriteExtended {
 
     @Unique
     int spriteIndex = -1;

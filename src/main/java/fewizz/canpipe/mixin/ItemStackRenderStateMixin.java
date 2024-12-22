@@ -3,12 +3,12 @@ package fewizz.canpipe.mixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-import fewizz.canpipe.mixininterface.ItemStackRenderStateAccessor;
+import fewizz.canpipe.mixininterface.ItemStackRenderStateExtended;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.item.Item;
 
 @Mixin(ItemStackRenderState.class)
-public class ItemStackRenderStateMixin implements ItemStackRenderStateAccessor {
+public class ItemStackRenderStateMixin implements ItemStackRenderStateExtended {
 
     @Unique
     Item item;

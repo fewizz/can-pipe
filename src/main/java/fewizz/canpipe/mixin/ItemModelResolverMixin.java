@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import fewizz.canpipe.mixininterface.ItemStackRenderStateAccessor;
+import fewizz.canpipe.mixininterface.ItemStackRenderStateExtended;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.entity.LivingEntity;
@@ -31,7 +31,7 @@ public class ItemModelResolverMixin {
         int i,
         CallbackInfo ci
     ) {
-        ((ItemStackRenderStateAccessor) itemStackRenderState).setItem(itemStack.getItem());
+        ((ItemStackRenderStateExtended) itemStackRenderState).setItem(itemStack.getItem());
     }
 
 }
