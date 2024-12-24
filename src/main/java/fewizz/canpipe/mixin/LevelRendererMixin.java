@@ -207,6 +207,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
         MultiBufferSource.BufferSource crumblingBufferSource = this.renderBuffers.crumblingBufferSource();
 
+        GL33C.glEnable(GL33C.GL_POLYGON_OFFSET_FILL);
+        GL33C.glPolygonOffset(p.skyShadows.offsetSlopeFactor(), p.skyShadows.offsetBiasUnits());
+
         for (int cascade = 0; cascade < 4; ++cascade) {
             for (var shadowProgram : p.shadowPrograms.values()) {
                 shadowProgram.FRXU_CASCADE.set(cascade);
@@ -218,7 +221,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 cascadeRenderDistance = renderDistance + 16;
             }
             else {
-                cascadeRenderDistance = p.skyShadows.cascadeRadius().get(cascade-1) / 2.0F;
+                cascadeRenderDistance = p.skyShadows.cascadeRadii().get(cascade-1) / 2.0F;
             }
 
             gra.canpipe_setDepthFar(Optional.of(cascadeRenderDistance));
@@ -286,6 +289,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.checkPoseStack(poseStack);
             this.visibleEntities.clear();
         }
+
+        GL33C.glDisable(GL33C.GL_POLYGON_OFFSET_FILL);
 
         modelViewMatrixStack.popMatrix();
         mc.mainRenderTarget.bindWrite(true);

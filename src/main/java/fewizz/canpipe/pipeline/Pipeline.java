@@ -46,7 +46,9 @@ public class Pipeline implements AutoCloseable {
         String framebufferName,
         ResourceLocation vertexShaderLocation,
         ResourceLocation fragmentShaderLocation,
-        List<Integer> cascadeRadius
+        List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
+        float offsetSlopeFactor,
+        float offsetBiasUnits
     ) {}
 
     public static record Sky(
@@ -144,7 +146,9 @@ public class Pipeline implements AutoCloseable {
                 skyShadowsO.get(String.class, "framebuffer"),
                 ResourceLocation.parse(skyShadowsO.get(String.class, "vertexSource")),
                 ResourceLocation.parse(skyShadowsO.get(String.class, "fragmentSource")),
-                JanksonUtils.listOfIntegers(skyShadowsO, "cascadeRadius")
+                JanksonUtils.listOfIntegers(skyShadowsO, "cascadeRadius"),
+                skyShadowsO.getFloat("offsetSlopeFactor", 1.1F),
+                skyShadowsO.getFloat("offsetBiasUnits", 4.0F)
             );
         }
         else {
