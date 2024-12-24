@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.NotImplementedException;
@@ -119,6 +120,15 @@ public class Pipeline implements AutoCloseable {
         }
         pipelineJson.remove("options");
 
+        Function<String, Option.Element> optionElementByName = (String name) -> {
+            for (var o : options.values()) {
+                if (o.elements.containsKey(name)) {
+                    return o.elements.get(name);
+                }
+            }
+            return null;
+        };
+
         // Skipping dynamic options for now... (choosing defaults)
         class SkipDynamicOptions { static JsonElement doSkip(JsonElement e) {
             if (e instanceof JsonObject vo) {
@@ -138,29 +148,24 @@ public class Pipeline implements AutoCloseable {
         }}
         SkipDynamicOptions.doSkip(pipelineJson);
 
-        class ApplyOptions { static JsonElement doApply(JsonElement e, Map<ResourceLocation, Option> options) {
+        class ApplyOptions { static JsonElement doApply(JsonElement e, Function<String, Option.Element> optionElementByName) {
             if (e instanceof JsonObject vo) {
                 if (vo.size() == 1 && vo.containsKey("option")) {
                     String optionName = vo.get(String.class, "option");
-                    for (var o : options.values()) {
-                        if (o.elements.containsKey(optionName)) {
-                            return o.elements.get(optionName).defaultValue;
-                        }
-                    }
-                    throw new RuntimeException();
+                    return optionElementByName.apply(optionName).defaultValue;
                 }
                 for (var kv : vo.entrySet()) {
-                    kv.setValue(doApply(kv.getValue(), options));
+                    kv.setValue(doApply(kv.getValue(), optionElementByName));
                 }
             }
             if (e instanceof JsonArray va) {
                 for (int i = 0; i < va.size(); ++i) {
-                    va.set(i, doApply(va.get(i), options));
+                    va.set(i, doApply(va.get(i), optionElementByName));
                 }
             }
             return e;
         }}
-        ApplyOptions.doApply(pipelineJson, this.options);
+        ApplyOptions.doApply(pipelineJson, optionElementByName);
 
         System.out.println(pipelineJson.toJson(true, true));
 
@@ -335,6 +340,13 @@ public class Pipeline implements AutoCloseable {
                 return;
             }
             for (var passO : JanksonUtils.listOfObjects(passesJson, "passes")) {
+                String toggleConfig = passO.get(String.class, "toggleConfig");
+
+                // pass is disabled, skipping
+                if (toggleConfig != null && !optionElementByName.apply(toggleConfig).defaultValue.asBoolean(true)) {
+                    continue;
+                }
+
                 String passName = passO.get(String.class, "name");
                 Framebuffer framebuffer = this.framebuffers.get(passO.get(String.class, "framebuffer"));
                 String programName = passO.get(String.class, "program");
