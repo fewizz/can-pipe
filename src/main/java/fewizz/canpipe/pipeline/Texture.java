@@ -10,7 +10,7 @@ import org.lwjgl.opengl.KHRDebug;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import fewizz.canpipe.mixin.GLStateManagerAccessor;
+import fewizz.canpipe.mixin.GlStateManagerAccessor;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -110,8 +110,8 @@ public class Texture extends AbstractTexture {
     */
     public static void bind(int id, int target) {
         RenderSystem.assertOnRenderThreadOrInit();
-        var TEXTURES = GLStateManagerAccessor.canpipe_getTEXTURES();
-        int active  = GLStateManagerAccessor.canpipe_getActiveTexture();
+        var TEXTURES = GlStateManagerAccessor.canpipe_getTEXTURES();
+        int active  = GlStateManagerAccessor.canpipe_getActiveTexture();
         if (id != TEXTURES[active].binding) {
             TEXTURES[active].binding = id;
             GL33C.glBindTexture(target, id);

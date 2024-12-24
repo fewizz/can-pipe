@@ -7,7 +7,7 @@ uniform float frx_worldDay;  // (aka world.getDayTime() / 24000) % 2147483647L (
 uniform float frx_worldTime;  // aka (world.getDayTime() % 24000.0) / 24000.0
 const float frx_moonSize = 1.0;  // TODO
 
-const float frx_skyAngleRadians = 0.0;  // TODO
+uniform float frx_skyAngleRadians;
 uniform vec3 frx_skyLightVector;
 const vec3 frx_skyLightColor = vec3(1.0);  // TODO
 const float frx_skyLightIlluminance = 1.0;  // TOOD

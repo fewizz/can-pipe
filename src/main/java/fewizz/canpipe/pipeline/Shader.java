@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.shaders.CompiledShader;
 
@@ -39,11 +42,19 @@ public class Shader extends CompiledShader {
         int version,
         Map<ResourceLocation, Option> options,
         String source,
-        Map<ResourceLocation, String> cache
+        Map<ResourceLocation, String> cache,
+        @Nullable Framebuffer shadowFramebuffer
     ) throws CompilationException, IOException {
         String preprocessedSource =
             "#version " + version + "\n\n" +
             "#define " + type.name() + "_SHADER\n\n" +
+            (
+                shadowFramebuffer != null ?
+                "#define SHADOW_MAP_PRESENT\n"+
+                "#define SHADOW_MAP_SIZE "+shadowFramebuffer.depthAttachment.texture().extent.x + "\n\n"
+                :
+                ""
+            ) +
             // some shaderpacks define them, some not
             (type == Type.VERTEX && !CONTAINS_VERTEX_IN.test(source) ? "in vec3 in_vertex;\n\n" : "") +
             (type == Type.VERTEX && !CONTAINS_UV_IN.test(source) ? "in vec2 in_uv;\n\n" : "") +

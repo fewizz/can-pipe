@@ -317,7 +317,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         }
         // Don't create transparency post chain, will be handled by pipeline
 
-        this.targets.main = frameGraphBuilder.importExternal("main", p.solidTerrainFramebuffer);
+        this.targets.main = frameGraphBuilder.importExternal("main", p.solidFramebuffer);
         this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.translucentTerrainFramebuffer);
         this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.translucentEntityFramebuffer);
         this.targets.particles = frameGraphBuilder.importExternal("particles", p.translucentParticlesFramebuffer);

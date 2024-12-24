@@ -1,4 +1,4 @@
-const vec3 frx_cameraView = vec3(0.0);  // TODO define
+uniform vec3 frx_cameraView;  // TODO define
 const vec3 frx_entityView = vec3(0.0);  // TODO define
 uniform vec3 frx_cameraPos;
 uniform vec3 frx_lastCameraPos;
@@ -32,10 +32,13 @@ const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO
 const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO
 
 uniform mat4 frx_shadowViewMatrix;
+#define frx_inverseShadowViewMatrix inverse(frx_shadowViewMatrix)
+
 uniform mat4 canpipe_shadowProjectionMatrix_0;
 uniform mat4 canpipe_shadowProjectionMatrix_1;
 uniform mat4 canpipe_shadowProjectionMatrix_2;
 uniform mat4 canpipe_shadowProjectionMatrix_3;
+
 uniform vec4 canpipe_shadowCenter_0;
 uniform vec4 canpipe_shadowCenter_1;
 uniform vec4 canpipe_shadowCenter_2;

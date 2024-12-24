@@ -60,7 +60,7 @@ public class Pipeline implements AutoCloseable {
     @Nullable public final Sky sky;
 
     public final Framebuffer defaultFramebuffer;
-    public final Framebuffer solidTerrainFramebuffer;
+    public final Framebuffer solidFramebuffer;
     public final Framebuffer translucentTerrainFramebuffer;
     public final Framebuffer translucentEntityFramebuffer;
     public final Framebuffer translucentParticlesFramebuffer;
@@ -117,6 +117,7 @@ public class Pipeline implements AutoCloseable {
                 this.options.put(includeToken, new Option(includeToken, elements));
             }
         }
+        pipelineJson.remove("options");
 
         // Skipping dynamic options for now... (choosing defaults)
         class SkipDynamicOptions { static JsonElement doSkip(JsonElement e) {
@@ -136,6 +137,32 @@ public class Pipeline implements AutoCloseable {
             return e;
         }}
         SkipDynamicOptions.doSkip(pipelineJson);
+
+        class ApplyOptions { static JsonElement doApply(JsonElement e, Map<ResourceLocation, Option> options) {
+            if (e instanceof JsonObject vo) {
+                if (vo.size() == 1 && vo.containsKey("option")) {
+                    String optionName = vo.get(String.class, "option");
+                    for (var o : options.values()) {
+                        if (o.elements.containsKey(optionName)) {
+                            return o.elements.get(optionName).defaultValue;
+                        }
+                    }
+                    throw new RuntimeException();
+                }
+                for (var kv : vo.entrySet()) {
+                    kv.setValue(doApply(kv.getValue(), options));
+                }
+            }
+            if (e instanceof JsonArray va) {
+                for (int i = 0; i < va.size(); ++i) {
+                    va.set(i, doApply(va.get(i), options));
+                }
+            }
+            return e;
+        }}
+        ApplyOptions.doApply(pipelineJson, this.options);
+
+        System.out.println(pipelineJson.toJson(true, true));
 
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
@@ -256,11 +283,12 @@ public class Pipeline implements AutoCloseable {
             this.framebuffers.put(name, framebuffer);
         }
 
+        Framebuffer shadowFramebuffer = skyShadows != null ? this.framebuffers.get(skyShadows.framebufferName) : null;
+
         JsonObject targetsO = pipelineJson.getObject("drawTargets");
 
-        // All framebuffers are created, so we can assign target's framebuffers
         this.defaultFramebuffer = this.framebuffers.get(pipelineJson.get(String.class, "defaultFramebuffer"));
-        this.solidTerrainFramebuffer = this.framebuffers.get(targetsO.get(String.class, "solidTerrain"));
+        this.solidFramebuffer = this.framebuffers.get(targetsO.get(String.class, "solidTerrain"));
         this.translucentTerrainFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentTerrain"));
         this.translucentEntityFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentEntity"));
         this.translucentParticlesFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentParticles"));
@@ -287,7 +315,7 @@ public class Pipeline implements AutoCloseable {
                         source = IOUtils.toString(mc.getResourceManager().openAsReader(location));
                         shaderSourceCache.put(location, source);
                     }
-                    shader = Shader.compile(location, type, glslVersion, options, source, shaderSourceCache);
+                    shader = Shader.compile(location, type, glslVersion, options, source, shaderSourceCache, shadowFramebuffer);
                     shaders.put(p, shader);
                 }
                 return shader;
@@ -392,7 +420,6 @@ public class Pipeline implements AutoCloseable {
             CoreShaders.RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL,
             CoreShaders.PARTICLE
         }) {
-            Framebuffer shadowFramebuffer = skyShadows != null ? this.framebuffers.get(skyShadows.framebufferName) : null;
             this.materialPrograms.put(
                 shaderProgram,
                 MaterialProgram.create(

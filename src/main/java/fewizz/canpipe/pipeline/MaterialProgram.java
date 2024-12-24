@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -98,8 +99,6 @@ public class MaterialProgram extends ProgramBase {
 
         String typeName = shaderProgram.configId().getPath().replace("core/", "");
 
-        String shadowMapDefinitions = null;
-
         if (shadowFramebuffer != null && shadowFramebuffer.depthAttachment != null) {
             var depthArray = shadowFramebuffer.depthAttachment.texture();
 
@@ -111,10 +110,6 @@ public class MaterialProgram extends ProgramBase {
                 textures.stream(),
                 List.of(depthArray, depthArray).stream()
             ).toList();
-
-            shadowMapDefinitions =
-                "#define SHADOW_MAP_PRESENT\n"+
-                "#define SHADOW_MAP_SIZE "+depthArray.extent.x;
         }
 
         var format = shaderProgram.vertexFormat();
@@ -168,7 +163,6 @@ public class MaterialProgram extends ProgramBase {
 
         vertexSrc =
             "#define _"+typeName.toUpperCase()+"\n\n"+
-            (shadowMapDefinitions != null ? shadowMapDefinitions + "\n\n" : "")+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
@@ -281,7 +275,6 @@ public class MaterialProgram extends ProgramBase {
             "#extension GL_ARB_conservative_depth: enable\n\n"+
             "#define _"+typeName.toUpperCase()+"\n\n"+
             (enablePBR ? "#define PBR_ENABLED\n\n" : "") +
-            (shadowMapDefinitions != null ? shadowMapDefinitions + "\n\n" : "") +
             """
 
             layout (depth_unchanged) out float gl_FragDepth;
@@ -374,8 +367,8 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
-        var vertexShader = Shader.compile(vertexShaderLocation, Type.VERTEX, glslVersion, options, vertexSrc, shaderSourceCache);
-        var fragmentShader = Shader.compile(fragmentShaderLocation, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache);
+        var vertexShader = Shader.compile(vertexShaderLocation, Type.VERTEX, glslVersion, options, vertexSrc, shaderSourceCache, shadowFramebuffer);
+        var fragmentShader = Shader.compile(fragmentShaderLocation, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache, shadowFramebuffer);
 
         return new MaterialProgram(
             pipelineLocation.withSuffix("-"+typeName),

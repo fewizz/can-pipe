@@ -23,16 +23,14 @@ public class RenderStateShardMixin {
         ordinal = 0
     )
     private static Runnable replaceSetup(Runnable setup, @Local String name) {
-        Set<String> solidTargets = Set.of(
+        if (Set.of(
             "solid", "cutout_mipped", "cutout",
             "entity_solid", "entity_solid_z_offset_forward",
             "entity_cutout", "entity_cutout_no_cull", "entity_cutout_no_cull_z_offset",
             "entity_smooth_cutout",
             "entity_translucent",
             "opaque_particle"
-        );
-
-        if (solidTargets.contains(name)) {
+        ).contains(name)) {
             return () -> {
                 setup.run();
                 Pipeline p = Pipelines.getCurrent();
@@ -41,11 +39,30 @@ public class RenderStateShardMixin {
                     (
                         ((LevelRendererExtended) mc.levelRenderer).getIsRenderingShadow() ?
                         p.framebuffers.get(p.skyShadows.framebufferName()) :
-                        p.solidTerrainFramebuffer
+                        p.solidFramebuffer
                     ).bindWrite(false);
                 }
             };
         };
+
+        /*if (Set.of(
+            "translucent", "translucent_moving_block", "armor_translucent",
+            "item_entity_translucent_cull"
+        ).contains(name)) {
+            return () -> {
+                setup.run();
+                Pipeline p = Pipelines.getCurrent();
+                if (p != null) {
+                    var mc = Minecraft.getInstance();
+                    (
+                        ((LevelRendererExtended) mc.levelRenderer).getIsRenderingShadow() ?
+                        p.framebuffers.get(p.skyShadows.framebufferName()) :
+                        p.translucentParticlesFramebuffer
+                    ).bindWrite(false);
+                }
+            };
+        };*/
+
         return setup;
     }
 

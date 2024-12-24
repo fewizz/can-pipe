@@ -92,7 +92,7 @@ public class Pass extends PassBase {
 
         RenderSystem.viewport(0, 0, (int) w, (int) h);
 
-        program.setDefaultUniforms(view, projection, w, h, this.lod);
+        program.setDefaultUniforms(view, projection, w, h, this.lod, this.layer);
         for (int i = 0; i < Math.min(program.samplers.size(), this.textures.size()); ++i) {
             String sampler = program.samplers.get(i);
             AbstractTexture texture = this.textures.get(i);

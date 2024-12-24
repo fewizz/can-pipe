@@ -26,6 +26,7 @@ import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 
 public class ProgramBase extends CompiledShaderProgram {
 
@@ -34,6 +35,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("canpipe_light1Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         // view.glsl
         new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_cameraView", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_lastCameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_modelToWorld", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("canpipe_originType", "int", 1, List.of(0.0F)),
@@ -66,7 +68,8 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_renderSeconds", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_worldTime", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_skyLightVector", "float", 3, List.of(0.0F, 1.0F, 0.0F))
+        new ShaderProgramConfig.Uniform("frx_skyLightVector", "float", 3, List.of(0.0F, 1.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_skyAngleRadians", "float", 1, List.of(0.0F))
     );
 
     final ResourceLocation location;
@@ -75,6 +78,7 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_MODEL_TO_WORLD,
         FRX_RENDER_FRAMES,
         FRX_CAMERA_POS,
+        FRX_CAMERA_VIEW,
         FRX_LAST_CAMERA_POS,
         CANPIPE_ORIGIN_TYPE,
         FRX_LAST_VIEW_MATRIX,
@@ -94,7 +98,8 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_RENDER_SECONDS,
         FRX_WORLD_DAY,
         FRX_WORLD_TIME,
-        FRX_SKY_LIGHT_VECTOR;
+        FRX_SKY_LIGHT_VECTOR,
+        FRX_SKY_ANGLE_RADIANS;
 
     ProgramBase(
         ResourceLocation location,
@@ -116,6 +121,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_MODEL_TO_WORLD = getUniform("frx_modelToWorld");
         this.FRX_RENDER_FRAMES = getUniform("canpipe_renderFrames");
         this.FRX_CAMERA_POS = getUniform("frx_cameraPos");
+        this.FRX_CAMERA_VIEW = getUniform("frx_cameraView");
         this.FRX_LAST_CAMERA_POS = getUniform("frx_lastCameraPos");
         this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");
         this.FRX_LAST_VIEW_MATRIX = getUniform("frx_lastViewMatrix");
@@ -136,6 +142,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_WORLD_DAY = getUniform("frx_worldDay");
         this.FRX_WORLD_TIME = getUniform("frx_worldTime");
         this.FRX_SKY_LIGHT_VECTOR = getUniform("frx_skyLightVector");
+        this.FRX_SKY_ANGLE_RADIANS = getUniform("frx_skyAngleRadians");
 
         KHRDebug.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
     }
@@ -168,6 +175,10 @@ public class ProgramBase extends CompiledShaderProgram {
 
         if (this.FRX_CAMERA_POS != null) {
             this.FRX_CAMERA_POS.set(mc.gameRenderer.getMainCamera().getPosition().toVector3f());
+        }
+        if (this.FRX_CAMERA_VIEW != null) {
+            var cam = mc.gameRenderer.getMainCamera();
+            this.FRX_CAMERA_VIEW.set(Vec3.directionFromRotation(cam.getXRot(), cam.getYRot()).toVector3f());
         }
         if (this.FRX_LAST_CAMERA_POS != null) {
             this.FRX_LAST_CAMERA_POS.set(gra.canpipe_getLastCameraPos());
@@ -235,6 +246,9 @@ public class ProgramBase extends CompiledShaderProgram {
         }
         if (this.FRX_SKY_LIGHT_VECTOR != null) {
             this.FRX_SKY_LIGHT_VECTOR.set(p.getSunDir(mc.level, new Vector3f()));
+        }
+        if (this.FRX_SKY_ANGLE_RADIANS != null) {
+            this.FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(0.0F));
         }
     }
 
