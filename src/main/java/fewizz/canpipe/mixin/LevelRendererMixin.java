@@ -76,7 +76,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     private RenderBuffers renderBuffers;
 
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_visibleSections = new ObjectArrayList<>(10000);
-    private Vector2d canpipe_prevCamRot = new Vector2d(Double.MIN_VALUE);
     public Matrix4f canpipe_shadowViewMatrix = new Matrix4f();
     public Matrix4f[] canpipe_shadowProjectionMatrices = new Matrix4f[] { new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f() };
     public Vector4f[] canpipe_shadowCenters = new Vector4f[] { new Vector4f(), new Vector4f(), new Vector4f(), new Vector4f() };
@@ -128,20 +127,15 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow
     abstract void applyFrustum(Frustum frustum);
 
+    @Shadow
+    abstract void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f);
+
     void canpipe_swap() {
-        var tmpVisibleSections = visibleSections;
-        visibleSections = canpipe_visibleSections;
-        canpipe_visibleSections = tmpVisibleSections;
+        var tmpVisibleSections = this.visibleSections;
+        this.visibleSections = this.canpipe_visibleSections;
+        this.canpipe_visibleSections = tmpVisibleSections;
 
-        var tmpPrevCameraRotX = prevCamRotX;
-        prevCamRotX = canpipe_prevCamRot.x;
-        canpipe_prevCamRot.x = tmpPrevCameraRotX;
-
-        var tmpPrevCameraRotY = prevCamRotY;
-        prevCamRotY = canpipe_prevCamRot.y;
-        canpipe_prevCamRot.y = tmpPrevCameraRotY;
-
-        canpipe_isRenderingShadow = !canpipe_isRenderingShadow;
+        this.canpipe_isRenderingShadow = !this.canpipe_isRenderingShadow;
     }
 
     @Inject(
@@ -176,7 +170,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Vector3f fromSunDir = toSunDir.negate(new Vector3f());
 
         var camPos = camera.getPosition();
-        var sunPosOffset = new Vec3(toSunDir.mul(renderDistance, new Vector3f()));
+        var sunPosOffset = new Vec3(toSunDir.mul(renderDistance + 32, new Vector3f()));
         var sunPos = camPos.add(sunPosOffset);
 
         canpipe_shadowViewMatrix.setLookAt(
@@ -197,17 +191,21 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         Framebuffer shadowFramebuffer = p.framebuffers.get(p.skyShadows.framebufferName());
 
-        FrameGraphBuilder frameGraphBuilder = new FrameGraphBuilder();
+        /*FrameGraphBuilder frameGraphBuilder = new FrameGraphBuilder();
         this.targets.main = frameGraphBuilder.importExternal("main", shadowFramebuffer);
         this.targets.translucent = frameGraphBuilder.importExternal("translucent", shadowFramebuffer);
         this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", shadowFramebuffer);
         this.targets.particles = frameGraphBuilder.importExternal("particles", shadowFramebuffer);
         this.targets.weather = frameGraphBuilder.importExternal("weather", shadowFramebuffer);
-        this.targets.clouds = frameGraphBuilder.importExternal("clouds", shadowFramebuffer);
+        this.targets.clouds = frameGraphBuilder.importExternal("clouds", shadowFramebuffer);*/
 
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
         modelViewMatrixStack.pushMatrix();
         modelViewMatrixStack.mul(modelViewMatrix);
+
+        PoseStack poseStack = new PoseStack();
+        MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
+        MultiBufferSource.BufferSource crumblingBufferSource = this.renderBuffers.crumblingBufferSource();
 
         for (int cascade = 0; cascade < 4; ++cascade) {
             for (var shadowProgram : p.shadowPrograms.values()) {
@@ -217,7 +215,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             float cascadeRenderDistance;
 
             if (cascade == 0) {
-                cascadeRenderDistance = renderDistance;
+                cascadeRenderDistance = renderDistance + 16;
             }
             else {
                 cascadeRenderDistance = p.skyShadows.cascadeRadius().get(cascade-1) / 2.0F;
@@ -259,25 +257,32 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             );
             shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
 
-            // this.setupRender(camera, shadowFrustum, false, false);
-            this.applyFrustum(shadowFrustum); // TODO
-            this.compileSections(camera);
+            if (cascade == 0) {
+                this.setupRender(new Camera() {{
+                    setPosition(camPos);
+                    setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
+                }}, shadowFrustum, false, false);
+                this.compileSections(camera);
+            }
+            else {
+                this.applyFrustum(shadowFrustum);
+            }
 
             shadowFramebuffer.bindWrite(true);
 
             GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().getId(), 0, cascade);
 
-            RenderSystem.disableCull();
+            RenderSystem.disableCull();  // Light can pass through chunk edge. Not ideal solution
             this.renderSectionLayer(RenderType.solid(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
             this.renderSectionLayer(RenderType.cutoutMipped(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
             this.renderSectionLayer(RenderType.cutout(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
             RenderSystem.enableCull();
 
-            PoseStack poseStack = new PoseStack();
-            MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
             this.collectVisibleEntities(shadowCamera, shadowFrustum, this.visibleEntities);
             this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
+            this.renderBlockEntities(poseStack, bufferSource, crumblingBufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
             bufferSource.endBatch();
+            crumblingBufferSource.endBatch();
             this.checkPoseStack(poseStack);
             this.visibleEntities.clear();
         }
@@ -362,7 +367,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return canpipe_isRenderingShadow ? false : original;
     }
 
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = "setupRender",
         at = @At(
             value = "INVOKE",
@@ -370,23 +375,24 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         )
     )
     boolean alwaysApplyFrustumIfShadow(boolean consumeFrustumUpdate) {
-        return canpipe_isRenderingShadow ? consumeFrustumUpdate : true;
-    }
+        return canpipe_isRenderingShadow ? true : consumeFrustumUpdate;
+    }*/
 
     @WrapOperation(
-        method = "setupRender",
+        method = "offsetFrustum",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;offsetFrustum("+
-                "Lnet/minecraft/client/renderer/culling/Frustum;"+
+            target = "Lnet/minecraft/client/renderer/culling/Frustum;offsetToFullyIncludeCameraCube("+
+                "I"+
             ")Lnet/minecraft/client/renderer/culling/Frustum;"
         )
     )
-    Frustum dontOffsetShadowFrustum(Frustum frustum, Operation<Frustum> original) {
-        if (canpipe_isRenderingShadow) {
+    private static Frustum dontOffsetShadowFrustum(Frustum frustum, int size, Operation<Frustum> original) {
+        var mc = Minecraft.getInstance();
+        if (((LevelRendererExtended)mc.levelRenderer).getIsRenderingShadow()) {
             return frustum;
         }
-        return original.call(frustum);
+        return original.call(frustum, size);
     }
 
 }
