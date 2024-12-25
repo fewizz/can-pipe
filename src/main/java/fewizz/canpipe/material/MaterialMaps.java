@@ -38,6 +38,9 @@ public class MaterialMaps implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<ResourceLocation, Resource> materialMapsJson) -> {
+                FLUIDS.clear();
+                BLOCKS.clear();
+
                 for (var e : materialMapsJson.entrySet()) {
                     ResourceLocation location = e.getKey();
                     String path = location.getPath();

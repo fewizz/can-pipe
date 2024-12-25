@@ -72,20 +72,9 @@ const int frx_cameraInWater = 0;  // TODO
 const int frx_cameraInLava = 0;  // TODO
 const int frx_cameraInSnow = 0;  // TODO
 
-int canpipe_renderTarget() { // TODO redo, temp. solution
-    if (!(frx_isGui && !frx_isHand)) {
-        #if defined _RENDERTYPE_TRANSLUCENT
-            return 1;  // translucent
-        #elif defined _RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL
-            return 2;  // entity
-        #elif defined _PARTICLES
-            return 3;  // particle
-        #endif
-    }
-    return 0;  // solid
-}
-
-#define frx_renderTargetSolid       (canpipe_renderTarget() == 0)
-#define frx_renderTargetTranslucent (canpipe_renderTarget() == 1)
-#define frx_renderTargetEntity      (canpipe_renderTarget() == 2)
-#define frx_renderTargetParticles   (canpipe_renderTarget() == 3)
+#if defined CANPIPE_MATERIAL_SHADER
+    #define frx_renderTargetSolid       (canpipe_renderTarget == 0)
+    #define frx_renderTargetTranslucent (canpipe_renderTarget == 1)
+    #define frx_renderTargetEntity      (canpipe_renderTarget == 2)
+    #define frx_renderTargetParticles   (canpipe_renderTarget == 3)
+#endif

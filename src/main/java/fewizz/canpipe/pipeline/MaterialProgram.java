@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -13,7 +12,6 @@ import org.jetbrains.annotations.Nullable;
 import com.google.common.collect.Streams;
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.shaders.Uniform;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
@@ -25,7 +23,6 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
-import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.resources.model.ModelManager;
@@ -35,10 +32,14 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public class MaterialProgram extends ProgramBase {
 
     static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
-        new ShaderProgramConfig.Uniform("frxu_cascade", "int", 1, List.of(0.0F))
+        new ShaderProgramConfig.Uniform("frxu_cascade", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_renderTarget", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_alphaCutout", "float", 1, List.of(0.0F))
     );
 
     public final Uniform FRXU_CASCADE;
+    public final Uniform CANPIPE_RENDER_TARGET;
+    public final Uniform CANPIPE_ALPHA_CUTOUT;
 
     MaterialProgram(
         ResourceLocation location,
@@ -65,6 +66,8 @@ public class MaterialProgram extends ProgramBase {
         }
 
         this.FRXU_CASCADE = getUniform("frxu_cascade");
+        this.CANPIPE_RENDER_TARGET = getUniform("canpipe_renderTarget");
+        this.CANPIPE_ALPHA_CUTOUT = getUniform("canpipe_alphaCutout");
 
         for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
             String sampler = samplers.get(i);
@@ -80,11 +83,11 @@ public class MaterialProgram extends ProgramBase {
     }
 
     public static MaterialProgram create(
-        ShaderProgram shaderProgram,
+        VertexFormat format,
         int glslVersion,
         boolean enablePBR,
         @Nullable Framebuffer shadowFramebuffer,
-        ResourceLocation pipelineLocation,
+        ResourceLocation location,
         ResourceLocation vertexShaderLocation,
         ResourceLocation fragmentShaderLocation,
         Map<ResourceLocation, Option> options,
@@ -97,8 +100,6 @@ public class MaterialProgram extends ProgramBase {
         String vertexSrc = IOUtils.toString(manager.getResourceOrThrow(vertexShaderLocation).openAsReader());
         String fragmentSrc = IOUtils.toString(manager.getResourceOrThrow(fragmentShaderLocation).openAsReader());
 
-        String typeName = shaderProgram.configId().getPath().replace("core/", "");
-
         if (shadowFramebuffer != null && shadowFramebuffer.depthAttachment != null) {
             var depthArray = shadowFramebuffer.depthAttachment.texture();
 
@@ -110,17 +111,6 @@ public class MaterialProgram extends ProgramBase {
                 textures.stream(),
                 List.of(depthArray, depthArray).stream()
             ).toList();
-        }
-
-        var format = shaderProgram.vertexFormat();
-        if (format == DefaultVertexFormat.BLOCK) {
-            format = CanPipe.VertexFormats.BLOCK;
-        }
-        if (format == DefaultVertexFormat.NEW_ENTITY) {
-            format = CanPipe.VertexFormats.NEW_ENTITY;
-        }
-        if (format == DefaultVertexFormat.PARTICLE) {
-            format = CanPipe.VertexFormats.PARTICLE;
         }
 
         String materialsVertexSrc = "";
@@ -162,7 +152,7 @@ public class MaterialProgram extends ProgramBase {
             """;
 
         vertexSrc =
-            "#define _"+typeName.toUpperCase()+"\n\n"+
+            "#define CANPIPE_MATERIAL_SHADER\n\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
@@ -273,8 +263,8 @@ public class MaterialProgram extends ProgramBase {
 
         fragmentSrc =
             "#extension GL_ARB_conservative_depth: enable\n\n"+
-            "#define _"+typeName.toUpperCase()+"\n\n"+
-            (enablePBR ? "#define PBR_ENABLED\n\n" : "") +
+            "#define CANPIPE_MATERIAL_SHADER\n"+
+            (enablePBR ? "#define PBR_ENABLED\n" : "") +
             """
 
             layout (depth_unchanged) out float gl_FragDepth;
@@ -312,12 +302,15 @@ public class MaterialProgram extends ProgramBase {
                 float frx_fragAo = 1.0;
             #endif // PBR
 
+            uniform int canpipe_renderTarget;
+            uniform float canpipe_alphaCutout;
+
             uniform sampler2D frxs_baseColor;  // aka Sampler0
             uniform sampler2D frxs_lightmap;  // aka Sampler2
 
             #ifdef SHADOW_MAP_PRESENT
-                uniform sampler2DArrayShadow frxs_shadowMap;  // TODO define
-                uniform sampler2DArray frxs_shadowMapTexture;  // TODO define
+                uniform sampler2DArrayShadow frxs_shadowMap;
+                uniform sampler2DArray frxs_shadowMapTexture;
             #endif
 
             #include frex:shaders/api/material.glsl
@@ -342,17 +335,9 @@ public class MaterialProgram extends ProgramBase {
 
                 frx_fragColor = frx_sampleColor * frx_vertexColor;
 
-                #if defined _RENDERTYPE_CUTOUT_MIPPED
-                if (frx_fragColor.a < 0.5) {
+                if (frx_fragColor.a < canpipe_alphaCutout) {
                     discard;
                 }
-                #endif
-
-                #if defined _RENDERTYPE_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL || defined _RENDERTYPE_ENTITY_CUTOUT_NO_CULL_Z_OFFSET || defined _PARTICLE || defined _RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL
-                if (frx_fragColor.a < 0.1) {
-                    discard;
-                }
-                #endif
 
                 """+
             "    switch (canpipe_materialIndex) {\n" +
@@ -371,7 +356,7 @@ public class MaterialProgram extends ProgramBase {
         var fragmentShader = Shader.compile(fragmentShaderLocation, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache, shadowFramebuffer);
 
         return new MaterialProgram(
-            pipelineLocation.withSuffix("-"+typeName),
+            location.withSuffix("-"),
             format,
             vertexShader,
             fragmentShader,

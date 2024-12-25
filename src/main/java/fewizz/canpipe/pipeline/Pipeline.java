@@ -20,22 +20,24 @@ import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL40C;
 
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.annotation.Nullable;
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import it.unimi.dsi.fastutil.ints.IntIntImmutablePair;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.CoreShaders;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
-import net.minecraft.client.renderer.ShaderProgram;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -63,8 +65,8 @@ public class Pipeline implements AutoCloseable {
     public final Framebuffer defaultFramebuffer;
     public final Framebuffer solidFramebuffer;
     public final Framebuffer translucentTerrainFramebuffer;
-    public final Framebuffer translucentEntityFramebuffer;
-    public final Framebuffer translucentParticlesFramebuffer;
+    public final Framebuffer translucentItemEntityFramebuffer;
+    public final Framebuffer particlesFramebuffer;
     public final Framebuffer weatherFramebuffer;
     public final Framebuffer cloudsFramebuffer;
 
@@ -73,8 +75,8 @@ public class Pipeline implements AutoCloseable {
     final Map<String, Texture> textures = new HashMap<>();
     public final Map<String, Framebuffer> framebuffers = new HashMap<>();
     final Map<ResourceLocation, Option> options = new HashMap<>();
-    public final Map<ShaderProgram, MaterialProgram> materialPrograms = new HashMap<>();
-    public final Map<ShaderProgram, MaterialProgram> shadowPrograms = new HashMap<>();
+    public final Map<VertexFormat, MaterialProgram> materialPrograms = new HashMap<>();
+    public final Map<VertexFormat, MaterialProgram> shadowPrograms = new HashMap<>();
 
     private final List<PassBase> onInit = new ArrayList<>();
     private final List<PassBase> beforeWorldRenderPasses = new ArrayList<>();
@@ -200,7 +202,8 @@ public class Pipeline implements AutoCloseable {
         // "images"
         class GLConstantCode {
             static int fromName(String name) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
-                return GL33C.class.getField("GL_"+name).getInt(null);
+                // Not 3.3, because GL_TEXTURE_CUBE_MAP_ARRAY is in 4.0
+                return GL40C.class.getField("GL_"+name).getInt(null);
             }
         }
 
@@ -250,6 +253,7 @@ public class Pipeline implements AutoCloseable {
                 String textureName = colorAttachementO.get(String.class, "image");
                 int lod = colorAttachementO.getInt("lod", 0);
                 int layer = colorAttachementO.getInt("layer", 0);
+                int face = colorAttachementO.getInt("face", -1);
 
                 Vector4f clearColor = new Vector4f(0.0F);
                 JsonElement clearColorRaw = colorAttachementO.get("clearColor");
@@ -267,7 +271,7 @@ public class Pipeline implements AutoCloseable {
                 }
 
                 colorAttachements.add(new Framebuffer.ColorAttachment(
-                    this.textures.get(textureName), clearColor, lod, layer
+                    this.textures.get(textureName), clearColor, lod, layer, face
                 ));
             }
 
@@ -295,8 +299,8 @@ public class Pipeline implements AutoCloseable {
         this.defaultFramebuffer = this.framebuffers.get(pipelineJson.get(String.class, "defaultFramebuffer"));
         this.solidFramebuffer = this.framebuffers.get(targetsO.get(String.class, "solidTerrain"));
         this.translucentTerrainFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentTerrain"));
-        this.translucentEntityFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentEntity"));
-        this.translucentParticlesFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentParticles"));
+        this.translucentItemEntityFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentEntity"));
+        this.particlesFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentParticles"));
         this.weatherFramebuffer = this.framebuffers.get(targetsO.get(String.class, "weather"));
         this.cloudsFramebuffer = this.framebuffers.get(targetsO.get(String.class, "clouds"));
 
@@ -417,8 +421,8 @@ public class Pipeline implements AutoCloseable {
             }
         }};
 
-        for (var shaderProgram : new ShaderProgram[] {
-            CoreShaders.RENDERTYPE_SOLID,
+        for (var vertexFormat : new VertexFormat[] {
+            /*CoreShaders.RENDERTYPE_SOLID,
             CoreShaders.RENDERTYPE_CUTOUT_MIPPED,
             CoreShaders.RENDERTYPE_CUTOUT,
             CoreShaders.RENDERTYPE_TRANSLUCENT,
@@ -430,12 +434,14 @@ public class Pipeline implements AutoCloseable {
             CoreShaders.RENDERTYPE_ENTITY_TRANSLUCENT,
             CoreShaders.RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE,
             CoreShaders.RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL,
-            CoreShaders.PARTICLE
+            CoreShaders.PARTICLE*/
+            CanPipe.VertexFormats.BLOCK,
+            CanPipe.VertexFormats.NEW_ENTITY,
+            CanPipe.VertexFormats.PARTICLE,
         }) {
             this.materialPrograms.put(
-                shaderProgram,
-                MaterialProgram.create(
-                    shaderProgram,
+                vertexFormat, MaterialProgram.create(
+                    vertexFormat,
                     glslVersion,
                     enablePBR,
                     shadowFramebuffer,
@@ -451,9 +457,8 @@ public class Pipeline implements AutoCloseable {
 
             if (this.skyShadows != null) {
                 this.shadowPrograms.put(
-                    shaderProgram,
-                    MaterialProgram.create(
-                        shaderProgram,
+                    vertexFormat, MaterialProgram.create(
+                        vertexFormat,
                         glslVersion,
                         enablePBR,
                         shadowFramebuffer,

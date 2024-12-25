@@ -6,34 +6,14 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
-import fewizz.canpipe.mixininterface.LevelRendererExtended;
-import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.ShaderProgram;
 
 @Mixin(ShaderManager.class)
 public class ShaderManagerMixin {
-
-    @WrapMethod(method = "getProgram")
-    CompiledShaderProgram wrapGetProgram(ShaderProgram shaderProgram, Operation<CompiledShaderProgram> original) {
-        var pipeline = Pipelines.getCurrent();
-
-        if (pipeline != null) {
-            var mc = Minecraft.getInstance();
-            var p = (((LevelRendererExtended) mc.levelRenderer).getIsRenderingShadow() ? pipeline.shadowPrograms : pipeline.materialPrograms).get(shaderProgram);
-            if (p != null) {
-                return p;
-            }
-        }
-
-        return original.call(shaderProgram);
-    }
 
     @ModifyExpressionValue(
         method = "linkProgram",

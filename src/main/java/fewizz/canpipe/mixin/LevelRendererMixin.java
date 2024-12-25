@@ -319,8 +319,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         this.targets.main = frameGraphBuilder.importExternal("main", p.solidFramebuffer);
         this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.translucentTerrainFramebuffer);
-        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.translucentEntityFramebuffer);
-        this.targets.particles = frameGraphBuilder.importExternal("particles", p.translucentParticlesFramebuffer);
+        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.translucentItemEntityFramebuffer);
+        this.targets.particles = frameGraphBuilder.importExternal("particles", p.particlesFramebuffer);
         this.targets.weather = frameGraphBuilder.importExternal("weather", p.weatherFramebuffer);
         this.targets.clouds = frameGraphBuilder.importExternal("clouds", p.cloudsFramebuffer);
 

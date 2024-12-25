@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -47,6 +46,7 @@ public class Shader extends CompiledShader {
     ) throws CompilationException, IOException {
         String preprocessedSource =
             "#version " + version + "\n\n" +
+            "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
             "#define " + type.name() + "_SHADER\n\n" +
             (
                 shadowFramebuffer != null ?

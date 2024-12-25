@@ -3,8 +3,10 @@ package fewizz.canpipe.pipeline;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.GL40C;
 import org.lwjgl.opengl.KHRDebug;
 
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -78,16 +80,25 @@ public class Texture extends AbstractTexture {
         bind();
 
         for (int i = 0; i <= maxLod; ++i) {
-            if (target == GL33C.GL_TEXTURE_3D) {
-                GL33C.glTexImage3D(target, i, internalFormat, this.extent.x >> i, this.extent.y >> i, this.extent.z >> i, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
+            int w = this.extent.x >> i;
+            int h = this.extent.y >> i;
+
+            if (target == GL33C.GL_TEXTURE_2D) {
+                GlStateManager._texImage2D(target, i, internalFormat, w, h, 0, pixelFormat, pixelDataType, (IntBuffer) null);
+            } else if (target == GL33C.GL_TEXTURE_3D) {
+                GL33C.glTexImage3D(target, i, internalFormat, w, h, this.extent.z >> i, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
             } else if (target == GL33C.GL_TEXTURE_2D_ARRAY) {
-                GL33C.glTexImage3D(target, i, internalFormat, this.extent.x >> i, this.extent.y >> i, this.extent.z, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
+                GL33C.glTexImage3D(target, i, internalFormat, w, h, this.extent.z, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
             } else if (target == GL33C.GL_TEXTURE_CUBE_MAP) {
                 for (int face = 0; face < 6; ++face) {
-                    GlStateManager._texImage2D(GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, i, internalFormat, this.extent.x >> i, this.extent.y >> i, 0, pixelFormat, pixelDataType, (IntBuffer) null);
+                    GlStateManager._texImage2D(GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, i, internalFormat, w, h, 0, pixelFormat, pixelDataType, (IntBuffer) null);
                 }
+            } else if (target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
+                /* "... depth must be a multiple of six indicating 6N layer-faces in the
+                cube map array, otherwise the error INVALID_VALUE is generated." */
+                GL40C.glTexImage3D(GL40C.GL_TEXTURE_CUBE_MAP_ARRAY, i, internalFormat, w, h, this.extent.z * 6, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
             } else {
-                GlStateManager._texImage2D(target, i, internalFormat, this.extent.x >> i, this.extent.y >> i, 0, pixelFormat, pixelDataType, (IntBuffer) null);
+                throw new NotImplementedException();
             }
         }
     }

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.GL40C;
 import org.lwjgl.opengl.KHRDebug;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -24,7 +25,8 @@ public class Framebuffer extends RenderTarget {
         @NotNull Texture texture,
         @NotNull Vector4f clearColor,
         int lod,
-        int layer
+        int layer,
+        int face
     ) {}
 
     public static record DepthAttachment(
@@ -110,7 +112,10 @@ public class Framebuffer extends RenderTarget {
             } else if (a.texture.target == GL33C.GL_TEXTURE_2D_ARRAY || a.texture.target == GL33C.GL_TEXTURE_3D) {
                 GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + i, a.texture.getId(), a.lod, a.layer);
             } else if (a.texture.target == GL33C.GL_TEXTURE_CUBE_MAP) {
-                GL33C.glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + i, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + a.layer, a.texture.getId(), a.lod);
+                int face = a.face != -1 ? a.face : a.layer; // for compatibility
+                GL33C.glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + i, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, a.texture.getId(), a.lod);
+            } else if (a.texture.target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
+                GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + i, a.texture.getId(), a.lod, a.layer * 6 + a.face);
             } else {
                 throw new NotImplementedException();
             }

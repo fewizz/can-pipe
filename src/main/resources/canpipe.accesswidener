@@ -16,16 +16,32 @@ mutable     field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojan
 
 accessible  class   net/minecraft/client/renderer/RenderStateShard$OutputStateShard
 accessible  class   net/minecraft/client/renderer/RenderStateShard$TextureStateShard
+accessible  class   net/minecraft/client/renderer/RenderStateShard$ShaderStateShard
+accessible  field   net/minecraft/client/renderer/RenderStateShard$ShaderStateShard  shader  Ljava/util/Optional;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  name  Ljava/lang/String;
+
 accessible  field   net/minecraft/client/renderer/RenderStateShard  LIGHTMAP  Lnet/minecraft/client/renderer/RenderStateShard$LightmapStateShard;
+
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_SOLID_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_CUTOUT_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_CUTOUT_MIPPED_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_TRANSLUCENT_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_TRANSLUCENT_MOVING_BLOCK_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_SOLID_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_CUTOUT_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_CUTOUT_NO_CULL_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_CUTOUT_NO_CULL_Z_OFFSET_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_TRANSLUCENT_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  PARTICLE_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+
+accessible  field   net/minecraft/client/renderer/RenderStateShard  TRANSLUCENT_TARGET  Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  PARTICLES_TARGET  Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  WEATHER_TARGET  Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  CLOUDS_TARGET  Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  ITEM_ENTITY_TARGET  Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;
+
 accessible  field   net/minecraft/client/renderer/RenderStateShard  BLOCK_SHEET  Lnet/minecraft/client/renderer/RenderStateShard$TextureStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  BLOCK_SHEET_MIPPED  Lnet/minecraft/client/renderer/RenderStateShard$TextureStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  TRANSLUCENT_TRANSPARENCY  Lnet/minecraft/client/renderer/RenderStateShard$TransparencyStateShard;
@@ -35,6 +51,7 @@ accessible  field   net/minecraft/client/renderer/RenderStateShard  VIEW_OFFSET_
 accessible  field   net/minecraft/client/renderer/RenderStateShard  NO_CULL  Lnet/minecraft/client/renderer/RenderStateShard$CullStateShard;
 
 accessible  class   net/minecraft/client/renderer/RenderType$CompositeState
+accessible  class   net/minecraft/client/renderer/RenderType$OutlineProperty
 accessible  method  net/minecraft/client/renderer/RenderType  create  (Ljava/lang/String;Lcom/mojang/blaze3d/vertex/VertexFormat;Lcom/mojang/blaze3d/vertex/VertexFormat$Mode;IZZLnet/minecraft/client/renderer/RenderType$CompositeState;)Lnet/minecraft/client/renderer/RenderType$CompositeRenderType;
 accessible  method  net/minecraft/client/renderer/RenderType  translucentState  (Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;)Lnet/minecraft/client/renderer/RenderType$CompositeState;
 accessible  field   net/minecraft/client/renderer/RenderType  SOLID  Lnet/minecraft/client/renderer/RenderType;
