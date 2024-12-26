@@ -16,7 +16,8 @@ public class CompiledShaderProgramMixin {
         method = "apply",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/RenderSystem;bindTexture(I)V"
+            target = "Lcom/mojang/blaze3d/systems/RenderSystem;bindTexture(I)V",
+            remap = false
         )
     )
     void onApplyTexureBind(int id, Operation<Void> original) {

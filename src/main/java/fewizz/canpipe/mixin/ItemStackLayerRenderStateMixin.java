@@ -5,23 +5,10 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-
-import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.material.Material;
-import fewizz.canpipe.material.MaterialMap;
-import fewizz.canpipe.material.MaterialMaps;
-import fewizz.canpipe.material.Materials;
+import fewizz.canpipe.WrappingMultiBufferSourceThatSetsItemMaterialIndex;
 import fewizz.canpipe.mixininterface.ItemStackRenderStateExtended;
-import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 
 @Mixin(ItemStackRenderState.LayerRenderState.class)
 public class ItemStackLayerRenderStateMixin {
@@ -48,28 +35,10 @@ public class ItemStackLayerRenderStateMixin {
     MultiBufferSource replaceBufferSourceOnRender(
         MultiBufferSource source
     ) {
-        return new MultiBufferSource() {
-
-            @Override
-            public VertexConsumer getBuffer(RenderType renderType) {
-                var vc = source.getBuffer(renderType);
-                Item item = ((ItemStackRenderStateExtended) field_55345).getItem();
-                if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
-                    int index = -1;
-                    if (item instanceof BlockItem bi) {
-                        ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bi.getBlock());
-                        MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
-                        Material material = materialMap != null ? materialMap.defaultMaterial : null;
-                        if (material != null) {
-                            index = Materials.id(material);
-                        }
-                    }
-                    ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
-                }
-                return vc;
-            }
-            
-        };
+        return new WrappingMultiBufferSourceThatSetsItemMaterialIndex(
+            source,
+            ((ItemStackRenderStateExtended) field_55345).getItem()
+        );
     }
 
 }

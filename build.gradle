@@ -43,6 +43,7 @@ dependencies {
 	include(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
 
 	modImplementation "blue.endless:jankson:1.2.3"
+	include "blue.endless:jankson:1.2.3"
 }
 
 processResources {

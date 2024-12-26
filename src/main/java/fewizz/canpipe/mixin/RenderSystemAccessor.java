@@ -8,7 +8,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.renderer.CompiledShaderProgram;
 
-@Mixin(RenderSystem.class)
+@Mixin(value = RenderSystem.class, remap = false)
 public interface RenderSystemAccessor {
 
     @Accessor("shader")
