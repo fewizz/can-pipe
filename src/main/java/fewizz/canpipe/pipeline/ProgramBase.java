@@ -64,7 +64,7 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // world.glsl
         new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_timeOfDay", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_fixedOrDayTime", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_renderSeconds", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_worldTime", "float", 1, List.of(0.0F)),
@@ -94,7 +94,7 @@ public class ProgramBase extends CompiledShaderProgram {
         CANPIPE_SHADOW_CENTER_3,
         FRX_VIEW_DISTANCE,
         FRX_EYE_POS,
-        CANPIPE_TIME_OF_DAY,
+        CANPIPE_FIXED_OR_DAY_TIME,
         FRX_RENDER_SECONDS,
         FRX_WORLD_DAY,
         FRX_WORLD_TIME,
@@ -137,7 +137,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.CANPIPE_SHADOW_CENTER_3 = getUniform("canpipe_shadowCenter_3");
         this.FRX_VIEW_DISTANCE = getUniform("frx_viewDistance");
         this.FRX_EYE_POS = getUniform("frx_eyePos");
-        this.CANPIPE_TIME_OF_DAY = getUniform("canpipe_timeOfDay");
+        this.CANPIPE_FIXED_OR_DAY_TIME = getUniform("canpipe_fixedOrDayTime");
         this.FRX_RENDER_SECONDS = getUniform("frx_renderSeconds");
         this.FRX_WORLD_DAY = getUniform("frx_worldDay");
         this.FRX_WORLD_TIME = getUniform("frx_worldTime");
@@ -230,14 +230,15 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_RENDER_SECONDS != null) {
             this.FRX_RENDER_SECONDS.set(gra.canpipe_getRenderSeconds());
         }
-        if (this.CANPIPE_TIME_OF_DAY != null) {
-            this.CANPIPE_TIME_OF_DAY.set(mc.level != null ? mc.level.getTimeOfDay(0.0F): 0.0F);
+        if (this.CANPIPE_FIXED_OR_DAY_TIME != null) {
+            long ticks = mc.level.dimensionType().fixedTime().orElse(mc.level.getDayTime());
+            this.CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         }
         if (this.FRX_WORLD_DAY != null) {
-            this.FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getGameTime() / 24000L) % 2147483647L : 0.0F);
+            this.FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F);
         }
         if (this.FRX_WORLD_TIME != null) {
-            this.FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getGameTime() % 24000.0F) / 24000.0F : 0.0F);
+            this.FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
         }
         if (this.FRX_MODEL_TO_WORLD != null) {
             // will be re-set for terrain in LevelRenderer.renderSectionLayer
@@ -245,7 +246,7 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F);
         }
         if (this.FRX_SKY_LIGHT_VECTOR != null) {
-            this.FRX_SKY_LIGHT_VECTOR.set(p.getSunDir(mc.level, new Vector3f()));
+            this.FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
         }
         if (this.FRX_SKY_ANGLE_RADIANS != null) {
             this.FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(0.0F));
@@ -265,7 +266,6 @@ public class ProgramBase extends CompiledShaderProgram {
      * Doesn't know about texture targets.
      * Use {@link ProgramBase#bindSampler(String, AbstractTexture)} instead.
      * */
-    @Deprecated
     @Override
     public void bindSampler(String sampler, int textureID) {
         super.bindSampler(sampler, textureID);

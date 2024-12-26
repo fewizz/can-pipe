@@ -6,14 +6,22 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
 
-    @Inject(method="<init>", at=@At("TAIL"))
+    @Inject(method = "<init>", at = @At("TAIL"))
     void onInitEnd(CallbackInfo ci) {
         GL33C.glEnable(GL33C.GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+
+    @ModifyReturnValue(method = "useShaderTransparency", at = @At("RETURN"))
+    private static boolean useShaderTransparency(boolean original) {
+        return Pipelines.getCurrent() != null ? true : original;
     }
 
 }

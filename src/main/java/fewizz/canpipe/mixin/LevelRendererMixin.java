@@ -166,7 +166,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Minecraft mc = Minecraft.getInstance();
         GameRendererAccessor gra = ((GameRendererAccessor) mc.gameRenderer);
         float renderDistance = mc.gameRenderer.getRenderDistance();
-        Vector3f toSunDir = p.getSunDir(mc.level, new Vector3f());
+        Vector3f toSunDir = p.getSunOrMoonDir(mc.level, new Vector3f());
         Vector3f fromSunDir = toSunDir.negate(new Vector3f());
 
         var camPos = camera.getPosition();
