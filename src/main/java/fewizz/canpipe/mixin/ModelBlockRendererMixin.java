@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -62,17 +63,56 @@ public class ModelBlockRendererMixin {
         float r, float g, float b, float a, int ao0, int ao1, int ao2, int ao3, int overlay,
         CallbackInfo ci
     ) {
-        if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
-            int index = -1;
-            if (bs != null) {
+        if (Pipelines.getCurrent() != null) {
+            ((VertexConsumerExtended) vc).recomputeNormal(true);
+
+            if (
+                bs != null &&
+                vc instanceof BufferBuilder bb &&
+                bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            ) {
                 ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
                 MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
                 if (materialMap != null && materialMap.defaultMaterial != null) {
-                    index = Materials.id(materialMap.defaultMaterial);
+                    int index = Materials.id(materialMap.defaultMaterial);
+                    ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
                 }
             }
-            ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
-            return;
+        }
+    }
+
+    @Inject(
+        method = "putQuadData",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData("+
+                "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
+                "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
+                "[FFFFF[IIZ"+
+            ")V",
+            shift = Shift.AFTER
+        )
+    )
+    void onAfterData(
+        BlockAndTintGetter blockAndTintGetter,
+        BlockState bs,
+        BlockPos bp,
+        VertexConsumer vc,
+        PoseStack.Pose pose,
+        BakedQuad bakedQuad,
+        float r, float g, float b, float a, int ao0, int ao1, int ao2, int ao3, int overlay,
+        CallbackInfo ci
+    ) {
+        if (Pipelines.getCurrent() != null) {
+            ((VertexConsumerExtended) vc).recomputeNormal(false);
+
+            if (
+                bs != null &&
+                vc instanceof BufferBuilder bb &&
+                bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            ) {
+                ((VertexConsumerExtended) bb).resetSharedMaterialIndex();
+            }
         }
     }
 
@@ -88,17 +128,46 @@ public class ModelBlockRendererMixin {
         float r, float g, float b, int light, int overlay,
         CallbackInfo ci
     ) {
-        if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
-            int index = -1;
-            if (bs != null) {
+        if (Pipelines.getCurrent() != null) {
+            ((VertexConsumerExtended) vc).recomputeNormal(true);
+
+            if (
+                bs != null &&
+                vc instanceof BufferBuilder bb &&
+                bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            ) {
                 ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
                 MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
                 if (materialMap != null && materialMap.defaultMaterial != null) {
-                    index = Materials.id(materialMap.defaultMaterial);
+                    int index = Materials.id(materialMap.defaultMaterial);
+                    ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
                 }
             }
-            ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
-            return;
+        }
+    }
+
+    @Inject(
+        method = "renderModel",
+        at = @At("TAIL")
+    )
+    void onAfterSingleBlockData(
+        PoseStack.Pose pose,
+        VertexConsumer vc,
+        @Nullable BlockState bs,
+        BakedModel bakedModel,
+        float r, float g, float b, int light, int overlay,
+        CallbackInfo ci
+    ) {
+        if (Pipelines.getCurrent() != null) {
+            ((VertexConsumerExtended) vc).recomputeNormal(false);
+
+            if (
+                bs != null &&
+                vc instanceof BufferBuilder bb &&
+                bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            ) {
+                ((VertexConsumerExtended) bb).resetSharedMaterialIndex();
+            }
         }
     }
 

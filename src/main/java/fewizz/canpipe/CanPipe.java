@@ -1,6 +1,7 @@
 package fewizz.canpipe;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,9 +90,15 @@ public class CanPipe {
             .build();
 
         public static VertexFormat replace(VertexFormat format) {
-            if (format == DefaultVertexFormat.BLOCK) return VertexFormats.BLOCK;
-            if (format == DefaultVertexFormat.NEW_ENTITY) return VertexFormats.NEW_ENTITY;
-            if (format == DefaultVertexFormat.PARTICLE) return VertexFormats.PARTICLE;
+            if (format == DefaultVertexFormat.BLOCK) {
+                return VertexFormats.BLOCK;
+            }
+            if (format == DefaultVertexFormat.NEW_ENTITY) {
+                return VertexFormats.NEW_ENTITY;
+            }
+            if (format == DefaultVertexFormat.PARTICLE) {
+                return VertexFormats.PARTICLE;
+            }
             throw new RuntimeException("Couldn't replace vertex format");
         }
 
@@ -109,15 +116,15 @@ public class CanPipe {
         public static class MaterialProgramStateShard extends RenderStateShard.ShaderStateShard {
 
             final float alphaCutout;
-            final int renderTargetIndex;
+            final Supplier<Integer> renderTargetIndexGetter;
 
             public MaterialProgramStateShard(
                 RenderStateShard.ShaderStateShard original,
-                int renderTargetIndex,
+                Supplier<Integer> renderTargetIndexGetter,
                 float alphaCutout
             ) {
                 super(original.shader.get());
-                this.renderTargetIndex = renderTargetIndex;
+                this.renderTargetIndexGetter = renderTargetIndexGetter;
                 this.alphaCutout = alphaCutout;
             }
 
@@ -142,18 +149,7 @@ public class CanPipe {
                 RenderSystemAccessor.canpipe_setShader(program);
 
                 if (program.CANPIPE_RENDER_TARGET != null) {
-                    // TODO this is ugly, i know
-                    int actualTarget = 0;
-                    if (this.renderTargetIndex == 1 && mc.levelRenderer.getTranslucentTarget() != null) {
-                        actualTarget = 1;
-                    } else
-                    if (this.renderTargetIndex == 2 && mc.levelRenderer.getItemEntityTarget() != null) {
-                        actualTarget = 2;
-                    } else
-                    if (this.renderTargetIndex == 3 && mc.levelRenderer.getParticlesTarget() != null) {
-                        actualTarget = 3;
-                    }
-                    program.CANPIPE_RENDER_TARGET.set(actualTarget);
+                    program.CANPIPE_RENDER_TARGET.set(this.renderTargetIndexGetter.get());
                 }
 
                 if (program.CANPIPE_ALPHA_CUTOUT != null) {

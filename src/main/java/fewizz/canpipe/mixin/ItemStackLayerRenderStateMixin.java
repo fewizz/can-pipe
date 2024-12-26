@@ -26,8 +26,8 @@ import net.minecraft.world.item.Item;
 @Mixin(ItemStackRenderState.LayerRenderState.class)
 public class ItemStackLayerRenderStateMixin {
 
-    @Shadow
-    ItemStackRenderState this$0;
+    @Shadow(aliases = {"this$0"})
+    ItemStackRenderState field_55345;
 
     @ModifyArg(
         method = "render",
@@ -53,7 +53,7 @@ public class ItemStackLayerRenderStateMixin {
             @Override
             public VertexConsumer getBuffer(RenderType renderType) {
                 var vc = source.getBuffer(renderType);
-                Item item = ((ItemStackRenderStateExtended) this$0).getItem();
+                Item item = ((ItemStackRenderStateExtended) field_55345).getItem();
                 if (vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
                     int index = -1;
                     if (item instanceof BlockItem bi) {

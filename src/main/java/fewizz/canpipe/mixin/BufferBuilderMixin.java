@@ -66,9 +66,15 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique
     int sharedSpriteIndex = -1;
 
+    @Unique
+    boolean recomputeNormal = false;
+
     @Inject(method = "endLastVertex", at = @At("HEAD"))
     private void endLastVertex(CallbackInfo ci) {
-        if ((elementsToFill & VertexFormatElement.NORMAL.mask()) != 0) {
+        boolean requiresNormal = format.contains(VertexFormatElement.NORMAL);
+        boolean normalIsNotSet = (elementsToFill & VertexFormatElement.NORMAL.mask()) != 0;
+
+        if ((this.recomputeNormal && requiresNormal) || normalIsNotSet) {
             if (!this.mode.connectedPrimitives && this.vertices > 0 && (this.vertices % this.mode.primitiveLength) == 0) {
                 int posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
                 int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
@@ -91,10 +97,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 }
                 this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
             }
-            else {
+            else if (normalIsNotSet) {
                 setNormal(0.0F, 1.0F, 0.0F);
             }
         }
+
         if ((elementsToFill & CanPipe.VertexFormatElements.TANGENT.mask()) != 0) {
             if (!this.mode.connectedPrimitives && this.vertices > 0 && (this.vertices % this.mode.primitiveLength) == 0) {
                 int posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
@@ -186,6 +193,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Override
     public void setSharedTangent(float x, float y, float z) {
         this.sharedTangent.set(x, y, z);
+    }
+
+    @Override
+    public void recomputeNormal(boolean recompute) {
+        this.recomputeNormal = recompute;
     }
 
 }

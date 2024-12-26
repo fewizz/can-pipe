@@ -24,7 +24,8 @@
         "SectionCompilerMixin",
         "ShaderManagerMixin",
         "TextureAtlasMixin",
-        "TextureAtlasSpriteMixin"
+        "TextureAtlasSpriteMixin",
+        "VertexConsumerMixin"
     ],
     "injectors": {
         "defaultRequire": 1

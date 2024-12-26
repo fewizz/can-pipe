@@ -169,8 +169,6 @@ public class Pipeline implements AutoCloseable {
         }}
         ApplyOptions.doApply(pipelineJson, optionElementByName);
 
-        System.out.println(pipelineJson.toJson(true, true));
-
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
         JsonObject skyShadowsO = pipelineJson.getObject("skyShadows");
@@ -422,19 +420,6 @@ public class Pipeline implements AutoCloseable {
         }};
 
         for (var vertexFormat : new VertexFormat[] {
-            /*CoreShaders.RENDERTYPE_SOLID,
-            CoreShaders.RENDERTYPE_CUTOUT_MIPPED,
-            CoreShaders.RENDERTYPE_CUTOUT,
-            CoreShaders.RENDERTYPE_TRANSLUCENT,
-            CoreShaders.RENDERTYPE_TRANSLUCENT_MOVING_BLOCK,
-            CoreShaders.RENDERTYPE_ENTITY_SOLID,
-            CoreShaders.RENDERTYPE_ENTITY_CUTOUT,
-            CoreShaders.RENDERTYPE_ENTITY_CUTOUT_NO_CULL,
-            CoreShaders.RENDERTYPE_ENTITY_CUTOUT_NO_CULL_Z_OFFSET,
-            CoreShaders.RENDERTYPE_ENTITY_TRANSLUCENT,
-            CoreShaders.RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE,
-            CoreShaders.RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL,
-            CoreShaders.PARTICLE*/
             CanPipe.VertexFormats.BLOCK,
             CanPipe.VertexFormats.NEW_ENTITY,
             CanPipe.VertexFormats.PARTICLE,

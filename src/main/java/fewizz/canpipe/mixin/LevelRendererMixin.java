@@ -75,7 +75,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Final
     private RenderBuffers renderBuffers;
 
-    private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_visibleSections = new ObjectArrayList<>(10000);
+    //private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_visibleSections = new ObjectArrayList<>(10000);
     public Matrix4f canpipe_shadowViewMatrix = new Matrix4f();
     public Matrix4f[] canpipe_shadowProjectionMatrices = new Matrix4f[] { new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f() };
     public Vector4f[] canpipe_shadowCenters = new Vector4f[] { new Vector4f(), new Vector4f(), new Vector4f(), new Vector4f() };
@@ -131,9 +131,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     abstract void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f);
 
     void canpipe_swap() {
-        var tmpVisibleSections = this.visibleSections;
+        /*var tmpVisibleSections = this.visibleSections;
         this.visibleSections = this.canpipe_visibleSections;
-        this.canpipe_visibleSections = tmpVisibleSections;
+        this.canpipe_visibleSections = tmpVisibleSections;*/
 
         this.canpipe_isRenderingShadow = !this.canpipe_isRenderingShadow;
     }

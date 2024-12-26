@@ -66,8 +66,8 @@ public class CompositeStateBuilderMixin {
         if (this.outputState == RenderStateShard.TRANSLUCENT_TARGET) {
             this.shaderState = new CanPipe.RenderStateShards.MaterialProgramStateShard(
                 this.shaderState,
-                1,    // renderTargetIndex
-                0.0F  // alphaCutout
+                () -> Minecraft.getInstance().levelRenderer.getTranslucentTarget() != null ? 1 : 0,
+                0.0F
             );
             this.outputState = new CanPipe.RenderStateShards.OutputStateShard(
                 "translucent_terrain_target",
@@ -81,8 +81,8 @@ public class CompositeStateBuilderMixin {
         else if (this.outputState == RenderStateShard.ITEM_ENTITY_TARGET) {
             this.shaderState = new CanPipe.RenderStateShards.MaterialProgramStateShard(
                 this.shaderState,
-                2,    // renderTargetIndex
-                0.1F  // alphaCutout
+                () -> Minecraft.getInstance().levelRenderer.getItemEntityTarget() != null ? 2 : 0,
+                0.1F
             );
             this.outputState = new CanPipe.RenderStateShards.OutputStateShard(
                 "translucent_item_entity_target",
@@ -97,7 +97,7 @@ public class CompositeStateBuilderMixin {
         else if (this.outputState == RenderStateShard.PARTICLES_TARGET) {
             this.shaderState = new CanPipe.RenderStateShards.MaterialProgramStateShard(
                 this.shaderState,
-                3,    // renderTargetIndex
+                () -> Minecraft.getInstance().levelRenderer.getParticlesTarget() != null ? 2 : 0,
                 0.1F  // alphaCutout
             );
             this.outputState = new CanPipe.RenderStateShards.OutputStateShard(
@@ -128,7 +128,7 @@ public class CompositeStateBuilderMixin {
 
             this.shaderState = new CanPipe.RenderStateShards.MaterialProgramStateShard(
                 this.shaderState,
-                0,  // renderTargetIndex
+                () -> 0,
                 alphaCutout
             );
             this.outputState = new CanPipe.RenderStateShards.OutputStateShard(
