@@ -1,5 +1,5 @@
 package fewizz.canpipe.compat.indigo.mixin;
-/*
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -10,17 +10,15 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.CanPipe.VertexFormatElements;
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
+import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext;
 
-@Mixin(
-    targets="net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext",
-    remap = false
-)*/
+@Mixin(value = AbstractRenderContext.class, remap = false)
 public class AbstractRenderContextMixin {
-/*
+
     @Inject(
         method = "bufferQuad("+
             "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
@@ -35,10 +33,10 @@ public class AbstractRenderContextMixin {
     ) {
         if (
             vertexConsumer instanceof BufferBuilder bb
-            && bb.format.contains(CanPipe.VertexFormatElements.TANGENT)
+            && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
             && quad instanceof MutableQuadViewExtended mq
         ) {
-            mq.computeTangent();
+            ((VertexConsumerExtended) bb).setSharedSpriteIndex(mq.getSpriteIndex());
         }
     }
 
@@ -67,13 +65,13 @@ public class AbstractRenderContextMixin {
                 ((VertexConsumerExtended) bb).setAO(q.getAO(quadVertexIndex));
             }
             if (bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-                ((VertexConsumerExtended) bb).setSpriteIndex(q.getSpriteIndex());
+                ((VertexConsumerExtended) bb).inheritSpriteIndex();
             }
-            if (bb.format.contains(CanPipe.VertexFormatElements.TANGENT)) {
-                ((VertexConsumerExtended) bb).setTangent(q.getTangent());
+            if (bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
+                ((VertexConsumerExtended) bb).inheritMaterialIndex();
             }
         }
 
     }
-*/
+
 }

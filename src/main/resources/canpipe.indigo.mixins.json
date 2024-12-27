@@ -3,10 +3,8 @@
 	"package": "fewizz.canpipe.compat.indigo.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"AbstractBlockRenderContextAccessor",
 		"AbstractBlockRenderContextMixin",
 		"AbstractRenderContextMixin",
-		"BlockRenderInfoMixin",
 		"MutableQuadViewImplMixin",
 		"QuadViewImplMixin"
 	],
