@@ -16,10 +16,10 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.core.Direction;
 
-@Mixin(value = MutableQuadViewImpl.class, remap = false)
+@Mixin(MutableQuadViewImpl.class)
 public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin implements MutableQuadViewExtended {
 
-    @Inject(method = "clear", at = @At("TAIL"))
+    @Inject(method = "clear", at = @At("TAIL"), remap = false)
     void onClear(CallbackInfo ci) {
         Arrays.fill(this.ao, 1.0F);
         this.spriteIndex = -1;

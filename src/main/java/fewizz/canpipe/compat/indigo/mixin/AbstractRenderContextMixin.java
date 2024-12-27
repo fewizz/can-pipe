@@ -16,7 +16,7 @@ import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext;
 
-@Mixin(value = AbstractRenderContext.class, remap = false)
+@Mixin(value = AbstractRenderContext.class)
 public class AbstractRenderContextMixin {
 
     @Inject(
@@ -26,7 +26,7 @@ public class AbstractRenderContextMixin {
         ")V",
         at = @At("HEAD")
     )
-    void computeTangentIfNeeded(
+    void setSpriteIndex(
         MutableQuadViewImpl quad,
         VertexConsumer vertexConsumer,
         CallbackInfo ci
