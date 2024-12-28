@@ -5,6 +5,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -25,7 +26,7 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
-@Mixin(value=AbstractBlockRenderContext.class, remap = false)
+@Mixin(value=AbstractBlockRenderContext.class)
 public class AbstractBlockRenderContextMixin {
 
     @Final
@@ -40,8 +41,9 @@ public class AbstractBlockRenderContextMixin {
         method = "bufferQuad",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/render/AbstractBlockRenderContext;tintQuad("+
+            target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/render/AbstractBlockRenderContext;bufferQuad("+
                 "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
+                "Lcom/mojang/blaze3d/vertex/VertexConsumer;"+
             ")V"
         )
     )
@@ -56,12 +58,30 @@ public class AbstractBlockRenderContextMixin {
         }
     }
 
+    @Inject(
+        method = "bufferQuad",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/render/AbstractBlockRenderContext;bufferQuad("+
+                "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
+                "Lcom/mojang/blaze3d/vertex/VertexConsumer;"+
+            ")V",
+            shift = Shift.AFTER
+        )
+    )
+    void afterVertexConsumerWrite(CallbackInfo ci, @Local VertexConsumer vc) {
+        if (vc instanceof VertexConsumerExtended vce) {
+            vce.resetSharedMaterialIndex();
+        }
+    }
+
     @WrapOperation(
         method = "shadeQuad",
         at = @At(
             value = "INVOKE",
             target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;color(II)Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"
-        )
+        ),
+        remap = false
     )
     MutableQuadViewImpl dontApplyAO(
         MutableQuadViewImpl instance,
