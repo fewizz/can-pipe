@@ -48,9 +48,12 @@ public class Pipelines implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<ResourceLocation, Resource> jsons) -> {
+                Minecraft mc = Minecraft.getInstance();
+
                 if (current != null) {
                     current.close();
                     current = null;
+                    mc.mainRenderTarget = null;
                 }
 
                 RAW_PIPELINES.clear();
@@ -79,13 +82,16 @@ public class Pipelines implements PreparableReloadListener {
                     }
                 }
 
-                Minecraft mc = Minecraft.getInstance();
-
                 if (current != null) {
+                    if (mc.mainRenderTarget != null) {
+                        mc.mainRenderTarget.destroyBuffers();
+                    }
                     mc.mainRenderTarget = current.defaultFramebuffer;
                     ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
                 }
-                else if (!(mc.mainRenderTarget instanceof MainTarget)) {
+
+                // Pipeline wasn't selected and main render target was destroyed previously
+                if (mc.mainRenderTarget == null) {
                     mc.mainRenderTarget = new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
                 }
             },
