@@ -28,6 +28,7 @@ import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import fewizz.canpipe.GFX;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
@@ -207,8 +208,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
         MultiBufferSource.BufferSource crumblingBufferSource = this.renderBuffers.crumblingBufferSource();
 
-        GL33C.glEnable(GL33C.GL_POLYGON_OFFSET_FILL);
-        GL33C.glPolygonOffset(p.skyShadows.offsetSlopeFactor(), p.skyShadows.offsetBiasUnits());
+        RenderSystem.enablePolygonOffset();
+        RenderSystem.polygonOffset(
+            p.skyShadows.offsetSlopeFactor(),
+            p.skyShadows.offsetBiasUnits()
+        );
 
         for (int cascade = 0; cascade < 4; ++cascade) {
             for (var shadowProgram : p.shadowPrograms.values()) {
@@ -273,7 +277,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             shadowFramebuffer.bindWrite(true);
 
-            GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().getId(), 0, cascade);
+            GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().getId(), 0, cascade);
 
             RenderSystem.disableCull();  // Light can pass through chunk edge. Not ideal solution
             this.renderSectionLayer(RenderType.solid(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
@@ -290,7 +294,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.visibleEntities.clear();
         }
 
-        GL33C.glDisable(GL33C.GL_POLYGON_OFFSET_FILL);
+        RenderSystem.disablePolygonOffset();
 
         modelViewMatrixStack.popMatrix();
         mc.mainRenderTarget.bindWrite(true);

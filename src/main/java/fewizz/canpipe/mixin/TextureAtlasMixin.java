@@ -1,10 +1,10 @@
 package fewizz.canpipe.mixin;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.Map;
 
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.KHRDebug;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 
+import fewizz.canpipe.GFX;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -39,7 +40,8 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
 
         int width = 1024;
         int height = Math.ceilDiv(texturesByName.size(), width);
-        FloatBuffer buff = MemoryUtil.memAllocFloat(width*height*4);
+        ByteBuffer byteBuff = MemoryUtil.memAlloc(width*height*4*Float.BYTES);
+        FloatBuffer buff = byteBuff.asFloatBuffer();
 
         {
             int index = 0;
@@ -61,8 +63,8 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
                     GlStateManager._texParameter(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_MAG_FILTER, GL33C.GL_NEAREST);
                     GlStateManager._texParameter(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_S, GL33C.GL_CLAMP_TO_EDGE);
                     GlStateManager._texParameter(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_WRAP_T, GL33C.GL_CLAMP_TO_EDGE);
-                    GL33C.glTexImage2D(GL33C.GL_TEXTURE_2D, 0, GL33C.GL_RGBA32F, width, height, 0, GL33C.GL_RGBA, GL33C.GL_FLOAT, buff);
-                    KHRDebug.glObjectLabel(GL33C.GL_TEXTURE, getId(), location.toString()+"-sprites-extents");
+                    GlStateManager._texImage2D(GL33C.GL_TEXTURE_2D, 0, GL33C.GL_RGBA32F, width, height, 0, GL33C.GL_RGBA, GL33C.GL_FLOAT, byteBuff.asIntBuffer());
+                    GFX.glObjectLabel(GL33C.GL_TEXTURE, getId(), location.toString()+"-sprites-extents");
                 }
             };
         } finally {

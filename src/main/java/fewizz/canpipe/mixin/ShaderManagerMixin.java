@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 
+import fewizz.canpipe.GFX;
 import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.ShaderProgram;
@@ -30,7 +31,7 @@ public class ShaderManagerMixin {
         CompiledShaderProgram program,
         @Local ShaderProgram shaderProgram
     ) {
-        KHRDebug.glObjectLabel(
+        GFX.glObjectLabel(
             GL43C.GL_PROGRAM,
             program.getProgramId(),
             shaderProgram.configId().toString()

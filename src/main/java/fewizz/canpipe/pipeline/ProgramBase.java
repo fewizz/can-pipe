@@ -17,6 +17,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
+import fewizz.canpipe.GFX;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
@@ -144,7 +145,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_SKY_LIGHT_VECTOR = getUniform("frx_skyLightVector");
         this.FRX_SKY_ANGLE_RADIANS = getUniform("frx_skyAngleRadians");
 
-        KHRDebug.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
+        GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
     }
 
     @Override
@@ -286,9 +287,9 @@ public class ProgramBase extends CompiledShaderProgram {
     */
     public void onApplyTextureBind(int textureID) {
         for (int target : List.of(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_2D_ARRAY, GL33C.GL_TEXTURE_CUBE_MAP, GL33C.GL_TEXTURE_3D)) {
-            Texture.bind(0, target);  // Stupid AF, TODO
+            GFX.glBindTexture(target, 0);  // Stupid AF, TODO
         }
-        Texture.bind(textureID, this.samplerTargetByID.getOrDefault(textureID, GL33C.GL_TEXTURE_2D));
+        GFX.glBindTexture(this.samplerTargetByID.getOrDefault(textureID, GL33C.GL_TEXTURE_2D), textureID);
     }
 
 }

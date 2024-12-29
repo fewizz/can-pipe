@@ -7,11 +7,11 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
-import org.lwjgl.opengl.KHRDebug;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import fewizz.canpipe.GFX;
 import fewizz.canpipe.mixin.GlStateManagerAccessor;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
@@ -73,7 +73,7 @@ public class Texture extends AbstractTexture {
         }
 
         allocate();
-        KHRDebug.glObjectLabel(GL33C.GL_TEXTURE, getId(), pipelineLocation.toString()+"-"+name);
+        GFX.glObjectLabel(GL33C.GL_TEXTURE, getId(), pipelineLocation.toString()+"-"+name);
     }
 
     private void allocate() {
@@ -86,9 +86,9 @@ public class Texture extends AbstractTexture {
             if (target == GL33C.GL_TEXTURE_2D) {
                 GlStateManager._texImage2D(target, i, internalFormat, w, h, 0, pixelFormat, pixelDataType, (IntBuffer) null);
             } else if (target == GL33C.GL_TEXTURE_3D) {
-                GL33C.glTexImage3D(target, i, internalFormat, w, h, this.extent.z >> i, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
+                GFX.glTexImage3D(target, i, internalFormat, w, h, this.extent.z >> i, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
             } else if (target == GL33C.GL_TEXTURE_2D_ARRAY) {
-                GL33C.glTexImage3D(target, i, internalFormat, w, h, this.extent.z, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
+                GFX.glTexImage3D(target, i, internalFormat, w, h, this.extent.z, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
             } else if (target == GL33C.GL_TEXTURE_CUBE_MAP) {
                 for (int face = 0; face < 6; ++face) {
                     GlStateManager._texImage2D(GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, i, internalFormat, w, h, 0, pixelFormat, pixelDataType, (IntBuffer) null);
@@ -96,7 +96,7 @@ public class Texture extends AbstractTexture {
             } else if (target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
                 /* "... depth must be a multiple of six indicating 6N layer-faces in the
                 cube map array, otherwise the error INVALID_VALUE is generated." */
-                GL40C.glTexImage3D(GL40C.GL_TEXTURE_CUBE_MAP_ARRAY, i, internalFormat, w, h, this.extent.z * 6, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
+                GFX.glTexImage3D(GL40C.GL_TEXTURE_CUBE_MAP_ARRAY, i, internalFormat, w, h, this.extent.z * 6, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
             } else {
                 throw new NotImplementedException();
             }
@@ -115,22 +115,8 @@ public class Texture extends AbstractTexture {
         }
     }
 
-    /**
-     * Same as {@link com.mojang.blaze3d.systems.RenderSystem#bindTexture RenderSystem.bindTexture},
-     * but additionally supports targets other than {@link org.lwjgl.opengl.GL11#GL_TEXTURE_2D GL_TEXTURE_2D}
-    */
-    public static void bind(int id, int target) {
-        RenderSystem.assertOnRenderThreadOrInit();
-        var TEXTURES = GlStateManagerAccessor.canpipe_getTEXTURES();
-        int active  = GlStateManagerAccessor.canpipe_getActiveTexture();
-        if (id != TEXTURES[active].binding) {
-            TEXTURES[active].binding = id;
-            GL33C.glBindTexture(target, id);
-        }
-    }
-
     public void bind() {
-        bind(getId(), target);
+        GFX.glBindTexture(target, getId());
     }
 
     @Override

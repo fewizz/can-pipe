@@ -371,7 +371,7 @@ public class MaterialProgram extends ProgramBase {
         if (name.equals("Sampler0")) {
             name = "frxs_baseColor";
 
-            // cursed, as always :)
+            // binding texture atlas? then we should also bind it's data texture (cursed way)
             var mc = Minecraft.getInstance();
             for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
                 var atlas = mc.getModelManager().getAtlas(atlasLoc);
