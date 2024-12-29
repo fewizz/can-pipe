@@ -2,11 +2,9 @@ package fewizz.canpipe.mixin;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
-import org.joml.Vector2d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
@@ -18,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -402,6 +399,18 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return frustum;
         }
         return original.call(frustum, size);
+    }
+
+    @ModifyArg(
+        method = "collectVisibleEntities",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/Entity;setViewScale(D)V"
+        ),
+        index = 0
+    )
+    double fixEntityRenderDistance(double original) {  // TODO use optimal value
+        return this.canpipe_isRenderingShadow ? Minecraft.getInstance().gameRenderer.getRenderDistance() * 2.0 : original;
     }
 
 }
