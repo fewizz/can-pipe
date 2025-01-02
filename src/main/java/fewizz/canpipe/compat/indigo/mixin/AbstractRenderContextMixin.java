@@ -36,7 +36,27 @@ public class AbstractRenderContextMixin {
             && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
             && quad instanceof MutableQuadViewExtended mq
         ) {
-            ((VertexConsumerExtended) bb).setSharedSpriteIndex(mq.getSpriteIndex());
+            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(mq::canpipe_getSprite);
+        }
+    }
+
+    @Inject(
+        method = "bufferQuad("+
+            "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
+            "Lcom/mojang/blaze3d/vertex/VertexConsumer;"+
+        ")V",
+        at = @At("RETURN")
+    )
+    void resetSpriteIndex(
+        MutableQuadViewImpl quad,
+        VertexConsumer vertexConsumer,
+        CallbackInfo ci
+    ) {
+        if (
+            vertexConsumer instanceof BufferBuilder bb
+            && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
+        ) {
+            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(null);
         }
     }
 
@@ -62,13 +82,7 @@ public class AbstractRenderContextMixin {
             quad instanceof MutableQuadViewExtended q
         ) {
             if (bb.format.contains(CanPipe.VertexFormatElements.AO)) {
-                ((VertexConsumerExtended) bb).setAO(q.getAO(quadVertexIndex));
-            }
-            if (bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-                ((VertexConsumerExtended) bb).inheritSpriteIndex();
-            }
-            if (bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
-                ((VertexConsumerExtended) bb).inheritMaterialIndex();
+                ((VertexConsumerExtended) bb).canpipe_setAO(q.canpipe_getAO(quadVertexIndex));
             }
         }
 

@@ -12,7 +12,6 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 
@@ -27,13 +26,23 @@ public interface VertexConsumerMixin {
         ")V",
         at = @At("HEAD")
     )
-    default void setSpriteIndex(CallbackInfo ci, @Local BakedQuad bakedQuad) {
-        if ((Object)this instanceof BufferBuilder bb) {
-            if (bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-                ((VertexConsumerExtended) bb).setSharedSpriteIndex(
-                    ((TextureAtlasSpriteExtended) bakedQuad.getSprite()).getIndex()
-                );
-            }
+    default void setSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
+        if (this instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
+            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(() -> bakedQuad.getSprite());
+        }
+    }
+
+    @Inject(
+        method = "putBulkData("+
+            "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
+            "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
+            "[FFFFF[IIZ"+
+        ")V",
+        at = @At("RETURN")
+    )
+    default void resetSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
+        if (this instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
+            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(null);
         }
     }
 
@@ -60,20 +69,14 @@ public interface VertexConsumerMixin {
         ")V",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V", shift = Shift.AFTER)
     )
-    default void hz(
+    default void setAO(
         CallbackInfo ci,
-        @Local(ordinal = 0) float[] ao,
+        @Local(ordinal = 0, argsOnly = true) float[] ao,
         @Local(ordinal = 5) int vertexIndex
     ) {
         if (this instanceof BufferBuilder bb) {
             if (bb.format.contains(CanPipe.VertexFormatElements.AO)) {
-                ((VertexConsumerExtended) bb).setAO(ao[vertexIndex + 4 /* because of mixin above */]);
-            }
-            if (bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-                ((VertexConsumerExtended) bb).inheritSpriteIndex();
-            }
-            if (bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
-                ((VertexConsumerExtended) bb).inheritMaterialIndex();
+                ((VertexConsumerExtended) bb).canpipe_setAO(ao[vertexIndex + 4 /* because of mixin above */]);
             }
         }
     }

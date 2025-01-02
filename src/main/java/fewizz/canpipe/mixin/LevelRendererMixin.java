@@ -11,6 +11,7 @@ import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -56,6 +57,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow
     private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
 
+    @Final
     @Shadow
     private List<Entity> visibleEntities;
 
@@ -74,9 +76,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     private RenderBuffers renderBuffers;
 
     //private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_visibleSections = new ObjectArrayList<>(10000);
+    @Unique
     public Matrix4f canpipe_shadowViewMatrix = new Matrix4f();
+    @Unique
     public Matrix4f[] canpipe_shadowProjectionMatrices = new Matrix4f[] { new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f() };
+    @Unique
     public Vector4f[] canpipe_shadowCenters = new Vector4f[] { new Vector4f(), new Vector4f(), new Vector4f(), new Vector4f() };
+    @Unique
     public boolean canpipe_isRenderingShadow = false;
 
     @Override
@@ -128,6 +134,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow
     abstract void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f);
 
+    @Unique
     void canpipe_swap() {
         /*var tmpVisibleSections = this.visibleSections;
         this.visibleSections = this.canpipe_visibleSections;
@@ -183,8 +190,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 (float) Math.toDegrees(Math.atan2(-fromSunDir.x, fromSunDir.z)),
                 (float) Math.toDegrees(Math.atan2(-fromSunDir.y, Math.sqrt(fromSunDir.x*fromSunDir.x + fromSunDir.z*fromSunDir.z)))
             );
-            ((CameraAccessor) this).canpipe_setDetached(true);
-            ((CameraAccessor) this).canpipe_setEntity(camera.getEntity());
+            ((CameraAccessor)(Object) this).canpipe_setDetached(true);
+            ((CameraAccessor)(Object) this).canpipe_setEntity(camera.getEntity());
         }};
 
         Framebuffer shadowFramebuffer = p.framebuffers.get(p.skyShadows.framebufferName());

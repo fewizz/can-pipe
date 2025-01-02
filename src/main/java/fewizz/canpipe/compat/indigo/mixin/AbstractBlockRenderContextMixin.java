@@ -53,7 +53,7 @@ public class AbstractBlockRenderContextMixin {
             MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
             if (materialMap != null && materialMap.defaultMaterial != null) {
                 int index = Materials.id(materialMap.defaultMaterial);
-                vce.setSharedMaterialIndex(index);
+                vce.canpipe_setSharedMaterialIndex(index);
             }
         }
     }
@@ -71,7 +71,7 @@ public class AbstractBlockRenderContextMixin {
     )
     void afterVertexConsumerWrite(CallbackInfo ci, @Local VertexConsumer vc) {
         if (vc instanceof VertexConsumerExtended vce) {
-            vce.resetSharedMaterialIndex();
+            vce.canpipe_resetSharedMaterialIndex();
         }
     }
 
@@ -91,7 +91,7 @@ public class AbstractBlockRenderContextMixin {
     ) {
         // don't set color, set AO instead
         if (Pipelines.getCurrent() != null) {
-            ((MutableQuadViewExtended) instance).setAO(vertexIndex, this.aoCalc.ao[vertexIndex]);
+            ((MutableQuadViewExtended) instance).canpipe_setAO(vertexIndex, this.aoCalc.ao[vertexIndex]);
             return null;
         }
         return original.call(instance, vertexIndex, newColor);

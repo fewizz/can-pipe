@@ -64,7 +64,7 @@ public class ModelBlockRendererMixin {
         CallbackInfo ci
     ) {
         if (Pipelines.getCurrent() != null) {
-            ((VertexConsumerExtended) vc).recomputeNormal(true);
+            ((VertexConsumerExtended) vc).canpipe_recomputeNormal(true);
 
             if (
                 bs != null &&
@@ -75,7 +75,7 @@ public class ModelBlockRendererMixin {
                 MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
                 if (materialMap != null && materialMap.defaultMaterial != null) {
                     int index = Materials.id(materialMap.defaultMaterial);
-                    ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
+                    ((VertexConsumerExtended) bb).canpipe_setSharedMaterialIndex(index);
                 }
             }
         }
@@ -104,14 +104,14 @@ public class ModelBlockRendererMixin {
         CallbackInfo ci
     ) {
         if (Pipelines.getCurrent() != null) {
-            ((VertexConsumerExtended) vc).recomputeNormal(false);
+            ((VertexConsumerExtended) vc).canpipe_recomputeNormal(false);
 
             if (
                 bs != null &&
                 vc instanceof BufferBuilder bb &&
                 bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
             ) {
-                ((VertexConsumerExtended) bb).resetSharedMaterialIndex();
+                ((VertexConsumerExtended) bb).canpipe_resetSharedMaterialIndex();
             }
         }
     }
@@ -129,7 +129,7 @@ public class ModelBlockRendererMixin {
         CallbackInfo ci
     ) {
         if (Pipelines.getCurrent() != null) {
-            ((VertexConsumerExtended) vc).recomputeNormal(true);
+            ((VertexConsumerExtended) vc).canpipe_recomputeNormal(true);
 
             if (
                 bs != null &&
@@ -140,7 +140,7 @@ public class ModelBlockRendererMixin {
                 MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
                 if (materialMap != null && materialMap.defaultMaterial != null) {
                     int index = Materials.id(materialMap.defaultMaterial);
-                    ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
+                    ((VertexConsumerExtended) bb).canpipe_setSharedMaterialIndex(index);
                 }
             }
         }
@@ -159,14 +159,14 @@ public class ModelBlockRendererMixin {
         CallbackInfo ci
     ) {
         if (Pipelines.getCurrent() != null) {
-            ((VertexConsumerExtended) vc).recomputeNormal(false);
+            ((VertexConsumerExtended) vc).canpipe_recomputeNormal(false);
 
             if (
                 bs != null &&
                 vc instanceof BufferBuilder bb &&
                 bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
             ) {
-                ((VertexConsumerExtended) bb).resetSharedMaterialIndex();
+                ((VertexConsumerExtended) bb).canpipe_resetSharedMaterialIndex();
             }
         }
     }

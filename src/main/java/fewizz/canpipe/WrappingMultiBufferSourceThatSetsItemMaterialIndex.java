@@ -38,7 +38,7 @@ public class WrappingMultiBufferSourceThatSetsItemMaterialIndex implements Multi
                     index = Materials.id(material);
                 }
             }
-            ((VertexConsumerExtended) bb).setSharedMaterialIndex(index);
+            ((VertexConsumerExtended) bb).canpipe_setSharedMaterialIndex(index);
         }
         return vc;
     }

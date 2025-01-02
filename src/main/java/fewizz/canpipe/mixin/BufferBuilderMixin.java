@@ -1,5 +1,8 @@
 package fewizz.canpipe.mixin;
 
+import java.util.function.Supplier;
+
+import com.mojang.blaze3d.vertex.*;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
@@ -10,14 +13,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
-
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
@@ -55,16 +56,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     abstract protected long beginElement(VertexFormatElement vertexFormatElement);
 
     @Shadow
-    protected static byte normalIntValue(float f) {return 0;}
-
-    @Unique
-    final Vector3f sharedTangent = new Vector3f(1.0F, 0.0F, 0.0F);
+    private static byte normalIntValue(float f) {return 0;}
 
     @Unique
     int sharedMaterialIndex = -1;
 
     @Unique
-    int sharedSpriteIndex = -1;
+    Supplier<TextureAtlasSprite> spriteSupplier = null;
 
     @Unique
     boolean recomputeNormal = false;
@@ -73,27 +71,28 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private void endLastVertex(CallbackInfo ci) {
         boolean requiresNormal = format.contains(VertexFormatElement.NORMAL);
         boolean normalIsNotSet = (elementsToFill & VertexFormatElement.NORMAL.mask()) != 0;
+        boolean lastVertex = !this.mode.connectedPrimitives && this.vertices != 0 && (this.vertices % this.mode.primitiveLength) == 0;
+        int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
 
         if ((this.recomputeNormal && requiresNormal) || normalIsNotSet) {
-            if (!this.mode.connectedPrimitives && this.vertices > 0 && (this.vertices % this.mode.primitiveLength) == 0) {
-                int posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
-                int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
-                long o = this.vertexPointer - this.vertexSize*(this.mode.primitiveLength - 1);
+            if (lastVertex) {
                 Vector3f normal = Pipelines.computeNormal(
-                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+1*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+2*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+1*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+2*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+1*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+2*Float.BYTES)
+                    canpipe_getPos(offsetToFirstVertex, 0),
+                    canpipe_getPos(offsetToFirstVertex, 1),
+                    canpipe_getPos(offsetToFirstVertex, 2),
+                    canpipe_getPos(offsetToFirstVertex+1, 0),
+                    canpipe_getPos(offsetToFirstVertex+1, 1),
+                    canpipe_getPos(offsetToFirstVertex+1, 2),
+                    canpipe_getPos(offsetToFirstVertex+2, 0),
+                    canpipe_getPos(offsetToFirstVertex+2, 1),
+                    canpipe_getPos(offsetToFirstVertex+2, 2)
                 );
+                int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
                 for (int i = 0; i < this.mode.primitiveLength; ++i) {
-                    MemoryUtil.memPutByte(o+this.vertexSize*i+normalOffset+0, normalIntValue(normal.x));
-                    MemoryUtil.memPutByte(o+this.vertexSize*i+normalOffset+1, normalIntValue(normal.y));
-                    MemoryUtil.memPutByte(o+this.vertexSize*i+normalOffset+2, normalIntValue(normal.z));
+                    long o = this.vertexPointer + (long) this.vertexSize *(offsetToFirstVertex+i)+normalOffset;
+                    MemoryUtil.memPutByte(o, normalIntValue(normal.x));
+                    MemoryUtil.memPutByte(o+1, normalIntValue(normal.y));
+                    MemoryUtil.memPutByte(o+2, normalIntValue(normal.z));
                 }
                 this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
             }
@@ -103,101 +102,138 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
 
         if ((elementsToFill & CanPipe.VertexFormatElements.TANGENT.mask()) != 0) {
-            if (!this.mode.connectedPrimitives && this.vertices > 0 && (this.vertices % this.mode.primitiveLength) == 0) {
-                int posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
-                int uvOffset = this.offsetsByElement[VertexFormatElement.UV0.id()];
-                int tangentOffset = this.offsetsByElement[CanPipe.VertexFormatElements.TANGENT.id()];
-                long o = this.vertexPointer - this.vertexSize*(this.mode.primitiveLength - 1);
+            if (lastVertex) {
                 Vector3f tangent = Pipelines.computeTangent(
-                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+1*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + posOffset+2*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + uvOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*0 + uvOffset+1*Float.BYTES),
+                    canpipe_getPos(offsetToFirstVertex, 0),
+                    canpipe_getPos(offsetToFirstVertex, 1),
+                    canpipe_getPos(offsetToFirstVertex, 2),
+                    canpipe_getUV(offsetToFirstVertex, 0),
+                    canpipe_getUV(offsetToFirstVertex, 1),
 
-                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+1*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + posOffset+2*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + uvOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*1 + uvOffset+1*Float.BYTES),
+                    canpipe_getPos(offsetToFirstVertex+1, 0),
+                    canpipe_getPos(offsetToFirstVertex+1, 1),
+                    canpipe_getPos(offsetToFirstVertex+1, 2),
+                    canpipe_getUV(offsetToFirstVertex+1, 0),
+                    canpipe_getUV(offsetToFirstVertex+1, 1),
 
-                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+1*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + posOffset+2*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + uvOffset+0*Float.BYTES),
-                    MemoryUtil.memGetFloat(o+this.vertexSize*2 + uvOffset+1*Float.BYTES)
+                    canpipe_getPos(offsetToFirstVertex+2, 0),
+                    canpipe_getPos(offsetToFirstVertex+2, 1),
+                    canpipe_getPos(offsetToFirstVertex+2, 2),
+                    canpipe_getUV(offsetToFirstVertex+2, 0),
+                    canpipe_getUV(offsetToFirstVertex+2, 1)
                 ).normalize();
                 for (int i = 0; i < this.mode.primitiveLength; ++i) {
-                    MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+0, normalIntValue(tangent.x));
-                    MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+1, normalIntValue(tangent.y));
-                    MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+2, normalIntValue(tangent.z));
-                    MemoryUtil.memPutByte(o+this.vertexSize*i+tangentOffset+3, (byte) 0);
+                    setTangentRaw(offsetToFirstVertex+i, tangent.x, tangent.y, tangent.z);
                 }
-                this.elementsToFill &= ~CanPipe.VertexFormatElements.TANGENT.mask();
             }
             else {
-                setSharedTangent(1.0F, 0.0F, 0.0F);
-                inheritTangent();
+                setTangentRaw(0, 1.0F, 0.0F, 0.0F);
             }
+            this.elementsToFill &= ~CanPipe.VertexFormatElements.TANGENT.mask();
         }
+
         if ((elementsToFill & CanPipe.VertexFormatElements.AO.mask()) != 0) {
-            setAO(1.0F);
+            canpipe_setAO(1.0F);
         }
         if ((elementsToFill & CanPipe.VertexFormatElements.MATERIAL_INDEX.mask()) != 0) {
-            setSharedMaterialIndex(-1);
-            inheritMaterialIndex();
+            long offset = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX);
+            MemoryUtil.memPutInt(offset, this.sharedMaterialIndex);
         }
-        if ((elementsToFill & CanPipe.VertexFormatElements.SPRITE_INDEX.mask()) != 0) {
-            setSharedSpriteIndex(-1);
-            inheritSpriteIndex();
+
+        /*if ((elementsToFill & CanPipe.VertexFormatElements.SPRITE_INDEX.mask()) != 0) {
+            if (lastVertex) {
+                TextureAtlasSprite sprite = this.spriteSupplier != null ? this.spriteSupplier.get() : null;
+                if (sprite != null) {
+                    for (int i = 0; i < this.mode.primitiveLength; ++i) {
+                        setSpriteRaw(offsetToFirstVertex+i, sprite);
+                    }
+                }
+            }
+            else {
+                setSpriteRaw(0, null);
+            }
+            this.elementsToFill &= ~CanPipe.VertexFormatElements.SPRITE_INDEX.mask();
+        }*/
+    }
+
+    @Inject(
+        method = "setUv",
+        at = @At("RETURN"),
+        remap = false
+    )
+    void onSetUv(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
+        if ((elementsToFill & CanPipe.VertexFormatElements.SPRITE_INDEX.mask()) == 0) {
+            return;
         }
+
+        boolean lastVertex = !this.mode.connectedPrimitives && this.vertices != 0 && (this.vertices % this.mode.primitiveLength) == 0;
+        if (lastVertex) {
+            int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
+            TextureAtlasSprite sprite = this.spriteSupplier != null ? this.spriteSupplier.get() : null;
+            if (sprite != null) {
+                for (int i = 0; i < this.mode.primitiveLength; ++i) {
+                    setSpriteRaw(offsetToFirstVertex+i, sprite);
+                }
+            }
+        }
+        else {
+            setSpriteRaw(0, null);
+        }
+        this.elementsToFill &= ~CanPipe.VertexFormatElements.SPRITE_INDEX.mask();
     }
 
     @Override
-    public void setAO(float ao) {
+    public void canpipe_setAO(float ao) {
         long offset = this.beginElement(CanPipe.VertexFormatElements.AO);
         MemoryUtil.memPutFloat(offset, ao);
     }
 
     @Override
-    public void setSharedSpriteIndex(int spriteIndex) {
-        this.sharedSpriteIndex = spriteIndex;
+    public void canpipe_setSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier) {
+        this.spriteSupplier = spriteSupplier;
+    }
+
+    @Unique
+    private void setSpriteRaw(int vertexOffset, TextureAtlasSprite sprite) {
+        long spriteOffset = this.offsetsByElement[CanPipe.VertexFormatElements.SPRITE_INDEX.id()];
+        long o = this.vertexPointer + (long) this.vertexSize * vertexOffset + spriteOffset;
+        MemoryUtil.memPutInt(
+            o,
+            sprite != null ? ((TextureAtlasSpriteExtended) sprite).getIndex() : -1
+        );
     }
 
     @Override
-    public void inheritSpriteIndex() {
-        long offset = this.beginElement(CanPipe.VertexFormatElements.SPRITE_INDEX);
-        MemoryUtil.memPutInt(offset, this.sharedSpriteIndex);
-    }
-
-    @Override
-    public void setSharedMaterialIndex(int materialIndex) {
+    public void canpipe_setSharedMaterialIndex(int materialIndex) {
         this.sharedMaterialIndex = materialIndex;
     }
 
-    @Override
-    public void inheritMaterialIndex() {
-        long offset = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX);
-        MemoryUtil.memPutInt(offset, this.sharedMaterialIndex);
+    @Unique
+    private void setTangentRaw(int vertexOffset, float x, float y, float z) {
+        long tangentOffset = this.offsetsByElement[CanPipe.VertexFormatElements.TANGENT.id()];
+        long o = this.vertexPointer + (long) this.vertexSize * vertexOffset + tangentOffset;
+        MemoryUtil.memPutByte(o, normalIntValue(x));
+        MemoryUtil.memPutByte(o+1, normalIntValue(y));
+        MemoryUtil.memPutByte(o+2, normalIntValue(z));
+        MemoryUtil.memPutByte(o+3, (byte) 0);
     }
 
     @Override
-    public void inheritTangent() {
-        long offset = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
-        MemoryUtil.memPutByte(offset+0, normalIntValue(this.sharedTangent.x));
-        MemoryUtil.memPutByte(offset+1, normalIntValue(this.sharedTangent.y));
-        MemoryUtil.memPutByte(offset+2, normalIntValue(this.sharedTangent.z));
-        MemoryUtil.memPutByte(offset+3, (byte) 0);
-    }
-
-    @Override
-    public void setSharedTangent(float x, float y, float z) {
-        this.sharedTangent.set(x, y, z);
-    }
-
-    @Override
-    public void recomputeNormal(boolean recompute) {
+    public void canpipe_recomputeNormal(boolean recompute) {
         this.recomputeNormal = recompute;
     }
 
+    @Override
+    public float canpipe_getUV(int vertexOffset, int element) {
+        long uvOffset = this.offsetsByElement[VertexFormatElement.UV0.id()];
+        long o = this.vertexPointer + (long) this.vertexSize*vertexOffset + uvOffset;
+        return MemoryUtil.memGetFloat(o + (long) element*Float.BYTES);
+    }
+
+    @Unique
+    private float canpipe_getPos(int vertexOffset, int element) {
+        long posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
+        long o = this.vertexPointer + (long) this.vertexSize*vertexOffset + posOffset;
+        return MemoryUtil.memGetFloat(o + (long) element*Float.BYTES);
+    }
 }
