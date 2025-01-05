@@ -158,8 +158,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Inject(
         method = "setUv",
-        at = @At("RETURN"),
-        remap = false
+        at = @At("RETURN")
     )
     void onSetUv(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
         if ((elementsToFill & CanPipe.VertexFormatElements.SPRITE_INDEX.mask()) == 0) {
