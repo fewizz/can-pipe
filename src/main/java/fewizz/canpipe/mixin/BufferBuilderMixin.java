@@ -135,13 +135,20 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         if ((elementsToFill & CanPipe.VertexFormatElements.AO.mask()) != 0) {
             canpipe_setAO(1.0F);
         }
-        if ((elementsToFill & CanPipe.VertexFormatElements.MATERIAL_INDEX.mask()) != 0) {
-            long offset = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX);
-            MemoryUtil.memPutInt(offset, this.sharedMaterialIndex);
-        }
+    }
 
-        /*if ((elementsToFill & CanPipe.VertexFormatElements.SPRITE_INDEX.mask()) != 0) {
+    /**
+     * NOTE: we assume that {@link VertexFormatElement#UV0} is always present, which is... not the best way
+     */
+    @Inject(
+        method = "setUv",
+        at = @At("RETURN")
+    )
+    void onSetUv(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
+        if ((elementsToFill & CanPipe.VertexFormatElements.SPRITE_INDEX.mask()) != 0) {
+            boolean lastVertex = !this.mode.connectedPrimitives && this.vertices != 0 && (this.vertices % this.mode.primitiveLength) == 0;
             if (lastVertex) {
+                int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
                 TextureAtlasSprite sprite = this.spriteSupplier != null ? this.spriteSupplier.get() : null;
                 if (sprite != null) {
                     for (int i = 0; i < this.mode.primitiveLength; ++i) {
@@ -153,32 +160,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 setSpriteRaw(0, null);
             }
             this.elementsToFill &= ~CanPipe.VertexFormatElements.SPRITE_INDEX.mask();
-        }*/
-    }
-
-    @Inject(
-        method = "setUv",
-        at = @At("RETURN")
-    )
-    void onSetUv(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
-        if ((elementsToFill & CanPipe.VertexFormatElements.SPRITE_INDEX.mask()) == 0) {
-            return;
         }
-
-        boolean lastVertex = !this.mode.connectedPrimitives && this.vertices != 0 && (this.vertices % this.mode.primitiveLength) == 0;
-        if (lastVertex) {
-            int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
-            TextureAtlasSprite sprite = this.spriteSupplier != null ? this.spriteSupplier.get() : null;
-            if (sprite != null) {
-                for (int i = 0; i < this.mode.primitiveLength; ++i) {
-                    setSpriteRaw(offsetToFirstVertex+i, sprite);
-                }
-            }
+        if ((elementsToFill & CanPipe.VertexFormatElements.MATERIAL_INDEX.mask()) != 0) {
+            long offset = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX);
+            MemoryUtil.memPutInt(offset, this.sharedMaterialIndex);
         }
-        else {
-            setSpriteRaw(0, null);
-        }
-        this.elementsToFill &= ~CanPipe.VertexFormatElements.SPRITE_INDEX.mask();
     }
 
     @Override
