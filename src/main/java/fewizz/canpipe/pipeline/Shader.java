@@ -141,25 +141,26 @@ public class Shader extends CompiledShader {
                     Option option = options.get(location);
                     if (option != null) {
                         StringBuilder optionsDefs = new StringBuilder();
+
                         for (var e : option.elements.entrySet()) {
                             String name = e.getKey();
                             Option.Element value = e.getValue();
                             var defaultValue = value.defaultValue.getValue();
-                            if (defaultValue instanceof Boolean) {
-                                if (defaultValue == Boolean.TRUE) {
-                                    optionsDefs
-                                        .append("#define ")
-                                        .append(name.toUpperCase())
-                                        .append("\n");
+
+                            // don't define if false
+                            if (defaultValue != Boolean.FALSE) {
+                                optionsDefs.append("#define ");
+                                if (value.prefix != null) {
+                                    optionsDefs.append(value.prefix.toUpperCase());
                                 }
-                                definitions.add(name.toUpperCase());
+                                optionsDefs.append(name.toUpperCase());
+                                if (!(defaultValue instanceof Boolean)) {
+                                    optionsDefs.append(" ").append(defaultValue);
+                                }
+                                optionsDefs.append("\n");
                             }
-                            else {
-                                optionsDefs
-                                    .append("#define ").append(name.toUpperCase())
-                                    .append(" ").append(defaultValue).append("\n");
-                                definitions.add(name.toUpperCase());
-                            }
+
+                            definitions.add(name.toUpperCase());
                         }
                         line = optionsDefs.toString();
                     }

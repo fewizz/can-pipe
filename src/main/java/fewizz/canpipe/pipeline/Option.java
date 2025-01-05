@@ -3,6 +3,7 @@ package fewizz.canpipe.pipeline;
 import java.util.Map;
 
 import blue.endless.jankson.JsonPrimitive;
+import blue.endless.jankson.annotation.Nullable;
 import net.minecraft.resources.ResourceLocation;
 
 public class Option {
@@ -19,9 +20,11 @@ public class Option {
 
     public static class Element {
         final JsonPrimitive defaultValue;
+        @Nullable final String prefix;
 
-        Element(JsonPrimitive defaultValue) {
+        Element(JsonPrimitive defaultValue, String prefix) {
             this.defaultValue = defaultValue;
+            this.prefix = prefix;
         }
     }
 }
