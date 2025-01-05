@@ -105,7 +105,7 @@ public class Pass extends PassBase {
 
         framebuffer.bindWrite(false);
 
-        RenderSystem.depthFunc(GL33C.GL_ALWAYS);
+        RenderSystem.disableDepthTest();
 
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
         bufferBuilder.addVertex(0.0F, 0.0F, 0.0F).setUv(0.0F, 0.0F);
@@ -114,7 +114,7 @@ public class Pass extends PassBase {
         bufferBuilder.addVertex(0.0F, 1.0F, 0.0F).setUv(0.0F, 1.0F);
         BufferUploader.draw(bufferBuilder.buildOrThrow());
 
-        RenderSystem.depthFunc(GL33C.GL_LEQUAL);
+        RenderSystem.enableDepthTest();
 
         framebuffer.unbindWrite();
         program.clear();

@@ -86,6 +86,7 @@ public class MaterialProgram extends ProgramBase {
         VertexFormat format,
         int glslVersion,
         boolean enablePBR,
+        boolean depthPass,
         @Nullable Framebuffer shadowFramebuffer,
         ResourceLocation location,
         ResourceLocation vertexShaderLocation,
@@ -152,7 +153,9 @@ public class MaterialProgram extends ProgramBase {
             """;
 
         vertexSrc =
-            "#define CANPIPE_MATERIAL_SHADER\n\n"+
+            "#define CANPIPE_MATERIAL_SHADER\n"+
+            (depthPass ? "#define DEPTH_PASS\n" : "")+
+            "\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
@@ -264,6 +267,7 @@ public class MaterialProgram extends ProgramBase {
         fragmentSrc =
             "#extension GL_ARB_conservative_depth: enable\n\n"+
             "#define CANPIPE_MATERIAL_SHADER\n"+
+            (depthPass ? "#define DEPTH_PASS\n" : "")+
             (enablePBR ? "#define PBR_ENABLED\n" : "") +
             """
 

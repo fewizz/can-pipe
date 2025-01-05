@@ -6,11 +6,11 @@ import java.util.Map;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.KHRDebug;
 
 import com.google.common.collect.Streams;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -283,13 +283,27 @@ public class ProgramBase extends CompiledShaderProgram {
 
     /**
      * Replaces {@link RenderSystem#bindTexture} on {@link CompiledShaderProgram#apply},
-     * because vanilla supports only {@link GL11#GL_TEXTURE_2D} texture target
+     * because vanilla supports only {@link GL33C#GL_TEXTURE_2D} texture target
     */
-    public void onApplyTextureBind(int textureID) {
-        for (int target : List.of(GL33C.GL_TEXTURE_2D, GL33C.GL_TEXTURE_2D_ARRAY, GL33C.GL_TEXTURE_CUBE_MAP, GL33C.GL_TEXTURE_3D)) {
-            GFX.glBindTexture(target, 0);  // Stupid AF, TODO
-        }
+    public void onTextureBindOnApply(int textureID) {
         GFX.glBindTexture(this.samplerTargetByID.getOrDefault(textureID, GL33C.GL_TEXTURE_2D), textureID);
+    }
+
+    /**
+     * Called on {@link CompiledShaderProgram#clear}
+     * for particular texture/active texture.
+     * We need this, because
+     * <a href="https://community.khronos.org/t/binding-different-targets-to-same-unit/76935">
+     * different targets could be bound to same texture unit
+     * </a>.
+     * Vanilla doesn't know about texture targets other that {@link GL33C#GL_TEXTURE_2D}
+    */
+    public void onClearSampler(int textureID, int textureUnit) {
+        int target = samplerTargetByID.getOrDefault(textureID, GL33C.GL_TEXTURE_2D);
+        if (target != GL33C.GL_TEXTURE_2D) {
+            GlStateManager._activeTexture(GL33C.GL_TEXTURE0 + textureUnit);
+            GFX.glBindTexture(target, textureID);  // unbind non-TEXTURE_2D
+        }
     }
 
 }

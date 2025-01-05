@@ -196,14 +196,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         Framebuffer shadowFramebuffer = p.framebuffers.get(p.skyShadows.framebufferName());
 
-        /*FrameGraphBuilder frameGraphBuilder = new FrameGraphBuilder();
-        this.targets.main = frameGraphBuilder.importExternal("main", shadowFramebuffer);
-        this.targets.translucent = frameGraphBuilder.importExternal("translucent", shadowFramebuffer);
-        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", shadowFramebuffer);
-        this.targets.particles = frameGraphBuilder.importExternal("particles", shadowFramebuffer);
-        this.targets.weather = frameGraphBuilder.importExternal("weather", shadowFramebuffer);
-        this.targets.clouds = frameGraphBuilder.importExternal("clouds", shadowFramebuffer);*/
-
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
         modelViewMatrixStack.pushMatrix();
         modelViewMatrixStack.mul(modelViewMatrix);
@@ -226,7 +218,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             float cascadeRenderDistance;
 
             if (cascade == 0) {
-                cascadeRenderDistance = renderDistance + 16;
+                cascadeRenderDistance = renderDistance + 32;
             }
             else {
                 cascadeRenderDistance = p.skyShadows.cascadeRadii().get(cascade-1) / 2.0F;

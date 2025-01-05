@@ -20,7 +20,6 @@ import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL40C;
 
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
@@ -430,6 +429,7 @@ public class Pipeline implements AutoCloseable {
                     vertexFormat,
                     glslVersion,
                     enablePBR,
+                    false,
                     shadowFramebuffer,
                     location,
                     materialVertexShaderLocation,
@@ -447,6 +447,7 @@ public class Pipeline implements AutoCloseable {
                         vertexFormat,
                         glslVersion,
                         enablePBR,
+                        true, // depth pass
                         shadowFramebuffer,
                         location,
                         this.skyShadows.vertexShaderLocation,
