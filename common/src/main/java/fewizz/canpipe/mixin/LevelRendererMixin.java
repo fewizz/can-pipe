@@ -54,18 +54,9 @@ import net.minecraft.world.phys.Vec3;
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin implements LevelRendererExtended {
 
-    @Shadow
-    private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
-
     @Final
     @Shadow
     private List<Entity> visibleEntities;
-
-    @Shadow
-    private double prevCamRotX = Double.MIN_VALUE;
-
-    @Shadow
-    private double prevCamRotY = Double.MIN_VALUE;
 
     @Shadow
     @Final
@@ -74,8 +65,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow
     @Final
     private RenderBuffers renderBuffers;
-
-    //private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_visibleSections = new ObjectArrayList<>(10000);
     @Unique
     public Matrix4f canpipe_shadowViewMatrix = new Matrix4f();
     @Unique
@@ -136,10 +125,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Unique
     void canpipe_swap() {
-        /*var tmpVisibleSections = this.visibleSections;
-        this.visibleSections = this.canpipe_visibleSections;
-        this.canpipe_visibleSections = tmpVisibleSections;*/
-
         this.canpipe_isRenderingShadow = !this.canpipe_isRenderingShadow;
     }
 
@@ -284,10 +269,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.collectVisibleEntities(shadowCamera, shadowFrustum, this.visibleEntities);
             this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
             this.renderBlockEntities(poseStack, bufferSource, crumblingBufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
-            bufferSource.endBatch();
-            crumblingBufferSource.endBatch();
             this.checkPoseStack(poseStack);
             this.visibleEntities.clear();
+            bufferSource.endBatch();
+            crumblingBufferSource.endBatch();
         }
 
         RenderSystem.disablePolygonOffset();

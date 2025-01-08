@@ -117,11 +117,12 @@ public class MaterialProgram extends ProgramBase {
         String materialsVertexSrc = "";
         IntList usedMaterialIDs = new IntArrayList();
         for (Material m : Materials.MATERIALS.values()) {
-            if (m.vertexShaderSource == null) {
+            String src = depthPass ? m.depthVertexShaderSource : m.vertexShaderSource;
+            if (src == null) {
                 continue;
             }
             int id = Materials.id(m);
-            String src = m.vertexShaderSource.replace("frx_materialVertex", "_material_"+id);
+            src = src.replace("frx_materialVertex", "_material_"+id);
             materialsVertexSrc += src + "\n\n";
             usedMaterialIDs.add(id);
         }
@@ -255,11 +256,12 @@ public class MaterialProgram extends ProgramBase {
         String materialsFragmentSrc = "";
         usedMaterialIDs.clear();
         for (Material m : Materials.MATERIALS.values()) {
-            if (m.fragmentShaderSource == null) {
+            String src = depthPass ? m.depthFragmentShaderSource : m.fragmentShaderSource;
+            if (src == null) {
                 continue;
             }
             int id = Materials.id(m);
-            String src = m.fragmentShaderSource.replace("frx_materialFragment", "_material_"+id);
+            src = src.replace("frx_materialFragment", "_material_"+id);
             materialsFragmentSrc += src + "\n\n";
             usedMaterialIDs.add(id);
         }

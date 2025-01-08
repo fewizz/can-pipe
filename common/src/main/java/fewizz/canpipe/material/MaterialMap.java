@@ -1,7 +1,8 @@
 package fewizz.canpipe.material;
 
+import org.jetbrains.annotations.Nullable;
+
 import blue.endless.jankson.JsonObject;
-import blue.endless.jankson.annotation.Nullable;
 import net.minecraft.resources.ResourceLocation;
 
 public class MaterialMap {
