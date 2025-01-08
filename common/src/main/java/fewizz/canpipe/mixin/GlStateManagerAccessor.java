@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 
-@Mixin(value=GlStateManager.class, remap=false)
+@Mixin(value = GlStateManager.class, remap = false)
 public interface GlStateManagerAccessor {
 
     @Accessor("TEXTURES")

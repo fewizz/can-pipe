@@ -1,0 +1,35 @@
+plugins {
+    id 'multiloader-loader'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    version = neoforge_version
+    def at = project(':common').file('src/main/resources/META-INF/accesstransformer.cfg')
+    if (at.exists()) {
+        accessTransformers.from(at.absolutePath)
+    }
+    parchment {
+        minecraftVersion = parchment_minecraft
+        mappingsVersion = parchment_version
+    }
+    runs {
+        client {
+            client()
+            ideName = "NeoForge"
+            gameDirectory = new File(project.rootDir, "/run")
+        }
+    }
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    jarJar(implementation("blue.endless:jankson:1.2.3"))
+    additionalRuntimeClasspath "blue.endless:jankson:1.2.3"
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
