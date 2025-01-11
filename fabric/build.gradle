@@ -1,6 +1,10 @@
 plugins {
-    id 'multiloader-loader'
-    id 'fabric-loom'
+    id 'fabric-loom' version '1.9-SNAPSHOT'
+}
+
+sourceSets.main {
+    java { srcDir "../src/main/java" }
+    resources { srcDir "../src/main/resources" }
 }
 
 dependencies {
@@ -12,31 +16,25 @@ dependencies {
 
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     include(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
-    // modCompileOnly(fabricApi.module("fabric-renderer-indigo", project.fabric_version))
+    // modCompileOnly(fabricApi.module("fabric-renderer-indigo", fabric_version))
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-    modImplementation(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
+    modImplementation(fabricApi.module("fabric-resource-loader-v0", fabric_version))
 
     modImplementation "blue.endless:jankson:1.2.3"
     include "blue.endless:jankson:1.2.3"
 }
 
 loom {
-    def aw = project(':common').file("src/main/resources/${mod_id}.accesswidener")
-    if (aw.exists()) {
-        accessWidenerPath.set(aw)
-    }
-    mixin {
-        defaultRefmapName.set("${mod_id}.refmap.json")
-    }
+    accessWidenerPath = file("src/main/resources/canpipe.accesswidener")
+
     runs {
         client {
             client()
             setConfigName('Fabric')
             ideConfigGenerated(true)
-            // loom adds 
             runDir('../run')
-            appendProjectPathToConfigName.set(false)
+            appendProjectPathToConfigName = false
         }
     }
 }

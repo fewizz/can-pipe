@@ -191,31 +191,31 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_LAST_PROJECTION_MATRIX.set(gra.canpipe_getLastProjectionMatrix());
         }
         if (this.FRX_SHADOW_VIEW_MATRIX != null) {
-            this.FRX_SHADOW_VIEW_MATRIX.set(lre.getShadowViewMatrix());
+            this.FRX_SHADOW_VIEW_MATRIX.set(lre.canpipe_getShadowViewMatrix());
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(lre.getShadowProjectionMatrices()[0]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(lre.canpipe_getShadowProjectionMatrices()[0]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.set(lre.getShadowProjectionMatrices()[1]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.set(lre.canpipe_getShadowProjectionMatrices()[1]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.set(lre.getShadowProjectionMatrices()[2]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.set(lre.canpipe_getShadowProjectionMatrices()[2]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.set(lre.getShadowProjectionMatrices()[3]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.set(lre.canpipe_getShadowProjectionMatrices()[3]);
         }
         if (this.CANPIPE_SHADOW_CENTER_0 != null) {
-            this.CANPIPE_SHADOW_CENTER_0.set(lre.getShadowCenters()[0]);
+            this.CANPIPE_SHADOW_CENTER_0.set(lre.canpipe_getShadowCenters()[0]);
         }
         if (this.CANPIPE_SHADOW_CENTER_1 != null) {
-            this.CANPIPE_SHADOW_CENTER_1.set(lre.getShadowCenters()[1]);
+            this.CANPIPE_SHADOW_CENTER_1.set(lre.canpipe_getShadowCenters()[1]);
         }
         if (this.CANPIPE_SHADOW_CENTER_2 != null) {
-            this.CANPIPE_SHADOW_CENTER_2.set(lre.getShadowCenters()[2]);
+            this.CANPIPE_SHADOW_CENTER_2.set(lre.canpipe_getShadowCenters()[2]);
         }
         if (this.CANPIPE_SHADOW_CENTER_3 != null) {
-            this.CANPIPE_SHADOW_CENTER_3.set(lre.getShadowCenters()[3]);
+            this.CANPIPE_SHADOW_CENTER_3.set(lre.canpipe_getShadowCenters()[3]);
         }
         if (this.FRX_VIEW_DISTANCE != null) {
             this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);

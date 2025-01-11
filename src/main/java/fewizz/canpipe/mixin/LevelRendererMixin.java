@@ -33,7 +33,6 @@ import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.pipeline.ProgramBase;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -72,30 +71,25 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Unique
     public Vector4f[] canpipe_shadowCenters = new Vector4f[] { new Vector4f(), new Vector4f(), new Vector4f(), new Vector4f() };
     @Unique
-    public boolean canpipe_isRenderingShadow = false;
+    volatile public boolean canpipe_isRenderingShadows = false;
 
     @Override
-    public boolean getIsRenderingShadow() {
-        return this.canpipe_isRenderingShadow;
+    public boolean canpipe_getIsRenderingShadows() {
+        return this.canpipe_isRenderingShadows;
     }
 
     @Override
-    public void setIsRenderingShadow(boolean v) {
-        this.canpipe_isRenderingShadow = v;
-    }
-
-    @Override
-    public Matrix4f getShadowViewMatrix() {
+    public Matrix4f canpipe_getShadowViewMatrix() {
         return this.canpipe_shadowViewMatrix;
     }
 
     @Override
-    public Matrix4f[] getShadowProjectionMatrices() {
+    public Matrix4f[] canpipe_getShadowProjectionMatrices() {
         return this.canpipe_shadowProjectionMatrices;
     }
 
     @Override
-    public Vector4f[] getShadowCenters() {
+    public Vector4f[] canpipe_getShadowCenters() {
         return this.canpipe_shadowCenters;
     }
 
@@ -125,7 +119,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Unique
     void canpipe_swap() {
-        this.canpipe_isRenderingShadow = !this.canpipe_isRenderingShadow;
+        // non-atomic, changed by one thread
+        this.canpipe_isRenderingShadows = !this.canpipe_isRenderingShadows;
     }
 
     @Inject(
@@ -354,7 +349,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         index = 0
     )
     boolean disableSmartCullIfShadow(boolean original) {
-        return canpipe_isRenderingShadow ? false : original;
+        return canpipe_isRenderingShadows ? false : original;
     }
 
     /*@ModifyExpressionValue(
@@ -379,7 +374,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     private static Frustum dontOffsetShadowFrustum(Frustum frustum, int size, Operation<Frustum> original) {
         var mc = Minecraft.getInstance();
-        if (((LevelRendererExtended)mc.levelRenderer).getIsRenderingShadow()) {
+        if (((LevelRendererExtended)mc.levelRenderer).canpipe_getIsRenderingShadows()) {
             return frustum;
         }
         return original.call(frustum, size);
@@ -394,7 +389,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         index = 0
     )
     double fixEntityRenderDistance(double original) {  // TODO use optimal value
-        return this.canpipe_isRenderingShadow ? Minecraft.getInstance().gameRenderer.getRenderDistance() * 2.0 : original;
+        return this.canpipe_isRenderingShadows ? Minecraft.getInstance().gameRenderer.getRenderDistance() * 2.0 : original;
     }
 
 }

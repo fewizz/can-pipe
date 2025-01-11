@@ -141,7 +141,7 @@ public class CanPipe {
                 Minecraft mc = Minecraft.getInstance();
 
                 MaterialProgram program =
-                    ((LevelRendererExtended) mc.levelRenderer).getIsRenderingShadow() ?
+                    ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows() ?
                     p.shadowPrograms.get(format) :
                     p.materialPrograms.get(format);
 
@@ -185,7 +185,7 @@ public class CanPipe {
                 var mc = Minecraft.getInstance();
 
                 Framebuffer framebuffer =
-                    ((LevelRendererExtended) mc.levelRenderer).getIsRenderingShadow() ?
+                    ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows() ?
                     p.framebuffers.get(p.skyShadows.framebufferName()) :
                     framebufferGetter.apply(p);
 
