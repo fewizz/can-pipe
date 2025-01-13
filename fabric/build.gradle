@@ -2,11 +2,6 @@ plugins {
     id 'fabric-loom' version '1.9-SNAPSHOT'
 }
 
-sourceSets.main {
-    java { srcDir "../src/main/java" }
-    resources { srcDir "../src/main/resources" }
-}
-
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {
@@ -38,3 +33,19 @@ loom {
         }
     }
 }
+
+base {
+    archivesName = mod_id
+}
+
+processResources {
+    from project(":common").sourceSets.main.resources
+
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+compileJava.source project(":common").sourceSets.main.allSource

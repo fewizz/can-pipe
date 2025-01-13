@@ -39,6 +39,6 @@ replay_*.log
 *.hprof
 *.jfr
 
-src/main/java/com/*
-src/main/java/net/*
-src/main/resources/assets/minecraft/*
+common/src/main/java/com/*
+common/src/main/java/net/*
+common/src/main/resources/assets/minecraft/*

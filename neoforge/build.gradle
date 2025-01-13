@@ -2,16 +2,6 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.49-beta'
 }
 
-base {
-    archivesName = mod_id
-}
-
-sourceSets.main {
-    java { srcDir "../src/main/java" }
-    resources { srcDir "../src/main/resources" }
-    resources { srcDir "src/generated/resources" }
-}
-
 dependencies {
     jarJar(implementation("blue.endless:jankson:1.2.3"))
     additionalRuntimeClasspath "blue.endless:jankson:1.2.3"
@@ -41,7 +31,15 @@ neoForge {
     }
 }
 
+base {
+    archivesName = mod_id
+}
+
+compileJava.source project(":common").sourceSets.main.allSource
+
 processResources {
+    from project(":common").sourceSets.main.resources
+
     var expandProps = [
         'version'                      : version,
         'group'                        : project.group,
