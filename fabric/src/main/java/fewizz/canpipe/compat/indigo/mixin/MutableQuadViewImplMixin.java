@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
-import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.api.renderer.v1.material.RenderMaterial;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;

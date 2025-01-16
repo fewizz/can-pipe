@@ -3,13 +3,9 @@ package fewizz.canpipe.pipeline;
 import java.io.IOException;
 import java.util.List;
 
-import org.joml.Matrix4f;
-
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.resources.ResourceLocation;
@@ -53,7 +49,7 @@ public class Program extends ProgramBase {
         this.samplers = samplers;
     }
 
-    public void setDefaultUniforms(
+    /*public void setDefaultUniforms(
         Matrix4f view, Matrix4f projection,
         int width, int height,
         int lod, int layer
@@ -74,6 +70,6 @@ public class Program extends ProgramBase {
         if (FRXU_FRAME_PROJECTION_MATRIX != null) {
             FRXU_FRAME_PROJECTION_MATRIX.set(new Matrix4f().ortho2D(0, width, 0, height));
         }
-    }
+    }*/
 
 }

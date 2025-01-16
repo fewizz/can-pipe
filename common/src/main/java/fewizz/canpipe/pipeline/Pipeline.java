@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.NotImplementedException;
@@ -25,6 +26,7 @@ import org.lwjgl.opengl.GL40C;
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
@@ -479,6 +481,17 @@ public class Pipeline implements AutoCloseable {
             }
         }
 
+        Minecraft mc = Minecraft.getInstance();
+
+        Stream.of(
+            this.materialPrograms.values().stream(),
+            this.shadowPrograms.values().stream(),
+            this.programs.values().stream()
+        ).flatMap(p -> p).forEach(p -> {
+            p.setDefaultUniforms(Mode.QUADS, view, projection, mc.getWindow());
+            p.setFREXUniforms();
+        });
+
         if (this.runInitPasses) {
             for (PassBase pass : this.onInit) {
                 pass.apply(view, projection);
@@ -497,7 +510,6 @@ public class Pipeline implements AutoCloseable {
             pass.apply(view, projection);
         }
 
-        Minecraft mc = Minecraft.getInstance();
         RenderSystem.viewport(0, 0, mc.getMainRenderTarget().width, mc.getMainRenderTarget().height);
     }
 

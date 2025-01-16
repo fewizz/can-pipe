@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
-import org.lwjgl.opengl.GL33C;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -90,9 +89,22 @@ public class Pass extends PassBase {
         w >>= this.lod;
         h >>= this.lod;
 
+        if (program.FRXU_SIZE != null) {
+            program.FRXU_SIZE.set((int) w, (int) h);
+        }
+        if (program.FRXU_LOD != null) {
+            program.FRXU_LOD.set(this.lod);
+        }
+        if (program.FRXU_LAYER != null) {
+            program.FRXU_LAYER.set(this.layer);
+        }
+        if (program.FRXU_FRAME_PROJECTION_MATRIX != null) {
+            program.FRXU_FRAME_PROJECTION_MATRIX.set(new Matrix4f().ortho2D(0, w, 0, h));
+        }
+
         RenderSystem.viewport(0, 0, (int) w, (int) h);
 
-        program.setDefaultUniforms(view, projection, w, h, this.lod, this.layer);
+        // program.setDefaultUniforms(view, projection, w, h, this.lod, this.layer);
         for (int i = 0; i < Math.min(program.samplers.size(), this.textures.size()); ++i) {
             String sampler = program.samplers.get(i);
             AbstractTexture texture = this.textures.get(i);

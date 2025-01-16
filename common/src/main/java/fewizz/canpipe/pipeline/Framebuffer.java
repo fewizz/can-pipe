@@ -11,7 +11,6 @@ import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
-import org.lwjgl.opengl.KHRDebug;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.GlStateManager;

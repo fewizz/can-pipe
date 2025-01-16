@@ -9,10 +9,8 @@ import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.GFX;
-import fewizz.canpipe.mixin.GlStateManagerAccessor;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;

@@ -1,7 +1,6 @@
 package fewizz.canpipe.mixin;
 
 import org.lwjgl.opengl.GL43C;
-import org.lwjgl.opengl.KHRDebug;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 

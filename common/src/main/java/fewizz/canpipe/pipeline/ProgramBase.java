@@ -164,10 +164,7 @@ public class ProgramBase extends CompiledShaderProgram {
         return super.getUniform(name);
     }
 
-    @Override
-    public void setDefaultUniforms(Mode mode, Matrix4f viewMatrix, Matrix4f projectionMatrix, Window window) {
-        super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, window);
-
+    public void setFREXUniforms() {
         Minecraft mc = Minecraft.getInstance();
         Pipeline p = Pipelines.getCurrent();
 

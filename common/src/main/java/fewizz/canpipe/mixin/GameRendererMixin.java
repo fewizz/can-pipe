@@ -8,12 +8,13 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
@@ -85,7 +86,7 @@ public class GameRendererMixin implements GameRendererAccessor {
         canpipe_lastCameraPos = this.mainCamera.getPosition().toVector3f();
     }
 
-    @WrapOperation(
+    @Inject(
         method = "renderLevel",
         at = @At(
             value = "INVOKE",
@@ -100,31 +101,45 @@ public class GameRendererMixin implements GameRendererAccessor {
             ")V"
         )
     )
-    void levelRendererRenderLevelWrapper(
-        LevelRenderer instance,
-        GraphicsResourceAllocator resourcePool,
+    void onBeforeWorldRender(
         DeltaTracker deltaTracker,
-        boolean bl,
-        Camera camera,
-        GameRenderer gameRenderer,
-        Matrix4f viewMatrix,
-        Matrix4f projectionMatrix,
-        Operation<Void> original
+        CallbackInfo ci,
+        @Local(ordinal = 0) Matrix4f projectionMatrix,
+        @Local(ordinal = 2) Matrix4f viewMatrix
     ) {
-        canpipe_lastViewMatrix.set(canpipe_viewMatrix);
-        canpipe_lastProjectionMatrix.set(canpipe_projectionMatrix);
-
-        canpipe_viewMatrix.set(viewMatrix);
-        canpipe_projectionMatrix.set(projectionMatrix);
-
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
+            canpipe_lastViewMatrix.set(canpipe_viewMatrix);
+            canpipe_lastProjectionMatrix.set(canpipe_projectionMatrix);
+
+            canpipe_viewMatrix.set(viewMatrix);
+            canpipe_projectionMatrix.set(projectionMatrix);
             p.onBeforeWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
             this.minecraft.mainRenderTarget.bindWrite(false);
         }
+    }
 
-        original.call(instance, resourcePool, deltaTracker, bl, camera, gameRenderer, viewMatrix, projectionMatrix);
-
+    @Inject(
+        method = "renderLevel",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel("+
+                "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
+                "Lnet/minecraft/client/DeltaTracker;"+
+                "Z"+
+                "Lnet/minecraft/client/Camera;"+
+                "Lnet/minecraft/client/renderer/GameRenderer;"+
+                "Lorg/joml/Matrix4f;"+
+                "Lorg/joml/Matrix4f;"+
+            ")V",
+            shift = Shift.AFTER
+        )
+    )
+    void onAfterWorldRender(
+        DeltaTracker deltaTracker,
+        CallbackInfo ci
+    ) {
+        Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             p.onAfterWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
             this.minecraft.mainRenderTarget.bindWrite(false);

@@ -11,7 +11,7 @@ dependencies {
 
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     include(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
-    // modCompileOnly(fabricApi.module("fabric-renderer-indigo", fabric_version))
+    modCompileOnly(fabricApi.module("fabric-renderer-indigo", fabric_version))
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
     modImplementation(fabricApi.module("fabric-resource-loader-v0", fabric_version))

@@ -14,6 +14,7 @@ dependencies {
         parchment("org.parchmentmc.data:parchment-${parchment_minecraft}:${parchment_version}@zip")
     }
     modImplementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+    compileOnly "blue.endless:jankson:1.2.3"
 }
 
 tasks.withType(JavaCompile).configureEach {
