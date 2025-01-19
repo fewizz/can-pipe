@@ -38,6 +38,8 @@ base {
     archivesName = mod_id
 }
 
+compileJava.source project(":common").sourceSets.main.allSource
+
 processResources {
     from project(":common").sourceSets.main.resources
 
@@ -48,4 +50,6 @@ processResources {
     }
 }
 
-compileJava.source project(":common").sourceSets.main.allSource
+runClient {
+    useArgFile = false
+}

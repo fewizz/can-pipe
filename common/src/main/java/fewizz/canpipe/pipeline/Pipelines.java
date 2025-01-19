@@ -26,7 +26,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 
 public class Pipelines implements PreparableReloadListener {
 
-    private static final Map<ResourceLocation, JsonObject> RAW_PIPELINES = new HashMap<>();
+    public static final Map<ResourceLocation, JsonObject> RAW_PIPELINES = new HashMap<>();
     private static volatile Pipeline current = null;
 
     @Override

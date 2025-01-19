@@ -1,5 +1,7 @@
 package fewizz.canpipe;
 
+import java.util.ArrayList;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -11,6 +13,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import blue.endless.jankson.Jankson;
+import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
@@ -18,7 +21,10 @@ import fewizz.canpipe.pipeline.MaterialProgram;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.OptionInstance;
 import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public class CanPipe {
     public static final String MOD_ID = "canpipe";
@@ -195,5 +201,36 @@ public class CanPipe {
         }
 
     }
+
+
+    public static OptionInstance<ResourceLocation> PIPELINE_OPTION = new OptionInstance<>(
+        "Pipeline",
+        OptionInstance.noTooltip(),
+        (Component component, ResourceLocation loc) -> {
+            if (loc.getPath().equals("")) {
+                return Component.literal("No");
+            }
+            JsonObject p = Pipelines.RAW_PIPELINES.get(loc);
+            return Component.translatable(p.get(String.class, "nameKey"));
+        },
+        new OptionInstance.LazyEnum<ResourceLocation>(
+            () -> {
+                var values = new ArrayList<ResourceLocation>();
+                values.add(ResourceLocation.withDefaultNamespace(""));
+                for (var p : Pipelines.RAW_PIPELINES.keySet()) {
+                    values.add(p);
+                }
+                return values;
+            },
+            (ResourceLocation val) -> {
+                return Optional.of(val);
+            },
+            null
+        ),
+        Pipelines.getCurrent() == null ? ResourceLocation.withDefaultNamespace("") : Pipelines.getCurrent().location,
+        (ResourceLocation p) -> {
+            System.out.println(p);
+        }
+    );
 
 }

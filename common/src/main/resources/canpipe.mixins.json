@@ -26,7 +26,8 @@
     "TextureAtlasAccessor",
     "TextureAtlasMixin",
     "TextureAtlasSpriteMixin",
-    "VertexConsumerMixin"
+    "VertexConsumerMixin",
+    "VideoSettingsScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
