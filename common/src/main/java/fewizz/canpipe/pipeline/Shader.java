@@ -3,12 +3,17 @@ package fewizz.canpipe.pipeline;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.shaders.CompiledShader;
@@ -90,38 +95,91 @@ public class Shader extends CompiledShader {
         Set<String> definitions,
         Map<ResourceLocation, String> cache
     ) throws IOException {
+        ArrayList<String> linesIncludeProcessed = new ArrayList<>();
+        Iterable<Pair<String, Int2BooleanFunction>> lines = () -> forEachLine(source.lines().iterator());
+
+        for (Pair<String, Int2BooleanFunction> lc : lines) {
+            String line = lc.getKey();
+            Int2BooleanFunction isCommentedAt = lc.getValue();
+
+            var includeMatcher = INCLUDE_PATTERN.matcher(line);
+
+            if (!(includeMatcher.find() && !isCommentedAt.get(includeMatcher.start(1))))  {
+                linesIncludeProcessed.add(line);
+                continue;
+            }
+
+            String locationStr = includeMatcher.group(1);
+            var location = ResourceLocation.parse(locationStr);
+
+            if (preprocessed.contains(location)) {
+                continue;  // already included
+            }
+
+            Option option = options.get(location);
+            if (option != null) {
+                StringBuilder optionsDefs = new StringBuilder();
+
+                for (var e : option.elements.entrySet()) {
+                    String name = e.getKey();
+                    Option.Element value = e.getValue();
+                    var defaultValue = value.defaultValue.getValue();
+
+                    // don't define if false
+                    if (defaultValue != Boolean.FALSE) {
+                        optionsDefs.append("#define ");
+                        if (value.prefix != null) {
+                            optionsDefs.append(value.prefix.toUpperCase());
+                        }
+                        optionsDefs.append(name.toUpperCase());
+                        if (!(defaultValue instanceof Boolean)) {
+                            optionsDefs.append(" ").append(defaultValue);
+                        }
+                        optionsDefs.append("\n");
+                    }
+
+                    definitions.add(name.toUpperCase());
+                }
+                linesIncludeProcessed.add(optionsDefs.toString());
+            }
+            else if (!processing.contains(location)) {
+                if (!cache.containsKey(location)) {
+                    Minecraft mc = Minecraft.getInstance();
+                    ResourceManager resourceManager = mc.getResourceManager();
+                    var resource = resourceManager.getResource(location);
+                    if (!resource.isEmpty()) {
+                        cache.put(location, resource.get().openAsReader().lines().collect(Collectors.joining("\n")));
+                    }
+                    else {
+                        cache.put(location, null);
+                    }
+                }
+
+                String resourceStr = cache.get(location);
+
+                if (resourceStr != null) {
+                    processing.add(location);
+                    linesIncludeProcessed.add(
+                        processIncludes(resourceStr, location, preprocessed, processing, options, definitions, cache)
+                    );
+                    processing.remove(location);
+                    preprocessed.add(location);
+                }
+                else {
+                    CanPipe.LOGGER.warn(sourceLocation+": couldn't include " + location);
+                }
+            }
+            else {
+                // Mod.LOGGER.warn("Circular dependency?: "+ loc.toString());
+            }
+        }
+
         StringBuilder preprocessedSource = new StringBuilder();
+        lines = () -> forEachLine(linesIncludeProcessed.iterator());
 
-        boolean prevLineIsCommented = false;
-
-        Iterable<String> lines = () -> source.lines().iterator();
-
-        for (var line : lines) {
-            final String initialLine = line;
-            final boolean initialPrevLineIsCommented = prevLineIsCommented;
-            final int singleLineCommentIndexStart = line.indexOf("//");
-
-            Int2BooleanFunction isMultilineCommentedAt = index -> {
-                boolean comment = initialPrevLineIsCommented;
-                for (int i = 0; i < index; ++i) {
-                    if (comment && initialLine.startsWith("*/", i)) {
-                        comment = false;
-                        ++i;
-                    }
-                    if (!comment && initialLine.startsWith("/*", i)) {
-                        comment = true;
-                        ++i;
-                    }
-                }
-                return comment;
-            };
-
-            Int2BooleanFunction isCommentedAt = index -> {
-                if (singleLineCommentIndexStart != -1 && index > singleLineCommentIndexStart) {
-                    return true;
-                }
-                return isMultilineCommentedAt.get(index);
-            };
+        for (Pair<String, Int2BooleanFunction> lc : lines) {
+            String line = lc.getKey();
+            Int2BooleanFunction isCommentedAt = lc.getValue();
 
             var definitionMatcher = DEFINITION_PATTERN.matcher(line);
             if (definitionMatcher.find() && !isCommentedAt.get(definitionMatcher.start(1))) {
@@ -132,79 +190,57 @@ public class Shader extends CompiledShader {
                 }
             }
 
-            var includeMatcher = INCLUDE_PATTERN.matcher(line);
-            if (includeMatcher.find() && !isCommentedAt.get(includeMatcher.start(1))) {
-                String locationStr = includeMatcher.group(1);
-                var location = ResourceLocation.parse(locationStr);
-
-                if (!preprocessed.contains(location)) {
-                    Option option = options.get(location);
-                    if (option != null) {
-                        StringBuilder optionsDefs = new StringBuilder();
-
-                        for (var e : option.elements.entrySet()) {
-                            String name = e.getKey();
-                            Option.Element value = e.getValue();
-                            var defaultValue = value.defaultValue.getValue();
-
-                            // don't define if false
-                            if (defaultValue != Boolean.FALSE) {
-                                optionsDefs.append("#define ");
-                                if (value.prefix != null) {
-                                    optionsDefs.append(value.prefix.toUpperCase());
-                                }
-                                optionsDefs.append(name.toUpperCase());
-                                if (!(defaultValue instanceof Boolean)) {
-                                    optionsDefs.append(" ").append(defaultValue);
-                                }
-                                optionsDefs.append("\n");
-                            }
-
-                            definitions.add(name.toUpperCase());
-                        }
-                        line = optionsDefs.toString();
-                    }
-                    else if (!processing.contains(location)) {
-                        if (!cache.containsKey(location)) {
-                            Minecraft mc = Minecraft.getInstance();
-                            ResourceManager resourceManager = mc.getResourceManager();
-                            var resource = resourceManager.getResource(location);
-                            if (!resource.isEmpty()) {
-                                cache.put(location, resource.get().openAsReader().lines().collect(Collectors.joining("\n")));
-                            }
-                            else {
-                                cache.put(location, null);
-                            }
-                        }
-
-                        String resourceStr = cache.get(location);
-
-                        if (resourceStr != null) {
-                            processing.add(location);
-                            line = processIncludes(resourceStr, location, preprocessed, processing, options, definitions, cache);
-                            processing.remove(location);
-                            preprocessed.add(location);
-                        }
-                        else {
-                            CanPipe.LOGGER.warn(sourceLocation+": couldn't include " + location);
-                            line = "";
-                        }
-                    }
-                    else {
-                        // Mod.LOGGER.warn("Circular dependency?: "+ loc.toString());
-                        line = "";
-                    }
-                }
-                else {  // already included
-                    line = "";
-                }
-            }
-
             preprocessedSource.append(line).append("\n");
-            prevLineIsCommented = isMultilineCommentedAt.get(initialLine.length());
         }
 
         return preprocessedSource.toString();
+    }
+
+    static Iterator<Pair<String, Int2BooleanFunction>> forEachLine(
+        Iterator<String> lines
+    ) {
+        return new Iterator<Pair<String, Int2BooleanFunction>>() {
+            boolean prevLineIsCommented = false;
+
+            @Override
+            public boolean hasNext() {
+                return lines.hasNext();
+            }
+
+            @Override
+            public Pair<String, Int2BooleanFunction> next() {
+                String line = lines.next();
+                final String initialLine = line;
+                final boolean initialPrevLineIsCommented = prevLineIsCommented;
+                final int singleLineCommentIndexStart = line.indexOf("//");
+
+                Int2BooleanFunction isMultilineCommentedAt = index -> {
+                    boolean comment = initialPrevLineIsCommented;
+                    for (int i = 0; i < index; ++i) {
+                        if (comment && initialLine.startsWith("*/", i)) {
+                            comment = false;
+                            ++i;
+                        }
+                        if (!comment && initialLine.startsWith("/*", i)) {
+                            comment = true;
+                            ++i;
+                        }
+                    }
+                    return comment;
+                };
+
+                Int2BooleanFunction isCommentedAt = index -> {
+                    if (singleLineCommentIndexStart != -1 && index > singleLineCommentIndexStart) {
+                        return true;
+                    }
+                    return isMultilineCommentedAt.get(index);
+                };
+
+                prevLineIsCommented = isMultilineCommentedAt.get(initialLine.length());
+
+                return Pair.of(line, isCommentedAt);
+            }
+        };
     }
 
 }

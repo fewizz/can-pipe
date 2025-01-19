@@ -202,35 +202,4 @@ public class CanPipe {
 
     }
 
-
-    public static OptionInstance<ResourceLocation> PIPELINE_OPTION = new OptionInstance<>(
-        "Pipeline",
-        OptionInstance.noTooltip(),
-        (Component component, ResourceLocation loc) -> {
-            if (loc.getPath().equals("")) {
-                return Component.literal("No");
-            }
-            JsonObject p = Pipelines.RAW_PIPELINES.get(loc);
-            return Component.translatable(p.get(String.class, "nameKey"));
-        },
-        new OptionInstance.LazyEnum<ResourceLocation>(
-            () -> {
-                var values = new ArrayList<ResourceLocation>();
-                values.add(ResourceLocation.withDefaultNamespace(""));
-                for (var p : Pipelines.RAW_PIPELINES.keySet()) {
-                    values.add(p);
-                }
-                return values;
-            },
-            (ResourceLocation val) -> {
-                return Optional.of(val);
-            },
-            null
-        ),
-        Pipelines.getCurrent() == null ? ResourceLocation.withDefaultNamespace("") : Pipelines.getCurrent().location,
-        (ResourceLocation p) -> {
-            System.out.println(p);
-        }
-    );
-
 }

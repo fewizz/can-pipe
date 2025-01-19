@@ -1,6 +1,8 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -10,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.pipeline.MainTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
@@ -28,6 +31,68 @@ public class Pipelines implements PreparableReloadListener {
 
     public static final Map<ResourceLocation, JsonObject> RAW_PIPELINES = new HashMap<>();
     private static volatile Pipeline current = null;
+    private static JsonObject options = new JsonObject();
+    static final Path CONFIG_PATH = Path.of("config/can-pipe.json");
+
+    void readOptions() {
+        if (!Files.exists(CONFIG_PATH)) {
+            return;
+        }
+
+        try {
+            var _options = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
+            String current = _options.get(String.class, "current");
+            if (current != null) {
+                options.put("current", new JsonPrimitive(current));
+            }
+        } catch (IOException | SyntaxError e) {
+            e.printStackTrace();
+            options = new JsonObject();
+        }
+    }
+
+    static void saveOptions() {
+        try {
+            Files.writeString(CONFIG_PATH, options.toJson(true, true));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void loadAndSetPipeline(ResourceLocation loc) throws Exception {
+        var pipeline = loc == null ? null : new Pipeline(loc, RAW_PIPELINES.get(loc));
+        setLoadedPipeline(pipeline);
+    }
+
+    static void setLoadedPipeline(Pipeline pipeline) {
+        assert RenderSystem.isOnRenderThread();
+
+        Minecraft mc = Minecraft.getInstance();
+
+        if (current != null) {
+            current.close();
+            if (mc.mainRenderTarget != null) {
+                mc.mainRenderTarget.destroyBuffers();
+            }
+            mc.mainRenderTarget = null;
+        }
+
+        current = pipeline;
+
+        if (pipeline != null) {
+            mc.mainRenderTarget = pipeline.defaultFramebuffer;
+            ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
+        }
+        else {
+            // Pipeline wasn't selected and main render target was destroyed previously
+            if (mc.mainRenderTarget == null) {
+                mc.mainRenderTarget = new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+            }
+        }
+
+        mc.levelRenderer.allChanged();
+        options.put("current", new JsonPrimitive(current == null ? null : current.location.toString()));
+    }
 
     @Override
     public CompletableFuture<Void> reload(
@@ -48,21 +113,11 @@ public class Pipelines implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<ResourceLocation, Resource> jsons) -> {
-                Minecraft mc = Minecraft.getInstance();
-
-                if (current != null) {
-                    current.close();
-                    current = null;
-                    mc.mainRenderTarget = null;
-                }
+                readOptions();
 
                 RAW_PIPELINES.clear();
 
                 jsons.forEach((loc, pipelineRawJson) -> {
-                    if (!loc.getPath().startsWith("pipelines/")) {
-                        return;
-                    }
-
                     try {
                         JsonObject o = CanPipe.JANKSON.load(pipelineRawJson.open());
                         Map<String, JsonObject> includes = new HashMap<>();
@@ -73,27 +128,15 @@ public class Pipelines implements PreparableReloadListener {
                     }
                 });
 
-                if (RAW_PIPELINES.size() > 0) {
+                if (current != null) {
                     try {
-                        var raw = RAW_PIPELINES.entrySet().iterator().next();
-                        current = new Pipeline(raw.getKey(), raw.getValue());
+                        loadAndSetPipeline(RAW_PIPELINES.containsKey(current.location) ? current.location : null);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
 
-                if (current != null) {
-                    if (mc.mainRenderTarget != null) {
-                        mc.mainRenderTarget.destroyBuffers();
-                    }
-                    mc.mainRenderTarget = current.defaultFramebuffer;
-                    ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
-                }
-
-                // Pipeline wasn't selected and main render target was destroyed previously
-                if (mc.mainRenderTarget == null) {
-                    mc.mainRenderTarget = new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
-                }
+                saveOptions();
             },
             applyExecutor
         );
@@ -104,11 +147,11 @@ public class Pipelines implements PreparableReloadListener {
         Map<String, JsonObject> includes,
         ResourceManager manager
     ) throws IOException, SyntaxError {
-        JsonArray includesA = (JsonArray) object.remove("include");
-        if (includesA == null) {
+        JsonArray includesArray = (JsonArray) object.remove("include");
+        if (includesArray == null) {
             return;
         }
-        for (var path : includesA) {
+        for (var path : includesArray) {
             JsonObject toInclude = includes.getOrDefault(path, null);
             if (toInclude == null) {
                 String pathStr = ((JsonPrimitive) path).asString();
