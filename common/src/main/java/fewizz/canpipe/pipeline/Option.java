@@ -1,5 +1,6 @@
 package fewizz.canpipe.pipeline;
 
+import java.util.List;
 import java.util.Map;
 
 import blue.endless.jankson.JsonPrimitive;
@@ -21,10 +22,12 @@ public class Option {
     public static class Element {
         final JsonPrimitive defaultValue;
         @Nullable final String prefix;
+        @Nullable final List<String> choices;
 
-        Element(JsonPrimitive defaultValue, String prefix) {
+        Element(JsonPrimitive defaultValue, String prefix, List<String> choices) {
             this.defaultValue = defaultValue;
             this.prefix = prefix;
+            this.choices = choices;
         }
     }
 }

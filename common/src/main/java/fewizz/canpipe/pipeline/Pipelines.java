@@ -15,6 +15,7 @@ import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonArray;
+import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
@@ -60,7 +61,12 @@ public class Pipelines implements PreparableReloadListener {
     }
 
     public static void loadAndSetPipeline(ResourceLocation loc) throws Exception {
-        var pipeline = loc == null ? null : new Pipeline(loc, RAW_PIPELINES.get(loc));
+        Pipeline pipeline = null;
+        if (loc != null) {
+            // clone, because it can be changed
+            JsonObject pipelineJSON = RAW_PIPELINES.get(loc).clone();
+            pipeline = new Pipeline(loc, pipelineJSON);
+        }
         setLoadedPipeline(pipeline);
     }
 
@@ -91,7 +97,7 @@ public class Pipelines implements PreparableReloadListener {
         }
 
         mc.levelRenderer.allChanged();
-        options.put("current", new JsonPrimitive(current == null ? null : current.location.toString()));
+        options.put("current", current == null ? JsonNull.INSTANCE : new JsonPrimitive(current.location.toString()));
     }
 
     @Override

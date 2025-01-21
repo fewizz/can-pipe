@@ -117,7 +117,9 @@ public class Pipeline implements AutoCloseable {
                     JsonObject elementO = (JsonObject) elementE.getValue();
                     var defaultValue = elementO.get(JsonPrimitive.class, "default");
                     var prefix = elementO.get(String.class, "prefix");
-                    elements.put(name, new Option.Element(defaultValue, prefix));
+                    var choices = JanksonUtils.listOfStrings(elementO, "choices");
+                    choices = choices.size() == 0 ? null : choices;
+                    elements.put(name, new Option.Element(defaultValue, prefix, choices));
                 }
                 this.options.put(includeToken, new Option(includeToken, elements));
             }
