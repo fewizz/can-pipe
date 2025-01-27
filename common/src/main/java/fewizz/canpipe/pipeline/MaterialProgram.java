@@ -92,6 +92,7 @@ public class MaterialProgram extends ProgramBase {
         ResourceLocation vertexShaderLocation,
         ResourceLocation fragmentShaderLocation,
         Map<ResourceLocation, Option> options,
+        Map<Option.Element<?>, Object> appliedOptions,
         List<String> samplers,
         List<? extends AbstractTexture> textures,
         Map<ResourceLocation, String> shaderSourceCache
@@ -358,8 +359,8 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
-        var vertexShader = Shader.compile(vertexShaderLocation, Type.VERTEX, glslVersion, options, vertexSrc, shaderSourceCache, shadowFramebuffer);
-        var fragmentShader = Shader.compile(fragmentShaderLocation, Type.FRAGMENT, glslVersion, options, fragmentSrc, shaderSourceCache, shadowFramebuffer);
+        var vertexShader = Shader.compile(vertexShaderLocation, Type.VERTEX, glslVersion, options, appliedOptions, vertexSrc, shaderSourceCache, shadowFramebuffer);
+        var fragmentShader = Shader.compile(fragmentShaderLocation, Type.FRAGMENT, glslVersion, options, appliedOptions, fragmentSrc, shaderSourceCache, shadowFramebuffer);
 
         return new MaterialProgram(
             location.withSuffix("-"),

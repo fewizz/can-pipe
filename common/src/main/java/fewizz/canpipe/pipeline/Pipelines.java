@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
 
 import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -29,49 +31,53 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public class Pipelines implements PreparableReloadListener {
-
-    public static final Map<ResourceLocation, JsonObject> RAW_PIPELINES = new HashMap<>();
-    private static volatile Pipeline current = null;
-    private static JsonObject options = new JsonObject();
     static final Path CONFIG_PATH = Path.of("config/can-pipe.json");
+    public static final Map<ResourceLocation, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
 
-    void readOptions() {
-        if (!Files.exists(CONFIG_PATH)) {
-            return;
-        }
+    private static volatile Pipeline current = null;
 
-        try {
-            var _options = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
-            String current = _options.get(String.class, "current");
-            if (current != null) {
-                options.put("current", new JsonPrimitive(current));
-            }
-        } catch (IOException | SyntaxError e) {
-            e.printStackTrace();
-            options = new JsonObject();
-        }
-    }
-
-    static void saveOptions() {
-        try {
-            Files.writeString(CONFIG_PATH, options.toJson(true, true));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void loadAndSetPipeline(ResourceLocation loc) throws Exception {
-        Pipeline pipeline = null;
-        if (loc != null) {
-            // clone, because it can be changed
-            JsonObject pipelineJSON = RAW_PIPELINES.get(loc).clone();
-            pipeline = new Pipeline(loc, pipelineJSON);
-        }
-        setLoadedPipeline(pipeline);
-    }
-
-    static void setLoadedPipeline(Pipeline pipeline) {
+    public static void loadAndSetPipeline(
+        PipelineRaw raw,
+        @Nullable Map<Option.Element<?>, Object> optionsChanges
+    ) throws Exception {
         assert RenderSystem.isOnRenderThread();
+
+        Pipeline pipeline = null;
+        Map<Option.Element<?>, Object> appliedOptions = optionsChanges != null ? new HashMap<>(optionsChanges) : new HashMap<>();
+
+        JsonObject config = new JsonObject();
+
+        if (Files.exists(CONFIG_PATH)) {
+            config = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
+        }
+
+        if (raw != null) {
+            JsonObject pipelinesOptions = config.getObject("pipelinesOptions");
+            pipelinesOptions = pipelinesOptions == null ? new JsonObject() : pipelinesOptions;
+
+            JsonObject pipelineOptions = pipelinesOptions.getObject(raw.location.toString());
+            pipelineOptions = pipelineOptions == null ? new JsonObject() : pipelineOptions;
+
+            for (var entry : pipelineOptions.entrySet()) {
+                var optionElementName = entry.getKey();
+                var optionValue = ((JsonPrimitive) entry.getValue()).getValue();
+
+                Option.Element<?> optionElement = null;
+                for (var option : raw.options.values()) {
+                    optionElement = option.elements.get(optionElementName);
+                    if (optionElement != null) {
+                        appliedOptions.put(optionElement, optionValue);
+                        break;
+                    }
+                }
+            }
+
+            if (optionsChanges != null) {
+                appliedOptions.putAll(optionsChanges);
+            }
+
+            pipeline = new Pipeline(raw, appliedOptions);
+        }
 
         Minecraft mc = Minecraft.getInstance();
 
@@ -85,6 +91,39 @@ public class Pipelines implements PreparableReloadListener {
 
         current = pipeline;
 
+        try {
+            if (current != null) {
+                config.put("current", new JsonPrimitive(current.location.toString()));
+
+                Function<Option.Element<?>, String> optionName = (Option.Element<?> e) -> {
+                    for (var option : raw.options.values()) {
+                        for (var entry : option.elements.entrySet()) {
+                            String elementName = entry.getKey();
+                            Option.Element<?> element = entry.getValue();
+                            if (element == e) {
+                                return elementName;
+                            }
+                        }
+                    }
+                    throw new RuntimeException("Couldn't file option element "+e);
+                };
+
+                var pipelineOptions = new JsonObject();
+                for (var kv : appliedOptions.entrySet()) {
+                    pipelineOptions.put(optionName.apply(kv.getKey()), new JsonPrimitive(kv.getValue()));
+                }
+
+                JsonObject pipelinesOptions = (JsonObject) config.computeIfAbsent("pipelinesOptions", (k) -> new JsonObject());
+                pipelinesOptions.put(current.location.toString(), pipelineOptions);
+            }
+            else {
+                config.put("current", JsonNull.INSTANCE);
+            }
+            Files.writeString(CONFIG_PATH, config.toJson(true, true));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         if (pipeline != null) {
             mc.mainRenderTarget = pipeline.defaultFramebuffer;
             ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
@@ -97,7 +136,6 @@ public class Pipelines implements PreparableReloadListener {
         }
 
         mc.levelRenderer.allChanged();
-        options.put("current", current == null ? JsonNull.INSTANCE : new JsonPrimitive(current.location.toString()));
     }
 
     @Override
@@ -107,7 +145,8 @@ public class Pipelines implements PreparableReloadListener {
         Executor loadExecutor,
         Executor applyExecutor
     ) {
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.supplyAsync(
+            () -> {
                 return resourceManager.listResources(
                     "pipelines",
                     (ResourceLocation rl) -> {
@@ -119,30 +158,97 @@ public class Pipelines implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<ResourceLocation, Resource> jsons) -> {
-                readOptions();
-
                 RAW_PIPELINES.clear();
 
                 jsons.forEach((loc, pipelineRawJson) -> {
                     try {
                         JsonObject o = CanPipe.JANKSON.load(pipelineRawJson.open());
+
                         Map<String, JsonObject> includes = new HashMap<>();
                         processIncludes(o, includes, resourceManager);
-                        RAW_PIPELINES.put(loc, o);
+
+                        Map<ResourceLocation, Option> options = new LinkedHashMap<>();
+
+                        for (var optionGroups : JanksonUtils.listOfObjects(o, "options")) {
+                            ResourceLocation includeToken = ResourceLocation.parse(optionGroups.get(String.class, "includeToken"));
+                            var elementsO = optionGroups.getObject("elements");
+                            if (elementsO == null) {  // compat
+                                elementsO = optionGroups.getObject("options");
+                            }
+
+                            var categoryKey = optionGroups.get(String.class, "categoryKey");
+
+                            if (elementsO != null) {
+                                Map<String, Option.Element<?>> elements = new LinkedHashMap<>();
+                                for (var elementE : elementsO.entrySet()) {
+                                    String name = elementE.getKey();
+                                    JsonObject elementO = (JsonObject) elementE.getValue();
+
+                                    var defaultValue = elementO.get(JsonPrimitive.class, "default").getValue();
+                                    String nameKey = elementO.get(String.class, "nameKey");
+
+                                    var prefix = elementO.get(String.class, "prefix");
+                                    var choices = JanksonUtils.listOfStrings(elementO, "choices");
+                                    choices = choices.size() == 0 ? null : choices;
+
+                                    Option.Element<?> element;
+                                    if (choices != null) {
+                                        element = new Option.EnumElement((String) defaultValue, nameKey, prefix, choices);
+                                    }
+                                    else if (defaultValue instanceof Number) {
+                                        var min = (Number) elementO.get(JsonPrimitive.class, "min").getValue();
+                                        var max = (Number) elementO.get(JsonPrimitive.class, "max").getValue();
+                                        if (defaultValue instanceof Double) {
+                                            element = new Option.FloatElement((double) defaultValue, nameKey, (double) min, (double) max);
+                                        }
+                                        else if (defaultValue instanceof Long) {
+                                            element = new Option.IntegerElement((long) defaultValue, nameKey, (long) min, (long) max);
+                                        }
+                                        else {
+                                            throw new NotImplementedException();
+                                        }
+                                    }
+                                    else if (defaultValue instanceof Boolean) {
+                                        element = new Option.BooleanElement((boolean) defaultValue, nameKey);
+                                    }
+                                    else {
+                                        throw new NotImplementedException();
+                                    }
+
+                                    elements.put(name, element);
+                                }
+                                options.put(includeToken, new Option(includeToken, categoryKey, elements));
+                            }
+                        }
+                        o.remove("options");
+
+                        String nameKey = o.get(String.class, "nameKey");
+
+                        RAW_PIPELINES.put(loc, new PipelineRaw(loc, nameKey, options, o));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 });
 
-                if (current != null) {
+                PipelineRaw pipelineRaw = null;
+
+                if (Files.exists(CONFIG_PATH)) {
                     try {
-                        loadAndSetPipeline(RAW_PIPELINES.containsKey(current.location) ? current.location : null);
-                    } catch (Exception e) {
+                        JsonObject readOptions = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
+                        String current = readOptions.get(String.class, "current");
+                        if (current != null) {
+                            pipelineRaw = RAW_PIPELINES.get(ResourceLocation.parse(current));
+                        }
+                    } catch (IOException | SyntaxError e) {
                         e.printStackTrace();
                     }
                 }
 
-                saveOptions();
+                try {
+                    loadAndSetPipeline(pipelineRaw, null);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             },
             applyExecutor
         );
@@ -169,66 +275,8 @@ public class Pipelines implements PreparableReloadListener {
         }
     }
 
-
     public static @Nullable Pipeline getCurrent() {
         return current;
-    }
-
-    public static Vector3f computeTangent(
-        float x0, float y0, float z0, float u0, float v0,
-        float x1, float y1, float z1, float u1, float v1,
-        float x2, float y2, float z2, float u2, float v2
-    ) {
-        // taken from frex
-        final float dv0 = v1 - v0;
-        final float dv1 = v2 - v1;
-        final float du0 = u1 - u0;
-        final float du1 = u2 - u1;
-        final float inverseLength = 1.0f / (du0 * dv1 - du1 * dv0);
-
-        final float tx = inverseLength * (dv1 * (x1 - x0) - dv0 * (x2 - x1));
-        final float ty = inverseLength * (dv1 * (y1 - y0) - dv0 * (y2 - y1));
-        final float tz = inverseLength * (dv1 * (z1 - z0) - dv0 * (z2 - z1));
-
-        // TODO
-        // final float bx = inverseLength * (-du1 * (x1 - x(0)) + du0 * (x(2) - x1));
-        // final float by = inverseLength * (-du1 * (y1 - y(0)) + du0 * (y(2) - y1));
-        // final float bz = inverseLength * (-du1 * (z1 - z(0)) + du0 * (z(2) - z1));
-
-        // Compute handedness
-        // final float nx = this.normalX(0);
-        // final float ny = this.normalY(0);
-        // final float nz = this.normalZ(0);
-
-        // T cross N
-        // final float TcNx = ty * nz - tz * ny;
-        // final float TcNy = tz * nx - tx * nz;
-        // final float TcNz = tx * ny - ty * nx;
-
-        // B dot TcN
-        // final float BdotTcN = bx * TcNx + by * TcNy + bz * TcNz;
-        // final boolean inverted = BdotTcN < 0f;
-
-        return new Vector3f(tx, ty, tz);
-    }
-
-    public static Vector3f computeNormal(
-        float x0, float y0, float z0,
-        float x1, float y1, float z1,
-        float x2, float y2, float z2
-    ) {
-        final float dx0 = x2 - x1;
-        final float dy0 = y2 - y1;
-        final float dz0 = z2 - z1;
-        final float dx1 = x0 - x1;
-        final float dy1 = y0 - y1;
-        final float dz1 = z0 - z1;
-
-        float nx = dy0 * dz1 - dz0 * dy1;
-        float ny = dz0 * dx1 - dx0 * dz1;
-        float nz = dx0 * dy1 - dy0 * dx1;
-
-        return new Vector3f(nx, ny, nz).normalize();
     }
 
 }

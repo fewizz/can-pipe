@@ -2,7 +2,6 @@ package fewizz.canpipe.mixin;
 
 import java.util.function.Supplier;
 
-import com.mojang.blaze3d.vertex.*;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
@@ -12,13 +11,18 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
-import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
@@ -76,7 +80,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         if ((this.recomputeNormal && requiresNormal) || normalIsNotSet) {
             if (lastVertex) {
-                Vector3f normal = Pipelines.computeNormal(
+                Vector3f normal = computeNormal(
                     canpipe_getPos(offsetToFirstVertex, 0),
                     canpipe_getPos(offsetToFirstVertex, 1),
                     canpipe_getPos(offsetToFirstVertex, 2),
@@ -103,7 +107,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         if ((elementsToFill & CanPipe.VertexFormatElements.TANGENT.mask()) != 0) {
             if (lastVertex) {
-                Vector3f tangent = Pipelines.computeTangent(
+                Vector3f tangent = computeTangent(
                     canpipe_getPos(offsetToFirstVertex, 0),
                     canpipe_getPos(offsetToFirstVertex, 1),
                     canpipe_getPos(offsetToFirstVertex, 2),
@@ -221,4 +225,64 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         long o = this.vertexPointer + (long) this.vertexSize*vertexOffset + posOffset;
         return MemoryUtil.memGetFloat(o + (long) element*Float.BYTES);
     }
+
+    @Unique
+    private static Vector3f computeTangent(
+        float x0, float y0, float z0, float u0, float v0,
+        float x1, float y1, float z1, float u1, float v1,
+        float x2, float y2, float z2, float u2, float v2
+    ) {
+        // taken from frex
+        final float dv0 = v1 - v0;
+        final float dv1 = v2 - v1;
+        final float du0 = u1 - u0;
+        final float du1 = u2 - u1;
+        final float inverseLength = 1.0f / (du0 * dv1 - du1 * dv0);
+
+        final float tx = inverseLength * (dv1 * (x1 - x0) - dv0 * (x2 - x1));
+        final float ty = inverseLength * (dv1 * (y1 - y0) - dv0 * (y2 - y1));
+        final float tz = inverseLength * (dv1 * (z1 - z0) - dv0 * (z2 - z1));
+
+        // TODO
+        // final float bx = inverseLength * (-du1 * (x1 - x(0)) + du0 * (x(2) - x1));
+        // final float by = inverseLength * (-du1 * (y1 - y(0)) + du0 * (y(2) - y1));
+        // final float bz = inverseLength * (-du1 * (z1 - z(0)) + du0 * (z(2) - z1));
+
+        // Compute handedness
+        // final float nx = this.normalX(0);
+        // final float ny = this.normalY(0);
+        // final float nz = this.normalZ(0);
+
+        // T cross N
+        // final float TcNx = ty * nz - tz * ny;
+        // final float TcNy = tz * nx - tx * nz;
+        // final float TcNz = tx * ny - ty * nx;
+
+        // B dot TcN
+        // final float BdotTcN = bx * TcNx + by * TcNy + bz * TcNz;
+        // final boolean inverted = BdotTcN < 0f;
+
+        return new Vector3f(tx, ty, tz);
+    }
+
+    @Unique
+    private static Vector3f computeNormal(
+        float x0, float y0, float z0,
+        float x1, float y1, float z1,
+        float x2, float y2, float z2
+    ) {
+        final float dx0 = x2 - x1;
+        final float dy0 = y2 - y1;
+        final float dz0 = z2 - z1;
+        final float dx1 = x0 - x1;
+        final float dy1 = y0 - y1;
+        final float dz1 = z0 - z1;
+
+        float nx = dy0 * dz1 - dz0 * dy1;
+        float ny = dz0 * dx1 - dx0 * dz1;
+        float nz = dx0 * dy1 - dy0 * dx1;
+
+        return new Vector3f(nx, ny, nz).normalize();
+    }
+
 }

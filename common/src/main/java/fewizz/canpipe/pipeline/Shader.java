@@ -6,9 +6,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -45,6 +42,7 @@ public class Shader extends CompiledShader {
         Type type,
         int version,
         Map<ResourceLocation, Option> options,
+        Map<Option.Element<?>, Object> appliedOptions,
         String source,
         Map<ResourceLocation, String> cache,
         @Nullable Framebuffer shadowFramebuffer
@@ -69,7 +67,7 @@ public class Shader extends CompiledShader {
         Set<ResourceLocation> processing = new HashSet<>();
         Set<String> definitions = new HashSet<>();
 
-        preprocessedSource = processIncludesAndDefinitions(preprocessedSource, location, preprocessed, processing, options, definitions, cache);
+        preprocessedSource = processIncludesAndDefinitions(preprocessedSource, location, preprocessed, processing, options, appliedOptions, definitions, cache);
 
         try {
             return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location, preprocessedSource);
@@ -92,7 +90,8 @@ public class Shader extends CompiledShader {
         Set<ResourceLocation> preprocessed,
         Set<ResourceLocation> processing,
         Map<ResourceLocation, Option> options,
-        Set<String> definitions,
+        Map<Option.Element<?>, Object> appliedOptions,
+        Set<String> definedDefinitions,
         Map<ResourceLocation, String> cache
     ) throws IOException {
         // includes
@@ -121,33 +120,28 @@ public class Shader extends CompiledShader {
             if (option != null) {  // this is an option
                 for (var e : option.elements.entrySet()) {
                     String name = e.getKey();
-                    Option.Element element = e.getValue();
-                    var defaultValue = element.defaultValue.getValue();
-
-                    // don't define if false
-                    if (defaultValue == Boolean.FALSE) {
-                        continue;
-                    }
-
-                    // this is enum! (we don't check for `enum` property tho (should we?))
-                    // define all the variants
-                    if (element.choices != null) {
-                        for (String choice : element.choices) {
-                            linesIncludeProcessed.add("#define "+element.prefix.toUpperCase()+""+choice.toUpperCase()+" "+element.choices.indexOf(choice));
-                        }
-                    }
+                    Option.Element<?> element = e.getValue();
+                    Object value = appliedOptions.getOrDefault(element, element.defaultValue);
 
                     String definition = "#define "+name.toUpperCase();
 
-                    // this is enum, set to chosen index
-                    if (element.choices != null) {
-                        definition += " "+element.prefix.toUpperCase()+""+((String)defaultValue).toUpperCase();
+                    if (element instanceof Option.EnumElement enumElement) {
+                        // define all the variants
+                        for (String choice : enumElement.choices) {
+                            String defName = enumElement.prefix.toUpperCase()+""+choice.toUpperCase();
+                            int valueIndex = enumElement.choices.indexOf(choice);
+                            linesIncludeProcessed.add("#define "+defName+" "+valueIndex);
+                        }
+                        definition += " "+enumElement.prefix.toUpperCase()+""+((String)value).toUpperCase();
                     }
-                    // bool option, don't set value
-                    else if (defaultValue instanceof Boolean) {
+                    else if (element instanceof Option.BooleanElement) {
+                        // don't define if false
+                        if ((Boolean) value == false) {
+                            continue;
+                        }
                     }
                     else {
-                        definition += " "+defaultValue;
+                        definition += " "+value;
                     }
 
                     linesIncludeProcessed.add(definition);
@@ -171,7 +165,7 @@ public class Shader extends CompiledShader {
                 if (resourceStr != null) {
                     processing.add(location);
                     linesIncludeProcessed.add(
-                        processIncludesAndDefinitions(resourceStr, location, preprocessed, processing, options, definitions, cache)
+                        processIncludesAndDefinitions(resourceStr, location, preprocessed, processing, options, appliedOptions, definedDefinitions, cache)
                     );
                     processing.remove(location);
                     preprocessed.add(location);
@@ -196,7 +190,7 @@ public class Shader extends CompiledShader {
             var definitionMatcher = DEFINITION_PATTERN.matcher(line);
             if (definitionMatcher.find() && !isCommentedAt.get(definitionMatcher.start(1))) {
                 String definitionName = definitionMatcher.group(1);
-                boolean redefine = !definitions.add(definitionName);
+                boolean redefine = !definedDefinitions.add(definitionName);
                 if (redefine) {
                     line = "#undef "+definitionName+"  // canpipe: redefining\n" + line;
                 }

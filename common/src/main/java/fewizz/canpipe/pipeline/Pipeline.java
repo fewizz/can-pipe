@@ -60,6 +60,8 @@ public class Pipeline implements AutoCloseable {
     ) {}
 
     public final ResourceLocation location;
+    public final Map<Option.Element<?>, Object> appliedOptions;
+
     @Nullable public final SkyShadows skyShadows;
     @Nullable public final Sky sky;
 
@@ -75,7 +77,6 @@ public class Pipeline implements AutoCloseable {
     final Map<String, Program> programs = new HashMap<>();
     final Map<String, Texture> textures = new HashMap<>();
     public final Map<String, Framebuffer> framebuffers = new HashMap<>();
-    final Map<ResourceLocation, Option> options = new HashMap<>();
     public final Map<VertexFormat, MaterialProgram> materialPrograms = new HashMap<>();
     public final Map<VertexFormat, MaterialProgram> shadowPrograms = new HashMap<>();
 
@@ -87,10 +88,7 @@ public class Pipeline implements AutoCloseable {
     private boolean runInitPasses = true;
     private boolean runResizePasses = true;
 
-    public Pipeline(
-        ResourceLocation location,
-        JsonObject pipelineJson
-    ) throws
+    public Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) throws
         FileNotFoundException,
         IOException,
         CompilationException,
@@ -99,34 +97,14 @@ public class Pipeline implements AutoCloseable {
         IllegalArgumentException,
         IllegalAccessException
     {
-        this.location = location;
+        this.location = rawPipeline.location;
+        this.appliedOptions = appliedOptions;
+
         var mc = Minecraft.getInstance();
+        JsonObject pipelineJson = rawPipeline.json.clone();
+        var options = rawPipeline.options;
 
-        // "options"
-        for (var optionO : JanksonUtils.listOfObjects(pipelineJson, "options")) {
-            ResourceLocation includeToken = ResourceLocation.parse(optionO.get(String.class, "includeToken"));
-            var elementsO = optionO.getObject("elements");
-            // compat
-            if (elementsO == null) {
-                elementsO = optionO.getObject("options");
-            }
-            if (elementsO != null) {
-                Map<String, Option.Element> elements = new HashMap<>();
-                for (var elementE : elementsO.entrySet()) {
-                    String name = elementE.getKey();
-                    JsonObject elementO = (JsonObject) elementE.getValue();
-                    var defaultValue = elementO.get(JsonPrimitive.class, "default");
-                    var prefix = elementO.get(String.class, "prefix");
-                    var choices = JanksonUtils.listOfStrings(elementO, "choices");
-                    choices = choices.size() == 0 ? null : choices;
-                    elements.put(name, new Option.Element(defaultValue, prefix, choices));
-                }
-                this.options.put(includeToken, new Option(includeToken, elements));
-            }
-        }
-        pipelineJson.remove("options");
-
-        Function<String, Option.Element> optionElementByName = (String name) -> {
+        Function<String, Option.Element<?>> optionElementByName = (String name) -> {
             for (var o : options.values()) {
                 if (o.elements.containsKey(name)) {
                     return o.elements.get(name);
@@ -135,30 +113,45 @@ public class Pipeline implements AutoCloseable {
             return null;
         };
 
+        Function<String, Object> optionValueByName = (String name) -> {
+            var element = optionElementByName.apply(name);
+            if (element == null) {
+                return null;
+            }
+            return appliedOptions.getOrDefault(element, element.defaultValue);
+        };
+
         // Skipping dynamic options for now... (choosing defaults)
-        class SkipDynamicOptions { static JsonElement doSkip(JsonElement e) {
+        class SkipDynamicOptions { static JsonElement doSkip(JsonElement e, Function<String, Object> optionValueByName) {
             if (e instanceof JsonObject vo) {
                 if (vo.size() == 2 && vo.containsKey("default") && (vo.containsKey("optionMap") || vo.containsKey("option"))) {
+                    if (vo.containsKey("option")) {
+                        String optionName = (String) ((JsonPrimitive) vo.get("option")).getValue();
+                        var value = optionValueByName.apply(optionName);
+                        if (value != null) {
+                            return new JsonPrimitive(value);
+                        }
+                    }
                     return (JsonPrimitive) vo.get("default");
                 }
                 for (var kv : vo.entrySet()) {
-                    kv.setValue(doSkip(kv.getValue()));
+                    kv.setValue(doSkip(kv.getValue(), optionValueByName));
                 }
             }
             if (e instanceof JsonArray va) {
                 for (int i = 0; i < va.size(); ++i) {
-                    va.set(i, doSkip(va.get(i)));
+                    va.set(i, doSkip(va.get(i), optionValueByName));
                 }
             }
             return e;
         }}
-        SkipDynamicOptions.doSkip(pipelineJson);
+        SkipDynamicOptions.doSkip(pipelineJson, optionValueByName);
 
-        class ApplyOptions { static JsonElement doApply(JsonElement e, Function<String, Option.Element> optionElementByName) {
+        class ApplyOptions { static JsonElement doApply(JsonElement e, Function<String, Option.Element<?>> optionElementByName) {
             if (e instanceof JsonObject vo) {
                 if (vo.size() == 1 && vo.containsKey("option")) {
                     String optionName = vo.get(String.class, "option");
-                    return optionElementByName.apply(optionName).defaultValue;
+                    return new JsonPrimitive(optionElementByName.apply(optionName).defaultValue);
                 }
                 for (var kv : vo.entrySet()) {
                     kv.setValue(doApply(kv.getValue(), optionElementByName));
@@ -326,7 +319,7 @@ public class Pipeline implements AutoCloseable {
                         source = IOUtils.toString(mc.getResourceManager().openAsReader(location));
                         shaderSourceCache.put(location, source);
                     }
-                    shader = Shader.compile(location, type, glslVersion, options, source, shaderSourceCache, shadowFramebuffer);
+                    shader = Shader.compile(location, type, glslVersion, options, appliedOptions, source, shaderSourceCache, shadowFramebuffer);
                     shaders.put(p, shader);
                 }
                 return shader;
@@ -349,7 +342,7 @@ public class Pipeline implements AutoCloseable {
                 String toggleConfig = passO.get(String.class, "toggleConfig");
 
                 // pass is disabled, skipping
-                if (toggleConfig != null && !optionElementByName.apply(toggleConfig).defaultValue.asBoolean(true)) {
+                if (toggleConfig != null && !(boolean) optionValueByName.apply(toggleConfig)) {
                     continue;
                 }
 
@@ -438,7 +431,8 @@ public class Pipeline implements AutoCloseable {
                     location,
                     materialVertexShaderLocation,
                     materialFragmentShaderLocation,
-                    this.options,
+                    options,
+                    appliedOptions,
                     samplers,
                     samplerImages,
                     shaderSourceCache
@@ -456,7 +450,8 @@ public class Pipeline implements AutoCloseable {
                         location,
                         this.skyShadows.vertexShaderLocation,
                         this.skyShadows.fragmentShaderLocation,
-                        this.options,
+                        options,
+                        appliedOptions,
                         List.of(),
                         List.of(),
                         shaderSourceCache
