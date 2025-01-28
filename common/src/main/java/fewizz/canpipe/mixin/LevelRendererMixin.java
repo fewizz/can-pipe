@@ -26,6 +26,7 @@ import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -117,12 +118,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow
     abstract void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f);
 
-    @Unique
-    void canpipe_swap() {
-        // non-atomic, changed by one thread
-        this.canpipe_isRenderingShadows = !this.canpipe_isRenderingShadows;
-    }
-
     @Inject(
         method = "renderLevel",
         at = @At(
@@ -146,7 +141,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
 
-        canpipe_swap();
+        this.canpipe_isRenderingShadows = true;
 
         Minecraft mc = Minecraft.getInstance();
         GameRendererAccessor gra = ((GameRendererAccessor) mc.gameRenderer);
@@ -190,10 +185,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             p.skyShadows.offsetBiasUnits()
         );
 
+        shadowFramebuffer.bindWrite(true /* update viewport */);
+
         for (int cascade = 0; cascade < 4; ++cascade) {
-            for (var shadowProgram : p.shadowPrograms.values()) {
-                shadowProgram.FRXU_CASCADE.set(cascade);
-            }
+            p.shadowPrograms.get(CanPipe.VertexFormats.BLOCK).FRXU_CASCADE.set(cascade);
 
             float cascadeRenderDistance;
 
@@ -251,8 +246,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 this.applyFrustum(shadowFrustum);
             }
 
-            shadowFramebuffer.bindWrite(true);
-
             GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().getId(), 0, cascade);
 
             RenderSystem.disableCull();  // Light can pass through chunk edge. Not ideal solution
@@ -260,22 +253,28 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.renderSectionLayer(RenderType.cutoutMipped(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
             this.renderSectionLayer(RenderType.cutout(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
             RenderSystem.enableCull();
-
-            this.collectVisibleEntities(shadowCamera, shadowFrustum, this.visibleEntities);
-            this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
-            this.renderBlockEntities(poseStack, bufferSource, crumblingBufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
-            this.checkPoseStack(poseStack);
-            this.visibleEntities.clear();
-            bufferSource.endBatch();
-            crumblingBufferSource.endBatch();
         }
+
+        Frustum shadowFrustum = new Frustum(
+            canpipe_shadowViewMatrix,
+            canpipe_shadowProjectionMatrices[0]
+        );
+        shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
+
+        this.collectVisibleEntities(shadowCamera, shadowFrustum, this.visibleEntities);
+        this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
+        this.renderBlockEntities(poseStack, bufferSource, crumblingBufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
+        this.checkPoseStack(poseStack);
+        this.visibleEntities.clear();
+        bufferSource.endBatch();
+        crumblingBufferSource.endBatch();
 
         RenderSystem.disablePolygonOffset();
 
         modelViewMatrixStack.popMatrix();
         mc.mainRenderTarget.bindWrite(true);
 
-        canpipe_swap();
+        this.canpipe_isRenderingShadows = false;
     }
 
     @WrapOperation(

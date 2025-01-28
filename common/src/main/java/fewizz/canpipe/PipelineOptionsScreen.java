@@ -159,7 +159,6 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                             Pipelines.loadAndSetPipeline(raw, Map.of(e, state));
                         })
                         .build();
-                    this.widget.setHeight(BUTTON_HEIGHT);
                 }
                 else if (e instanceof Option.FloatElement floatElement) {
                     Function<Double, Component> valueToComponent = (Double v) -> {

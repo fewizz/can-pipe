@@ -41,13 +41,17 @@ public class MaterialProgram extends ProgramBase {
     public final Uniform CANPIPE_RENDER_TARGET;
     public final Uniform CANPIPE_ALPHA_CUTOUT;
 
+    public final VertexFormat vertexFormat;
+    public final boolean depth;
+
     MaterialProgram(
         ResourceLocation location,
         VertexFormat vertexFormat,
         Shader vertexShader,
         Shader fragmentShader,
         List<String> samplers,
-        List<? extends AbstractTexture> textures
+        List<? extends AbstractTexture> textures,
+        boolean depth
     ) throws IOException, CompilationException {
         super(
             location,
@@ -58,6 +62,9 @@ public class MaterialProgram extends ProgramBase {
             vertexShader,
             fragmentShader
         );
+        this.vertexFormat = vertexFormat;
+        this.depth = depth;
+
         if (samplers.size() > textures.size()) {
             CanPipe.LOGGER.warn("Material program "+location+" has more samplers than textures");
         }
@@ -368,7 +375,8 @@ public class MaterialProgram extends ProgramBase {
             vertexShader,
             fragmentShader,
             samplers,
-            textures
+            textures,
+            depthPass
         );
     }
 
