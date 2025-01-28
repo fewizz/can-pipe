@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +26,6 @@ import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public class Pipelines implements PreparableReloadListener {
@@ -36,19 +34,23 @@ public class Pipelines implements PreparableReloadListener {
 
     private static volatile Pipeline current = null;
 
-    public static void loadAndSetPipeline(
-        PipelineRaw raw,
+    public static boolean loadAndSetPipeline(
+        @Nullable PipelineRaw raw,
         @Nullable Map<Option.Element<?>, Object> optionsChanges
-    ) throws Exception {
+    ) {
         assert RenderSystem.isOnRenderThread();
 
         Pipeline pipeline = null;
-        Map<Option.Element<?>, Object> appliedOptions = optionsChanges != null ? new HashMap<>(optionsChanges) : new HashMap<>();
+        Map<Option.Element<?>, Object> appliedOptions = new HashMap<>();
 
         JsonObject config = new JsonObject();
 
         if (Files.exists(CONFIG_PATH)) {
-            config = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
+            try {
+                config = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
+            } catch (IOException | SyntaxError e) {
+                e.printStackTrace();
+            }
         }
 
         if (raw != null) {
@@ -72,11 +74,14 @@ public class Pipelines implements PreparableReloadListener {
                 }
             }
 
-            if (optionsChanges != null) {
-                appliedOptions.putAll(optionsChanges);
-            }
+            appliedOptions.putAll(optionsChanges);
 
-            pipeline = new Pipeline(raw, appliedOptions);
+            try {
+                pipeline = new Pipeline(raw, appliedOptions);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
         }
 
         Minecraft mc = Minecraft.getInstance();
@@ -95,22 +100,9 @@ public class Pipelines implements PreparableReloadListener {
             if (current != null) {
                 config.put("current", new JsonPrimitive(current.location.toString()));
 
-                Function<Option.Element<?>, String> optionName = (Option.Element<?> e) -> {
-                    for (var option : raw.options.values()) {
-                        for (var entry : option.elements.entrySet()) {
-                            String elementName = entry.getKey();
-                            Option.Element<?> element = entry.getValue();
-                            if (element == e) {
-                                return elementName;
-                            }
-                        }
-                    }
-                    throw new RuntimeException("Couldn't file option element "+e);
-                };
-
                 var pipelineOptions = new JsonObject();
                 for (var kv : appliedOptions.entrySet()) {
-                    pipelineOptions.put(optionName.apply(kv.getKey()), new JsonPrimitive(kv.getValue()));
+                    pipelineOptions.put(kv.getKey().name, new JsonPrimitive(kv.getValue()));
                 }
 
                 JsonObject pipelinesOptions = (JsonObject) config.computeIfAbsent("pipelinesOptions", (k) -> new JsonObject());
@@ -136,6 +128,8 @@ public class Pipelines implements PreparableReloadListener {
         }
 
         mc.levelRenderer.allChanged();
+
+        return true;
     }
 
     @Override
@@ -147,108 +141,115 @@ public class Pipelines implements PreparableReloadListener {
     ) {
         return CompletableFuture.supplyAsync(
             () -> {
-                return resourceManager.listResources(
+                Map<ResourceLocation, PipelineRaw> rawPipelines = new LinkedHashMap<>();
+
+                resourceManager.listResources(
                     "pipelines",
                     (ResourceLocation rl) -> {
                         String pathStr = rl.getPath();
                         return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
                     }
-                );
+                ).forEach((location, pipelineJson) -> {
+                    JsonObject o;
+                    try {
+                        o = CanPipe.JANKSON.load(pipelineJson.open());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return;
+                    }
+
+                    Map<String, JsonObject> includes = new HashMap<>();
+                    try {
+                        processIncludes(o, includes, resourceManager);
+                    } catch (IOException | SyntaxError e) {
+                        e.printStackTrace();
+                        return;
+                    }
+
+                    Map<ResourceLocation, Option> options = new LinkedHashMap<>();
+
+                    for (var optionsA : JanksonUtils.listOfObjects(o, "options")) {
+                        ResourceLocation includeToken = ResourceLocation.parse(optionsA.get(String.class, "includeToken"));
+                        var elementsO = optionsA.getObject("elements");
+                        if (elementsO == null) {  // compat
+                            elementsO = optionsA.getObject("options");
+                        }
+                        if (elementsO == null) {
+                            elementsO = new JsonObject();
+                        }
+
+                        var categoryKey = optionsA.get(String.class, "categoryKey");
+
+                        Map<String, Option.Element<?>> elements = new LinkedHashMap<>();
+                        for (var entry : elementsO.entrySet()) {
+                            String name = entry.getKey();
+                            JsonObject elementO = (JsonObject) entry.getValue();
+
+                            var defaultValue = elementO.get(JsonPrimitive.class, "default").getValue();
+                            String nameKey = elementO.get(String.class, "nameKey");
+
+                            var prefix = elementO.get(String.class, "prefix");
+                            var choices = JanksonUtils.listOfStrings(elementO, "choices");
+                            choices = choices.size() == 0 ? null : choices;
+
+                            Option.Element<?> element;
+                            if (choices != null) {
+                                element = new Option.EnumElement(name, (String) defaultValue, nameKey, prefix, choices);
+                            }
+                            else if (defaultValue instanceof Number) {
+                                var min = (Number) elementO.get(JsonPrimitive.class, "min").getValue();
+                                var max = (Number) elementO.get(JsonPrimitive.class, "max").getValue();
+                                if (defaultValue instanceof Double) {
+                                    element = new Option.FloatElement(name, (double) defaultValue, nameKey, (double) min, (double) max);
+                                }
+                                else if (defaultValue instanceof Long) {
+                                    element = new Option.IntegerElement(name, (long) defaultValue, nameKey, (long) min, (long) max);
+                                }
+                                else {
+                                    throw new NotImplementedException();
+                                }
+                            }
+                            else if (defaultValue instanceof Boolean) {
+                                element = new Option.BooleanElement(name, (boolean) defaultValue, nameKey);
+                            }
+                            else {
+                                throw new NotImplementedException();
+                            }
+
+                            elements.put(name, element);
+                        }
+                        options.put(includeToken, new Option(includeToken, categoryKey, elements));
+                    }
+
+                    o.remove("options");
+
+                    String nameKey = o.get(String.class, "nameKey");
+
+                    rawPipelines.put(location, new PipelineRaw(location, nameKey, options, o));
+                });
+
+                return rawPipelines;
             },
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
-            (Map<ResourceLocation, Resource> jsons) -> {
+            (Map<ResourceLocation, PipelineRaw> rawPipelines) -> {
                 RAW_PIPELINES.clear();
+                RAW_PIPELINES.putAll(rawPipelines);
 
-                jsons.forEach((loc, pipelineRawJson) -> {
-                    try {
-                        JsonObject o = CanPipe.JANKSON.load(pipelineRawJson.open());
-
-                        Map<String, JsonObject> includes = new HashMap<>();
-                        processIncludes(o, includes, resourceManager);
-
-                        Map<ResourceLocation, Option> options = new LinkedHashMap<>();
-
-                        for (var optionGroups : JanksonUtils.listOfObjects(o, "options")) {
-                            ResourceLocation includeToken = ResourceLocation.parse(optionGroups.get(String.class, "includeToken"));
-                            var elementsO = optionGroups.getObject("elements");
-                            if (elementsO == null) {  // compat
-                                elementsO = optionGroups.getObject("options");
-                            }
-
-                            var categoryKey = optionGroups.get(String.class, "categoryKey");
-
-                            if (elementsO != null) {
-                                Map<String, Option.Element<?>> elements = new LinkedHashMap<>();
-                                for (var elementE : elementsO.entrySet()) {
-                                    String name = elementE.getKey();
-                                    JsonObject elementO = (JsonObject) elementE.getValue();
-
-                                    var defaultValue = elementO.get(JsonPrimitive.class, "default").getValue();
-                                    String nameKey = elementO.get(String.class, "nameKey");
-
-                                    var prefix = elementO.get(String.class, "prefix");
-                                    var choices = JanksonUtils.listOfStrings(elementO, "choices");
-                                    choices = choices.size() == 0 ? null : choices;
-
-                                    Option.Element<?> element;
-                                    if (choices != null) {
-                                        element = new Option.EnumElement((String) defaultValue, nameKey, prefix, choices);
-                                    }
-                                    else if (defaultValue instanceof Number) {
-                                        var min = (Number) elementO.get(JsonPrimitive.class, "min").getValue();
-                                        var max = (Number) elementO.get(JsonPrimitive.class, "max").getValue();
-                                        if (defaultValue instanceof Double) {
-                                            element = new Option.FloatElement((double) defaultValue, nameKey, (double) min, (double) max);
-                                        }
-                                        else if (defaultValue instanceof Long) {
-                                            element = new Option.IntegerElement((long) defaultValue, nameKey, (long) min, (long) max);
-                                        }
-                                        else {
-                                            throw new NotImplementedException();
-                                        }
-                                    }
-                                    else if (defaultValue instanceof Boolean) {
-                                        element = new Option.BooleanElement((boolean) defaultValue, nameKey);
-                                    }
-                                    else {
-                                        throw new NotImplementedException();
-                                    }
-
-                                    elements.put(name, element);
-                                }
-                                options.put(includeToken, new Option(includeToken, categoryKey, elements));
-                            }
-                        }
-                        o.remove("options");
-
-                        String nameKey = o.get(String.class, "nameKey");
-
-                        RAW_PIPELINES.put(loc, new PipelineRaw(loc, nameKey, options, o));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-
-                PipelineRaw pipelineRaw = null;
-
+                PipelineRaw selected = null;
                 if (Files.exists(CONFIG_PATH)) {
                     try {
                         JsonObject readOptions = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
                         String current = readOptions.get(String.class, "current");
                         if (current != null) {
-                            pipelineRaw = RAW_PIPELINES.get(ResourceLocation.parse(current));
+                            selected = RAW_PIPELINES.get(ResourceLocation.parse(current));
                         }
                     } catch (IOException | SyntaxError e) {
                         e.printStackTrace();
                     }
                 }
 
-                try {
-                    loadAndSetPipeline(pipelineRaw, null);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                loadAndSetPipeline(selected, Map.of());
             },
             applyExecutor
         );

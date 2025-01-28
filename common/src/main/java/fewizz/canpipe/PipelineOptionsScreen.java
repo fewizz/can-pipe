@@ -1,7 +1,6 @@
 package fewizz.canpipe;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -149,16 +148,11 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 this.nameWidth = minecraft.font.width(this.name);
 
                 if (e instanceof Option.BooleanElement boolElement) {
+                    var initialValue = appliedValue != null ? boolElement.validate(appliedValue) : boolElement.defaultValue;
                     this.widget = Checkbox.builder(Component.empty(), minecraft.font)
-                        .selected(appliedValue != null ? (boolean) appliedValue : boolElement.defaultValue)
+                        .selected(initialValue)
                         .onValueChange((checkbox, state) -> {
-                            Map<Option.Element<?>, Object> v = new HashMap<>();
-                            v.put(e, state);
-                            try {
-                                Pipelines.loadAndSetPipeline(raw, v);
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
-                            }
+                            Pipelines.loadAndSetPipeline(raw, Map.of(e, state));
                         })
                         .build();
                 }
@@ -167,12 +161,12 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         return Component.literal(Double.toString(v));
                     };
 
-                    var v = appliedValue != null ? (double) appliedValue : floatElement.defaultValue;
+                    var initialValue = appliedValue != null ? (double) appliedValue : floatElement.defaultValue;
 
                     this.widget = new AbstractSliderButton(
                         0, 0, BUTTON_WIDTH, Button.DEFAULT_HEIGHT,
-                        valueToComponent.apply(v),
-                        (v - floatElement.min) / (floatElement.max - floatElement.min)
+                        valueToComponent.apply(initialValue),
+                        (initialValue - floatElement.min) / (floatElement.max - floatElement.min)
                     ) {
 
                         @Override
@@ -186,13 +180,8 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         @Override
                         public void onRelease(double mouseX, double mouseY) {
                             super.onRelease(mouseX, mouseY);
-                            Map<Option.Element<?>, Object> v = new HashMap<>();
-                            v.put(e, (this.value * (floatElement.max - floatElement.min)) + floatElement.min);
-                            try {
-                                Pipelines.loadAndSetPipeline(raw, v);
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
-                            }
+                            var value = (this.value * (floatElement.max - floatElement.min)) + floatElement.min;
+                            Pipelines.loadAndSetPipeline(raw, Map.of(e, value));
                         }
                     };
                 }
@@ -201,12 +190,12 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         return Component.literal(Long.toString(v));
                     };
 
-                    var v = appliedValue != null ? (long) appliedValue : intElement.defaultValue;
+                    var initialValue = appliedValue != null ? (long) appliedValue : intElement.defaultValue;
 
                     this.widget = new AbstractSliderButton(
                         0, 0, BUTTON_WIDTH, Button.DEFAULT_HEIGHT,
-                        valueToComponent.apply(v),
-                        (double)(v - intElement.min) / (double)(intElement.max - intElement.min)
+                        valueToComponent.apply(initialValue),
+                        (double)(initialValue - intElement.min) / (double)(intElement.max - intElement.min)
                     ) {
                         @Override
                         protected void updateMessage() {
@@ -219,13 +208,8 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         @Override
                         public void onRelease(double mouseX, double mouseY) {
                             super.onRelease(mouseX, mouseY);
-                            Map<Option.Element<?>, Object> v = new HashMap<>();
-                            v.put(e, (long)((this.value * (intElement.max - intElement.min)) + intElement.min));
-                            try {
-                                Pipelines.loadAndSetPipeline(raw, v);
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
-                            }
+                            var value = (long)((this.value * (intElement.max - intElement.min)) + intElement.min);
+                            Pipelines.loadAndSetPipeline(raw, Map.of(e, value));
                         }
                     };
                 }
@@ -239,13 +223,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                             BUTTON_WIDTH, Button.DEFAULT_HEIGHT,
                             null,  // no name needed
                             (CycleButton<String> button, String choice) -> {
-                                Map<Option.Element<?>, Object> v = new HashMap<>();
-                                v.put(e, choice);
-                                try {
-                                    Pipelines.loadAndSetPipeline(raw, v);
-                                } catch (Exception e1) {
-                                    e1.printStackTrace();
-                                }
+                                Pipelines.loadAndSetPipeline(raw, Map.of(e, choice));
                             }
                         );
                 }

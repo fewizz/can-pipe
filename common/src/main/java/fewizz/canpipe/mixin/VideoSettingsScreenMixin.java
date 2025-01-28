@@ -1,6 +1,7 @@
 package fewizz.canpipe.mixin;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -85,10 +86,8 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen {
             ),
             Optional.ofNullable(current == null ? null : Pipelines.RAW_PIPELINES.get(current.location)),
             (Optional<PipelineRaw> p) -> {
-                try {
-                    Pipelines.loadAndSetPipeline(p.orElse(null), null);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if (!Pipelines.loadAndSetPipeline(p.orElse(null), Map.of())) {
+                    // ...
                 }
             }
         ).createButton(this.options);

@@ -121,7 +121,6 @@ public class Pipeline implements AutoCloseable {
             return appliedOptions.getOrDefault(element, element.defaultValue);
         };
 
-        // Skipping dynamic options for now... (choosing defaults)
         class SkipDynamicOptions { static JsonElement doSkip(JsonElement e, Function<String, Object> optionValueByName) {
             if (e instanceof JsonObject vo) {
                 if (vo.size() == 2 && vo.containsKey("default") && (vo.containsKey("optionMap") || vo.containsKey("option"))) {
