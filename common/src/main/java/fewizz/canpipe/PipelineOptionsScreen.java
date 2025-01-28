@@ -78,9 +78,10 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             PipelineRaw raw,
             Map<Option.Element<?>, Object> appliedOptions
         ) {
-            super(minecraft, screen.width, screen.layout.getContentHeight(), screen.layout.getHeaderHeight(), 20);
+            super(minecraft, screen.width, screen.layout.getContentHeight(), screen.layout.getHeaderHeight(), 18);
 
             for (Option o : screen.raw.options.values()) {
+                addEntry(new CategoryEntry(Component.empty()));
                 addEntry(new CategoryEntry(Component.translatable(o.categoryKey)));
 
                 for (Option.Element<?> e : o.elements.values()) {
@@ -115,7 +116,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     minecraft.font,
                     this.name,
                     (PipelineOptionsList.this.width - this.width) / 2,
-                    top + (height - minecraft.font.lineHeight) / 2,
+                    top + (height - minecraft.font.lineHeight) / 2 - 5,
                     0xFFFFFFFF
                 );
             }
@@ -141,7 +142,10 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             private final int nameWidth;
             private final AbstractWidget widget;
 
-            static final int BUTTON_WIDTH = Button.DEFAULT_WIDTH - 25;
+
+            static final int RIGHT_SHIFT = 0;
+            static final int BUTTON_WIDTH = Button.DEFAULT_WIDTH - 25 - RIGHT_SHIFT;
+            static final int BUTTON_HEIGHT = 17;
 
             OptionEntry(PipelineRaw raw, Option.Element<?> e, Object appliedValue) {
                 this.name = Component.translatable(e.nameKey);
@@ -155,6 +159,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                             Pipelines.loadAndSetPipeline(raw, Map.of(e, state));
                         })
                         .build();
+                    this.widget.setHeight(BUTTON_HEIGHT);
                 }
                 else if (e instanceof Option.FloatElement floatElement) {
                     Function<Double, Component> valueToComponent = (Double v) -> {
@@ -164,7 +169,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     var initialValue = appliedValue != null ? (double) appliedValue : floatElement.defaultValue;
 
                     this.widget = new AbstractSliderButton(
-                        0, 0, BUTTON_WIDTH, Button.DEFAULT_HEIGHT,
+                        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
                         valueToComponent.apply(initialValue),
                         (initialValue - floatElement.min) / (floatElement.max - floatElement.min)
                     ) {
@@ -193,7 +198,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     var initialValue = appliedValue != null ? (long) appliedValue : intElement.defaultValue;
 
                     this.widget = new AbstractSliderButton(
-                        0, 0, BUTTON_WIDTH, Button.DEFAULT_HEIGHT,
+                        0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
                         valueToComponent.apply(initialValue),
                         (double)(initialValue - intElement.min) / (double)(intElement.max - intElement.min)
                     ) {
@@ -220,7 +225,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         .displayOnlyValue()
                         .create(
                             0, 0,
-                            BUTTON_WIDTH, Button.DEFAULT_HEIGHT,
+                            BUTTON_WIDTH, BUTTON_HEIGHT,
                             null,  // no name needed
                             (CycleButton<String> button, String choice) -> {
                                 Pipelines.loadAndSetPipeline(raw, Map.of(e, choice));
@@ -237,12 +242,12 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 guiGraphics.drawString(
                     minecraft.font,
                     this.name,
-                    PipelineOptionsList.this.width / 2 - nameWidth - 5,
+                    PipelineOptionsList.this.width / 2 - nameWidth - 5 + RIGHT_SHIFT,
                     top + (height - minecraft.font.lineHeight) / 2,
                     0xFFFFFFFF
                 );
                 this.widget.setPosition(
-                    PipelineOptionsList.this.width / 2 + 5,
+                    PipelineOptionsList.this.width / 2 + 5 + RIGHT_SHIFT,
                     top + (height - this.widget.getHeight()) / 2
                 );
                 this.widget.render(guiGraphics, mouseX, mouseY, partialTick);
