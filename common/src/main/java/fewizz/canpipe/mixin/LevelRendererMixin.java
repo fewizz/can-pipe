@@ -1,5 +1,7 @@
 package fewizz.canpipe.mixin;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +26,9 @@ import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.GFX;
@@ -34,6 +38,7 @@ import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.pipeline.ProgramBase;
+import it.unimi.dsi.fastutil.objects.Object2ObjectSortedMaps;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -73,6 +78,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     public Vector4f[] canpipe_shadowCenters = new Vector4f[] { new Vector4f(), new Vector4f(), new Vector4f(), new Vector4f() };
     @Unique
     volatile public boolean canpipe_isRenderingShadows = false;
+    @Unique
+    final ByteBufferBuilder canpipt_shadowByteBufferBuilder = new ByteBufferBuilder(1 << 20);  // 1 mb
 
     @Override
     public boolean canpipe_getIsRenderingShadows() {
@@ -176,8 +183,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         modelViewMatrixStack.mul(modelViewMatrix);
 
         PoseStack poseStack = new PoseStack();
-        MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
-        MultiBufferSource.BufferSource crumblingBufferSource = this.renderBuffers.crumblingBufferSource();
 
         RenderSystem.enablePolygonOffset();
         RenderSystem.polygonOffset(
@@ -262,14 +267,23 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
 
         this.collectVisibleEntities(shadowCamera, shadowFrustum, this.visibleEntities);
+
+        MultiBufferSource.BufferSource bufferSource = new MultiBufferSource.BufferSource(canpipt_shadowByteBufferBuilder, Object2ObjectSortedMaps.emptyMap()) {
+
+            @Override
+            public VertexConsumer getBuffer(RenderType renderType) {
+                return super.getBuffer(RenderType.SOLID);
+            }
+
+        };
+
         this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
-        this.renderBlockEntities(poseStack, bufferSource, crumblingBufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
+        this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
+        bufferSource.endBatch();
+        RenderSystem.disablePolygonOffset();
+
         this.checkPoseStack(poseStack);
         this.visibleEntities.clear();
-        bufferSource.endBatch();
-        crumblingBufferSource.endBatch();
-
-        RenderSystem.disablePolygonOffset();
 
         modelViewMatrixStack.popMatrix();
         mc.mainRenderTarget.bindWrite(true);

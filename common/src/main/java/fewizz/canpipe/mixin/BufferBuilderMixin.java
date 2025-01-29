@@ -63,42 +63,23 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private static byte normalIntValue(float f) {return 0;}
 
     @Unique
-    int sharedMaterialIndex = -1;
+    private int sharedMaterialIndex = -1;
 
     @Unique
-    Supplier<TextureAtlasSprite> spriteSupplier = null;
+    private Supplier<TextureAtlasSprite> spriteSupplier = null;
 
     @Unique
-    boolean recomputeNormal = false;
+    private boolean recomputeNormal = false;
 
     @Inject(method = "endLastVertex", at = @At("HEAD"))
     private void endLastVertex(CallbackInfo ci) {
         boolean requiresNormal = format.contains(VertexFormatElement.NORMAL);
         boolean normalIsNotSet = (elementsToFill & VertexFormatElement.NORMAL.mask()) != 0;
         boolean lastVertex = !this.mode.connectedPrimitives && this.vertices != 0 && (this.vertices % this.mode.primitiveLength) == 0;
-        int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
 
         if ((this.recomputeNormal && requiresNormal) || normalIsNotSet) {
             if (lastVertex) {
-                Vector3f normal = computeNormal(
-                    canpipe_getPos(offsetToFirstVertex, 0),
-                    canpipe_getPos(offsetToFirstVertex, 1),
-                    canpipe_getPos(offsetToFirstVertex, 2),
-                    canpipe_getPos(offsetToFirstVertex+1, 0),
-                    canpipe_getPos(offsetToFirstVertex+1, 1),
-                    canpipe_getPos(offsetToFirstVertex+1, 2),
-                    canpipe_getPos(offsetToFirstVertex+2, 0),
-                    canpipe_getPos(offsetToFirstVertex+2, 1),
-                    canpipe_getPos(offsetToFirstVertex+2, 2)
-                );
-                int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
-                for (int i = 0; i < this.mode.primitiveLength; ++i) {
-                    long o = this.vertexPointer + (long) this.vertexSize *(offsetToFirstVertex+i)+normalOffset;
-                    MemoryUtil.memPutByte(o, normalIntValue(normal.x));
-                    MemoryUtil.memPutByte(o+1, normalIntValue(normal.y));
-                    MemoryUtil.memPutByte(o+2, normalIntValue(normal.z));
-                }
-                this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
+                computeNormals();
             }
             else if (normalIsNotSet) {
                 setNormal(0.0F, 1.0F, 0.0F);
@@ -107,28 +88,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         if ((elementsToFill & CanPipe.VertexFormatElements.TANGENT.mask()) != 0) {
             if (lastVertex) {
-                Vector3f tangent = computeTangent(
-                    canpipe_getPos(offsetToFirstVertex, 0),
-                    canpipe_getPos(offsetToFirstVertex, 1),
-                    canpipe_getPos(offsetToFirstVertex, 2),
-                    canpipe_getUV(offsetToFirstVertex, 0),
-                    canpipe_getUV(offsetToFirstVertex, 1),
-
-                    canpipe_getPos(offsetToFirstVertex+1, 0),
-                    canpipe_getPos(offsetToFirstVertex+1, 1),
-                    canpipe_getPos(offsetToFirstVertex+1, 2),
-                    canpipe_getUV(offsetToFirstVertex+1, 0),
-                    canpipe_getUV(offsetToFirstVertex+1, 1),
-
-                    canpipe_getPos(offsetToFirstVertex+2, 0),
-                    canpipe_getPos(offsetToFirstVertex+2, 1),
-                    canpipe_getPos(offsetToFirstVertex+2, 2),
-                    canpipe_getUV(offsetToFirstVertex+2, 0),
-                    canpipe_getUV(offsetToFirstVertex+2, 1)
-                ).normalize();
-                for (int i = 0; i < this.mode.primitiveLength; ++i) {
-                    setTangentRaw(offsetToFirstVertex+i, tangent.x, tangent.y, tangent.z);
-                }
+                computeTangents();
             }
             else {
                 setTangentRaw(0, 1.0F, 0.0F, 0.0F);
@@ -138,6 +98,58 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         if ((elementsToFill & CanPipe.VertexFormatElements.AO.mask()) != 0) {
             canpipe_setAO(1.0F);
+        }
+    }
+
+    @Unique
+    private void computeNormals() {
+        int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
+
+        Vector3f normal = computeNormal(
+            canpipe_getPos(offsetToFirstVertex, 0),
+            canpipe_getPos(offsetToFirstVertex, 1),
+            canpipe_getPos(offsetToFirstVertex, 2),
+            canpipe_getPos(offsetToFirstVertex+1, 0),
+            canpipe_getPos(offsetToFirstVertex+1, 1),
+            canpipe_getPos(offsetToFirstVertex+1, 2),
+            canpipe_getPos(offsetToFirstVertex+2, 0),
+            canpipe_getPos(offsetToFirstVertex+2, 1),
+            canpipe_getPos(offsetToFirstVertex+2, 2)
+        );
+        int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
+        for (int i = 0; i < this.mode.primitiveLength; ++i) {
+            long o = this.vertexPointer + (long) this.vertexSize *(offsetToFirstVertex+i)+normalOffset;
+            MemoryUtil.memPutByte(o, normalIntValue(normal.x));
+            MemoryUtil.memPutByte(o+1, normalIntValue(normal.y));
+            MemoryUtil.memPutByte(o+2, normalIntValue(normal.z));
+        }
+        this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
+    }
+
+    private void computeTangents() {
+        int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
+
+        Vector3f tangent = computeTangent(
+            canpipe_getPos(offsetToFirstVertex, 0),
+            canpipe_getPos(offsetToFirstVertex, 1),
+            canpipe_getPos(offsetToFirstVertex, 2),
+            canpipe_getUV(offsetToFirstVertex, 0),
+            canpipe_getUV(offsetToFirstVertex, 1),
+
+            canpipe_getPos(offsetToFirstVertex+1, 0),
+            canpipe_getPos(offsetToFirstVertex+1, 1),
+            canpipe_getPos(offsetToFirstVertex+1, 2),
+            canpipe_getUV(offsetToFirstVertex+1, 0),
+            canpipe_getUV(offsetToFirstVertex+1, 1),
+
+            canpipe_getPos(offsetToFirstVertex+2, 0),
+            canpipe_getPos(offsetToFirstVertex+2, 1),
+            canpipe_getPos(offsetToFirstVertex+2, 2),
+            canpipe_getUV(offsetToFirstVertex+2, 0),
+            canpipe_getUV(offsetToFirstVertex+2, 1)
+        ).normalize();
+        for (int i = 0; i < this.mode.primitiveLength; ++i) {
+            setTangentRaw(offsetToFirstVertex+i, tangent.x, tangent.y, tangent.z);
         }
     }
 
