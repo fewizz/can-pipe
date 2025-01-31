@@ -73,15 +73,16 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Inject(method = "endLastVertex", at = @At("HEAD"))
     private void endLastVertex(CallbackInfo ci) {
-        boolean requiresNormal = format.contains(VertexFormatElement.NORMAL);
-        boolean normalIsNotSet = (elementsToFill & VertexFormatElement.NORMAL.mask()) != 0;
-        boolean lastVertex = !this.mode.connectedPrimitives && this.vertices != 0 && (this.vertices % this.mode.primitiveLength) == 0;
+        boolean lastVertex = this.vertices != 0 && (this.vertices % this.mode.primitiveLength) == 0;
 
-        if ((this.recomputeNormal && requiresNormal) || normalIsNotSet) {
+        boolean requiresNormal = format.contains(VertexFormatElement.NORMAL);
+        boolean needsNormal = (elementsToFill & VertexFormatElement.NORMAL.mask()) != 0;
+
+        if (requiresNormal && (this.recomputeNormal || needsNormal)) {
             if (lastVertex) {
                 computeNormals();
             }
-            else if (normalIsNotSet) {
+            else {
                 setNormal(0.0F, 1.0F, 0.0F);
             }
         }

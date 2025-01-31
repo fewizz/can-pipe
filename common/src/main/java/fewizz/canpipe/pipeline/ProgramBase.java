@@ -4,18 +4,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.KHRDebug;
 
 import com.google.common.collect.Streams;
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;

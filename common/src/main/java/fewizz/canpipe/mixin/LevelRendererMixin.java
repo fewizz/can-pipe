@@ -1,7 +1,5 @@
 package fewizz.canpipe.mixin;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,7 +36,6 @@ import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.pipeline.ProgramBase;
-import it.unimi.dsi.fastutil.objects.Object2ObjectSortedMaps;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -268,22 +265,15 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         this.collectVisibleEntities(shadowCamera, shadowFrustum, this.visibleEntities);
 
-        MultiBufferSource.BufferSource bufferSource = new MultiBufferSource.BufferSource(canpipt_shadowByteBufferBuilder, Object2ObjectSortedMaps.emptyMap()) {
-
-            @Override
-            public VertexConsumer getBuffer(RenderType renderType) {
-                return super.getBuffer(RenderType.SOLID);
-            }
-
-        };
+        MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 
         this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
         this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
-        bufferSource.endBatch();
-        RenderSystem.disablePolygonOffset();
-
         this.checkPoseStack(poseStack);
         this.visibleEntities.clear();
+        bufferSource.endBatch();
+
+        RenderSystem.disablePolygonOffset();
 
         modelViewMatrixStack.popMatrix();
         mc.mainRenderTarget.bindWrite(true);
