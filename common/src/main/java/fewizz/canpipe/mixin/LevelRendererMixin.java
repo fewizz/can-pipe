@@ -376,11 +376,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         method = "collectVisibleEntities",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/Camera;getEntity()Lnet/minecraft/world/entity/Entity;"
+            target = "Lnet/minecraft/client/Camera;isDetached()Z"
         )
     )
-    private Entity addPlayerWhenCollectingVisibleEntities(Entity original) {
-        return this.canpipe_isRenderingShadows ? null : original;
+    private boolean addPlayerWhenCollectingVisibleEntities(boolean original) {
+        return this.canpipe_isRenderingShadows ? true : original;
     }
 
 }
