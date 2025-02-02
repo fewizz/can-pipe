@@ -86,48 +86,52 @@ public class Pipelines implements PreparableReloadListener {
 
         Minecraft mc = Minecraft.getInstance();
 
+        // reset main render target
+        if (pipeline != null) {
+            mc.mainRenderTarget = pipeline.defaultFramebuffer;
+        }
+        else if (!(mc.mainRenderTarget instanceof MainTarget)) {
+            mc.mainRenderTarget = new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+        }
+
+        // from vanilla to pipeline, or vice versa
+        if (
+            (current == null && pipeline != null) ||
+            (current != null && pipeline == null)
+        ) {
+            mc.levelRenderer.allChanged();
+        }
+
         if (current != null) {
             current.close();
-            if (mc.mainRenderTarget != null) {
-                mc.mainRenderTarget.destroyBuffers();
-            }
-            mc.mainRenderTarget = null;
         }
 
         current = pipeline;
 
+        if (current != null) {
+            ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
+        }
+
+        // save
+        if (current != null) {
+            config.put("current", new JsonPrimitive(current.location.toString()));
+
+            var pipelineOptions = new JsonObject();
+            for (var kv : appliedOptions.entrySet()) {
+                pipelineOptions.put(kv.getKey().name, new JsonPrimitive(kv.getValue()));
+            }
+
+            JsonObject pipelinesOptions = (JsonObject) config.computeIfAbsent("pipelinesOptions", (k) -> new JsonObject());
+            pipelinesOptions.put(current.location.toString(), pipelineOptions);
+        }
+        else {
+            config.put("current", JsonNull.INSTANCE);
+        }
         try {
-            if (current != null) {
-                config.put("current", new JsonPrimitive(current.location.toString()));
-
-                var pipelineOptions = new JsonObject();
-                for (var kv : appliedOptions.entrySet()) {
-                    pipelineOptions.put(kv.getKey().name, new JsonPrimitive(kv.getValue()));
-                }
-
-                JsonObject pipelinesOptions = (JsonObject) config.computeIfAbsent("pipelinesOptions", (k) -> new JsonObject());
-                pipelinesOptions.put(current.location.toString(), pipelineOptions);
-            }
-            else {
-                config.put("current", JsonNull.INSTANCE);
-            }
             Files.writeString(CONFIG_PATH, config.toJson(true, true));
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        if (pipeline != null) {
-            mc.mainRenderTarget = pipeline.defaultFramebuffer;
-            ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
-        }
-        else {
-            // Pipeline wasn't selected and main render target was destroyed previously
-            if (mc.mainRenderTarget == null) {
-                mc.mainRenderTarget = new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
-            }
-        }
-
-        mc.levelRenderer.allChanged();
 
         return true;
     }
