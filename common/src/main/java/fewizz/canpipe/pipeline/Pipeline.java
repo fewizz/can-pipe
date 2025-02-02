@@ -343,7 +343,12 @@ public class Pipeline implements AutoCloseable {
                 }
 
                 String passName = passO.get(String.class, "name");
-                Framebuffer framebuffer = this.framebuffers.get(passO.get(String.class, "framebuffer"));
+                String framebufferName = passO.get(String.class, "framebuffer");
+                Framebuffer framebuffer = this.framebuffers.get(framebufferName);
+                if (framebuffer == null) {
+                    throw new RuntimeException("Couldn't find framebuffer \""+framebufferName +"\"");
+                }
+
                 String programName = passO.get(String.class, "program");
 
                 PassBase pass;

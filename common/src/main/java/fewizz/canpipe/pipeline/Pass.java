@@ -2,6 +2,7 @@ package fewizz.canpipe.pipeline;
 
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
 
@@ -45,11 +46,11 @@ public class Pass extends PassBase {
     final int layer;
 
     Pass(
-        String name,
-        Framebuffer framebuffer,
-        Program program,
-        List<? extends AbstractTexture> textures,
-        Vector2i extent,
+        @NotNull String name,
+        @NotNull Framebuffer framebuffer,
+        @NotNull Program program,
+        @NotNull List<? extends AbstractTexture> textures,
+        @NotNull Vector2i extent,
         int lod,
         int layer
     ) {
