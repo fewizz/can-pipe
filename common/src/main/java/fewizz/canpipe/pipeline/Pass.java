@@ -104,18 +104,27 @@ public class Pass extends PassBase {
 
         RenderSystem.viewport(0, 0, (int) w, (int) h);
 
+        framebuffer.bindWrite(false);
+
         // program.setDefaultUniforms(view, projection, w, h, this.lod, this.layer);
         for (int i = 0; i < Math.min(program.samplers.size(), this.textures.size()); ++i) {
             String sampler = program.samplers.get(i);
             AbstractTexture texture = this.textures.get(i);
-            if (texture == null) {
+            if (texture == null) {  // Again, how is this possible?
                 continue;
             }
             program.bindSampler(sampler, texture);
         }
         program.apply();
 
-        framebuffer.bindWrite(false);
+        // assuming that active texture unit is GL_TEXTURE0,
+        // if we couldn't find first sampler location,
+        // then attach first texture to the texture unit GL_TEXTURE0.
+        // compat with canvas, for cases like this:
+        // https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5
+        if (program.samplers.size() > 0 && !program.samplerExists(program.samplers.get(0))) {
+            this.textures.get(0).bind();
+        }
 
         RenderSystem.disableDepthTest();
 
