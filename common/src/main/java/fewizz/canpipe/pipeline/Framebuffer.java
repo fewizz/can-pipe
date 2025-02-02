@@ -19,7 +19,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import fewizz.canpipe.GFX;
 import net.minecraft.resources.ResourceLocation;
 
-public class Framebuffer extends RenderTarget {
+public class Framebuffer extends RenderTarget implements AutoCloseable {
 
     public static record ColorAttachment(
         @NotNull Texture texture,
@@ -65,6 +65,11 @@ public class Framebuffer extends RenderTarget {
         this.depthBufferId = -1;
         this.colorTextureId = -1;
 
+        this.close();
+    }
+
+    @Override
+    public void close() {
         if (this.frameBufferId > -1) {
             GlStateManager._glBindFramebuffer(36160, 0);
             GlStateManager._glDeleteFramebuffers(this.frameBufferId);

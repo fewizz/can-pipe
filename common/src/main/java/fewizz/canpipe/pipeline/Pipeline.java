@@ -557,18 +557,10 @@ public class Pipeline implements AutoCloseable {
 
     @Override
     public void close() {
-        this.framebuffers.forEach((n, f) -> {
-            f.destroyBuffers();
-        });
-        this.textures.forEach((n, t) -> {
-            t.close();
-        });
-        this.shaders.forEach((n, s) -> {
-            s.close();
-        });
-        this.programs.forEach((n, p) -> {
-            p.close();
-        });
+        this.framebuffers.values().forEach(Framebuffer::close);
+        this.textures.values().forEach(Texture::close);
+        this.shaders.values().forEach(Shader::close);
+        this.programs.values().forEach(ProgramBase::close);
     }
 
 }

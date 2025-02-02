@@ -49,27 +49,4 @@ public class Program extends ProgramBase {
         this.samplers = samplers;
     }
 
-    /*public void setDefaultUniforms(
-        Matrix4f view, Matrix4f projection,
-        int width, int height,
-        int lod, int layer
-    ) {
-        Minecraft mc = Minecraft.getInstance();
-
-        super.setDefaultUniforms(Mode.QUADS, view, projection, mc.getWindow());
-
-        if (FRXU_SIZE != null) {
-            FRXU_SIZE.set((int) width, (int) height);
-        }
-        if (FRXU_LOD != null) {
-            FRXU_LOD.set(lod);
-        }
-        if (FRXU_LAYER != null) {
-            FRXU_LAYER.set(layer);
-        }
-        if (FRXU_FRAME_PROJECTION_MATRIX != null) {
-            FRXU_FRAME_PROJECTION_MATRIX.set(new Matrix4f().ortho2D(0, width, 0, height));
-        }
-    }*/
-
 }

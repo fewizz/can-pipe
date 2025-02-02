@@ -1,9 +1,12 @@
 package fewizz.canpipe;
 
+import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+
+import org.apache.commons.lang3.NotImplementedException;
 
 import com.google.common.collect.ImmutableList;
 
@@ -104,20 +107,13 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         @Override
         protected void renderScrollbar(GuiGraphics guiGraphics) {
             if (this.scrollbarVisible()) {
-                int i = this.scrollBarX();
-                int j = this.scrollerHeight();
-                int k = this.scrollBarY();
-                guiGraphics.blitSprite(
-                    RenderType::guiTextured,
-                    this.minecraft.level != null
-                    ? ResourceLocation.fromNamespaceAndPath("canpipe", "slider_background_transparent")
-                    : ResourceLocation.withDefaultNamespace("widget/scroller_background"),
-                    i, this.getY(), 6, this.getHeight()
-                );
                 guiGraphics.blitSprite(
                     RenderType::guiTextured,
                     ResourceLocation.withDefaultNamespace("widget/scroller"),
-                    i, k, 6, j
+                    this.scrollBarX(),
+                    this.scrollBarY(),
+                    6,
+                    this.scrollerHeight()
                 );
             }
         }
@@ -184,8 +180,11 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         .build();
                 }
                 else if (e instanceof Option.FloatElement floatElement) {
+                    NumberFormat numberFormat = NumberFormat.getInstance();
+                    numberFormat.setMaximumFractionDigits(3);
+
                     Function<Double, Component> valueToComponent = (Double v) -> {
-                        return Component.literal(Double.toString(v));
+                        return Component.literal(numberFormat.format(v));
                     };
 
                     var initialValue = appliedValue != null ? (double) appliedValue : floatElement.defaultValue;
@@ -255,7 +254,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         );
                 }
                 else {
-                    this.widget = Button.builder(name, (b) -> {}).width(BUTTON_WIDTH).build();
+                    throw new NotImplementedException();
                 }
             }
 
@@ -268,6 +267,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     top + (height - minecraft.font.lineHeight) / 2,
                     0xFFFFFFFF
                 );
+
                 this.widget.setPosition(
                     PipelineOptionsList.this.width / 2 + 5 + RIGHT_SHIFT,
                     top + (height - this.widget.getHeight()) / 2
