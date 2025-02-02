@@ -121,49 +121,46 @@ public class Pipeline implements AutoCloseable {
             return appliedOptions.getOrDefault(element, element.defaultValue);
         };
 
-        class SkipDynamicOptions { static JsonElement doSkip(JsonElement e, Function<String, Object> optionValueByName) {
+        class ApplyOptions { static JsonElement doApply(JsonElement e, Function<String, Object> optionValueByName) {
             if (e instanceof JsonObject vo) {
-                if (vo.size() == 2 && vo.containsKey("default") && (vo.containsKey("optionMap") || vo.containsKey("option"))) {
+                if (vo.size() == 1 && vo.containsKey("option")) {
+                    String optionName = vo.get(String.class, "option");
+                    return new JsonPrimitive(optionValueByName.apply(optionName));
+                }
+                if (vo.size() == 2 && vo.containsKey("default")) {
                     if (vo.containsKey("option")) {
-                        String optionName = (String) ((JsonPrimitive) vo.get("option")).getValue();
-                        var value = optionValueByName.apply(optionName);
+                        String optionElementName = (String) ((JsonPrimitive) vo.get("option")).getValue();
+                        var value = optionValueByName.apply(optionElementName);
                         if (value != null) {
                             return new JsonPrimitive(value);
+                        }
+                    }
+                    if (vo.containsKey("optionMap")) {
+                        JsonObject optionO = (JsonObject) vo.get("optionMap");
+                        String optionElementName = optionO.keySet().iterator().next();
+                        var value = optionValueByName.apply(optionElementName);
+                        if (value != null) {
+                            for (JsonObject variant : JanksonUtils.listOfObjects(optionO, optionElementName)) {
+                                if (variant.get(String.class, "from").equals(value)) {
+                                    return (JsonPrimitive) variant.get("to");
+                                }
+                            }
                         }
                     }
                     return (JsonPrimitive) vo.get("default");
                 }
                 for (var kv : vo.entrySet()) {
-                    kv.setValue(doSkip(kv.getValue(), optionValueByName));
+                    kv.setValue(doApply(kv.getValue(), optionValueByName));
                 }
             }
             if (e instanceof JsonArray va) {
                 for (int i = 0; i < va.size(); ++i) {
-                    va.set(i, doSkip(va.get(i), optionValueByName));
+                    va.set(i, doApply(va.get(i), optionValueByName));
                 }
             }
             return e;
         }}
-        SkipDynamicOptions.doSkip(pipelineJson, optionValueByName);
-
-        class ApplyOptions { static JsonElement doApply(JsonElement e, Function<String, Option.Element<?>> optionElementByName) {
-            if (e instanceof JsonObject vo) {
-                if (vo.size() == 1 && vo.containsKey("option")) {
-                    String optionName = vo.get(String.class, "option");
-                    return new JsonPrimitive(optionElementByName.apply(optionName).defaultValue);
-                }
-                for (var kv : vo.entrySet()) {
-                    kv.setValue(doApply(kv.getValue(), optionElementByName));
-                }
-            }
-            if (e instanceof JsonArray va) {
-                for (int i = 0; i < va.size(); ++i) {
-                    va.set(i, doApply(va.get(i), optionElementByName));
-                }
-            }
-            return e;
-        }}
-        ApplyOptions.doApply(pipelineJson, optionElementByName);
+        ApplyOptions.doApply(pipelineJson, optionValueByName);
 
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);

@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -317,7 +318,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             target = "Lcom/mojang/blaze3d/vertex/VertexBuffer;bind()V"
         )
     )
-    void beforeSectionLayerDraw(
+    void beforeSectionRender(
         CallbackInfo ci,
         @Local CompiledShaderProgram program,
         @Local SectionRenderDispatcher.RenderSection section
@@ -329,6 +330,22 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 pb.FRX_MODEL_TO_WORLD.upload();
                 pb.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F, 1.0F);
             }
+        }
+    }
+
+    @Inject(
+        method = "renderSectionLayer",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/CompiledShaderProgram;apply()V",
+            shift = Shift.AFTER
+        )
+    )
+    void afterSectionsRenderApplyProgram(
+        CallbackInfo ci,
+        @Local CompiledShaderProgram program
+    ) {
+        if (program instanceof ProgramBase pb) {
             if (pb.CANPIPE_ORIGIN_TYPE != null) {
                 pb.CANPIPE_ORIGIN_TYPE.set(1); // region
                 pb.CANPIPE_ORIGIN_TYPE.upload();
