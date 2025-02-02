@@ -24,7 +24,9 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public class PipelineOptionsScreen extends OptionsSubScreen {
 
@@ -97,6 +99,27 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
         @Override
         protected void renderListBackground(GuiGraphics guiGraphics) {
+        }
+
+        @Override
+        protected void renderScrollbar(GuiGraphics guiGraphics) {
+            if (this.scrollbarVisible()) {
+                int i = this.scrollBarX();
+                int j = this.scrollerHeight();
+                int k = this.scrollBarY();
+                guiGraphics.blitSprite(
+                    RenderType::guiTextured,
+                    this.minecraft.level != null
+                    ? ResourceLocation.fromNamespaceAndPath("canpipe", "slider_background_transparent")
+                    : ResourceLocation.withDefaultNamespace("widget/scroller_background"),
+                    i, this.getY(), 6, this.getHeight()
+                );
+                guiGraphics.blitSprite(
+                    RenderType::guiTextured,
+                    ResourceLocation.withDefaultNamespace("widget/scroller"),
+                    i, k, 6, j
+                );
+            }
         }
 
         abstract class Entry extends ContainerObjectSelectionList.Entry<Entry> {}

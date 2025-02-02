@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -26,7 +27,6 @@ import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.GFX;
@@ -263,7 +263,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         );
         shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
 
-        this.collectVisibleEntities(shadowCamera, shadowFrustum, this.visibleEntities);
+        this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
 
         MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 
@@ -351,20 +351,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         ),
         index = 0
     )
-    boolean disableSmartCullIfShadow(boolean original) {
+    private boolean disableSmartCullIfShadow(boolean original) {
         return canpipe_isRenderingShadows ? false : original;
     }
-
-    /*@ModifyExpressionValue(
-        method = "setupRender",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/SectionOcclusionGraph;consumeFrustumUpdate()Z"
-        )
-    )
-    boolean alwaysApplyFrustumIfShadow(boolean consumeFrustumUpdate) {
-        return canpipe_isRenderingShadow ? true : consumeFrustumUpdate;
-    }*/
 
     @WrapOperation(
         method = "offsetFrustum",
@@ -377,22 +366,21 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     private static Frustum dontOffsetShadowFrustum(Frustum frustum, int size, Operation<Frustum> original) {
         var mc = Minecraft.getInstance();
-        if (((LevelRendererExtended)mc.levelRenderer).canpipe_getIsRenderingShadows()) {
+        if (((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
             return frustum;
         }
         return original.call(frustum, size);
     }
 
-    @ModifyArg(
+    @ModifyExpressionValue(
         method = "collectVisibleEntities",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/entity/Entity;setViewScale(D)V"
-        ),
-        index = 0
+            target = "Lnet/minecraft/client/Camera;getEntity()Lnet/minecraft/world/entity/Entity;"
+        )
     )
-    double fixEntityRenderDistance(double original) {  // TODO use optimal value
-        return this.canpipe_isRenderingShadows ? Minecraft.getInstance().gameRenderer.getRenderDistance() * 2.0 : original;
+    private Entity addPlayerWhenCollectingVisibleEntities(Entity original) {
+        return this.canpipe_isRenderingShadows ? null : original;
     }
 
 }
