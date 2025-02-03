@@ -217,7 +217,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         MemoryUtil.memPutByte(o, normalIntValue(x));
         MemoryUtil.memPutByte(o+1, normalIntValue(y));
         MemoryUtil.memPutByte(o+2, normalIntValue(z));
-        MemoryUtil.memPutByte(o+3, (byte) 0);
+        MemoryUtil.memPutByte(o+3, normalIntValue(1.0F));
     }
 
     @Override
