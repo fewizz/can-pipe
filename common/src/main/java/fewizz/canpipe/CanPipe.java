@@ -186,7 +186,7 @@ public class CanPipe {
 
                 Framebuffer framebuffer =
                     ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows() ?
-                    p.framebuffers.get(p.skyShadows.framebufferName()) :
+                    p.skyShadows.framebuffer() :
                     framebufferGetter.apply(p);
 
                 framebuffer.bindWrite(false);

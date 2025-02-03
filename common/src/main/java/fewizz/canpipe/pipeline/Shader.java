@@ -46,7 +46,7 @@ public class Shader extends CompiledShader {
         String source,
         Map<ResourceLocation, String> cache,
         @Nullable Framebuffer shadowFramebuffer
-    ) throws CompilationException, IOException {
+    ) {
         String preprocessedSource =
             "#version " + version + "\n\n" +
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
@@ -67,7 +67,11 @@ public class Shader extends CompiledShader {
         Set<ResourceLocation> processing = new HashSet<>();
         Set<String> definitions = new HashSet<>();
 
-        preprocessedSource = processIncludesAndDefinitions(preprocessedSource, location, preprocessed, processing, options, appliedOptions, definitions, cache);
+        try {
+            preprocessedSource = processIncludesAndDefinitions(preprocessedSource, location, preprocessed, processing, options, appliedOptions, definitions, cache);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         try {
             return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location, preprocessedSource);
@@ -80,7 +84,7 @@ public class Shader extends CompiledShader {
                 sourceWithLineNumbers.append(lines.get(i));
                 sourceWithLineNumbers.append("\n");
             }
-            throw new CompilationException(sourceWithLineNumbers.toString()+e.getMessage());
+            throw new RuntimeException(new CompilationException(sourceWithLineNumbers.toString()+e.getMessage()));
         }
     }
 

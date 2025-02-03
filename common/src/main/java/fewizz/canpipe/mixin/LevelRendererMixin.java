@@ -174,7 +174,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             ((CameraAccessor)(Object) this).canpipe_setEntity(camera.getEntity());
         }};
 
-        Framebuffer shadowFramebuffer = p.framebuffers.get(p.skyShadows.framebufferName());
+        Framebuffer shadowFramebuffer = p.skyShadows.framebuffer();
 
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
         modelViewMatrixStack.pushMatrix();

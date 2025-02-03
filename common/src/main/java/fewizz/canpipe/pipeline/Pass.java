@@ -1,6 +1,7 @@
 package fewizz.canpipe.pipeline;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
@@ -40,7 +41,9 @@ public class Pass extends PassBase {
     final String name;
     final Framebuffer framebuffer;
     final Program program;
-    final List<? extends AbstractTexture> textures;
+    // Textures (spcified in "samplers": ["X", "Y"]) may not exist,
+    // and that's ok if program doesn't actually uses them
+    final List<Optional<? extends AbstractTexture>> textures;
     final Vector2i extent;
     final int lod;
     final int layer;
@@ -49,7 +52,7 @@ public class Pass extends PassBase {
         @NotNull String name,
         @NotNull Framebuffer framebuffer,
         @NotNull Program program,
-        @NotNull List<? extends AbstractTexture> textures,
+        @NotNull List<Optional<? extends AbstractTexture>> textures,
         @NotNull Vector2i extent,
         int lod,
         int layer
@@ -62,8 +65,8 @@ public class Pass extends PassBase {
         }
         for (int i = 0; i < Math.min(program.samplers.size(), textures.size()); ++i) {
             String sampler = program.samplers.get(i);
-            AbstractTexture texture = textures.get(i);
-            if (texture == null && program.samplerExists(sampler)) {
+            Optional<? extends AbstractTexture> texture = textures.get(i);
+            if (texture.isEmpty() && program.samplerExists(sampler)) {
                 throw new NullPointerException("Couldn't find texture for sampler \""+sampler +"\"");
             }
         }
@@ -110,11 +113,10 @@ public class Pass extends PassBase {
         // program.setDefaultUniforms(view, projection, w, h, this.lod, this.layer);
         for (int i = 0; i < Math.min(program.samplers.size(), this.textures.size()); ++i) {
             String sampler = program.samplers.get(i);
-            AbstractTexture texture = this.textures.get(i);
-            if (texture == null) {  // Again, how is this possible?
-                continue;
-            }
-            program.bindSampler(sampler, texture);
+            this.textures.get(i).ifPresent(texture -> {
+                program.bindSampler(sampler, texture);
+            });
+            
         }
         program.apply();
 
@@ -124,7 +126,7 @@ public class Pass extends PassBase {
         // compat with canvas, for cases like this:
         // https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5
         if (program.samplers.size() > 0 && !program.samplerExists(program.samplers.get(0))) {
-            this.textures.get(0).bind();
+            this.textures.get(0).ifPresent(t -> t.bind());
         }
 
         RenderSystem.disableDepthTest();

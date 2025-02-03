@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -50,7 +51,7 @@ public class MaterialProgram extends ProgramBase {
         Shader vertexShader,
         Shader fragmentShader,
         List<String> samplers,
-        List<? extends AbstractTexture> textures,
+        List<Optional<? extends AbstractTexture>> textures,
         boolean depth
     ) throws IOException, CompilationException {
         super(
@@ -78,14 +79,16 @@ public class MaterialProgram extends ProgramBase {
 
         for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
             String sampler = samplers.get(i);
-            AbstractTexture texture = textures.get(i);
-            if (texture == null) {
-                if (!this.samplerExists(sampler)) {
-                    continue;
+
+            Optional<? extends AbstractTexture> texture = textures.get(i);
+            if (texture.isEmpty()) {
+                if (this.samplerExists(sampler)) {
+                    throw new NullPointerException("Couldn't find texture for sampler \""+sampler+"\"");
                 }
-                throw new NullPointerException("Couldn't find texture for sampler \""+sampler+"\"");
             }
-            bindSampler(sampler, texture);
+            else {
+                bindSampler(sampler, texture.get());
+            }
         }
     }
 
@@ -101,7 +104,7 @@ public class MaterialProgram extends ProgramBase {
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         List<String> samplers,
-        List<? extends AbstractTexture> textures,
+        List<Optional<? extends AbstractTexture>> textures,
         Map<ResourceLocation, String> shaderSourceCache
     ) throws FileNotFoundException, IOException, CompilationException {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
@@ -118,7 +121,7 @@ public class MaterialProgram extends ProgramBase {
             ).toList();
             textures = Streams.concat(
                 textures.stream(),
-                List.of(depthArray, depthArray).stream()
+                List.of(Optional.of(depthArray), Optional.of(depthArray)).stream()
             ).toList();
         }
 

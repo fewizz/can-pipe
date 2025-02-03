@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -47,7 +48,7 @@ import net.minecraft.world.level.Level;
 public class Pipeline implements AutoCloseable {
 
     public static record SkyShadows(
-        String framebufferName,
+        Framebuffer framebuffer,
         ResourceLocation vertexShaderLocation,
         ResourceLocation fragmentShaderLocation,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
@@ -164,21 +165,6 @@ public class Pipeline implements AutoCloseable {
 
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
-        JsonObject skyShadowsO = pipelineJson.getObject("skyShadows");
-
-        if (skyShadowsO != null) {
-            this.skyShadows = new SkyShadows(
-                skyShadowsO.get(String.class, "framebuffer"),
-                ResourceLocation.parse(skyShadowsO.get(String.class, "vertexSource")),
-                ResourceLocation.parse(skyShadowsO.get(String.class, "fragmentSource")),
-                JanksonUtils.listOfIntegers(skyShadowsO, "cascadeRadius"),
-                skyShadowsO.getFloat("offsetSlopeFactor", 1.1F),
-                skyShadowsO.getFloat("offsetBiasUnits", 4.0F)
-            );
-        }
-        else {
-            this.skyShadows = null;
-        }
 
         JsonObject skyO = pipelineJson.getObject("sky");
         if (skyO != null) {
@@ -191,142 +177,187 @@ public class Pipeline implements AutoCloseable {
         }
 
         // "images"
-        class GLConstantCode {
-            static int fromName(String name) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
-                // Not 3.3, because GL_TEXTURE_CUBE_MAP_ARRAY is in 4.0
-                return GL40C.class.getField("GL_"+name).getInt(null);
-            }
-        }
+        Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
+            return Optional.ofNullable(this.textures.computeIfAbsent(name, _name -> {
+                List<JsonObject> textures = JanksonUtils.listOfObjects(pipelineJson, "images");
+                Optional<JsonObject> textureOO = textures.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
+                if (textureOO.isEmpty()) {
+                    return null;
+                }
+                JsonObject textureO = textureOO.get();
+                int maxLod = textureO.getInt("lod", 0);
+                int depth = textureO.getInt("depth", 0);
+                int size = textureO.getInt("size", 0);
+                int width = textureO.getInt("width", size);
+                int height = textureO.getInt("height", size);
 
-        for (var textureO : JanksonUtils.listOfObjects(pipelineJson, "images")) {
-            String name = textureO.get(String.class, "name");
-            int maxLod = textureO.getInt("lod", 0);
-            int depth = textureO.getInt("depth", 0);
-            int size = textureO.getInt("size", 0);
-            int width = textureO.getInt("width", size);
-            int height = textureO.getInt("height", size);
+                String targetStr = textureO.get(String.class, "target");
 
-            String targetStr = textureO.get(String.class, "target");
-            int target = targetStr != null ? GLConstantCode.fromName(targetStr) : GL33C.GL_TEXTURE_2D;
-
-            String internalFormatStr = textureO.get(String.class, "internalFormat");
-            int internalFormat = internalFormatStr != null ? GLConstantCode.fromName(internalFormatStr) : GL33C.GL_RGBA8;
-
-            String pixelFormatStr = textureO.get(String.class, "pixelFormat");
-            int pixelFormat = pixelFormatStr != null ? GLConstantCode.fromName(pixelFormatStr) : GL33C.GL_RGBA;
-
-            String pixelDataTypeStr = textureO.get(String.class, "pixelDataType");
-            int pixelDataType = pixelDataTypeStr != null ? GLConstantCode.fromName(pixelDataTypeStr) : GL33C.GL_UNSIGNED_BYTE;
-
-            List<IntIntPair> params = new ArrayList<>();
-
-            for (var paramsO : JanksonUtils.listOfObjects(textureO, "texParams")) {
-                int name0 = GLConstantCode.fromName(paramsO.get(String.class, "name"));
-                int value = GLConstantCode.fromName(paramsO.get(String.class, "val"));
-                params.add(IntIntImmutablePair.of(name0, value));
-            }
-
-            Texture texture = new Texture(
-                location, name,
-                new Vector3i(width, height, depth),
-                target, internalFormat, pixelFormat,
-                pixelDataType, maxLod, params.toArray(new IntIntPair[]{})
-            );
-            this.textures.put(name, texture);
-        }
-
-        // "framebuffers"
-        for (var framebufferO : JanksonUtils.listOfObjects(pipelineJson, "framebuffers")) {
-            String name = framebufferO.get(String.class, "name");
-            List<Framebuffer.ColorAttachment> colorAttachements = new ArrayList<>();
-
-            for (var colorAttachementO : JanksonUtils.listOfObjects(framebufferO, "colorAttachments")) {
-                String textureName = colorAttachementO.get(String.class, "image");
-                int lod = colorAttachementO.getInt("lod", 0);
-                int layer = colorAttachementO.getInt("layer", 0);
-                int face = colorAttachementO.getInt("face", -1);
-
-                Vector4f clearColor = new Vector4f(0.0F);
-                JsonElement clearColorRaw = colorAttachementO.get("clearColor");
-                if (clearColorRaw != null) {
-                    Object clearColorO = ((JsonPrimitive) clearColorRaw).getValue();
-                    if (clearColorO instanceof Long l) {
-                        clearColor.x = ((l >> 24) & 0xFF) / 255f;
-                        clearColor.y = ((l >> 16) & 0xFF) / 255f;
-                        clearColor.z = ((l >> 8)  & 0xFF) / 255f;
-                        clearColor.w = ((l >> 0)  & 0xFF) / 255f;
+                Function<String, Integer> glConstantCode = (String constantName) -> {
+                    // Not 3.3, because GL_TEXTURE_CUBE_MAP_ARRAY is in 4.0
+                    try {
+                        return GL40C.class.getField("GL_"+constantName).getInt(null);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
-                    else {
-                        throw new NotImplementedException(clearColorO.getClass().getName());
-                    }
+                };
+
+                int target = targetStr != null ? glConstantCode.apply(targetStr) : GL33C.GL_TEXTURE_2D;
+
+                String internalFormatStr = textureO.get(String.class, "internalFormat");
+                int internalFormat = internalFormatStr != null ? glConstantCode.apply(internalFormatStr) : GL33C.GL_RGBA8;
+
+                String pixelFormatStr = textureO.get(String.class, "pixelFormat");
+                int pixelFormat = pixelFormatStr != null ? glConstantCode.apply(pixelFormatStr) : GL33C.GL_RGBA;
+
+                String pixelDataTypeStr = textureO.get(String.class, "pixelDataType");
+                int pixelDataType = pixelDataTypeStr != null ? glConstantCode.apply(pixelDataTypeStr) : GL33C.GL_UNSIGNED_BYTE;
+
+                List<IntIntPair> params = new ArrayList<>();
+
+                for (var paramsO : JanksonUtils.listOfObjects(textureO, "texParams")) {
+                    int name0 = glConstantCode.apply(paramsO.get(String.class, "name"));
+                    int value = glConstantCode.apply(paramsO.get(String.class, "val"));
+                    params.add(IntIntImmutablePair.of(name0, value));
                 }
 
-                colorAttachements.add(new Framebuffer.ColorAttachment(
-                    this.textures.get(textureName), clearColor, lod, layer, face
-                ));
-            }
-
-            Framebuffer.DepthAttachment depthAttachement = null;
-            JsonObject depthAttachementO = framebufferO.getObject("depthAttachment");
-            if (depthAttachementO != null) {
-                var depthTexture = this.textures.get(depthAttachementO.get(String.class, "image"));
-
-                double clearDepth = depthAttachementO.getDouble("clearDepth", 1.0);
-                depthAttachement = new Framebuffer.DepthAttachment(
-                    depthTexture,
-                    clearDepth,
-                    Optional.ofNullable(depthAttachementO.get(Integer.class, "lod")),
-                    Optional.ofNullable(depthAttachementO.get(Integer.class, "layer"))
+                return new Texture(
+                    location, name,
+                    new Vector3i(width, height, depth),
+                    target, internalFormat, pixelFormat,
+                    pixelDataType, maxLod, params.toArray(new IntIntPair[]{})
                 );
+            }));
+        };
+
+        Function<String, Texture> getOrLoadTexture = (String name) -> {
+            var result = getOrLoadOptionalTexture.apply(name);
+            if (result.isEmpty()) {
+                throw new RuntimeException("Couldn't find texture \""+name+"\"");
             }
-            Framebuffer framebuffer = new Framebuffer(location, name, colorAttachements, depthAttachement);
-            this.framebuffers.put(name, framebuffer);
+            return result.get();
+        };
+
+        // "framebuffers"
+        Function<String, Framebuffer> getOrLoadFramebuffer = (String name) -> {
+            return this.framebuffers.computeIfAbsent(name, _name -> {
+                try {
+                    List<JsonObject> framebuffers = JanksonUtils.listOfObjects(pipelineJson, "framebuffers");
+
+                    JsonObject framebufferO = framebuffers.stream().filter(f -> f.get(String.class, "name").equals(name)).findFirst().get();
+                    List<Framebuffer.ColorAttachment> colorAttachements = new ArrayList<>();
+
+                    for (var colorAttachementO : JanksonUtils.listOfObjects(framebufferO, "colorAttachments")) {
+                        String textureName = colorAttachementO.get(String.class, "image");
+                        int lod = colorAttachementO.getInt("lod", 0);
+                        int layer = colorAttachementO.getInt("layer", 0);
+                        int face = colorAttachementO.getInt("face", -1);
+
+                        Vector4f clearColor = new Vector4f(0.0F);
+                        JsonElement clearColorRaw = colorAttachementO.get("clearColor");
+                        if (clearColorRaw != null) {
+                            Object clearColorO = ((JsonPrimitive) clearColorRaw).getValue();
+                            if (clearColorO instanceof Long l) {
+                                clearColor.x = ((l >> 24) & 0xFF) / 255f;
+                                clearColor.y = ((l >> 16) & 0xFF) / 255f;
+                                clearColor.z = ((l >> 8)  & 0xFF) / 255f;
+                                clearColor.w = ((l >> 0)  & 0xFF) / 255f;
+                            }
+                            else {
+                                throw new NotImplementedException(clearColorO.getClass().getName());
+                            }
+                        }
+
+                        colorAttachements.add(new Framebuffer.ColorAttachment(
+                            getOrLoadTexture.apply(textureName),
+                            clearColor, lod, layer, face
+                        ));
+                    }
+                    Framebuffer.DepthAttachment depthAttachement = null;
+                    JsonObject depthAttachementO = framebufferO.getObject("depthAttachment");
+                    if (depthAttachementO != null) {
+                        var depthTexture = getOrLoadTexture.apply(depthAttachementO.get(String.class, "image"));
+
+                        double clearDepth = depthAttachementO.getDouble("clearDepth", 1.0);
+                        depthAttachement = new Framebuffer.DepthAttachment(
+                            depthTexture,
+                            clearDepth,
+                            Optional.ofNullable(depthAttachementO.get(Integer.class, "lod")),
+                            Optional.ofNullable(depthAttachementO.get(Integer.class, "layer"))
+                        );
+                    }
+                    return new Framebuffer(location, name, colorAttachements, depthAttachement);
+                }
+                catch (Exception e) {
+                    throw new RuntimeException("Error occured when tried to load framebuffer \""+name+"\"");
+                }
+            });
+        };
+
+        JsonObject skyShadowsO = pipelineJson.getObject("skyShadows");
+        if (skyShadowsO != null) {
+            this.skyShadows = new SkyShadows(
+                getOrLoadFramebuffer.apply(skyShadowsO.get(String.class, "framebuffer")),
+                ResourceLocation.parse(skyShadowsO.get(String.class, "vertexSource")),
+                ResourceLocation.parse(skyShadowsO.get(String.class, "fragmentSource")),
+                JanksonUtils.listOfIntegers(skyShadowsO, "cascadeRadius"),
+                skyShadowsO.getFloat("offsetSlopeFactor", 1.1F),
+                skyShadowsO.getFloat("offsetBiasUnits", 4.0F)
+            );
+        }
+        else {
+            this.skyShadows = null;
         }
 
-        Framebuffer shadowFramebuffer = skyShadows != null ? this.framebuffers.get(skyShadows.framebufferName) : null;
+        Framebuffer shadowFramebuffer = this.skyShadows != null ? this.skyShadows.framebuffer : null;
 
         JsonObject targetsO = pipelineJson.getObject("drawTargets");
 
-        this.defaultFramebuffer = this.framebuffers.get(pipelineJson.get(String.class, "defaultFramebuffer"));
-        this.solidFramebuffer = this.framebuffers.get(targetsO.get(String.class, "solidTerrain"));
-        this.translucentTerrainFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentTerrain"));
-        this.translucentItemEntityFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentEntity"));
-        this.particlesFramebuffer = this.framebuffers.get(targetsO.get(String.class, "translucentParticles"));
-        this.weatherFramebuffer = this.framebuffers.get(targetsO.get(String.class, "weather"));
-        this.cloudsFramebuffer = this.framebuffers.get(targetsO.get(String.class, "clouds"));
+        this.defaultFramebuffer = getOrLoadFramebuffer.apply(pipelineJson.get(String.class, "defaultFramebuffer"));
+        this.solidFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "solidTerrain"));
+        this.translucentTerrainFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "translucentTerrain"));
+        this.translucentItemEntityFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "translucentEntity"));
+        this.particlesFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "translucentParticles"));
+        this.weatherFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "weather"));
+        this.cloudsFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "clouds"));
 
         Map<ResourceLocation, String> shaderSourceCache = new HashMap<>();
 
         // "programs"
-        for (var programO : JanksonUtils.listOfObjects(pipelineJson, "programs")) {
-            String name = programO.get(String.class, "name");
+        Function<String, Program> getOrLoadProgram = (String name) -> {
+            return this.programs.computeIfAbsent(name, _name -> {
+                List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
+                JsonObject programO = programs.stream().filter(p -> p.get(String.class, "name").equals(name)).findFirst().get();
+                List<String> samplers = JanksonUtils.listOfStrings(programO, "samplers");
 
-            List<String> samplers = JanksonUtils.listOfStrings(programO, "samplers");
+                var vertexLoc = ResourceLocation.parse(programO.get(String.class, "vertexSource"));
+                var fragmentLoc = ResourceLocation.parse(programO.get(String.class, "fragmentSource"));
 
-            var vertexLoc = ResourceLocation.parse(programO.get(String.class, "vertexSource"));
-            var fragmentLoc = ResourceLocation.parse(programO.get(String.class, "fragmentSource"));
+                BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
+                    return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
+                        String source = shaderSourceCache.get(location);
+                        if (source == null) {
+                            try {
+                                source = IOUtils.toString(mc.getResourceManager().openAsReader(location));
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            shaderSourceCache.put(location, source);
+                        }
+                        return Shader.compile(location, type, glslVersion, options, appliedOptions, source, shaderSourceCache, shadowFramebuffer);
+                    });
+                };
 
-            class Shaders { Shader getOrLoad(ResourceLocation location, Type type) throws CompilationException, IOException {
-                var p = Pair.of(location, type);
-                Shader shader = shaders.get(p);
-                if (shader == null) {
-                    String source = shaderSourceCache.get(location);
-                    if (source == null) {
-                        source = IOUtils.toString(mc.getResourceManager().openAsReader(location));
-                        shaderSourceCache.put(location, source);
-                    }
-                    shader = Shader.compile(location, type, glslVersion, options, appliedOptions, source, shaderSourceCache, shadowFramebuffer);
-                    shaders.put(p, shader);
+                Shader vertex = getOrLoadShader.apply(vertexLoc, Type.VERTEX);
+                Shader fragment = getOrLoadShader.apply(fragmentLoc, Type.FRAGMENT);
+
+                try {
+                    return new Program(location.withSuffix("-"+name), samplers, vertex, fragment);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-                return shader;
-            }}
-
-            Shader vertex = new Shaders().getOrLoad(vertexLoc, Type.VERTEX);
-            Shader fragment = new Shaders().getOrLoad(fragmentLoc, Type.FRAGMENT);
-
-            Program program = new Program(location.withSuffix("-"+name), samplers, vertex, fragment);
-            this.programs.put(name, program);
-        }
+            });
+        };
 
         // passes
         BiConsumer<String, List<PassBase>> parsePasses = (name, passes) -> {
@@ -344,7 +375,7 @@ public class Pipeline implements AutoCloseable {
 
                 String passName = passO.get(String.class, "name");
                 String framebufferName = passO.get(String.class, "framebuffer");
-                Framebuffer framebuffer = this.framebuffers.get(framebufferName);
+                Framebuffer framebuffer = getOrLoadFramebuffer.apply(framebufferName);
                 if (framebuffer == null) {
                     throw new RuntimeException("Couldn't find framebuffer \""+framebufferName +"\"");
                 }
@@ -357,17 +388,17 @@ public class Pipeline implements AutoCloseable {
                     pass = new Pass.FREXClear(passName, framebuffer);
                 }
                 else {
-                    Program program = this.programs.get(programName);
+                    Program program = getOrLoadProgram.apply(programName);
                     Objects.nonNull(program);
 
-                    List<AbstractTexture> textures = new ArrayList<>();
+                    List<Optional<? extends AbstractTexture>> textures = new ArrayList<>();
                     for (String s : JanksonUtils.listOfStrings(passO, "samplerImages")) {
-                        AbstractTexture t = null;
+                        Optional<? extends AbstractTexture> t = null;
                         if (s.contains(":")) {
-                            t = mc.getTextureManager().getTexture(ResourceLocation.parse(s));
+                            t = Optional.of(mc.getTextureManager().getTexture(ResourceLocation.parse(s)));
                         }
                         else {
-                            t = this.textures.get(s);
+                            t = getOrLoadOptionalTexture.apply(s);
                         }
                         textures.add(t);
                     }
@@ -395,8 +426,8 @@ public class Pipeline implements AutoCloseable {
         if (skyShadows != null) {
             this.beforeWorldRenderPasses.addFirst(new Pass.FREXClear(
                 "can_pipe_clear_shadow_map",
-                this.framebuffers.get(skyShadows.framebufferName))
-            );
+                skyShadows.framebuffer
+            ));
         }
 
         // "materialProgram"
@@ -406,13 +437,13 @@ public class Pipeline implements AutoCloseable {
         var materialFragmentShaderLocation = ResourceLocation.parse(materailProgramO.get(String.class, "fragmentSource"));
 
         List<String> samplers = JanksonUtils.listOfStrings(materailProgramO, "samplers");
-        List<? extends AbstractTexture> samplerImages = new ArrayList<>() {{
+        List<Optional<? extends AbstractTexture>> samplerImages = new ArrayList<>() {{
             for (String textureName : JanksonUtils.listOfStrings(materailProgramO, "samplerImages")) {
                 if (textureName.contains(":")) {
-                    add(mc.getTextureManager().getTexture(ResourceLocation.parse(textureName)));
+                    add(Optional.of(mc.getTextureManager().getTexture(ResourceLocation.parse(textureName))));
                 }
                 else {
-                    add(textures.get(textureName));
+                    add(getOrLoadOptionalTexture.apply(textureName));
                 }
             }
         }};

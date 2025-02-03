@@ -17,7 +17,6 @@ import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.MaterialProgram;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.renderer.CompiledShaderProgram;
 
 @Mixin(VertexBuffer.class)
 public abstract class VertexBufferMixin {
@@ -38,7 +37,7 @@ public abstract class VertexBufferMixin {
             this.trap = false;
 
             Pipeline p = Pipelines.getCurrent();
-            Framebuffer shadowFramebuffer = p.framebuffers.get(p.skyShadows.framebufferName());
+            Framebuffer shadowFramebuffer = p.skyShadows.framebuffer();
             // shadowFramebuffer.bindWrite(false); it should already be bound (:pray:)
 
             for (int cascade = 0; cascade < 4; ++cascade) {
