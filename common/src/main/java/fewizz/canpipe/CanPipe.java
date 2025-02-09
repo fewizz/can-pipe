@@ -57,7 +57,7 @@ public class CanPipe {
             /* 16 */.add("UV0", VertexFormatElement.UV0)
             /* 24 */.add("UV2", VertexFormatElement.UV2)
             /* 28 */.add("Normal", VertexFormatElement.NORMAL)
-            .padding(1)
+                    .padding(1)
             /* 32 */.add("AO", CanPipe.VertexFormatElements.AO)
             /* 36 */.add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             /* 40 */.add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
@@ -79,8 +79,8 @@ public class CanPipe {
 
         public static final VertexFormat PARTICLE = VertexFormat.builder()
             .add("Position", VertexFormatElement.POSITION)
-            .add("UV0", VertexFormatElement.UV0)
             .add("Color", VertexFormatElement.COLOR)
+            .add("UV0", VertexFormatElement.UV0)
             .add("UV2", VertexFormatElement.UV2)
             .add("Normal", VertexFormatElement.NORMAL)
             .padding(1)

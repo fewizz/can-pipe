@@ -1,6 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +44,7 @@ public class MaterialProgram extends ProgramBase {
     public final VertexFormat vertexFormat;
     public final boolean depth;
 
-    MaterialProgram(
+    private MaterialProgram(
         ResourceLocation location,
         VertexFormat vertexFormat,
         Shader vertexShader,
@@ -106,11 +105,17 @@ public class MaterialProgram extends ProgramBase {
         List<String> samplers,
         List<Optional<? extends AbstractTexture>> textures,
         Map<ResourceLocation, String> shaderSourceCache
-    ) throws FileNotFoundException, IOException, CompilationException {
+    ) {
         ResourceManager manager = Minecraft.getInstance().getResourceManager();
 
-        String vertexSrc = IOUtils.toString(manager.getResourceOrThrow(vertexShaderLocation).openAsReader());
-        String fragmentSrc = IOUtils.toString(manager.getResourceOrThrow(fragmentShaderLocation).openAsReader());
+        String vertexSrc;
+        String fragmentSrc;
+        try {
+            vertexSrc = IOUtils.toString(manager.getResourceOrThrow(vertexShaderLocation).openAsReader());
+            fragmentSrc = IOUtils.toString(manager.getResourceOrThrow(fragmentShaderLocation).openAsReader());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         if (shadowFramebuffer != null && shadowFramebuffer.depthAttachment != null) {
             var depthArray = shadowFramebuffer.depthAttachment.texture();
@@ -369,18 +374,22 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
-        var vertexShader = Shader.compile(vertexShaderLocation, Type.VERTEX, glslVersion, options, appliedOptions, vertexSrc, shaderSourceCache, shadowFramebuffer);
-        var fragmentShader = Shader.compile(fragmentShaderLocation, Type.FRAGMENT, glslVersion, options, appliedOptions, fragmentSrc, shaderSourceCache, shadowFramebuffer);
+        var vertexShader = Shader.load(vertexShaderLocation, Type.VERTEX, glslVersion, options, appliedOptions, vertexSrc, shaderSourceCache, shadowFramebuffer);
+        var fragmentShader = Shader.load(fragmentShaderLocation, Type.FRAGMENT, glslVersion, options, appliedOptions, fragmentSrc, shaderSourceCache, shadowFramebuffer);
 
-        return new MaterialProgram(
-            location.withSuffix("-"),
-            format,
-            vertexShader,
-            fragmentShader,
-            samplers,
-            textures,
-            depthPass
-        );
+        try {
+            return new MaterialProgram(
+                location.withSuffix("-"),
+                format,
+                vertexShader,
+                fragmentShader,
+                samplers,
+                textures,
+                depthPass
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @SuppressWarnings("deprecation")

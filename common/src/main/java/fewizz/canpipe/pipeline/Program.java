@@ -2,10 +2,14 @@ package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.BiFunction;
 
+import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
+import blue.endless.jankson.JsonObject;
+import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.resources.ResourceLocation;
@@ -27,7 +31,7 @@ public class Program extends ProgramBase {
 
     final List<String> samplers;
 
-    public Program(
+    private Program(
         ResourceLocation location,
         List<String> samplers,
         Shader vertexShader,
@@ -47,6 +51,27 @@ public class Program extends ProgramBase {
         this.FRXU_LAYER = getUniform("frxu_layer");
         this.FRXU_FRAME_PROJECTION_MATRIX = getUniform("frxu_frameProjectionMatrix");
         this.samplers = samplers;
+    }
+
+    static Program load(
+        JsonObject json,
+        ResourceLocation pipelineLocation,
+        BiFunction<ResourceLocation, Type, Shader> getOrLoadShader
+    ) {
+        List<String> samplers = JanksonUtils.listOfStrings(json, "samplers");
+
+        var name = json.get(String.class, "name");
+        var vertexLoc = ResourceLocation.parse(json.get(String.class, "vertexSource"));
+        var fragmentLoc = ResourceLocation.parse(json.get(String.class, "fragmentSource"));
+
+        Shader vertex = getOrLoadShader.apply(vertexLoc, Type.VERTEX);
+        Shader fragment = getOrLoadShader.apply(fragmentLoc, Type.FRAGMENT);
+
+        try {
+            return new Program(pipelineLocation.withSuffix("-"+name), samplers, vertex, fragment);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

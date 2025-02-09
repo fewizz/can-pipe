@@ -2,6 +2,13 @@ plugins {
     id 'fabric-loom' version '1.9-SNAPSHOT'
 }
 
+repositories {
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
     mappings loom.layered {

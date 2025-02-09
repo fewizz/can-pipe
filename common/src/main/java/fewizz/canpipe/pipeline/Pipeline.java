@@ -1,6 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,15 +13,10 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
-import org.joml.Vector3i;
-import org.joml.Vector4f;
-import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.GL40C;
 
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -36,10 +30,7 @@ import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.annotation.Nullable;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import it.unimi.dsi.fastutil.ints.IntIntImmutablePair;
-import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -89,15 +80,7 @@ public class Pipeline implements AutoCloseable {
     private boolean runInitPasses = true;
     private boolean runResizePasses = true;
 
-    public Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) throws
-        FileNotFoundException,
-        IOException,
-        CompilationException,
-        NoSuchFieldException,
-        SecurityException,
-        IllegalArgumentException,
-        IllegalAccessException
-    {
+    public Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) {
         this.location = rawPipeline.location;
         this.appliedOptions = appliedOptions;
 
@@ -185,48 +168,7 @@ public class Pipeline implements AutoCloseable {
                     return null;
                 }
                 JsonObject textureO = textureOO.get();
-                int maxLod = textureO.getInt("lod", 0);
-                int depth = textureO.getInt("depth", 0);
-                int size = textureO.getInt("size", 0);
-                int width = textureO.getInt("width", size);
-                int height = textureO.getInt("height", size);
-
-                String targetStr = textureO.get(String.class, "target");
-
-                Function<String, Integer> glConstantCode = (String constantName) -> {
-                    // Not 3.3, because GL_TEXTURE_CUBE_MAP_ARRAY is in 4.0
-                    try {
-                        return GL40C.class.getField("GL_"+constantName).getInt(null);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                };
-
-                int target = targetStr != null ? glConstantCode.apply(targetStr) : GL33C.GL_TEXTURE_2D;
-
-                String internalFormatStr = textureO.get(String.class, "internalFormat");
-                int internalFormat = internalFormatStr != null ? glConstantCode.apply(internalFormatStr) : GL33C.GL_RGBA8;
-
-                String pixelFormatStr = textureO.get(String.class, "pixelFormat");
-                int pixelFormat = pixelFormatStr != null ? glConstantCode.apply(pixelFormatStr) : GL33C.GL_RGBA;
-
-                String pixelDataTypeStr = textureO.get(String.class, "pixelDataType");
-                int pixelDataType = pixelDataTypeStr != null ? glConstantCode.apply(pixelDataTypeStr) : GL33C.GL_UNSIGNED_BYTE;
-
-                List<IntIntPair> params = new ArrayList<>();
-
-                for (var paramsO : JanksonUtils.listOfObjects(textureO, "texParams")) {
-                    int name0 = glConstantCode.apply(paramsO.get(String.class, "name"));
-                    int value = glConstantCode.apply(paramsO.get(String.class, "val"));
-                    params.add(IntIntImmutablePair.of(name0, value));
-                }
-
-                return new Texture(
-                    location, name,
-                    new Vector3i(width, height, depth),
-                    target, internalFormat, pixelFormat,
-                    pixelDataType, maxLod, params.toArray(new IntIntPair[]{})
-                );
+                return Texture.load(textureO, location);
             }));
         };
 
@@ -243,50 +185,8 @@ public class Pipeline implements AutoCloseable {
             return this.framebuffers.computeIfAbsent(name, _name -> {
                 try {
                     List<JsonObject> framebuffers = JanksonUtils.listOfObjects(pipelineJson, "framebuffers");
-
                     JsonObject framebufferO = framebuffers.stream().filter(f -> f.get(String.class, "name").equals(name)).findFirst().get();
-                    List<Framebuffer.ColorAttachment> colorAttachements = new ArrayList<>();
-
-                    for (var colorAttachementO : JanksonUtils.listOfObjects(framebufferO, "colorAttachments")) {
-                        String textureName = colorAttachementO.get(String.class, "image");
-                        int lod = colorAttachementO.getInt("lod", 0);
-                        int layer = colorAttachementO.getInt("layer", 0);
-                        int face = colorAttachementO.getInt("face", -1);
-
-                        Vector4f clearColor = new Vector4f(0.0F);
-                        JsonElement clearColorRaw = colorAttachementO.get("clearColor");
-                        if (clearColorRaw != null) {
-                            Object clearColorO = ((JsonPrimitive) clearColorRaw).getValue();
-                            if (clearColorO instanceof Long l) {
-                                clearColor.x = ((l >> 24) & 0xFF) / 255f;
-                                clearColor.y = ((l >> 16) & 0xFF) / 255f;
-                                clearColor.z = ((l >> 8)  & 0xFF) / 255f;
-                                clearColor.w = ((l >> 0)  & 0xFF) / 255f;
-                            }
-                            else {
-                                throw new NotImplementedException(clearColorO.getClass().getName());
-                            }
-                        }
-
-                        colorAttachements.add(new Framebuffer.ColorAttachment(
-                            getOrLoadTexture.apply(textureName),
-                            clearColor, lod, layer, face
-                        ));
-                    }
-                    Framebuffer.DepthAttachment depthAttachement = null;
-                    JsonObject depthAttachementO = framebufferO.getObject("depthAttachment");
-                    if (depthAttachementO != null) {
-                        var depthTexture = getOrLoadTexture.apply(depthAttachementO.get(String.class, "image"));
-
-                        double clearDepth = depthAttachementO.getDouble("clearDepth", 1.0);
-                        depthAttachement = new Framebuffer.DepthAttachment(
-                            depthTexture,
-                            clearDepth,
-                            Optional.ofNullable(depthAttachementO.get(Integer.class, "lod")),
-                            Optional.ofNullable(depthAttachementO.get(Integer.class, "layer"))
-                        );
-                    }
-                    return new Framebuffer(location, name, colorAttachements, depthAttachement);
+                    return Framebuffer.load(framebufferO, location, getOrLoadTexture);
                 }
                 catch (Exception e) {
                     throw new RuntimeException("Error occured when tried to load framebuffer \""+name+"\"");
@@ -324,35 +224,28 @@ public class Pipeline implements AutoCloseable {
         Map<ResourceLocation, String> shaderSourceCache = new HashMap<>();
 
         // "programs"
+        BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
+            return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
+                String source = shaderSourceCache.get(location);
+                if (source == null) {
+                    try {
+                        source = IOUtils.toString(mc.getResourceManager().openAsReader(location));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    shaderSourceCache.put(location, source);
+                }
+                return Shader.load(location, type, glslVersion, options, appliedOptions, source, shaderSourceCache, shadowFramebuffer);
+            });
+        };
+
         Function<String, Program> getOrLoadProgram = (String name) -> {
             return this.programs.computeIfAbsent(name, _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 JsonObject programO = programs.stream().filter(p -> p.get(String.class, "name").equals(name)).findFirst().get();
-                List<String> samplers = JanksonUtils.listOfStrings(programO, "samplers");
-
-                var vertexLoc = ResourceLocation.parse(programO.get(String.class, "vertexSource"));
-                var fragmentLoc = ResourceLocation.parse(programO.get(String.class, "fragmentSource"));
-
-                BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
-                    return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
-                        String source = shaderSourceCache.get(location);
-                        if (source == null) {
-                            try {
-                                source = IOUtils.toString(mc.getResourceManager().openAsReader(location));
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                            shaderSourceCache.put(location, source);
-                        }
-                        return Shader.compile(location, type, glslVersion, options, appliedOptions, source, shaderSourceCache, shadowFramebuffer);
-                    });
-                };
-
-                Shader vertex = getOrLoadShader.apply(vertexLoc, Type.VERTEX);
-                Shader fragment = getOrLoadShader.apply(fragmentLoc, Type.FRAGMENT);
 
                 try {
-                    return new Program(location.withSuffix("-"+name), samplers, vertex, fragment);
+                    return Program.load(programO, location, getOrLoadShader);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -366,53 +259,10 @@ public class Pipeline implements AutoCloseable {
                 return;
             }
             for (var passO : JanksonUtils.listOfObjects(passesJson, "passes")) {
-                String toggleConfig = passO.get(String.class, "toggleConfig");
-
-                // pass is disabled, skipping
-                if (toggleConfig != null && !(boolean) optionValueByName.apply(toggleConfig)) {
-                    continue;
-                }
-
-                String passName = passO.get(String.class, "name");
-                String framebufferName = passO.get(String.class, "framebuffer");
-                Framebuffer framebuffer = getOrLoadFramebuffer.apply(framebufferName);
-                if (framebuffer == null) {
-                    throw new RuntimeException("Couldn't find framebuffer \""+framebufferName +"\"");
-                }
-
-                String programName = passO.get(String.class, "program");
-
-                PassBase pass;
-
-                if (programName.equals("frex_clear")) {
-                    pass = new Pass.FREXClear(passName, framebuffer);
-                }
-                else {
-                    Program program = getOrLoadProgram.apply(programName);
-                    Objects.nonNull(program);
-
-                    List<Optional<? extends AbstractTexture>> textures = new ArrayList<>();
-                    for (String s : JanksonUtils.listOfStrings(passO, "samplerImages")) {
-                        Optional<? extends AbstractTexture> t = null;
-                        if (s.contains(":")) {
-                            t = Optional.of(mc.getTextureManager().getTexture(ResourceLocation.parse(s)));
-                        }
-                        else {
-                            t = getOrLoadOptionalTexture.apply(s);
-                        }
-                        textures.add(t);
-                    }
-
-                    int size = passO.getInt("size", 0);
-                    int width = passO.getInt("width", size);
-                    int height = passO.getInt("height", size);
-                    int lod = passO.getInt("lod", 0);
-                    int layer = passO.getInt("layer", 0);
-
-                    pass = new Pass(passName, framebuffer, program, textures, new Vector2i(width, height), lod, layer);
-                }
-
-                passes.add(pass);
+                Pass.load(
+                    passO, optionValueByName,
+                    getOrLoadFramebuffer, getOrLoadProgram, getOrLoadOptionalTexture
+                ).ifPresent(pass -> passes.add(pass));
             }
         };
 
@@ -422,13 +272,6 @@ public class Pipeline implements AutoCloseable {
         parsePasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
         parsePasses.accept("fabulous", this.fabulousPasses);
         parsePasses.accept("afterRenderHand", this.afterRenderHandPasses);
-
-        if (skyShadows != null) {
-            this.beforeWorldRenderPasses.addFirst(new Pass.FREXClear(
-                "can_pipe_clear_shadow_map",
-                skyShadows.framebuffer
-            ));
-        }
 
         // "materialProgram"
         JsonObject materailProgramO = pipelineJson.getObject("materialProgram");

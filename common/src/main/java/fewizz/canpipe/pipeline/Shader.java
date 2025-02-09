@@ -37,7 +37,7 @@ public class Shader extends CompiledShader {
         this.source = source;
     }
 
-    public static Shader compile(
+    static Shader load(
         ResourceLocation location,
         Type type,
         int version,

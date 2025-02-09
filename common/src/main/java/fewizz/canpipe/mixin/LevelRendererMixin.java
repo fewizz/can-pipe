@@ -188,7 +188,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             p.skyShadows.offsetBiasUnits()
         );
 
-        shadowFramebuffer.bindWrite(true /* update viewport */);
+        shadowFramebuffer.bindAndClearFully();
 
         for (int cascade = 0; cascade < 4; ++cascade) {
             p.shadowPrograms.get(CanPipe.VertexFormats.BLOCK).FRXU_CASCADE.set(cascade);

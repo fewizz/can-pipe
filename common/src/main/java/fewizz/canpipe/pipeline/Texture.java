@@ -2,6 +2,9 @@ package fewizz.canpipe.pipeline;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.joml.Vector3i;
@@ -10,7 +13,10 @@ import org.lwjgl.opengl.GL40C;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 
+import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.GFX;
+import fewizz.canpipe.JanksonUtils;
+import it.unimi.dsi.fastutil.ints.IntIntImmutablePair;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -28,7 +34,7 @@ public class Texture extends AbstractTexture {
     final boolean isWidthWindowSizeDependent;
     final boolean isHeightWindowSizeDependent;
 
-    public Texture(
+    private Texture(
         ResourceLocation pipelineLocation,
         String name,
         Vector3i extent,
@@ -120,6 +126,56 @@ public class Texture extends AbstractTexture {
     @Override
     public void close() {
         this.releaseId();
+    }
+
+    static Texture load(
+        JsonObject json,
+        ResourceLocation pipelineLocation
+    ) {
+        String name = json.get(String.class, "name");
+
+        int maxLod = json.getInt("lod", 0);
+        int depth = json.getInt("depth", 0);
+        int size = json.getInt("size", 0);
+        int width = json.getInt("width", size);
+        int height = json.getInt("height", size);
+
+        String targetStr = json.get(String.class, "target");
+
+        Function<String, Integer> glConstantCode = (String constantName) -> {
+            // Not 3.3, because GL_TEXTURE_CUBE_MAP_ARRAY is in 4.0
+            try {
+                return GL40C.class.getField("GL_"+constantName).getInt(null);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+
+        int target = targetStr != null ? glConstantCode.apply(targetStr) : GL33C.GL_TEXTURE_2D;
+
+        String internalFormatStr = json.get(String.class, "internalFormat");
+        int internalFormat = internalFormatStr != null ? glConstantCode.apply(internalFormatStr) : GL33C.GL_RGBA8;
+
+        String pixelFormatStr = json.get(String.class, "pixelFormat");
+        int pixelFormat = pixelFormatStr != null ? glConstantCode.apply(pixelFormatStr) : GL33C.GL_RGBA;
+
+        String pixelDataTypeStr = json.get(String.class, "pixelDataType");
+        int pixelDataType = pixelDataTypeStr != null ? glConstantCode.apply(pixelDataTypeStr) : GL33C.GL_UNSIGNED_BYTE;
+
+        List<IntIntPair> params = new ArrayList<>();
+
+        for (var paramsO : JanksonUtils.listOfObjects(json, "texParams")) {
+            int name0 = glConstantCode.apply(paramsO.get(String.class, "name"));
+            int value = glConstantCode.apply(paramsO.get(String.class, "val"));
+            params.add(IntIntImmutablePair.of(name0, value));
+        }
+
+        return new Texture(
+            pipelineLocation, name,
+            new Vector3i(width, height, depth),
+            target, internalFormat, pixelFormat,
+            pixelDataType, maxLod, params.toArray(new IntIntPair[]{})
+        );
     }
 
 }

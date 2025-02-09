@@ -1,9 +1,11 @@
 package fewizz.canpipe.pipeline;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
-import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
 
@@ -14,9 +16,12 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
+import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.resources.ResourceLocation;
 
 public class Pass extends PassBase {
 
@@ -33,7 +38,7 @@ public class Pass extends PassBase {
 
         @Override
         public void apply(Matrix4f view, Matrix4f projection) {
-            framebuffer.clearFully();
+            framebuffer.bindAndClearFully();
         }
 
     };
@@ -48,12 +53,12 @@ public class Pass extends PassBase {
     final int lod;
     final int layer;
 
-    Pass(
-        @NotNull String name,
-        @NotNull Framebuffer framebuffer,
-        @NotNull Program program,
-        @NotNull List<Optional<? extends AbstractTexture>> textures,
-        @NotNull Vector2i extent,
+    private Pass(
+        String name,
+        Framebuffer framebuffer,
+        Program program,
+        List<Optional<? extends AbstractTexture>> textures,
+        Vector2i extent,
         int lod,
         int layer
     ) {
@@ -142,5 +147,57 @@ public class Pass extends PassBase {
 
         framebuffer.unbindWrite();
         program.clear();
+    }
+
+    static Optional<PassBase> load(
+        JsonObject passO,
+        Function<String, Object> optionValueByName,
+        Function<String, Framebuffer> getOrLoadFramebuffer,
+        Function<String, Program> getOrLoadProgram,
+        Function<String, Optional<Texture>> getOrLoadOptionalTexture
+    ) {
+        String toggleConfig = passO.get(String.class, "toggleConfig");
+
+        // pass is disabled, skipping
+        if (toggleConfig != null && !(boolean) optionValueByName.apply(toggleConfig)) {
+            return Optional.empty();
+        }
+
+        String passName = passO.get(String.class, "name");
+        String framebufferName = passO.get(String.class, "framebuffer");
+        Framebuffer framebuffer = getOrLoadFramebuffer.apply(framebufferName);
+        if (framebuffer == null) {
+            throw new RuntimeException("Couldn't find framebuffer \""+framebufferName +"\"");
+        }
+
+        String programName = passO.get(String.class, "program");
+
+        if (programName.equals("frex_clear")) {
+            return Optional.of(new Pass.FREXClear(passName, framebuffer));
+        }
+
+        Program program = getOrLoadProgram.apply(programName);
+        Objects.nonNull(program);
+
+        List<Optional<? extends AbstractTexture>> textures = new ArrayList<>();
+        for (String s : JanksonUtils.listOfStrings(passO, "samplerImages")) {
+            Optional<? extends AbstractTexture> t = null;
+            if (s.contains(":")) {
+                Minecraft mc = Minecraft.getInstance();
+                t = Optional.of(mc.getTextureManager().getTexture(ResourceLocation.parse(s)));
+            }
+            else {
+                t = getOrLoadOptionalTexture.apply(s);
+            }
+            textures.add(t);
+        }
+
+        int size = passO.getInt("size", 0);
+        int width = passO.getInt("width", size);
+        int height = passO.getInt("height", size);
+        int lod = passO.getInt("lod", 0);
+        int layer = passO.getInt("layer", 0);
+
+        return Optional.of(new Pass(passName, framebuffer, program, textures, new Vector2i(width, height), lod, layer));
     }
 }
