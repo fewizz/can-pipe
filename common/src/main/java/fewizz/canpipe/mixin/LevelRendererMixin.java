@@ -13,9 +13,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -29,7 +29,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -191,7 +190,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         shadowFramebuffer.bindAndClearFully();
 
         for (int cascade = 0; cascade < 4; ++cascade) {
-            p.shadowPrograms.get(CanPipe.VertexFormats.BLOCK).FRXU_CASCADE.set(cascade);
+            for (var shadowProgram : p.shadowPrograms.values()) {
+                shadowProgram.FRXU_CASCADE.set(cascade);
+            }
 
             float cascadeRenderDistance;
 
@@ -256,23 +257,17 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.renderSectionLayer(RenderType.cutoutMipped(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
             this.renderSectionLayer(RenderType.cutout(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
             RenderSystem.enableCull();
+
+            this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
+
+            MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
+
+            this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
+            this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
+            this.checkPoseStack(poseStack);
+            this.visibleEntities.clear();
+            bufferSource.endBatch();
         }
-
-        Frustum shadowFrustum = new Frustum(
-            canpipe_shadowViewMatrix,
-            canpipe_shadowProjectionMatrices[0]
-        );
-        shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
-
-        this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
-
-        MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
-
-        this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
-        this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
-        this.checkPoseStack(poseStack);
-        this.visibleEntities.clear();
-        bufferSource.endBatch();
 
         RenderSystem.disablePolygonOffset();
 

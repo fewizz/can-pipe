@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -15,7 +14,6 @@ import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
-import org.joml.Vector2i;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
@@ -84,7 +82,6 @@ public class Pipeline implements AutoCloseable {
         this.location = rawPipeline.location;
         this.appliedOptions = appliedOptions;
 
-        var mc = Minecraft.getInstance();
         JsonObject pipelineJson = rawPipeline.json.clone();
         var options = rawPipeline.options;
 
@@ -221,21 +218,33 @@ public class Pipeline implements AutoCloseable {
         this.weatherFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "weather"));
         this.cloudsFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "clouds"));
 
-        Map<ResourceLocation, String> shaderSourceCache = new HashMap<>();
+        Map<ResourceLocation, String> _shaderSourceCache = new HashMap<>();
+
+        Function<ResourceLocation, Optional<String>> getShaderSource = (ResourceLocation location) -> {
+            String source = _shaderSourceCache.computeIfAbsent(location, (loc) -> {
+                try {
+                    Minecraft mc = Minecraft.getInstance();
+                    var resource = mc.getResourceManager().getResource(location);
+                    if (resource.isEmpty()) {
+                        return null;
+                    }
+                    return IOUtils.toString(resource.get().openAsReader());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            return Optional.ofNullable(source);
+        };
 
         // "programs"
         BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
             return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
-                String source = shaderSourceCache.get(location);
-                if (source == null) {
-                    try {
-                        source = IOUtils.toString(mc.getResourceManager().openAsReader(location));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    shaderSourceCache.put(location, source);
+                try {
+                    String source = getShaderSource.apply(location).get();
+                    return Shader.load(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-                return Shader.load(location, type, glslVersion, options, appliedOptions, source, shaderSourceCache, shadowFramebuffer);
             });
         };
 
@@ -283,6 +292,7 @@ public class Pipeline implements AutoCloseable {
         List<Optional<? extends AbstractTexture>> samplerImages = new ArrayList<>() {{
             for (String textureName : JanksonUtils.listOfStrings(materailProgramO, "samplerImages")) {
                 if (textureName.contains(":")) {
+                    var mc = Minecraft.getInstance();
                     add(Optional.of(mc.getTextureManager().getTexture(ResourceLocation.parse(textureName))));
                 }
                 else {
@@ -310,7 +320,7 @@ public class Pipeline implements AutoCloseable {
                     appliedOptions,
                     samplers,
                     samplerImages,
-                    shaderSourceCache
+                    getShaderSource
                 )
             );
 
@@ -329,7 +339,7 @@ public class Pipeline implements AutoCloseable {
                         appliedOptions,
                         List.of(),
                         List.of(),
-                        shaderSourceCache
+                        getShaderSource
                     )
                 );
             }
@@ -337,12 +347,8 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onWindowSizeChanged(int w, int h) {
-        this.textures.forEach((n, t) -> {
-            t.onWindowSizeChanged(w, h);
-        });
-        this.framebuffers.forEach((n, f) -> {
-            f.resize(w, h);
-        });
+        this.textures.forEach((n, t) -> t.onWindowSizeChanged(w, h));
+        this.framebuffers.forEach((n, f) -> f.resize(w, h));
         this.runResizePasses = true;
     }
 
@@ -353,7 +359,7 @@ public class Pipeline implements AutoCloseable {
             }
         }
 
-        Minecraft mc = Minecraft.getInstance();
+        var mc = Minecraft.getInstance();
 
         Stream.of(
             this.materialPrograms.values().stream(),

@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -17,10 +19,8 @@ import com.mojang.blaze3d.shaders.CompiledShader;
 
 import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 public class Shader extends CompiledShader {
 
@@ -39,14 +39,14 @@ public class Shader extends CompiledShader {
 
     static Shader load(
         ResourceLocation location,
+        String source,
         Type type,
         int version,
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
-        String source,
-        Map<ResourceLocation, String> cache,
+        Function<ResourceLocation, Optional<String>> getShaderSource,
         @Nullable Framebuffer shadowFramebuffer
-    ) {
+    ) throws IOException {
         String preprocessedSource =
             "#version " + version + "\n\n" +
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
@@ -67,11 +67,9 @@ public class Shader extends CompiledShader {
         Set<ResourceLocation> processing = new HashSet<>();
         Set<String> definitions = new HashSet<>();
 
-        try {
-            preprocessedSource = processIncludesAndDefinitions(preprocessedSource, location, preprocessed, processing, options, appliedOptions, definitions, cache);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        preprocessedSource = processIncludesAndDefinitions(
+            preprocessedSource, location, preprocessed, processing, options, appliedOptions, definitions, getShaderSource
+        );
 
         try {
             return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location, preprocessedSource);
@@ -79,7 +77,7 @@ public class Shader extends CompiledShader {
             StringBuilder sourceWithLineNumbers = new StringBuilder();
             var lines = preprocessedSource.lines().collect(Collectors.toCollection(ArrayList::new));
             int digits = (int) Math.log10(lines.size()) + 1;
-            for(int i = 0; i < lines.size(); ++i) {
+            for (int i = 0; i < lines.size(); ++i) {
                 sourceWithLineNumbers.append(("%1$"+digits+"s|").formatted(i+1));
                 sourceWithLineNumbers.append(lines.get(i));
                 sourceWithLineNumbers.append("\n");
@@ -96,7 +94,7 @@ public class Shader extends CompiledShader {
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         Set<String> definedDefinitions,
-        Map<ResourceLocation, String> cache
+        Function<ResourceLocation, Optional<String>> getShaderSource
     ) throws IOException {
         // includes
         ArrayList<String> linesIncludeProcessed = new ArrayList<>();
@@ -151,25 +149,13 @@ public class Shader extends CompiledShader {
                     linesIncludeProcessed.add(definition);
                 }
             }
-            else if (!processing.contains(location)) {
-                if (!cache.containsKey(location)) {
-                    Minecraft mc = Minecraft.getInstance();
-                    ResourceManager resourceManager = mc.getResourceManager();
-                    var resource = resourceManager.getResource(location);
-                    if (!resource.isEmpty()) {
-                        cache.put(location, resource.get().openAsReader().lines().collect(Collectors.joining("\n")));
-                    }
-                    else {
-                        cache.put(location, null);
-                    }
-                }
+            else if (!processing.contains(location)) {  // this is file include
+                Optional<String> resourceStr = getShaderSource.apply(location);
 
-                String resourceStr = cache.get(location);
-
-                if (resourceStr != null) {
+                if (resourceStr.isPresent()) {
                     processing.add(location);
                     linesIncludeProcessed.add(
-                        processIncludesAndDefinitions(resourceStr, location, preprocessed, processing, options, appliedOptions, definedDefinitions, cache)
+                        processIncludesAndDefinitions(resourceStr.get(), location, preprocessed, processing, options, appliedOptions, definedDefinitions, getShaderSource)
                     );
                     processing.remove(location);
                     preprocessed.add(location);
