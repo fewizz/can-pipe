@@ -13,8 +13,8 @@ const float frx_moonSize = 1.0;  // TODO
 
 uniform float frx_skyAngleRadians;  // world.getTimeOfDay() * 2PI for vanilla
 uniform vec3 frx_skyLightVector;  // points to the sun or moon
-#define frx_skyLightColor (frx_worldIsMoonlit ? vec3(1.0, 0.5475, 0.5475) : vec3(1.0))  // unhardcode?
-#define frx_skyLightIlluminance (frx_worldIsMoonlit ? 2000.0 : 32000.0)  // unhardcode?
+#define frx_skyLightColor (frx_worldIsMoonlit == 1.0 ? vec3(1.0, 0.5475, 0.5475) : vec3(1.0))  // unhardcode?
+#define frx_skyLightIlluminance (frx_worldIsMoonlit == 1.0 ? 2000.0 : 32000.0)  // unhardcode?
 const vec3 frx_skyLightAtmosphericColor = vec3(1.0);  // TODO
 #define frx_skyLightTransitionFactor min(1.0, min(abs(canpipe_fixedOrDayTime*24.0-13.0), abs(canpipe_fixedOrDayTime*24-23.0)))  /*https://www.desmos.com/calculator/a6ouxizdbp*/
 const float frx_skyFlashStrength = 0.0;  // TODO

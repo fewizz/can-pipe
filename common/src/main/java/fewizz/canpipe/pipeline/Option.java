@@ -2,6 +2,7 @@ package fewizz.canpipe.pipeline;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import net.minecraft.resources.ResourceLocation;
 
@@ -50,8 +51,15 @@ public class Option {
         public final String prefix;
         public final List<String> choices;
 
-        EnumElement(String name, String defaultValue, String nameKey, String prefix, List<String> choices) {
+        EnumElement(
+            String name,
+            String defaultValue,
+            String nameKey,
+            String prefix,
+            List<String> choices
+        ) {
             super(name, defaultValue, nameKey);
+            Objects.requireNonNull(choices, "\"choices\" is null for enum option element \""+name+"\"");
             this.prefix = prefix;
             this.choices = choices;
         }

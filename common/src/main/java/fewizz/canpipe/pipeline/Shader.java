@@ -127,14 +127,14 @@ public class Shader extends CompiledShader {
 
                     String definition = "#define "+name.toUpperCase();
 
-                    if (element instanceof Option.EnumElement enumElement) {
+                    if (element instanceof Option.EnumElement enumElement && enumElement.prefix != null) {
                         // define all the variants
                         for (String choice : enumElement.choices) {
                             String defName = enumElement.prefix.toUpperCase()+""+choice.toUpperCase();
                             int valueIndex = enumElement.choices.indexOf(choice);
                             linesIncludeProcessed.add("#define "+defName+" "+valueIndex);
                         }
-                        definition += " "+enumElement.prefix.toUpperCase()+""+((String)value).toUpperCase();
+                        definition += " "+enumElement.prefix.toUpperCase()+((String)value).toUpperCase();
                     }
                     else if (element instanceof Option.BooleanElement) {
                         // don't define if false
