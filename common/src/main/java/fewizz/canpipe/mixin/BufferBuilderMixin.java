@@ -112,24 +112,57 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique
     private void computeNormals() {
         int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
-
-        Vector3f normal = computeNormal(
-            canpipe_getPos(offsetToFirstVertex, 0),
-            canpipe_getPos(offsetToFirstVertex, 1),
-            canpipe_getPos(offsetToFirstVertex, 2),
-            canpipe_getPos(offsetToFirstVertex+1, 0),
-            canpipe_getPos(offsetToFirstVertex+1, 1),
-            canpipe_getPos(offsetToFirstVertex+1, 2),
-            canpipe_getPos(offsetToFirstVertex+2, 0),
-            canpipe_getPos(offsetToFirstVertex+2, 1),
-            canpipe_getPos(offsetToFirstVertex+2, 2)
-        );
         int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
-        for (int i = 0; i < this.mode.primitiveLength; ++i) {
-            long o = this.vertexPointer + (long) this.vertexSize *(offsetToFirstVertex+i)+normalOffset;
-            MemoryUtil.memPutByte(o, normalIntValue(normal.x));
-            MemoryUtil.memPutByte(o+1, normalIntValue(normal.y));
-            MemoryUtil.memPutByte(o+2, normalIntValue(normal.z));
+
+        float
+            x0 = canpipe_getPos(offsetToFirstVertex, 0),
+            y0 = canpipe_getPos(offsetToFirstVertex, 1),
+            z0 = canpipe_getPos(offsetToFirstVertex, 2),
+            x1 = canpipe_getPos(offsetToFirstVertex+1, 0),
+            y1 = canpipe_getPos(offsetToFirstVertex+1, 1),
+            z1 = canpipe_getPos(offsetToFirstVertex+1, 2),
+            x2 = canpipe_getPos(offsetToFirstVertex+2, 0),
+            y2 = canpipe_getPos(offsetToFirstVertex+2, 1),
+            z2 = canpipe_getPos(offsetToFirstVertex+2, 2);
+
+        Vector3f normal0 = computeNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+        long o = this.vertexPointer + (long) this.vertexSize *(offsetToFirstVertex+0)+normalOffset;
+
+        if (this.mode.primitiveLength == 4) {
+            float
+                x3 = canpipe_getPos(offsetToFirstVertex+3, 0),
+                y3 = canpipe_getPos(offsetToFirstVertex+3, 1),
+                z3 = canpipe_getPos(offsetToFirstVertex+3, 2);
+
+            Vector3f normal1 = computeNormal(x2, y2, z2, x3, y3, z3, x0, y0, z0);
+
+            Vector3f mid = new Vector3f(normal0).add(normal1).normalize();
+
+            MemoryUtil.memPutByte(o+0, normalIntValue(mid.x));
+            MemoryUtil.memPutByte(o+1, normalIntValue(mid.y));
+            MemoryUtil.memPutByte(o+2, normalIntValue(mid.z));
+
+            o += this.vertexSize;
+            MemoryUtil.memPutByte(o+0, normalIntValue(normal0.x));
+            MemoryUtil.memPutByte(o+1, normalIntValue(normal0.y));
+            MemoryUtil.memPutByte(o+2, normalIntValue(normal0.z));
+
+            o += this.vertexSize;
+            MemoryUtil.memPutByte(o+0, normalIntValue(mid.x));
+            MemoryUtil.memPutByte(o+1, normalIntValue(mid.y));
+            MemoryUtil.memPutByte(o+2, normalIntValue(mid.z));
+
+            o += this.vertexSize;
+            MemoryUtil.memPutByte(o+0, normalIntValue(normal1.x));
+            MemoryUtil.memPutByte(o+1, normalIntValue(normal1.y));
+            MemoryUtil.memPutByte(o+2, normalIntValue(normal1.z));
+        } else {
+            for (int i = 0; i < this.mode.primitiveLength; ++i) {
+                MemoryUtil.memPutByte(o+0, normalIntValue(normal0.x));
+                MemoryUtil.memPutByte(o+1, normalIntValue(normal0.y));
+                MemoryUtil.memPutByte(o+2, normalIntValue(normal0.z));
+                o += this.vertexSize;
+            }
         }
         this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
     }

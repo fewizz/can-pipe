@@ -16,6 +16,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -77,6 +78,8 @@ public class Pipeline implements AutoCloseable {
     private final List<PassBase> onResizePasses = new ArrayList<>();
     private boolean runInitPasses = true;
     private boolean runResizePasses = true;
+
+    // final VertexFormat blockVertexFormat;
 
     public Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) {
         this.location = rawPipeline.location;
@@ -160,12 +163,11 @@ public class Pipeline implements AutoCloseable {
         Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
             return Optional.ofNullable(this.textures.computeIfAbsent(name, _name -> {
                 List<JsonObject> textures = JanksonUtils.listOfObjects(pipelineJson, "images");
-                Optional<JsonObject> textureOO = textures.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
-                if (textureOO.isEmpty()) {
+                Optional<JsonObject> possibleJson = textures.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
+                if (possibleJson.isEmpty()) {
                     return null;
                 }
-                JsonObject textureO = textureOO.get();
-                return Texture.load(textureO, location);
+                return Texture.load(possibleJson.get(), location);
             }));
         };
 
@@ -343,6 +345,17 @@ public class Pipeline implements AutoCloseable {
                     )
                 );
             }
+        }
+
+        var blockProgram = this.materialPrograms.get(CanPipe.VertexFormats.BLOCK);
+        for (
+            String attrName : new String[] {
+                "in_vertex", "in_color", "in_uv", "in_uv1", "in_lightmap",
+                "in_normal", "in_ao", "in_spriteIndex", "in_materialIndex",
+                "in_tangent"
+            }
+        ) {
+            System.out.println(attrName + ": "+GlStateManager._glGetAttribLocation(blockProgram.getProgramId(), attrName));
         }
     }
 
