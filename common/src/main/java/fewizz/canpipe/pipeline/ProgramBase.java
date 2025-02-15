@@ -19,6 +19,7 @@ import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -53,7 +54,6 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("canpipe_shadowCenter_3", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_fogStart", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_fogEnd", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_fogColor", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_screenSize", "float", 2, List.of(0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_viewDistance", "float", 1, List.of(0.0F)),
 
@@ -69,7 +69,10 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_skyLightVector", "float", 3, List.of(0.0F, 1.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_skyAngleRadians", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_worldFlags", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_weatherGradients", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F))
+        new ShaderProgramConfig.Uniform("canpipe_weatherGradients", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
+
+        // fog.glsl
+        new ShaderProgramConfig.Uniform("frx_fogColor", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F))
     );
 
     final ResourceLocation location;
@@ -101,7 +104,8 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_SKY_LIGHT_VECTOR,
         FRX_SKY_ANGLE_RADIANS,
         CANPIPE_WORLD_FLAGS,
-        CANPIPE_WEATHER_GRADIENTS;
+        CANPIPE_WEATHER_GRADIENTS,
+        FRX_FOG_COLOR;
 
     ProgramBase(
         ResourceLocation location,
@@ -147,6 +151,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_SKY_ANGLE_RADIANS = getUniform("frx_skyAngleRadians");
         this.CANPIPE_WORLD_FLAGS = getUniform("canpipe_worldFlags");
         this.CANPIPE_WEATHER_GRADIENTS = getUniform("canpipe_weatherGradients");
+        this.FRX_FOG_COLOR = getUniform("frx_fogColor");
 
         GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
     }
@@ -158,7 +163,6 @@ public class ProgramBase extends CompiledShaderProgram {
         if (name.equals("ProjMat")) { name = "frx_projectionMatrix"; }
         if (name.equals("FogStart")) { name = "frx_fogStart"; }
         if (name.equals("FogEnd")) { name = "frx_fogEnd"; }
-        if (name.equals("FogColor")) { name = "frx_fogColor"; }
         if (name.equals("ScreenSize")) { name = "canpipe_screenSize"; }
         if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
         if (name.equals("Light0_Direction")) { name = "canpipe_light0Direction"; }
@@ -278,6 +282,18 @@ public class ProgramBase extends CompiledShaderProgram {
                 mc.level.getThunderLevel(0),
                 mc.level.getRainLevel(0),    // TODO: smoothed
                 mc.level.getThunderLevel(0)  // TODO: smoothed
+            );
+        }
+
+        // fog.glsl
+        if (this.FRX_FOG_COLOR != null) {
+            this.FRX_FOG_COLOR.set(
+                FogRenderer.computeFogColor(
+                    mc.gameRenderer.getMainCamera(),
+                    0,
+                    mc.level, mc.options.getEffectiveRenderDistance(),
+                    mc.gameRenderer.getDarkenWorldAmount(0)
+                )
             );
         }
     }
