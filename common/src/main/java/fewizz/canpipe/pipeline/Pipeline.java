@@ -71,7 +71,7 @@ public class Pipeline implements AutoCloseable {
     public final Map<VertexFormat, MaterialProgram> materialPrograms = new HashMap<>();
     public final Map<VertexFormat, MaterialProgram> shadowPrograms = new HashMap<>();
 
-    private final List<PassBase> onInit = new ArrayList<>();
+    private final List<PassBase> onInitPasses = new ArrayList<>();
     private final List<PassBase> beforeWorldRenderPasses = new ArrayList<>();
     private final List<PassBase> fabulousPasses = new ArrayList<>();
     private final List<PassBase> afterRenderHandPasses = new ArrayList<>();
@@ -277,7 +277,7 @@ public class Pipeline implements AutoCloseable {
             }
         };
 
-        parsePasses.accept("onInit", this.onInit);
+        parsePasses.accept("onInit", this.onInitPasses);
         parsePasses.accept("onResize", this.onResizePasses);
 
         parsePasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
@@ -384,7 +384,7 @@ public class Pipeline implements AutoCloseable {
         });
 
         if (this.runInitPasses) {
-            for (PassBase pass : this.onInit) {
+            for (PassBase pass : this.onInitPasses) {
                 pass.apply(view, projection);
             }
             this.runInitPasses = false;
@@ -400,8 +400,6 @@ public class Pipeline implements AutoCloseable {
         for (PassBase pass : this.beforeWorldRenderPasses) {
             pass.apply(view, projection);
         }
-
-        RenderSystem.viewport(0, 0, mc.getMainRenderTarget().width, mc.getMainRenderTarget().height);
     }
 
     public void onAfterWorldRender(Matrix4f view, Matrix4f projection) {

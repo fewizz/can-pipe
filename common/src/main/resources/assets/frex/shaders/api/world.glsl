@@ -21,16 +21,23 @@ const float frx_skyFlashStrength = 0.0;  // TODO
 
 const float frx_ambientIntensity = 1.0;  // TODO
 const vec4 frx_emissiveColor = vec4(1.0);  // TODO
-const float frx_rainGradient = 0.0;  // TODO
-const float frx_thunderGradient = 0.0;  // TODO
-const float frx_smoothedRainGradient = 0.0;  // TODO
-const float frx_smoothedThunderGradient = 0.0;  // TODO
+
+uniform vec4 canpipe_weatherGradients;
+#define frx_rainGradient            (canpipe_weatherGradients.x)
+#define frx_thunderGradient         (canpipe_weatherGradients.y)
+#define frx_smoothedRainGradient    (canpipe_weatherGradients.z)
+#define frx_smoothedThunderGradient (canpipe_weatherGradients.w)
+
 const vec3 frx_vanillaClearColor = vec3(0.0);  // TODO
-const int frx_worldHasSkylight = 1;  // TODO
-const int frx_worldIsOverworld = 1;  // TODO
-const int frx_worldIsNether = 0;  // TODO
-const int frx_worldIsEnd = 0;  // TODO
-const int frx_worldIsRaining = 0;  // TODO
-const int frx_worldIsThundering = 0;  // TODO
-const int frx_worldIsSkyDarkened = 0;  // TODO
+
+uniform int canpipe_worldFlags;
+
+#define frx_worldHasSkylight     ((canpipe_worldFlags >> 0) & 1)
+#define frx_worldIsOverworld int(((canpipe_worldFlags >> 1) & 3) == 0)
+#define frx_worldIsNether    int(((canpipe_worldFlags >> 1) & 3) == 1)
+#define frx_worldIsEnd       int(((canpipe_worldFlags >> 1) & 3) == 2)
+#define frx_worldIsRaining       ((canpipe_worldFlags >> 3) & 1)
+#define frx_worldIsThundering    ((canpipe_worldFlags >> 4) & 1)
+#define frx_worldIsSkyDarkened   ((canpipe_worldFlags >> 5) & 1)
+
 #define frx_worldIsMoonlit float(canpipe_fixedOrDayTime > 13.0/24.0 && canpipe_fixedOrDayTime < 23.0/24.0)

@@ -16,7 +16,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
-import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
@@ -24,6 +23,7 @@ import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public class ProgramBase extends CompiledShaderProgram {
@@ -67,7 +67,9 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_worldTime", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_skyLightVector", "float", 3, List.of(0.0F, 1.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_skyAngleRadians", "float", 1, List.of(0.0F))
+        new ShaderProgramConfig.Uniform("frx_skyAngleRadians", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_worldFlags", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_weatherGradients", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F))
     );
 
     final ResourceLocation location;
@@ -97,7 +99,9 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_WORLD_DAY,
         FRX_WORLD_TIME,
         FRX_SKY_LIGHT_VECTOR,
-        FRX_SKY_ANGLE_RADIANS;
+        FRX_SKY_ANGLE_RADIANS,
+        CANPIPE_WORLD_FLAGS,
+        CANPIPE_WEATHER_GRADIENTS;
 
     ProgramBase(
         ResourceLocation location,
@@ -141,6 +145,8 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_WORLD_TIME = getUniform("frx_worldTime");
         this.FRX_SKY_LIGHT_VECTOR = getUniform("frx_skyLightVector");
         this.FRX_SKY_ANGLE_RADIANS = getUniform("frx_skyAngleRadians");
+        this.CANPIPE_WORLD_FLAGS = getUniform("canpipe_worldFlags");
+        this.CANPIPE_WEATHER_GRADIENTS = getUniform("canpipe_weatherGradients");
 
         GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
     }
@@ -166,7 +172,6 @@ public class ProgramBase extends CompiledShaderProgram {
         Pipeline p = Pipelines.getCurrent();
 
         GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
-        LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
 
         if (this.FRX_CAMERA_POS != null) {
             this.FRX_CAMERA_POS.set(mc.gameRenderer.getMainCamera().getPosition().toVector3f());
@@ -185,31 +190,31 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_LAST_PROJECTION_MATRIX.set(gra.canpipe_getLastProjectionMatrix());
         }
         if (this.FRX_SHADOW_VIEW_MATRIX != null) {
-            this.FRX_SHADOW_VIEW_MATRIX.set(lre.canpipe_getShadowViewMatrix());
+            this.FRX_SHADOW_VIEW_MATRIX.set(gra.canpipe_getShadowViewMatrix());
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(lre.canpipe_getShadowProjectionMatrices()[0]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(gra.canpipe_getShadowProjectionMatrices()[0]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.set(lre.canpipe_getShadowProjectionMatrices()[1]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.set(gra.canpipe_getShadowProjectionMatrices()[1]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.set(lre.canpipe_getShadowProjectionMatrices()[2]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.set(gra.canpipe_getShadowProjectionMatrices()[2]);
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.set(lre.canpipe_getShadowProjectionMatrices()[3]);
+            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.set(gra.canpipe_getShadowProjectionMatrices()[3]);
         }
         if (this.CANPIPE_SHADOW_CENTER_0 != null) {
-            this.CANPIPE_SHADOW_CENTER_0.set(lre.canpipe_getShadowCenters()[0]);
+            this.CANPIPE_SHADOW_CENTER_0.set(gra.canpipe_getShadowCenters()[0]);
         }
         if (this.CANPIPE_SHADOW_CENTER_1 != null) {
-            this.CANPIPE_SHADOW_CENTER_1.set(lre.canpipe_getShadowCenters()[1]);
+            this.CANPIPE_SHADOW_CENTER_1.set(gra.canpipe_getShadowCenters()[1]);
         }
         if (this.CANPIPE_SHADOW_CENTER_2 != null) {
-            this.CANPIPE_SHADOW_CENTER_2.set(lre.canpipe_getShadowCenters()[2]);
+            this.CANPIPE_SHADOW_CENTER_2.set(gra.canpipe_getShadowCenters()[2]);
         }
         if (this.CANPIPE_SHADOW_CENTER_3 != null) {
-            this.CANPIPE_SHADOW_CENTER_3.set(lre.canpipe_getShadowCenters()[3]);
+            this.CANPIPE_SHADOW_CENTER_3.set(gra.canpipe_getShadowCenters()[3]);
         }
         if (this.FRX_VIEW_DISTANCE != null) {
             this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
@@ -245,6 +250,35 @@ public class ProgramBase extends CompiledShaderProgram {
         }
         if (this.FRX_SKY_ANGLE_RADIANS != null) {
             this.FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(0.0F));
+        }
+        if (this.CANPIPE_WORLD_FLAGS != null) {
+            int value = mc.level.dimensionType().hasSkyLight() ? 1 : 0;
+
+            int dimension = 3;
+            if (mc.level.dimension() == Level.OVERWORLD) {
+                dimension = 0;
+            }
+            if (mc.level.dimension() == Level.NETHER) {
+                dimension = 1;
+            }
+            if (mc.level.dimension() == Level.END) {
+                dimension = 2;
+            }
+            value |= dimension << 1;
+
+            value |= (mc.level.isRaining() ? 1 : 0) << 3;
+            value |= (mc.level.isThundering() ? 1 : 0) << 4;
+            value |= (mc.level.effects().constantAmbientLight() ? 1 : 0) << 5;
+
+            this.CANPIPE_WORLD_FLAGS.set(value);
+        }
+        if (this.CANPIPE_WEATHER_GRADIENTS != null) {
+            this.CANPIPE_WEATHER_GRADIENTS.set(
+                mc.level.getRainLevel(0),
+                mc.level.getThunderLevel(0),
+                mc.level.getRainLevel(0),    // TODO: smoothed
+                mc.level.getThunderLevel(0)  // TODO: smoothed
+            );
         }
     }
 

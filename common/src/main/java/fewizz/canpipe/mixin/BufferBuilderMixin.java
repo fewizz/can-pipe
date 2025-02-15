@@ -157,11 +157,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             MemoryUtil.memPutByte(o+1, normalIntValue(normal1.y));
             MemoryUtil.memPutByte(o+2, normalIntValue(normal1.z));
         } else {
-            for (int i = 0; i < this.mode.primitiveLength; ++i) {
+            for (int i = 0; i < this.mode.primitiveLength; ++i, o += this.vertexSize) {
                 MemoryUtil.memPutByte(o+0, normalIntValue(normal0.x));
                 MemoryUtil.memPutByte(o+1, normalIntValue(normal0.y));
                 MemoryUtil.memPutByte(o+2, normalIntValue(normal0.z));
-                o += this.vertexSize;
             }
         }
         this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();

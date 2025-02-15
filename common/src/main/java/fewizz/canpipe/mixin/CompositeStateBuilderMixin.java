@@ -58,6 +58,7 @@ public class CompositeStateBuilderMixin {
             this.shaderState == RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_SHADER ||
             this.shaderState == RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER ||
             this.shaderState == RenderStateShard.RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL_SHADER ||
+            this.shaderState == RenderStateShard.RENDERTYPE_EYES_SHADER ||
             this.shaderState == RenderStateShard.PARTICLE_SHADER
         )) {
             return;

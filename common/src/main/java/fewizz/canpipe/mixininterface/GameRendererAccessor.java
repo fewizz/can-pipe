@@ -1,9 +1,8 @@
 package fewizz.canpipe.mixininterface;
 
-import java.util.Optional;
-
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public interface GameRendererAccessor {
 
@@ -14,11 +13,10 @@ public interface GameRendererAccessor {
     public Matrix4f canpipe_getLastViewMatrix();
     public Matrix4f canpipe_getLastProjectionMatrix();
 
-    // public Matrix4f canpipe_getShadowViewMatrix();
-    // public Matrix4f canpipe_getShadowProjectionMatrix();
+    public Matrix4f canpipe_getShadowViewMatrix();
+    public Matrix4f[] canpipe_getShadowProjectionMatrices();
+    public Vector4f[] canpipe_getShadowCenters();
 
     public void canpipe_onPipelineActivated();
-
-    public void canpipe_setDepthFar(Optional<Float> depthFar);
 
 }

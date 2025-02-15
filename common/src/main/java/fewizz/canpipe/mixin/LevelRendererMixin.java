@@ -1,12 +1,10 @@
 package fewizz.canpipe.mixin;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,10 +21,10 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.GFX;
@@ -67,35 +65,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow
     @Final
     private RenderBuffers renderBuffers;
-    @Unique
-    public Matrix4f canpipe_shadowViewMatrix = new Matrix4f();
-    @Unique
-    public Matrix4f[] canpipe_shadowProjectionMatrices = new Matrix4f[] { new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f() };
-    @Unique
-    public Vector4f[] canpipe_shadowCenters = new Vector4f[] { new Vector4f(), new Vector4f(), new Vector4f(), new Vector4f() };
+
     @Unique
     volatile public boolean canpipe_isRenderingShadows = false;
-    @Unique
-    final ByteBufferBuilder canpipt_shadowByteBufferBuilder = new ByteBufferBuilder(1 << 20);  // 1 mb
 
     @Override
     public boolean canpipe_getIsRenderingShadows() {
         return this.canpipe_isRenderingShadows;
-    }
-
-    @Override
-    public Matrix4f canpipe_getShadowViewMatrix() {
-        return this.canpipe_shadowViewMatrix;
-    }
-
-    @Override
-    public Matrix4f[] canpipe_getShadowProjectionMatrices() {
-        return this.canpipe_shadowProjectionMatrices;
-    }
-
-    @Override
-    public Vector4f[] canpipe_getShadowCenters() {
-        return this.canpipe_shadowCenters;
     }
 
     @Shadow
@@ -157,12 +133,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         var sunPosOffset = new Vec3(toSunDir.mul(renderDistance + 32, new Vector3f()));
         var sunPos = camPos.add(sunPosOffset);
 
-        canpipe_shadowViewMatrix.setLookAt(
-            sunPosOffset.toVector3f(),       // eye pos
-            new Vector3f(0.0F, 0.0F, 0.0F),  // center
-            new Vector3f(0.0F, 1.0F, 0.0F)   // up
-        );
-
         Camera shadowCamera = new Camera() {{
             setPosition(sunPos);
             setRotation(
@@ -172,8 +142,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             ((CameraAccessor)(Object) this).canpipe_setDetached(true);
             ((CameraAccessor)(Object) this).canpipe_setEntity(camera.getEntity());
         }};
-
-        Framebuffer shadowFramebuffer = p.skyShadows.framebuffer();
 
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
         modelViewMatrixStack.pushMatrix();
@@ -187,6 +155,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             p.skyShadows.offsetBiasUnits()
         );
 
+        RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
+
+        Framebuffer shadowFramebuffer = p.skyShadows.framebuffer();
+        mc.mainRenderTarget = shadowFramebuffer;
+
+        try {
+
         shadowFramebuffer.bindAndClearFully();
 
         for (int cascade = 0; cascade < 4; ++cascade) {
@@ -194,48 +169,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 shadowProgram.FRXU_CASCADE.set(cascade);
             }
 
-            float cascadeRenderDistance;
-
-            if (cascade == 0) {
-                cascadeRenderDistance = renderDistance + 32;
-            }
-            else {
-                cascadeRenderDistance = p.skyShadows.cascadeRadii().get(cascade-1) / 2.0F;
-            }
-
-            gra.canpipe_setDepthFar(Optional.of(cascadeRenderDistance));
-            float fov = (float) mc.options.fov().get().intValue();
-            Matrix4f cascadeProjectionMatrix = mc.gameRenderer.getProjectionMatrix(fov);
-            gra.canpipe_setDepthFar(Optional.empty());
-
-            Frustum cascadeFrustum = new Frustum(modelViewMatrix, cascadeProjectionMatrix);
-
-            Vector4f min = new Vector4f(+Float.MAX_VALUE);
-            Vector4f max = new Vector4f(-Float.MAX_VALUE);
-
-            for (Vector4f point : cascadeFrustum.getFrustumPoints()) {
-                point.mul(canpipe_shadowViewMatrix);
-                min.min(point);
-                max.max(point);
-            }
-
-            Vector4f center = new Vector4f().add(min).add(max).div(2.0F);
-
-            float effectiveRadius = Math.max(max.x - min.x, max.y - min.y) / 2.0F;
-
-            canpipe_shadowProjectionMatrices[cascade].setOrtho(
-                center.x - effectiveRadius,  // left
-                center.x + effectiveRadius,  // right
-                center.y - effectiveRadius,  // bottom
-                center.y + effectiveRadius,  // up
-                0.0F,                        // near
-                -center.z + effectiveRadius  // far
-            );
-            canpipe_shadowCenters[cascade].set(center.x, center.y, center.z, effectiveRadius);
-
             Frustum shadowFrustum = new Frustum(
-                canpipe_shadowViewMatrix,
-                canpipe_shadowProjectionMatrices[cascade]
+                gra.canpipe_getShadowViewMatrix(),
+                gra.canpipe_getShadowProjectionMatrices()[cascade]
             );
             shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
 
@@ -268,13 +204,17 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.visibleEntities.clear();
             bufferSource.endBatch();
         }
-
+        shadowFramebuffer.unbindWrite();
         RenderSystem.disablePolygonOffset();
 
         modelViewMatrixStack.popMatrix();
-        mc.mainRenderTarget.bindWrite(true);
-
         this.canpipe_isRenderingShadows = false;
+
+        } finally {
+            mc.mainRenderTarget = originalMainRenderTarget;
+        }
+
+        mc.mainRenderTarget.bindWrite(true);
     }
 
     @WrapOperation(
