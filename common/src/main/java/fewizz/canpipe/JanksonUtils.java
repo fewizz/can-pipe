@@ -59,4 +59,9 @@ public class JanksonUtils {
         return a.stream().map(s -> (JsonObject)s).toList();
     }
 
+    public static JsonObject objectOrEmpty(JsonObject o, String key) {
+        JsonObject result = o.getObject(key);
+        return result != null ? result : new JsonObject();
+    }
+
 }

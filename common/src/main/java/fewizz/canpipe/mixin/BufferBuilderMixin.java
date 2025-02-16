@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -21,8 +21,13 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.material.Material;
+import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 @Mixin(BufferBuilder.class)
@@ -64,7 +69,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private static byte normalIntValue(float f) {return 0;}
 
     @Unique
-    private int sharedMaterialIndex = -1;
+    private MaterialMap materialMap = null;
 
     @Unique
     private Supplier<TextureAtlasSprite> spriteSupplier = null;
@@ -203,27 +208,48 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             remap = false
         )
     )
-    void onSetUv(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
+    void afterUVSet(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
+        boolean lastVertex = !this.mode.connectedPrimitives && (this.vertices % this.mode.primitiveLength) == 0;
+
+        TextureAtlasSprite sprite = lastVertex && this.spriteSupplier != null ? this.spriteSupplier.get() : null;
+
         long l;
-        if ((l = this.beginElement(CanPipe.VertexFormatElements.SPRITE_INDEX)) != -1) {
-            boolean lastVertex = !this.mode.connectedPrimitives && (this.vertices % this.mode.primitiveLength) == 0;
-            if (lastVertex) {
-                long spriteOffset = l - this.vertexPointer;
-                int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
-                TextureAtlasSprite sprite = this.spriteSupplier != null ? this.spriteSupplier.get() : null;
-                if (sprite != null) {
-                    for (int i = 0; i < this.mode.primitiveLength; ++i) {
-                        long o = this.vertexPointer + (long) this.vertexSize * (offsetToFirstVertex+i) + spriteOffset;
-                        MemoryUtil.memPutInt(
-                            o,
-                            sprite != null ? ((TextureAtlasSpriteExtended) sprite).getIndex() : -1
-                        );
-                    }
+        if ((l = this.beginElement(CanPipe.VertexFormatElements.SPRITE_INDEX)) != -1 && lastVertex) {
+            if (sprite != null) {
+                for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
+                    MemoryUtil.memPutInt(
+                        l + i*this.vertexSize,
+                        sprite != null ? ((TextureAtlasSpriteExtended) sprite).getIndex() : -1
+                    );
                 }
             }
         }
-        if ((l = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX)) != -1) {
-            MemoryUtil.memPutInt(l, this.sharedMaterialIndex);
+        if ((l = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX)) != -1 && lastVertex) {
+            Material material = null;
+            if (this.materialMap != null) {
+                if (this.materialMap.spriteMap != null && sprite != null) {
+                    Minecraft mc = Minecraft.getInstance();
+                    TextureAtlas atlas = mc.getModelManager().getAtlas(sprite.atlasLocation());
+
+                    for (var kv : this.materialMap.spriteMap.entrySet()) {
+                        if (atlas.getSprite(kv.getKey()) == sprite) {
+                            material = kv.getValue();
+                        }
+                    }
+                }
+                if (material == null) {
+                    material = materialMap.defaultMaterial;
+                }
+            }
+
+            if (material != null) {
+                for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
+                    MemoryUtil.memPutInt(
+                        l+i*this.vertexSize,
+                        material != null ? Materials.id(material) : -1
+                    );
+                }
+            }
         }
     }
 
@@ -239,8 +265,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
-    public void canpipe_setSharedMaterialIndex(int materialIndex) {
-        this.sharedMaterialIndex = materialIndex;
+    public void canpipe_setSharedMaterialMap(MaterialMap materialmap) {
+        this.materialMap = materialmap;
     }
 
     @Unique

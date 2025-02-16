@@ -1,15 +1,5 @@
 package fewizz.canpipe.mixin;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.material.Material;
-import fewizz.canpipe.material.MaterialMap;
-import fewizz.canpipe.material.MaterialMaps;
-import fewizz.canpipe.material.Materials;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -18,11 +8,19 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.LiquidBlockRenderer;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.FluidState;
 
 @Mixin(LiquidBlockRenderer.class)
@@ -68,9 +66,7 @@ public class LiquidBlockRendererMixin {
 
             ResourceLocation rl = BuiltInRegistries.FLUID.getKey(fs.getType());
             MaterialMap materialMap = MaterialMaps.FLUIDS.get(rl);
-
-            Material material = materialMap != null ? materialMap.defaultMaterial : null;
-            vce.canpipe_setSharedMaterialIndex(material != null ? Materials.id(material) : -1);
+            vce.canpipe_setSharedMaterialMap(materialMap);
 
             vce.canpipe_recomputeNormal(true);
         }
@@ -86,7 +82,7 @@ public class LiquidBlockRendererMixin {
     ) {
         if (vc instanceof VertexConsumerExtended vce) {
             vce.canpipe_setSpriteSupplier(null);
-            vce.canpipe_resetSharedMaterialIndex();
+            vce.canpipe_setSharedMaterialMap(null);
             vce.canpipe_recomputeNormal(false);
         }
     }

@@ -26,7 +26,8 @@ public class MaterialMaps implements PreparableReloadListener {
         Executor loadExecutor,
         Executor applyExecutor
     ) {
-        return CompletableFuture.supplyAsync(() -> {
+        return CompletableFuture.supplyAsync(
+            () -> {
                 return resourceManager.listResources(
                     "materialmaps",
                     (ResourceLocation rl) -> {

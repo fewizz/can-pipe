@@ -3,8 +3,8 @@ package fewizz.canpipe.mixin;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -15,7 +15,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
-import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
@@ -73,10 +72,7 @@ public class ModelBlockRendererMixin {
             ) {
                 ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
                 MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
-                if (materialMap != null && materialMap.defaultMaterial != null) {
-                    int index = Materials.id(materialMap.defaultMaterial);
-                    ((VertexConsumerExtended) bb).canpipe_setSharedMaterialIndex(index);
-                }
+                ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(materialMap);
             }
         }
     }
@@ -111,7 +107,7 @@ public class ModelBlockRendererMixin {
                 vc instanceof BufferBuilder bb &&
                 bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
             ) {
-                ((VertexConsumerExtended) bb).canpipe_resetSharedMaterialIndex();
+                ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(null);
             }
         }
     }
@@ -138,10 +134,7 @@ public class ModelBlockRendererMixin {
             ) {
                 ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
                 MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
-                if (materialMap != null && materialMap.defaultMaterial != null) {
-                    int index = Materials.id(materialMap.defaultMaterial);
-                    ((VertexConsumerExtended) bb).canpipe_setSharedMaterialIndex(index);
-                }
+                ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(materialMap);
             }
         }
     }
@@ -166,7 +159,7 @@ public class ModelBlockRendererMixin {
                 vc instanceof BufferBuilder bb &&
                 bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
             ) {
-                ((VertexConsumerExtended) bb).canpipe_resetSharedMaterialIndex();
+                ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(null);
             }
         }
     }
