@@ -12,6 +12,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,8 +30,19 @@ public class Shader extends CompiledShader {
     static final Pattern DEFINITION_PATTERN = Pattern.compile("^\\s*#define\\s+([[a-z][A-Z][0-9]_]+)");
     static final Pattern INCLUDE_PATTERN = Pattern.compile("^\\s*#include\\s+([[a-z][0-9]._]+:[[a-z][0-9]._/]+)");
 
+    static final Pattern FLOAT_PATTERN = Pattern.compile("[0-9]+\\.[0-9]+");
+    /**
+    Naive pattern for matching expressions like <code>#if X op Y</code>
+    , where X, Y is either option name or floating-point number,
+    op is < > == or !=
+    <p>Not supported by GLSL preprocessor, but canvas uses external one that supports this
+    */
+    static final Pattern FLOAT_CONDITIONAL_PATTERN = Pattern.compile(
+        "^\\s*(#if)\\s+("+FLOAT_PATTERN.pattern()+"|[[A-Za-z][0-9]_]+)\\s+([<>]|!=|==)\\s+("+FLOAT_PATTERN.pattern()+"|[[A-Za-z][0-9]_]+)"
+    );
+
     @SuppressWarnings("unused")
-    private final String source;  // for debug
+    private final String source;  // for debugging
 
     private Shader(int id, ResourceLocation resourceLocation, String source) {
         super(id, resourceLocation);
@@ -98,9 +110,13 @@ public class Shader extends CompiledShader {
     ) throws IOException {
         // includes
         ArrayList<String> linesIncludeProcessed = new ArrayList<>();
-        Iterable<Pair<String, Int2BooleanFunction>> lines = () -> forEachLine(source.lines().iterator());
 
-        for (Pair<String, Int2BooleanFunction> lc : lines) {
+        for (
+            Pair<String, Int2BooleanFunction> lc
+            :
+            (Iterable<Pair<String, Int2BooleanFunction>>)
+            () -> forEachLine(source.lines().iterator())
+        ) {
             String line = lc.getKey();
             Int2BooleanFunction isCommentedAt = lc.getValue();
 
@@ -169,11 +185,14 @@ public class Shader extends CompiledShader {
             }
         }
 
-        // definitions
+        // definitions (and float conditionals)
         StringBuilder preprocessedSource = new StringBuilder();
-        lines = () -> forEachLine(linesIncludeProcessed.iterator());
 
-        for (Pair<String, Int2BooleanFunction> lc : lines) {
+        for (
+            Pair<String, Int2BooleanFunction> lc :
+            (Iterable<Pair<String, Int2BooleanFunction>>)
+            () -> forEachLine(linesIncludeProcessed.iterator())
+        ) {
             String line = lc.getKey();
             Int2BooleanFunction isCommentedAt = lc.getValue();
 
@@ -183,6 +202,53 @@ public class Shader extends CompiledShader {
                 boolean redefine = !definedDefinitions.add(definitionName);
                 if (redefine) {
                     line = "#undef "+definitionName+"  // canpipe: redefining\n" + line;
+                }
+            }
+
+            // Implemented, because ecos has this conditional: #if HAND_SIZE < 1.0
+            var floatConditionalMatcher = FLOAT_CONDITIONAL_PATTERN.matcher(line);
+            if (floatConditionalMatcher.find() && !isCommentedAt.get(floatConditionalMatcher.start(1))) {
+                Function<String, Object> numByValueOrOption = str -> {
+                    if (FLOAT_PATTERN.matcher(str).matches()) {
+                        return Double.parseDouble(str);
+                    }
+
+                    var e = options.values().stream()
+                        .map(o -> o.elements.values()).flatMap(es -> es.stream())
+                        .filter(el -> el.name.equals(str.toLowerCase()))
+                        .findAny();
+                    if (e.isPresent()) {
+                        return appliedOptions.getOrDefault(e.get(), e.get().defaultValue);
+                    }
+
+                    return null;
+                };
+
+                var left = numByValueOrOption.apply(floatConditionalMatcher.group(2));
+                String op = floatConditionalMatcher.group(3);
+                var right = numByValueOrOption.apply(floatConditionalMatcher.group(4));
+
+                if (left instanceof Double leftF && right instanceof Double rightF) {
+                    boolean result = false;
+                    switch (op) {
+                        case ">":
+                            result = leftF > rightF; break;
+                        case "<":
+                            result = leftF < rightF; break;
+                        case "==":
+                            result = leftF == rightF; break;
+                        case "!=":
+                            result = leftF != rightF; break;
+                        default:
+                            throw new NotImplementedException(op);
+                    }
+                    int conditionalStart = floatConditionalMatcher.start(2);
+
+                    line =
+                        line.substring(0, conditionalStart)
+                        + (result ? "true" : "false")
+                        + " // " + line.substring(conditionalStart)
+                        + " // canpipe: precomputed";
                 }
             }
 

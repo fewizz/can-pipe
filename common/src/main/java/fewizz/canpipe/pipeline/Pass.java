@@ -152,7 +152,7 @@ public class Pass extends PassBase {
     static Optional<PassBase> load(
         JsonObject passO,
         Function<String, Object> optionValueByName,
-        Function<String, Framebuffer> getOrLoadFramebuffer,
+        Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
         Function<String, Program> getOrLoadProgram,
         Function<String, Optional<Texture>> getOrLoadOptionalTexture
     ) {
@@ -165,15 +165,17 @@ public class Pass extends PassBase {
 
         String passName = passO.get(String.class, "name");
         String framebufferName = passO.get(String.class, "framebuffer");
-        Framebuffer framebuffer = getOrLoadFramebuffer.apply(framebufferName);
-        if (framebuffer == null) {
-            throw new RuntimeException("Couldn't find framebuffer \""+framebufferName +"\"");
+        Optional<Framebuffer> framebuffer = getOrLoadOptionalFramebuffer.apply(framebufferName);
+        if (framebuffer.isEmpty()) {
+            // canvas behaviour
+            CanPipe.LOGGER.warn("Couldn't find framebuffer \""+framebufferName +"\", pass \""+passName+"\" will be skipped");
+            return Optional.empty();
         }
 
         String programName = passO.get(String.class, "program");
 
         if (programName.equals("frex_clear")) {
-            return Optional.of(new Pass.FREXClear(passName, framebuffer));
+            return Optional.of(new Pass.FREXClear(passName, framebuffer.get()));
         }
 
         Program program = getOrLoadProgram.apply(programName);
@@ -198,6 +200,6 @@ public class Pass extends PassBase {
         int lod = passO.getInt("lod", 0);
         int layer = passO.getInt("layer", 0);
 
-        return Optional.of(new Pass(passName, framebuffer, program, textures, new Vector2i(width, height), lod, layer));
+        return Optional.of(new Pass(passName, framebuffer.get(), program, textures, new Vector2i(width, height), lod, layer));
     }
 }

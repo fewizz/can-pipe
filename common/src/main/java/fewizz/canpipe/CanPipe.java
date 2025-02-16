@@ -176,20 +176,21 @@ public class CanPipe {
 
             @Override
             public void setupRenderState() {
-                Pipeline p = Pipelines.getCurrent();
-                if (p == null) {
+                var p = Pipelines.getCurrent();
+                var mc = Minecraft.getInstance();
+
+                // bind original framebuffer if 
+                if (
+                    // no pipeline is active
+                    p == null
+                    // or rendering shadows (shadows framebuffer overrides mc.mainRenderTarget)
+                    || ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()
+                ) {
                     original.setupRenderState();
                     return;
                 }
 
-                var mc = Minecraft.getInstance();
-
-                Framebuffer framebuffer =
-                    ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows() ?
-                    p.skyShadows.framebuffer() :
-                    framebufferGetter.apply(p);
-
-                framebuffer.bindWrite(false);
+                framebufferGetter.apply(p).bindWrite(false);
             }
 
         }

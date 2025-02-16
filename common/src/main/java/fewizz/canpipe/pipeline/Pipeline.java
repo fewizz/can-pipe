@@ -180,17 +180,28 @@ public class Pipeline implements AutoCloseable {
         };
 
         // "framebuffers"
-        Function<String, Framebuffer> getOrLoadFramebuffer = (String name) -> {
-            return this.framebuffers.computeIfAbsent(name, _name -> {
+        Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer = (String name) -> {
+            return Optional.ofNullable(this.framebuffers.computeIfAbsent(name, _name -> {
                 try {
                     List<JsonObject> framebuffers = JanksonUtils.listOfObjects(pipelineJson, "framebuffers");
-                    JsonObject framebufferO = framebuffers.stream().filter(f -> f.get(String.class, "name").equals(name)).findFirst().get();
-                    return Framebuffer.load(framebufferO, location, getOrLoadTexture);
+                    Optional<JsonObject> possibleJson = framebuffers.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
+                    if (possibleJson.isEmpty()) {
+                        return null;
+                    }
+                    return Framebuffer.load(possibleJson.get(), location, getOrLoadTexture);
                 }
                 catch (Exception e) {
                     throw new RuntimeException("Error occured when tried to load framebuffer \""+name+"\"");
                 }
-            });
+            }));
+        };
+
+        Function<String, Framebuffer> getOrLoadFramebuffer = (String name) -> {
+            var result = getOrLoadOptionalFramebuffer.apply(name);
+            if (result.isEmpty()) {
+                throw new RuntimeException("Couldn't find framebuffer \""+name+"\"");
+            }
+            return result.get();
         };
 
         JsonObject skyShadowsO = pipelineJson.getObject("skyShadows");
@@ -272,7 +283,7 @@ public class Pipeline implements AutoCloseable {
             for (var passO : JanksonUtils.listOfObjects(passesJson, "passes")) {
                 Pass.load(
                     passO, optionValueByName,
-                    getOrLoadFramebuffer, getOrLoadProgram, getOrLoadOptionalTexture
+                    getOrLoadOptionalFramebuffer, getOrLoadProgram, getOrLoadOptionalTexture
                 ).ifPresent(pass -> passes.add(pass));
             }
         };
