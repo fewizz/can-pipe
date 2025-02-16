@@ -215,13 +215,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         long l;
         if ((l = this.beginElement(CanPipe.VertexFormatElements.SPRITE_INDEX)) != -1 && lastVertex) {
-            if (sprite != null) {
-                for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
-                    MemoryUtil.memPutInt(
-                        l + i*this.vertexSize,
-                        sprite != null ? ((TextureAtlasSpriteExtended) sprite).getIndex() : -1
-                    );
-                }
+            int index = sprite != null ? ((TextureAtlasSpriteExtended) sprite).getIndex() : -1;
+            for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
+                MemoryUtil.memPutInt(l + i*this.vertexSize, index);
             }
         }
         if ((l = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX)) != -1 && lastVertex) {
@@ -242,13 +238,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 }
             }
 
-            if (material != null) {
-                for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
-                    MemoryUtil.memPutInt(
-                        l+i*this.vertexSize,
-                        material != null ? Materials.id(material) : -1
-                    );
-                }
+            int index = material != null ? Materials.id(material) : -1;
+            for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
+                MemoryUtil.memPutInt(l+i*this.vertexSize, index);
             }
         }
     }
