@@ -2,6 +2,7 @@ package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,6 +17,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
+import com.google.common.collect.Iterators;
 import com.mojang.blaze3d.shaders.CompiledShader;
 
 import fewizz.canpipe.CanPipe;
@@ -75,18 +77,14 @@ public class Shader extends CompiledShader {
             (type == Type.VERTEX && !CONTAINS_UV_IN.test(source) ? "in vec2 in_uv;\n\n" : "") +
             source;
 
-        Set<ResourceLocation> preprocessed = new HashSet<>();
-        Set<ResourceLocation> processing = new HashSet<>();
-        Set<String> definitions = new HashSet<>();
-
         preprocessedSource = processIncludesAndDefinitions(
-            preprocessedSource, location, preprocessed, processing, options, appliedOptions, definitions, getShaderSource
+            preprocessedSource, location, options, appliedOptions, getShaderSource
         );
 
         try {
             return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location, preprocessedSource);
         } catch (CompilationException e) {
-            StringBuilder sourceWithLineNumbers = new StringBuilder();
+            StringBuilder sourceWithLineNumbers = new StringBuilder("\n");
             var lines = preprocessedSource.lines().collect(Collectors.toCollection(ArrayList::new));
             int digits = (int) Math.log10(lines.size()) + 1;
             for (int i = 0; i < lines.size(); ++i) {
@@ -101,107 +99,33 @@ public class Shader extends CompiledShader {
     private static String processIncludesAndDefinitions(
         String source,
         ResourceLocation sourceLocation,
-        Set<ResourceLocation> preprocessed,
-        Set<ResourceLocation> processing,
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
-        Set<String> definedDefinitions,
         Function<ResourceLocation, Optional<String>> getShaderSource
     ) throws IOException {
-        // includes
-        ArrayList<String> linesIncludeProcessed = new ArrayList<>();
+        Set<ResourceLocation> preprocessed = new HashSet<>();
+        Set<String> definedDefinitions = new HashSet<>();
 
-        for (
-            Pair<String, Int2BooleanFunction> lc
-            :
-            (Iterable<Pair<String, Int2BooleanFunction>>)
-            () -> forEachLine(source.lines().iterator())
-        ) {
-            String line = lc.getKey();
-            Int2BooleanFunction isCommentedAt = lc.getValue();
-
-            var includeMatcher = INCLUDE_PATTERN.matcher(line);
-
-            if (!(includeMatcher.find() && !isCommentedAt.get(includeMatcher.start(1))))  {
-                linesIncludeProcessed.add(line);
-                continue;  // not an #include
-            }
-
-            String locationStr = includeMatcher.group(1);
-            var location = ResourceLocation.parse(locationStr);
-
-            if (preprocessed.contains(location)) {
-                continue;  // already included
-            }
-
-            Option option = options.get(location);
-            if (option != null) {  // this is an option
-                for (var e : option.elements.entrySet()) {
-                    String name = e.getKey();
-                    Option.Element<?> element = e.getValue();
-                    Object value = appliedOptions.getOrDefault(element, element.defaultValue);
-
-                    String definition = "#define "+name.toUpperCase();
-
-                    if (element instanceof Option.EnumElement enumElement && enumElement.prefix != null) {
-                        // define all the variants
-                        for (String choice : enumElement.choices) {
-                            String defName = enumElement.prefix.toUpperCase()+""+choice.toUpperCase();
-                            int valueIndex = enumElement.choices.indexOf(choice);
-                            linesIncludeProcessed.add("#define "+defName+" "+valueIndex);
-                        }
-                        definition += " "+enumElement.prefix.toUpperCase()+((String)value).toUpperCase();
-                    }
-                    else if (element instanceof Option.BooleanElement) {
-                        // don't define if false
-                        if ((Boolean) value == false) {
-                            continue;
-                        }
-                    }
-                    else {
-                        definition += " "+value;
-                    }
-
-                    linesIncludeProcessed.add(definition);
-                }
-            }
-            else if (!processing.contains(location)) {  // this is file include
-                Optional<String> resourceStr = getShaderSource.apply(location);
-
-                if (resourceStr.isPresent()) {
-                    processing.add(location);
-                    linesIncludeProcessed.add(
-                        processIncludesAndDefinitions(resourceStr.get(), location, preprocessed, processing, options, appliedOptions, definedDefinitions, getShaderSource)
-                    );
-                    processing.remove(location);
-                    preprocessed.add(location);
-                }
-                else {
-                    CanPipe.LOGGER.warn(sourceLocation+": couldn't include " + location);
-                }
-            }
-            else {
-                // Mod.LOGGER.warn("Circular dependency?: "+ loc.toString());
-            }
-        }
-
-        // definitions (and float conditionals)
-        StringBuilder preprocessedSource = new StringBuilder();
+        StringBuilder result = new StringBuilder();
 
         for (
             Pair<String, Int2BooleanFunction> lc :
             (Iterable<Pair<String, Int2BooleanFunction>>)
-            () -> forEachLine(linesIncludeProcessed.iterator())
+            (
+                () -> linesIterator(includePreprocessedLinesIterator(
+                    source, sourceLocation, preprocessed, options, appliedOptions, getShaderSource
+                ))
+            )
         ) {
-            String line = lc.getKey();
-            Int2BooleanFunction isCommentedAt = lc.getValue();
+            String line = lc.getLeft();
+            Int2BooleanFunction isCommentedAt = lc.getRight();
 
             var definitionMatcher = DEFINITION_PATTERN.matcher(line);
             if (definitionMatcher.find() && !isCommentedAt.get(definitionMatcher.start(1))) {
                 String definitionName = definitionMatcher.group(1);
-                boolean redefine = !definedDefinitions.add(definitionName);
-                if (redefine) {
-                    line = "#undef "+definitionName+"  // canpipe: redefining\n" + line;
+                boolean wasAlreadyDefined = !definedDefinitions.add(definitionName);
+                if (wasAlreadyDefined) {
+                    result.append("#undef "+definitionName+" // canpipe: possible macro redefinition\n");
                 }
             }
 
@@ -229,16 +153,16 @@ public class Shader extends CompiledShader {
                 var right = numByValueOrOption.apply(floatConditionalMatcher.group(4));
 
                 if (left instanceof Double leftF && right instanceof Double rightF) {
-                    boolean result = false;
+                    boolean opResult = false;
                     switch (op) {
                         case ">":
-                            result = leftF > rightF; break;
+                            opResult = leftF > rightF; break;
                         case "<":
-                            result = leftF < rightF; break;
+                            opResult = leftF < rightF; break;
                         case "==":
-                            result = leftF == rightF; break;
+                            opResult = leftF == rightF; break;
                         case "!=":
-                            result = leftF != rightF; break;
+                            opResult = leftF != rightF; break;
                         default:
                             throw new NotImplementedException(op);
                     }
@@ -246,20 +170,133 @@ public class Shader extends CompiledShader {
 
                     line =
                         line.substring(0, conditionalStart)
-                        + (result ? "true" : "false")
+                        + (opResult ? "true" : "false")
                         + " // " + line.substring(conditionalStart)
                         + " // canpipe: precomputed";
                 }
             }
 
-            preprocessedSource.append(line).append("\n");
+            result.append(line).append("\n");
         }
 
-        return preprocessedSource.toString();
+        return result.toString();
     }
 
+    private static Iterator<String>
+    includePreprocessedLinesIterator(
+        String source,
+        ResourceLocation sourceLocation,
+        Set<ResourceLocation> preprocessed,
+        Map<ResourceLocation, Option> options,
+        Map<Option.Element<?>, Object> appliedOptions,
+        Function<ResourceLocation, Optional<String>> getShaderSource
+    ) {
+        var linesIter = linesIterator(source.lines().iterator());
+
+        return new Iterator<String>() {
+            Iterator<String> innerIter = Collections.emptyIterator();
+
+            {
+                prepareInnerIter();
+            }
+
+            @Override
+            public String next() {
+                String result = innerIter.next();
+                prepareInnerIter();
+                return result;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return innerIter.hasNext();
+            }
+
+            public void prepareInnerIter() {
+                if (innerIter.hasNext()) {
+                    return;
+                }
+                if (!linesIter.hasNext()) {
+                    return;
+                }
+
+                var lineAndIsCommentedAt = linesIter.next();
+                String line = lineAndIsCommentedAt.getLeft();
+                Int2BooleanFunction isCommentedAt = lineAndIsCommentedAt.getRight();
+
+                var includeMatcher = INCLUDE_PATTERN.matcher(line);
+
+                if (!(includeMatcher.find() && !isCommentedAt.get(includeMatcher.start(1))))  {
+                    innerIter = Iterators.singletonIterator(line);  // not an #include
+                    return;
+                }
+
+                var location = ResourceLocation.parse(includeMatcher.group(1));
+
+                if (preprocessed.contains(location)) {
+                    this.prepareInnerIter();
+                    return;
+                }
+                preprocessed.add(location);
+
+                Option option = options.get(location);
+                if (option != null) {  // this is an option
+                    ArrayList<String> definitions = new ArrayList<>();
+                    for (var e : option.elements.entrySet()) {
+                        String name = e.getKey();
+                        Option.Element<?> element = e.getValue();
+                        Object value = appliedOptions.getOrDefault(element, element.defaultValue);
+
+                        String definition = "#define "+name.toUpperCase();
+
+                        if (element instanceof Option.EnumElement enumElement && enumElement.prefix != null) {
+                            // define all the variants
+                            for (String choice : enumElement.choices) {
+                                String defName = enumElement.prefix.toUpperCase()+""+choice.toUpperCase();
+                                int valueIndex = enumElement.choices.indexOf(choice);
+                                definitions.add("#define "+defName+" "+valueIndex);
+                            }
+                            definition += " "+enumElement.prefix.toUpperCase()+((String)value).toUpperCase();
+                        }
+                        else if (element instanceof Option.BooleanElement) {
+                            // don't define if false
+                            if ((Boolean) value == false) {
+                                continue;
+                            }
+                        }
+                        else {
+                            definition += " "+value;
+                        }
+                        definitions.add(definition);
+                    }
+                    innerIter = definitions.iterator();
+                }
+                else {  // this is file include
+                    Optional<String> resourceStr = getShaderSource.apply(location);
+
+                    if (resourceStr.isPresent()) {
+                        innerIter = includePreprocessedLinesIterator(
+                            resourceStr.get(), location,
+                            preprocessed, options, appliedOptions, getShaderSource
+                        );
+                    }
+                    else {
+                        CanPipe.LOGGER.warn(sourceLocation+": couldn't include " + location);
+                    }
+                }
+
+                this.prepareInnerIter();
+            }
+        };
+    }
+
+    /** Iteration element is Pair of:<br>
+     * 1. line<br>
+     * 2. function, which takes position (int) in the line and returns true
+     * if code is commented out at that position, false otherwise
+    */
     private static Iterator<Pair<String, Int2BooleanFunction>>
-    forEachLine(Iterator<String> lines) {
+    linesIterator(Iterator<String> lines) {
         return new Iterator<Pair<String, Int2BooleanFunction>>() {
             boolean prevLineIsCommented = false;
 

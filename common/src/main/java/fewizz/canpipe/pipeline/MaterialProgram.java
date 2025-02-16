@@ -285,9 +285,6 @@ public class MaterialProgram extends ProgramBase {
 
             layout (depth_unchanged) out float gl_FragDepth;
 
-            // TODO?
-            #define VANILLA_LIGHTING
-
             in vec4 frx_vertex;
             in vec2 frx_texcoord;
             in vec4 frx_vertexColor;
