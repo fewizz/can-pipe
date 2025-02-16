@@ -170,7 +170,7 @@ public class Shader extends CompiledShader {
 
                     line =
                         line.substring(0, conditionalStart)
-                        + (opResult ? "true" : "false")
+                        + (opResult ? "1" : "0")
                         + " // " + line.substring(conditionalStart)
                         + " // canpipe: precomputed";
                 }

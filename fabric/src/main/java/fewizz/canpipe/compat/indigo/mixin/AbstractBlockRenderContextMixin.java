@@ -30,11 +30,11 @@ import net.minecraft.resources.ResourceLocation;
 public class AbstractBlockRenderContextMixin {
 
     @Final
-    @Shadow
+    @Shadow(remap = false)
     protected AoCalculator aoCalc;
 
     @Final
-    @Shadow
+    @Shadow(remap = false)
     protected BlockRenderInfo blockInfo;
 
     @Inject(

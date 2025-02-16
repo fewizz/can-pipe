@@ -199,7 +199,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             value = "INVOKE",
             target = "Lorg/lwjgl/system/MemoryUtil;memPutFloat(JF)V",
             ordinal = 1,  // after uv set
-            shift = Shift.AFTER
+            shift = Shift.AFTER,
+            remap = false
         )
     )
     void onSetUv(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
