@@ -92,7 +92,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         if (requiresNormal && (this.recomputeNormal || needsNormal)) {
             if (lastVertex) {
-                computeNormals();
+                canpipe_computeNormals();
             }
             else {
                 setNormal(0.0F, 1.0F, 0.0F);
@@ -101,7 +101,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         if ((elementsToFill & CanPipe.VertexFormatElements.TANGENT.mask()) != 0) {
             if (lastVertex) {
-                computeTangents();
+                canpipe_computeTangents();
             }
             else {
                 setTangentRaw(0, 1.0F, 0.0F, 0.0F);
@@ -114,8 +114,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
     }
 
-    @Unique
-    private void computeNormals() {
+    public void canpipe_computeNormals() {
         int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
         int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
 
@@ -171,7 +170,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
     }
 
-    private void computeTangents() {
+    public void canpipe_computeTangents() {
         int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
 
         Vector3f tangent = computeTangent(
@@ -283,14 +282,12 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         return MemoryUtil.memGetFloat(o + (long) element*Float.BYTES);
     }
 
-    @Unique
-    private float canpipe_getPos(int vertexOffset, int element) {
+    public float canpipe_getPos(int vertexOffset, int element) {
         long posOffset = this.offsetsByElement[VertexFormatElement.POSITION.id()];
         long o = this.vertexPointer + (long) this.vertexSize*vertexOffset + posOffset;
         return MemoryUtil.memGetFloat(o + (long) element*Float.BYTES);
     }
 
-    @Unique
     private static Vector3f computeTangent(
         float x0, float y0, float z0, float u0, float v0,
         float x1, float y1, float z1, float u1, float v1,

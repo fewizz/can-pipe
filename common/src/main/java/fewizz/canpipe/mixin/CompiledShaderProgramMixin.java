@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.shaders.Uniform;
 
 import fewizz.canpipe.pipeline.ProgramBase;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -51,13 +52,34 @@ public class CompiledShaderProgramMixin {
             by = 2
         )
     )
-    void onSamplerClear(CallbackInfo ci, @Local ShaderProgramConfig.Sampler sampler, @Local(ordinal = 1) int textureUnit) {
-        if (((Object) this) instanceof ProgramBase pb) {
+    void onSamplerClear(
+        CallbackInfo ci,
+        @Local ShaderProgramConfig.Sampler sampler,
+        @Local(ordinal = 1) int textureUnit
+    ) {
+        if ((Object) this instanceof ProgramBase pb) {
             int id = this.samplerTextures.getOrDefault(sampler.name(), -1);
             if (id != -1) {
                 pb.onClearSampler(id, textureUnit);
             }
         }
+    }
+
+    @WrapOperation(
+        method = "apply",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/shaders/Uniform;upload()V"
+        )
+    )
+    void onUniformApply(
+        Uniform instance,
+        Operation<Void> original
+    ) {
+        if ((Object) this instanceof ProgramBase pb && pb.manuallyAppliedUniforms.contains(instance)) {
+            return;
+        }
+        original.call(instance);
     }
 
 }
