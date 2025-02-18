@@ -335,4 +335,36 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return this.canpipe_isRenderingShadows ? true : original;
     }
 
+    /**
+    TODO: probably related to `runVanillaClear` pipeline optoin
+    Not clearest way: setClearCaller, copyDepthFrom and bindWrite are still called
+    */
+    @WrapOperation(
+        method = "method_62214", // lambda in the `addMainPass`
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;clear()V"
+        )
+    )
+    private void dontClearRenderTargets(RenderTarget instance, Operation<Void> original) {
+        if (instance instanceof Framebuffer) { return; }
+        original.call(instance);
+    }
+
+    @WrapOperation(
+        method = "method_62214", // lambda in the `addMainPass`
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;copyDepthFrom(Lcom/mojang/blaze3d/pipeline/RenderTarget;)V",
+            ordinal = 1  // 0 - is for items entities, 1 - translucent
+        )
+    )
+    private void dontOverwriteTranslucentDepth(RenderTarget instance, RenderTarget other, Operation<Void> original) {
+        // translucent == itemEntity, then depth is already copied before
+        if (instance == targets.itemEntity.get()) {
+            return;
+        }
+        original.call(instance, other);
+    }
+
 }

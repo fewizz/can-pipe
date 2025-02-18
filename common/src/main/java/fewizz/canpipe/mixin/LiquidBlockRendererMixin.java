@@ -36,6 +36,7 @@ public class LiquidBlockRendererMixin {
         @Local(argsOnly = true) VertexConsumer vc
     ) {
         if (vc instanceof VertexConsumerExtended vce && vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
+            @SuppressWarnings("deprecation")
             TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
             var sprites = ((TextureAtlasAccessor) atlas).canpipe_getSprites();
 

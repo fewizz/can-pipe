@@ -23,8 +23,6 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.mixininterface.LevelRendererExtended;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 
 public class Framebuffer extends RenderTarget implements AutoCloseable {
@@ -159,15 +157,6 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         this.bindWrite(false);
         GFX.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
         this.unbindWrite();
-    }
-
-    @Override
-    public void bindWrite(boolean setViewport) {
-        Minecraft mc = Minecraft.getInstance();
-        if (((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows() && this != Pipelines.getCurrent().skyShadows.framebuffer()) {
-            int i = 0;
-        }
-        super.bindWrite(setViewport);
     }
 
     /**

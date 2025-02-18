@@ -19,7 +19,6 @@
     "ModelBlockRendererMixin",
     "ReloadableResourceManagerMixin",
     "RenderStateShardMixin",
-    "RenderSystemAccessor",
     "RenderTypeMixin",
     "SectionCompilerMixin",
     "ShaderManagerMixin",

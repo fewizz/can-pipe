@@ -21,7 +21,7 @@ public class MinecraftMixin {
 
     @ModifyReturnValue(method = "useShaderTransparency", at = @At("RETURN"))
     private static boolean useShaderTransparency(boolean original) {
-        return Pipelines.getCurrent() != null ? true : original;
+        return original || Pipelines.getCurrent() != null;
     }
 
 }

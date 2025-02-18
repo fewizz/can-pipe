@@ -16,6 +16,7 @@ mutable     field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojan
 
 accessible  class   net/minecraft/client/renderer/RenderStateShard$OutputStateShard
 accessible  class   net/minecraft/client/renderer/RenderStateShard$TextureStateShard
+accessible  field   net/minecraft/client/renderer/RenderStateShard$TextureStateShard  texture  Ljava/util/Optional;
 accessible  class   net/minecraft/client/renderer/RenderStateShard$ShaderStateShard
 accessible  field   net/minecraft/client/renderer/RenderStateShard$ShaderStateShard  shader  Ljava/util/Optional;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  name  Ljava/lang/String;

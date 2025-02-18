@@ -6,12 +6,12 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import blue.endless.jankson.Jankson;
-import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.MaterialProgram;
@@ -145,8 +145,7 @@ public class CanPipe {
                     p.shadowPrograms.get(format) :
                     p.materialPrograms.get(format);
 
-                RenderSystemAccessor.canpipe_invokeAssertOnRenderThread();
-                RenderSystemAccessor.canpipe_setShader(program);
+                RenderSystem.setShader(program);
 
                 if (program.CANPIPE_RENDER_TARGET != null) {
                     program.CANPIPE_RENDER_TARGET.set(this.renderTargetIndexGetter.get());

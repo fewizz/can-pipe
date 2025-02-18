@@ -25,6 +25,9 @@ public class CompositeStateBuilderMixin {
     @Shadow
     private RenderStateShard.OutputStateShard outputState;
 
+    @Shadow
+    private RenderStateShard.EmptyTextureStateShard textureState;
+
     @Inject(
         method = "createCompositeState(Lnet/minecraft/client/renderer/RenderType$OutlineProperty;)Lnet/minecraft/client/renderer/RenderType$CompositeState;",
         at = @At(value = "HEAD")

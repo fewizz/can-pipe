@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -87,36 +88,45 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private void endLastVertex(CallbackInfo ci) {
         boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
 
-        boolean requiresNormal = format.contains(VertexFormatElement.NORMAL);
-        boolean needsNormal = (elementsToFill & VertexFormatElement.NORMAL.mask()) != 0;
+        long l;
+        if ((l = beginElement(VertexFormatElement.NORMAL)) != -1 && lastVertex) {
+            canpipe_computeNormals(l);
+        }
+        if ((l = beginElement(CanPipe.VertexFormatElements.TANGENT)) != -1 && lastVertex) {
+            int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
 
-        if (requiresNormal && (this.recomputeNormal || needsNormal)) {
-            if (lastVertex) {
-                canpipe_computeNormals();
-            }
-            else {
-                setNormal(0.0F, 1.0F, 0.0F);
+            Vector3f tangent = computeTangent(
+                canpipe_getPos(offsetToFirstVertex, 0),
+                canpipe_getPos(offsetToFirstVertex, 1),
+                canpipe_getPos(offsetToFirstVertex, 2),
+                canpipe_getUV(offsetToFirstVertex, 0),
+                canpipe_getUV(offsetToFirstVertex, 1),
+
+                canpipe_getPos(offsetToFirstVertex+1, 0),
+                canpipe_getPos(offsetToFirstVertex+1, 1),
+                canpipe_getPos(offsetToFirstVertex+1, 2),
+                canpipe_getUV(offsetToFirstVertex+1, 0),
+                canpipe_getUV(offsetToFirstVertex+1, 1),
+
+                canpipe_getPos(offsetToFirstVertex+2, 0),
+                canpipe_getPos(offsetToFirstVertex+2, 1),
+                canpipe_getPos(offsetToFirstVertex+2, 2),
+                canpipe_getUV(offsetToFirstVertex+2, 0),
+                canpipe_getUV(offsetToFirstVertex+2, 1)
+            );
+            for (int i = offsetToFirstVertex; i <= 0; ++i) {
+                MemoryUtil.memPutByte(l+i*this.vertexSize+0, normalIntValue(tangent.x));
+                MemoryUtil.memPutByte(l+i*this.vertexSize+1, normalIntValue(tangent.y));
+                MemoryUtil.memPutByte(l+i*this.vertexSize+2, normalIntValue(tangent.z));
+                MemoryUtil.memPutByte(l+i*this.vertexSize+3, normalIntValue(1.0F));
             }
         }
 
-        if ((elementsToFill & CanPipe.VertexFormatElements.TANGENT.mask()) != 0) {
-            if (lastVertex) {
-                canpipe_computeTangents();
-            }
-            else {
-                setTangentRaw(0, 1.0F, 0.0F, 0.0F);
-            }
-            this.elementsToFill &= ~CanPipe.VertexFormatElements.TANGENT.mask();
-        }
-
-        if ((elementsToFill & CanPipe.VertexFormatElements.AO.mask()) != 0) {
-            canpipe_setAO(1.0F);
-        }
+        canpipe_setAO(1.0F);
     }
 
-    public void canpipe_computeNormals() {
+    public void canpipe_computeNormals(long l) {
         int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
-        int normalOffset = this.offsetsByElement[VertexFormatElement.NORMAL.id()];
 
         float
             x0 = canpipe_getPos(offsetToFirstVertex, 0),
@@ -130,7 +140,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             z2 = canpipe_getPos(offsetToFirstVertex+2, 2);
 
         Vector3f normal0 = computeNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
-        long o = this.vertexPointer + (long) this.vertexSize *(offsetToFirstVertex+0)+normalOffset;
 
         if (this.mode.primitiveLength == 4) {
             float
@@ -142,58 +151,31 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
             Vector3f mid = new Vector3f(normal0).add(normal1).normalize();
 
-            MemoryUtil.memPutByte(o+0, normalIntValue(mid.x));
-            MemoryUtil.memPutByte(o+1, normalIntValue(mid.y));
-            MemoryUtil.memPutByte(o+2, normalIntValue(mid.z));
+            int i = offsetToFirstVertex;
+            MemoryUtil.memPutByte(l+this.vertexSize*i+0, normalIntValue(mid.x));
+            MemoryUtil.memPutByte(l+this.vertexSize*i+1, normalIntValue(mid.y));
+            MemoryUtil.memPutByte(l+this.vertexSize*i+2, normalIntValue(mid.z));
 
-            o += this.vertexSize;
-            MemoryUtil.memPutByte(o+0, normalIntValue(normal0.x));
-            MemoryUtil.memPutByte(o+1, normalIntValue(normal0.y));
-            MemoryUtil.memPutByte(o+2, normalIntValue(normal0.z));
+            i += 1;
+            MemoryUtil.memPutByte(l+this.vertexSize*i+0, normalIntValue(normal0.x));
+            MemoryUtil.memPutByte(l+this.vertexSize*i+1, normalIntValue(normal0.y));
+            MemoryUtil.memPutByte(l+this.vertexSize*i+2, normalIntValue(normal0.z));
 
-            o += this.vertexSize;
-            MemoryUtil.memPutByte(o+0, normalIntValue(mid.x));
-            MemoryUtil.memPutByte(o+1, normalIntValue(mid.y));
-            MemoryUtil.memPutByte(o+2, normalIntValue(mid.z));
+            i += 1;
+            MemoryUtil.memPutByte(l+this.vertexSize*i+0, normalIntValue(mid.x));
+            MemoryUtil.memPutByte(l+this.vertexSize*i+1, normalIntValue(mid.y));
+            MemoryUtil.memPutByte(l+this.vertexSize*i+2, normalIntValue(mid.z));
 
-            o += this.vertexSize;
-            MemoryUtil.memPutByte(o+0, normalIntValue(normal1.x));
-            MemoryUtil.memPutByte(o+1, normalIntValue(normal1.y));
-            MemoryUtil.memPutByte(o+2, normalIntValue(normal1.z));
+            i += 1;
+            MemoryUtil.memPutByte(l+this.vertexSize*i+0, normalIntValue(normal1.x));
+            MemoryUtil.memPutByte(l+this.vertexSize*i+1, normalIntValue(normal1.y));
+            MemoryUtil.memPutByte(l+this.vertexSize*i+2, normalIntValue(normal1.z));
         } else {
-            for (int i = 0; i < this.mode.primitiveLength; ++i, o += this.vertexSize) {
-                MemoryUtil.memPutByte(o+0, normalIntValue(normal0.x));
-                MemoryUtil.memPutByte(o+1, normalIntValue(normal0.y));
-                MemoryUtil.memPutByte(o+2, normalIntValue(normal0.z));
+            for (int i = offsetToFirstVertex; i <= 0; ++i) {
+                MemoryUtil.memPutByte(l+this.vertexSize*i+0, normalIntValue(normal0.x));
+                MemoryUtil.memPutByte(l+this.vertexSize*i+1, normalIntValue(normal0.y));
+                MemoryUtil.memPutByte(l+this.vertexSize*i+2, normalIntValue(normal0.z));
             }
-        }
-        this.elementsToFill &= ~VertexFormatElement.NORMAL.mask();
-    }
-
-    public void canpipe_computeTangents() {
-        int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
-
-        Vector3f tangent = computeTangent(
-            canpipe_getPos(offsetToFirstVertex, 0),
-            canpipe_getPos(offsetToFirstVertex, 1),
-            canpipe_getPos(offsetToFirstVertex, 2),
-            canpipe_getUV(offsetToFirstVertex, 0),
-            canpipe_getUV(offsetToFirstVertex, 1),
-
-            canpipe_getPos(offsetToFirstVertex+1, 0),
-            canpipe_getPos(offsetToFirstVertex+1, 1),
-            canpipe_getPos(offsetToFirstVertex+1, 2),
-            canpipe_getUV(offsetToFirstVertex+1, 0),
-            canpipe_getUV(offsetToFirstVertex+1, 1),
-
-            canpipe_getPos(offsetToFirstVertex+2, 0),
-            canpipe_getPos(offsetToFirstVertex+2, 1),
-            canpipe_getPos(offsetToFirstVertex+2, 2),
-            canpipe_getUV(offsetToFirstVertex+2, 0),
-            canpipe_getUV(offsetToFirstVertex+2, 1)
-        ).normalize();
-        for (int i = 0; i < this.mode.primitiveLength; ++i) {
-            setTangentRaw(offsetToFirstVertex+i, tangent.x, tangent.y, tangent.z);
         }
     }
 
@@ -244,10 +226,30 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
     }
 
+    @ModifyExpressionValue(
+        method = "setNormal",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;beginElement(Lcom/mojang/blaze3d/vertex/VertexFormatElement;)J"
+        )
+    )
+    private long onSetNormal(long l) {
+        if (this.recomputeNormal && l != -1) {
+            boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
+            if (lastVertex) {
+                canpipe_computeNormals(l);
+            }
+            return -1;
+        }
+        return l;
+    }
+
     @Override
     public void canpipe_setAO(float ao) {
-        long offset = this.beginElement(CanPipe.VertexFormatElements.AO);
-        MemoryUtil.memPutFloat(offset, ao);
+        long l = this.beginElement(CanPipe.VertexFormatElements.AO);
+        if (l != -1) {
+            MemoryUtil.memPutFloat(l, ao);
+        }
     }
 
     @Override
@@ -258,16 +260,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Override
     public void canpipe_setSharedMaterialMap(MaterialMap materialmap) {
         this.materialMap = materialmap;
-    }
-
-    @Unique
-    private void setTangentRaw(int vertexOffset, float x, float y, float z) {
-        long tangentOffset = this.offsetsByElement[CanPipe.VertexFormatElements.TANGENT.id()];
-        long o = this.vertexPointer + (long) this.vertexSize * vertexOffset + tangentOffset;
-        MemoryUtil.memPutByte(o, normalIntValue(x));
-        MemoryUtil.memPutByte(o+1, normalIntValue(y));
-        MemoryUtil.memPutByte(o+2, normalIntValue(z));
-        MemoryUtil.memPutByte(o+3, normalIntValue(1.0F));
     }
 
     @Override
@@ -304,26 +296,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         final float ty = inverseLength * (dv1 * (y1 - y0) - dv0 * (y2 - y1));
         final float tz = inverseLength * (dv1 * (z1 - z0) - dv0 * (z2 - z1));
 
-        // TODO
-        // final float bx = inverseLength * (-du1 * (x1 - x(0)) + du0 * (x(2) - x1));
-        // final float by = inverseLength * (-du1 * (y1 - y(0)) + du0 * (y(2) - y1));
-        // final float bz = inverseLength * (-du1 * (z1 - z(0)) + du0 * (z(2) - z1));
-
-        // Compute handedness
-        // final float nx = this.normalX(0);
-        // final float ny = this.normalY(0);
-        // final float nz = this.normalZ(0);
-
-        // T cross N
-        // final float TcNx = ty * nz - tz * ny;
-        // final float TcNy = tz * nx - tx * nz;
-        // final float TcNz = tx * ny - ty * nx;
-
-        // B dot TcN
-        // final float BdotTcN = bx * TcNx + by * TcNy + bz * TcNz;
-        // final boolean inverted = BdotTcN < 0f;
-
-        return new Vector3f(tx, ty, tz);
+        return new Vector3f(tx, ty, tz).normalize();
     }
 
     @Unique
