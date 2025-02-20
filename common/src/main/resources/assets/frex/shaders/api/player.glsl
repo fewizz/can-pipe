@@ -1,8 +1,8 @@
 const float frx_effectModifier = 0.0;
 const float frx_darknessEffectFactor = 0.0;
-const vec4 frx_heldLight = vec4(0.0);
-const float frx_heldLightInnerRadius = 0.0;
-const float frx_heldLightOuterRadius = 0.0;
+uniform vec4 frx_heldLight;
+uniform float frx_heldLightInnerRadius;
+uniform float frx_heldLightOuterRadius;
 
 const int frx_effectSpeed = 0; // TODO define
 const int frx_effectSlowness = 0; // TODO define

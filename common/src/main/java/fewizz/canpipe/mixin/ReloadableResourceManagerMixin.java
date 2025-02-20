@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -25,6 +26,7 @@ public abstract class ReloadableResourceManagerMixin {
         if (listener instanceof ModelManager) {
             registerReloadListener(new Materials());
             registerReloadListener(new MaterialMaps());
+            registerReloadListener(new Lights());
             registerReloadListener(new Pipelines());
         }
     }

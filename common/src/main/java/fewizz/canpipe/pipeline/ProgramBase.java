@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33C;
@@ -17,6 +18,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.GFX;
+import fewizz.canpipe.light.Light;
+import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Minecraft;
@@ -25,7 +28,9 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -62,6 +67,9 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // player.glsl
         new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_heldLight", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_heldLightInnerRadius", "float", 1, List.of((float) Math.PI)),
+        new ShaderProgramConfig.Uniform("frx_heldLightOuterRadius", "float", 1, List.of((float) Math.PI)),
 
         // world.glsl
         new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F)),
@@ -110,7 +118,10 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_SKY_ANGLE_RADIANS,
         CANPIPE_WORLD_FLAGS,
         CANPIPE_WEATHER_GRADIENTS,
-        FRX_FOG_COLOR;
+        FRX_FOG_COLOR,
+        FRX_HELD_LIGHT,
+        FRX_HELD_LIGHT_OUTER_RADIUS,
+        FRX_HELD_LIGHT_INNER_RADIUS;
 
     ProgramBase(
         ResourceLocation location,
@@ -129,6 +140,7 @@ public class ProgramBase extends CompiledShaderProgram {
             Streams.concat(internalSamplers.stream(), samplers.stream()).map(s -> new ShaderProgramConfig.Sampler(s)).toList()
         );
 
+        // view.glsl
         this.FRX_MODEL_TO_WORLD = getUniform("frx_modelToWorld");  // non-manual
         this.FRX_RENDER_FRAMES = getManallyAppliedUniform("canpipe_renderFrames");
         this.FRX_CAMERA_POS = getManallyAppliedUniform("frx_cameraPos");
@@ -147,7 +159,14 @@ public class ProgramBase extends CompiledShaderProgram {
         this.CANPIPE_SHADOW_CENTER_2 = getManallyAppliedUniform("canpipe_shadowCenter_2");
         this.CANPIPE_SHADOW_CENTER_3 = getManallyAppliedUniform("canpipe_shadowCenter_3");
         this.FRX_VIEW_DISTANCE = getManallyAppliedUniform("frx_viewDistance");
+
+        // player.glsl
         this.FRX_EYE_POS = getManallyAppliedUniform("frx_eyePos");
+        this.FRX_HELD_LIGHT = getManallyAppliedUniform("frx_heldLight");
+        this.FRX_HELD_LIGHT_INNER_RADIUS = getManallyAppliedUniform("frx_heldLightInnerRadius");
+        this.FRX_HELD_LIGHT_OUTER_RADIUS = getManallyAppliedUniform("frx_heldLightOuterRadius");
+
+        // world.glsl
         this.CANPIPE_FIXED_OR_DAY_TIME = getManallyAppliedUniform("canpipe_fixedOrDayTime");
         this.FRX_RENDER_SECONDS = getManallyAppliedUniform("frx_renderSeconds");
         this.FRX_WORLD_DAY = getManallyAppliedUniform("frx_worldDay");
@@ -156,6 +175,8 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_SKY_ANGLE_RADIANS = getManallyAppliedUniform("frx_skyAngleRadians");
         this.CANPIPE_WORLD_FLAGS = getManallyAppliedUniform("canpipe_worldFlags");
         this.CANPIPE_WEATHER_GRADIENTS = getManallyAppliedUniform("canpipe_weatherGradients");
+
+        // fog.glsl
         this.FRX_FOG_COLOR = getManallyAppliedUniform("frx_fogColor");
 
         GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
@@ -171,7 +192,7 @@ public class ProgramBase extends CompiledShaderProgram {
 
     @Override
     public Uniform getUniform(String name) {
-        // :evil:
+        // :evil:, renaming some vanilla uniforms
         if (name.equals("ModelViewMat")) { name = "frx_viewMatrix"; }
         if (name.equals("ProjMat")) { name = "frx_projectionMatrix"; }
         if (name.equals("FogStart")) { name = "frx_fogStart"; }
@@ -252,9 +273,36 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
             this.FRX_VIEW_DISTANCE.upload();
         }
+
         if (this.FRX_EYE_POS != null) {
-            this.FRX_EYE_POS.set(mc.player.position().toVector3f());
+            this.FRX_EYE_POS.set(mc.player.getEyePosition().toVector3f());
             this.FRX_EYE_POS.upload();
+        }
+
+        Light light = ((Supplier<Light>)() -> {
+            Item item = mc.player.getMainHandItem().getItem();
+            if (item == null) return null;
+            ResourceLocation rl = BuiltInRegistries.ITEM.getKey(mc.player.getMainHandItem().getItem());
+            if (rl == null) return null;
+            return Lights.LIGHTS.get(rl);
+        }).get();
+
+        if (this.FRX_HELD_LIGHT != null) {
+            if (light != null) {
+                this.FRX_HELD_LIGHT.set(light.red, light.green, light.blue, light.intensity);
+            }
+            else {
+                this.FRX_HELD_LIGHT.set(0.0F, 0.0F, 0.0F, 0.0F);
+            }
+            this.FRX_HELD_LIGHT.upload();
+        }
+        if (this.FRX_HELD_LIGHT_INNER_RADIUS != null && light != null) {
+            this.FRX_HELD_LIGHT_INNER_RADIUS.set(light.innerConeAngle);
+            this.FRX_HELD_LIGHT_INNER_RADIUS.upload();
+        }
+        if (this.FRX_HELD_LIGHT_OUTER_RADIUS != null && light != null) {
+            this.FRX_HELD_LIGHT_OUTER_RADIUS.set(light.outerConeAngle);
+            this.FRX_HELD_LIGHT_OUTER_RADIUS.upload();
         }
 
         // world
