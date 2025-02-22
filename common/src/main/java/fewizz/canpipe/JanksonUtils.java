@@ -35,32 +35,26 @@ public class JanksonUtils {
         }
     }
 
-    public static List<String> listOfStrings(JsonObject o, String name) {
-        JsonArray a = o.get(JsonArray.class, name);
-        if (a == null) {
-            return List.of();
-        }
+    public static List<String> listOfStrings(JsonObject jsonObject, String propertyName) {
+        JsonArray a = jsonObject.get(JsonArray.class, propertyName);
+        if (a == null) return List.of();
         return a.stream().map(s -> ((JsonPrimitive)s).asString()).toList();
     }
 
-    public static List<Integer> listOfIntegers(JsonObject o, String name) {
-        JsonArray a = o.get(JsonArray.class, name);
-        if (a == null) {
-            return List.of();
-        }
+    public static List<Integer> listOfIntegers(JsonObject jsonObject, String propertyName) {
+        JsonArray a = jsonObject.get(JsonArray.class, propertyName);
+        if (a == null) return List.of();
         return a.stream().map(s -> (Integer) ((JsonPrimitive)s).asInt(0)).toList();
     }
 
-    public static List<JsonObject> listOfObjects(JsonObject o, String name) {
-        JsonArray a = o.get(JsonArray.class, name);
-        if (a == null) {
-            return List.of();
-        }
+    public static List<JsonObject> listOfObjects(JsonObject jsonObject, String propertyName) {
+        JsonArray a = jsonObject.get(JsonArray.class, propertyName);
+        if (a == null) return List.of();
         return a.stream().map(s -> (JsonObject)s).toList();
     }
 
-    public static JsonObject objectOrEmpty(JsonObject o, String key) {
-        JsonObject result = o.getObject(key);
+    public static JsonObject objectOrEmpty(JsonObject jsonObject, String propertyName) {
+        JsonObject result = jsonObject.getObject(propertyName);
         return result != null ? result : new JsonObject();
     }
 

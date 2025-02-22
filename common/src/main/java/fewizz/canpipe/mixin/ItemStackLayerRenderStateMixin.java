@@ -37,7 +37,7 @@ public class ItemStackLayerRenderStateMixin {
     ) {
         return new WrappingMultiBufferSourceThatSetsItemMaterialIndex(
             source,
-            ((ItemStackRenderStateExtended) field_55345).getItem()
+            ((ItemStackRenderStateExtended) this.field_55345).getItem()
         );
     }
 

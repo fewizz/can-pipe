@@ -178,11 +178,11 @@ public class CanPipe {
                 var p = Pipelines.getCurrent();
                 var mc = Minecraft.getInstance();
 
-                // bind original framebuffer if 
+                // bind original framebuffer if
                 if (
                     // no pipeline is active
                     p == null
-                    // or rendering shadows (shadows framebuffer overrides mc.mainRenderTarget)
+                    // rendering shadows (shadows framebuffer overrides mc.mainRenderTarget)
                     || ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()
                 ) {
                     original.setupRenderState();

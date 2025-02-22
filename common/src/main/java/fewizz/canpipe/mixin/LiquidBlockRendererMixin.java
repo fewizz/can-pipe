@@ -19,8 +19,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.LiquidBlockRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.FluidState;
 
 @Mixin(LiquidBlockRenderer.class)
@@ -35,7 +33,12 @@ public class LiquidBlockRendererMixin {
         @Local(argsOnly = true) FluidState fs,
         @Local(argsOnly = true) VertexConsumer vc
     ) {
-        if (vc instanceof VertexConsumerExtended vce && vc instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
+        if (
+            vc instanceof VertexConsumerExtended vce &&
+            vc instanceof BufferBuilder bb &&
+            bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
+        ) {
+
             @SuppressWarnings("deprecation")
             TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
             var sprites = ((TextureAtlasAccessor) atlas).canpipe_getSprites();
@@ -65,8 +68,7 @@ public class LiquidBlockRendererMixin {
                 return result.getValue();
             });
 
-            ResourceLocation rl = BuiltInRegistries.FLUID.getKey(fs.getType());
-            MaterialMap materialMap = MaterialMaps.FLUIDS.get(rl);
+            MaterialMap materialMap = MaterialMaps.getForFluid(fs.getType());
             vce.canpipe_setSharedMaterialMap(materialMap);
 
             vce.canpipe_recomputeNormal(true);

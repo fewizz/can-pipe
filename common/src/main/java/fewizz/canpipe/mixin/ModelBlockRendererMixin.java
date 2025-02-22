@@ -21,8 +21,6 @@ import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -70,8 +68,7 @@ public class ModelBlockRendererMixin {
                 vc instanceof BufferBuilder bb &&
                 bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
             ) {
-                ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
-                MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
+                MaterialMap materialMap = MaterialMaps.getForBlock(bs.getBlock());
                 ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(materialMap);
             }
         }
@@ -132,8 +129,7 @@ public class ModelBlockRendererMixin {
                 vc instanceof BufferBuilder bb &&
                 bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
             ) {
-                ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(bs.getBlock());
-                MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
+                MaterialMap materialMap = MaterialMaps.getForBlock(bs.getBlock());
                 ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(materialMap);
             }
         }

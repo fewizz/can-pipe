@@ -22,8 +22,6 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractBlockRenderContext;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 
 @Mixin(value=AbstractBlockRenderContext.class)
 public class AbstractBlockRenderContextMixin {
@@ -48,8 +46,7 @@ public class AbstractBlockRenderContextMixin {
     )
     void beforeVertexConsumerWrite(CallbackInfo ci, @Local VertexConsumer vc) {
         if (vc instanceof VertexConsumerExtended vce) {
-            ResourceLocation rl = BuiltInRegistries.BLOCK.getKey(blockInfo.blockState.getBlock());
-            MaterialMap materialMap = MaterialMaps.BLOCKS.get(rl);
+            MaterialMap materialMap = MaterialMaps.getForBlock(blockInfo.blockState.getBlock());
             vce.canpipe_setSharedMaterialMap(materialMap);
         }
     }

@@ -33,9 +33,9 @@ import net.minecraft.resources.ResourceLocation;
 
 public class PipelineOptionsScreen extends OptionsSubScreen {
 
-    final PipelineRaw raw;
-    final Map<Option.Element<?>, Object> appliedOptions;
-    PipelineOptionsList list;
+    private final PipelineRaw raw;
+    private final Map<Option.Element<?>, Object> appliedOptions;
+    private PipelineOptionsList list;
 
     public PipelineOptionsScreen(
         Screen previousScreen,

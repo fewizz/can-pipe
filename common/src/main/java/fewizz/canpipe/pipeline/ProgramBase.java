@@ -286,7 +286,7 @@ public class ProgramBase extends CompiledShaderProgram {
             if (item == Items.AIR) return null;
             ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
             if (itemLocation == null) return null;
-            return Lights.LIGHTS.get(itemLocation);
+            return Lights.get(itemLocation);
         }).get();
 
         if (this.FRX_HELD_LIGHT != null) {

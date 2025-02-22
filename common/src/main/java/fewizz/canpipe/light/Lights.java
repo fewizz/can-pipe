@@ -14,7 +14,11 @@ import net.minecraft.server.packs.resources.ResourceManager;
 
 public class Lights implements PreparableReloadListener {
 
-    public static final Map<ResourceLocation, Light> LIGHTS = new HashMap<>();
+    private static final Map<ResourceLocation, Light> LIGHTS = new HashMap<>();
+
+    public static Light get(ResourceLocation itemLocation) {
+        return LIGHTS.get(itemLocation);
+    }
 
     @Override
     public CompletableFuture<Void> reload(

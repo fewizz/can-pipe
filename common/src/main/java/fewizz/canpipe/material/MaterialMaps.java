@@ -9,15 +9,26 @@ import java.util.concurrent.Executor;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 
 public class MaterialMaps implements PreparableReloadListener {
 
-    public static final Map<ResourceLocation, MaterialMap> FLUIDS = new HashMap<>();
-    public static final Map<ResourceLocation, MaterialMap> BLOCKS = new HashMap<>();
+    private static final Map<Fluid, MaterialMap> FLUIDS = new HashMap<>();
+    private static final Map<Block, MaterialMap> BLOCKS = new HashMap<>();
+
+    public static MaterialMap getForBlock(Block block) {
+        return BLOCKS.get(block);
+    }
+
+    public static MaterialMap getForFluid(Fluid fluid) {
+        return FLUIDS.get(fluid);
+    }
 
     @Override
     public CompletableFuture<Void> reload(
@@ -56,13 +67,15 @@ public class MaterialMaps implements PreparableReloadListener {
                         MaterialMap materialMap = new MaterialMap(materialMapJson);
 
                         if (type.equals("fluid")) {
-                            FLUIDS.put(location.withPath(subpath), materialMap);
+                            var fluid = BuiltInRegistries.FLUID.get(location.withPath(subpath));
+                            if (fluid.isEmpty()) continue;
+                            FLUIDS.put(fluid.get().value(), materialMap);
                         }
                         if (type.equals("block")) {
-                            if (subpath.equals("grass")) {
-                                subpath = "short_grass"; // compat
-                            }
-                            BLOCKS.put(location.withPath(subpath), materialMap);
+                            if (subpath.equals("grass")) subpath = "short_grass"; // compat
+                            var block = BuiltInRegistries.BLOCK.get(location.withPath(subpath));
+                            if (block.isEmpty()) continue;
+                            BLOCKS.put(block.get().value(), materialMap);
                         }
                     } catch (IOException | SyntaxError ex) {
                         ex.printStackTrace();
