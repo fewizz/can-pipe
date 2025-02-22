@@ -29,19 +29,25 @@ public class Pipelines implements PreparableReloadListener {
     static final Path CONFIG_PATH = Path.of("config/can-pipe.json");
     public static final Map<ResourceLocation, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
 
-    private static volatile Pipeline current = null;
+    private static volatile @Nullable PipelineRaw currentRaw = null;
+    private static volatile @Nullable Throwable loadingError = null;
+    private static volatile @Nullable Pipeline current = null;
 
-    public static boolean loadAndSetPipeline(
+    public static void loadAndSetPipeline(
         @Nullable PipelineRaw raw,
-        @Nullable Map<Option.Element<?>, Object> optionsChanges
+        Map<Option.Element<?>, Object> optionsChanges
     ) {
         assert RenderSystem.isOnRenderThread();
+
+        Pipelines.loadingError = null;
+        Pipelines.currentRaw = null;
 
         Pipeline pipeline = null;
         Map<Option.Element<?>, Object> appliedOptions = new HashMap<>();
 
         JsonObject config = new JsonObject();
 
+        // read config
         if (Files.exists(CONFIG_PATH)) {
             try {
                 config = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
@@ -50,6 +56,28 @@ public class Pipelines implements PreparableReloadListener {
             }
         }
 
+        // save config
+        try {
+            if (raw != null) {
+                config.put("current", new JsonPrimitive(raw.location.toString()));
+
+                var pipelineOptions = new JsonObject();
+                for (var kv : appliedOptions.entrySet()) {
+                    pipelineOptions.put(kv.getKey().name, new JsonPrimitive(kv.getValue()));
+                }
+
+                JsonObject pipelinesOptions = (JsonObject) config.computeIfAbsent("pipelinesOptions", k -> new JsonObject());
+                pipelinesOptions.put(raw.location.toString(), pipelineOptions);
+            }
+            else {
+                config.put("current", JsonNull.INSTANCE);
+            }
+            Files.writeString(CONFIG_PATH, config.toJson(true, true));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // "load" part
         if (raw != null) {
             JsonObject pipelinesOptions = config.getObject("pipelinesOptions");
             pipelinesOptions = pipelinesOptions == null ? new JsonObject() : pipelinesOptions;
@@ -76,61 +104,39 @@ public class Pipelines implements PreparableReloadListener {
             try {
                 pipeline = new Pipeline(raw, appliedOptions);
             } catch (Exception e) {
-                e.printStackTrace();
-                return false;
+                Pipelines.loadingError = e;
             }
         }
 
+        // "set" part
         Minecraft mc = Minecraft.getInstance();
 
-        // reset main render target
-        if (pipeline != null) {
-            mc.mainRenderTarget = pipeline.defaultFramebuffer;
-        }
-        else if (!(mc.mainRenderTarget instanceof MainTarget)) {
-            mc.mainRenderTarget = new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
-        }
+        mc.mainRenderTarget.destroyBuffers();
+        mc.mainRenderTarget =
+            pipeline != null ?
+            pipeline.defaultFramebuffer :
+            new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+
+        boolean recompileRegions = false;
 
         // from vanilla to pipeline, or vice versa
-        if (
-            (current == null && pipeline != null) ||
-            (current != null && pipeline == null)
-        ) {
-            mc.levelRenderer.allChanged();
+        if ((Pipelines.current == null) != (pipeline == null)) {
+            recompileRegions = true;
         }
 
-        if (current != null) {
-            current.close();
+        if (Pipelines.current != null) {
+            Pipelines.current.close();
         }
 
-        current = pipeline;
+        Pipelines.current = pipeline;
 
-        if (current != null) {
+        if (Pipelines.current != null) {
             ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
         }
 
-        // save
-        if (current != null) {
-            config.put("current", new JsonPrimitive(current.location.toString()));
-
-            var pipelineOptions = new JsonObject();
-            for (var kv : appliedOptions.entrySet()) {
-                pipelineOptions.put(kv.getKey().name, new JsonPrimitive(kv.getValue()));
-            }
-
-            JsonObject pipelinesOptions = (JsonObject) config.computeIfAbsent("pipelinesOptions", (k) -> new JsonObject());
-            pipelinesOptions.put(current.location.toString(), pipelineOptions);
+        if (recompileRegions) {
+            mc.levelRenderer.allChanged();
         }
-        else {
-            config.put("current", JsonNull.INSTANCE);
-        }
-        try {
-            Files.writeString(CONFIG_PATH, config.toJson(true, true));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return true;
     }
 
     @Override
@@ -146,8 +152,8 @@ public class Pipelines implements PreparableReloadListener {
 
                 resourceManager.listResources(
                     "pipelines",
-                    (ResourceLocation rl) -> {
-                        String pathStr = rl.getPath();
+                    (ResourceLocation pipelineLocation) -> {
+                        String pathStr = pipelineLocation.getPath();
                         return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
                     }
                 ).forEach((location, pipelineJson) -> {
@@ -171,9 +177,9 @@ public class Pipelines implements PreparableReloadListener {
                 if (Files.exists(CONFIG_PATH)) {
                     try {
                         JsonObject readOptions = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
-                        String current = readOptions.get(String.class, "current");
-                        if (current != null) {
-                            selected = RAW_PIPELINES.get(ResourceLocation.parse(current));
+                        String currentLocationStr = readOptions.get(String.class, "current");
+                        if (currentLocationStr != null) {
+                            selected = RAW_PIPELINES.get(ResourceLocation.parse(currentLocationStr));
                         }
                     } catch (IOException | SyntaxError e) {
                         e.printStackTrace();
@@ -188,6 +194,14 @@ public class Pipelines implements PreparableReloadListener {
 
     public static @Nullable Pipeline getCurrent() {
         return current;
+    }
+
+    public static @Nullable PipelineRaw getCurrentRaw() {
+        return currentRaw;
+    }
+
+    public static @Nullable Throwable getLoadingError() {
+        return loadingError;
     }
 
 }

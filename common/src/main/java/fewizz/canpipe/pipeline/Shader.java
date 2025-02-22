@@ -1,6 +1,9 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -11,7 +14,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,8 +48,8 @@ public class Shader extends CompiledShader {
     @SuppressWarnings("unused")
     private final String source;  // for debugging
 
-    private Shader(int id, ResourceLocation resourceLocation, String source) {
-        super(id, resourceLocation);
+    private Shader(int id, ResourceLocation location, String source) {
+        super(id, location);
         this.source = source;
     }
 
@@ -82,17 +84,24 @@ public class Shader extends CompiledShader {
         );
 
         try {
-            return new Shader(CompiledShader.compile(location, type, preprocessedSource).getShaderId(), location, preprocessedSource);
+            return new Shader(
+                CompiledShader.compile(location, type, preprocessedSource).getShaderId(),
+                location,
+                preprocessedSource
+            );
         } catch (CompilationException e) {
-            StringBuilder sourceWithLineNumbers = new StringBuilder("\n");
+            /*StringBuilder sourceWithLineNumbers = new StringBuilder("\n");
             var lines = preprocessedSource.lines().collect(Collectors.toCollection(ArrayList::new));
             int digits = (int) Math.log10(lines.size()) + 1;
             for (int i = 0; i < lines.size(); ++i) {
                 sourceWithLineNumbers.append(("%1$"+digits+"s|").formatted(i+1));
                 sourceWithLineNumbers.append(lines.get(i));
                 sourceWithLineNumbers.append("\n");
-            }
-            throw new RuntimeException(new CompilationException(sourceWithLineNumbers.toString()+e.getMessage()));
+            }*/
+            // Files.delete(Path.of("logs/can-pipe/").toFile());
+            // Files.
+            throw new RuntimeException(e.getMessage(), e);
+            //throw new RuntimeException(new CompilationException(sourceWithLineNumbers.toString()+e.getMessage()));
         }
     }
 

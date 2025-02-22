@@ -16,7 +16,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -191,7 +190,7 @@ public class Pipeline implements AutoCloseable {
                     return Framebuffer.load(possibleJson.get(), location, getOrLoadTexture);
                 }
                 catch (Exception e) {
-                    throw new RuntimeException("Error occured when tried to load framebuffer \""+name+"\"");
+                    throw new RuntimeException("Error occured when tried to load framebuffer \""+name+"\"", e);
                 }
             }));
         };
@@ -256,7 +255,7 @@ public class Pipeline implements AutoCloseable {
                     String source = getShaderSource.apply(location).get();
                     return Shader.load(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException(e.getMessage(), e);
                 }
             });
         };
@@ -265,12 +264,7 @@ public class Pipeline implements AutoCloseable {
             return this.programs.computeIfAbsent(name, _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 JsonObject programO = programs.stream().filter(p -> p.get(String.class, "name").equals(name)).findFirst().get();
-
-                try {
-                    return Program.load(programO, location, getOrLoadShader);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                return Program.load(programO, location, getOrLoadShader);
             });
         };
 
@@ -358,16 +352,16 @@ public class Pipeline implements AutoCloseable {
             }
         }
 
-        var blockProgram = this.materialPrograms.get(CanPipe.VertexFormats.BLOCK);
-        for (
-            String attrName : new String[] {
-                "in_vertex", "in_color", "in_uv", "in_uv1", "in_lightmap",
-                "in_normal", "in_ao", "in_spriteIndex", "in_materialIndex",
-                "in_tangent"
-            }
-        ) {
-            System.out.println(attrName + ": "+GlStateManager._glGetAttribLocation(blockProgram.getProgramId(), attrName));
-        }
+        // var blockProgram = this.materialPrograms.get(CanPipe.VertexFormats.BLOCK);
+        // for (
+        //     String attrName : new String[] {
+        //         "in_vertex", "in_color", "in_uv", "in_uv1", "in_lightmap",
+        //         "in_normal", "in_ao", "in_spriteIndex", "in_materialIndex",
+        //         "in_tangent"
+        //     }
+        // ) {
+        //     System.out.println(attrName + ": "+GlStateManager._glGetAttribLocation(blockProgram.getProgramId(), attrName));
+        // }
     }
 
     public void onWindowSizeChanged(int w, int h) {

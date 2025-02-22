@@ -56,8 +56,7 @@ public class CanPipe {
             /* 12 */.add("Color", VertexFormatElement.COLOR)
             /* 16 */.add("UV0", VertexFormatElement.UV0)
             /* 24 */.add("UV2", VertexFormatElement.UV2)
-            /* 28 */.add("Normal", VertexFormatElement.NORMAL)
-                    .padding(1)
+            /* 28 */.add("Normal", VertexFormatElement.NORMAL).padding(1)
             /* 32 */.add("AO", CanPipe.VertexFormatElements.AO)
             /* 36 */.add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             /* 40 */.add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
@@ -70,8 +69,7 @@ public class CanPipe {
             .add("UV0", VertexFormatElement.UV0)
             .add("UV1", VertexFormatElement.UV1)
             .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL)
-            .padding(1)
+            .add("Normal", VertexFormatElement.NORMAL).padding(1)
             .add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             .add("Tangent", CanPipe.VertexFormatElements.TANGENT)
@@ -82,32 +80,11 @@ public class CanPipe {
             .add("Color", VertexFormatElement.COLOR)
             .add("UV0", VertexFormatElement.UV0)
             .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL)
-            .padding(1)
+            .add("Normal", VertexFormatElement.NORMAL).padding(1)
             .add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             .add("Tangent", CanPipe.VertexFormatElements.TANGENT)
             .build();
-
-        public static VertexFormat replace(VertexFormat format) {
-            if (format == DefaultVertexFormat.BLOCK) {
-                return VertexFormats.BLOCK;
-            }
-            if (format == DefaultVertexFormat.NEW_ENTITY) {
-                return VertexFormats.NEW_ENTITY;
-            }
-            if (format == DefaultVertexFormat.PARTICLE) {
-                return VertexFormats.PARTICLE;
-            }
-            throw new RuntimeException("Couldn't replace vertex format");
-        }
-
-        public static boolean isCanpipeFormat(VertexFormat format) {
-            if (format == BLOCK || format == NEW_ENTITY || format == PARTICLE) {
-                return true;
-            }
-            return false;
-        }
 
     }
 
@@ -136,14 +113,26 @@ public class CanPipe {
                     return;
                 }
 
-                VertexFormat format = this.shader.get().vertexFormat();
-                format = VertexFormats.replace(format);
+                VertexFormat originalFormat = this.shader.get().vertexFormat();
+                VertexFormat replacedFormat = ((Supplier<VertexFormat>) () -> {
+                    if (originalFormat == DefaultVertexFormat.BLOCK) {
+                        return VertexFormats.BLOCK;
+                    }
+                    if (originalFormat == DefaultVertexFormat.NEW_ENTITY) {
+                        return VertexFormats.NEW_ENTITY;
+                    }
+                    if (originalFormat == DefaultVertexFormat.PARTICLE) {
+                        return VertexFormats.PARTICLE;
+                    }
+                    throw new RuntimeException("Couldn't replace vertex format");
+                }).get();
+
                 Minecraft mc = Minecraft.getInstance();
 
                 MaterialProgram program =
                     ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows() ?
-                    p.shadowPrograms.get(format) :
-                    p.materialPrograms.get(format);
+                    p.shadowPrograms.get(replacedFormat) :
+                    p.materialPrograms.get(replacedFormat);
 
                 RenderSystem.setShader(program);
 

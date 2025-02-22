@@ -319,7 +319,7 @@ public class MaterialProgram extends ProgramBase {
             uniform float canpipe_alphaCutout;
 
             uniform sampler2D frxs_baseColor;  // aka Sampler0
-            uniform sampler2D frxs_lightmap;  // aka Sampler2
+            uniform sampler2D frxs_lightmap;   // aka Sampler2
 
             #ifdef SHADOW_MAP_PRESENT
                 uniform sampler2DArrayShadow frxs_shadowMap;
@@ -379,7 +379,7 @@ public class MaterialProgram extends ProgramBase {
                 depthPass
             );
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 

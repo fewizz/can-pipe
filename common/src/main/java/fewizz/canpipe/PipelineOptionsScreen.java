@@ -86,11 +86,11 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             super(minecraft, screen.width, screen.layout.getContentHeight(), screen.layout.getHeaderHeight(), 18);
 
             for (Option o : screen.raw.options.values()) {
-                addEntry(new CategoryEntry(Component.empty()));
-                addEntry(new CategoryEntry(Component.translatable(o.categoryKey)));
+                this.addEntry(new CategoryEntry(Component.empty()));
+                this.addEntry(new CategoryEntry(Component.translatable(o.categoryKey)));
 
                 for (Option.Element<?> e : o.elements.values()) {
-                    addEntry(new OptionEntry(raw, e, appliedOptions.get(e)));
+                    this.addEntry(new OptionEntry(raw, e, appliedOptions.get(e)));
                 }
             }
         }
@@ -197,7 +197,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                         @Override
                         protected void updateMessage() {
-                            setMessage(valueToComponent.apply((this.value * (floatElement.max - floatElement.min)) + floatElement.min));
+                            this.setMessage(valueToComponent.apply((this.value * (floatElement.max - floatElement.min)) + floatElement.min));
                         }
 
                         @Override
