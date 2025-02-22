@@ -31,6 +31,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -281,10 +282,11 @@ public class ProgramBase extends CompiledShaderProgram {
 
         Light light = ((Supplier<Light>)() -> {
             Item item = mc.player.getMainHandItem().getItem();
-            if (item == null) return null;
-            ResourceLocation rl = BuiltInRegistries.ITEM.getKey(mc.player.getMainHandItem().getItem());
-            if (rl == null) return null;
-            return Lights.LIGHTS.get(rl);
+            if (item == Items.AIR) item = mc.player.getOffhandItem().getItem();
+            if (item == Items.AIR) return null;
+            ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
+            if (itemLocation == null) return null;
+            return Lights.LIGHTS.get(itemLocation);
         }).get();
 
         if (this.FRX_HELD_LIGHT != null) {
