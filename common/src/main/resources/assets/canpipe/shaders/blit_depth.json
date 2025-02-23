@@ -1,0 +1,6 @@
+{
+    "vertex": "canpipe:blit_depth",
+    "fragment": "canpipe:blit_depth",
+    "samplers": [{ "name": "InSampler" }],
+    "uniforms": []
+}

@@ -150,7 +150,7 @@ public class Pipelines implements PreparableReloadListener {
             ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
         }
 
-        if ((prevPipeline != null) == (loadedPipeline != null)) {
+        if ((prevPipeline != null) != (loadedPipeline != null)) {
             mc.levelRenderer.allChanged();
         }
     }

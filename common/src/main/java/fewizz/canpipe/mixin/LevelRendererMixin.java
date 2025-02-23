@@ -45,6 +45,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
@@ -337,7 +338,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     /**
     TODO: probably related to `runVanillaClear` pipeline optoin
-    Not clearest way: setClearCaller, copyDepthFrom and bindWrite are still called
+    Not cleanest way: setClearColor, copyDepthFrom and bindWrite are still called
     */
     @WrapOperation(
         method = "method_62214", // lambda in the `addMainPass`
@@ -351,8 +352,55 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         original.call(instance);
     }
 
+    @ModifyExpressionValue(
+        method = "method_62214",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/Sheets;translucentItemSheet()Lnet/minecraft/client/renderer/RenderType;"
+        )
+    )
+    private RenderType dontDrawTranslucentIteims(RenderType original) {
+        if (Pipelines.getCurrent() != null) {
+            return RenderType.solid();  // solid should already be rendered, so nothing *should* happen
+        }
+        return original;
+    }
+
+    @ModifyExpressionValue(
+        method = "method_62214",  // lambda in the `addMainPass`
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/Sheets;translucentItemSheet()Lnet/minecraft/client/renderer/RenderType;"
+        )
+    )
+    private RenderType dontDrawTranslucentItems(RenderType original) {
+        if (Pipelines.getCurrent() != null) {
+            // solid should already be rendered, so nothing should happen (:clueless:),
+            // items will be rendered later, right before translucent terrain
+            // (see next @Inject)
+            return RenderType.solid();
+        }
+        return original;
+    }
+
+    @Inject(
+        method = "method_62214",  // lambda in the `addMainPass`
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;endBatch()V",
+            ordinal = 1
+        )
+    )
+    private void drawTranslucentItemsRightBeforeTranslucentTerrain(CallbackInfo ci) {
+        if (Pipelines.getCurrent() == null) {
+            return;
+        }
+        this.targets.itemEntity.get().copyDepthFrom(this.targets.main.get());
+        this.renderBuffers.bufferSource().endBatch(Sheets.translucentItemSheet());
+    }
+
     @WrapOperation(
-        method = "method_62214", // lambda in the `addMainPass`
+        method = "method_62214",  // lambda in the `addMainPass`
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;copyDepthFrom(Lcom/mojang/blaze3d/pipeline/RenderTarget;)V",
@@ -360,8 +408,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         )
     )
     private void dontOverwriteTranslucentDepth(RenderTarget instance, RenderTarget other, Operation<Void> original) {
-        // translucent == itemEntity, then depth is already copied before
-        if (instance == targets.itemEntity.get()) {
+        // if translucent == itemEntity, then no need to overwrite depth (right?)
+        if (instance == targets.translucent.get() && targets.translucent.get() == targets.itemEntity.get()) {
             return;
         }
         original.call(instance, other);
