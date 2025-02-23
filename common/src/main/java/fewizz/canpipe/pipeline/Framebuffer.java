@@ -43,7 +43,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
     ) {}
 
     public final List<ColorAttachment> colorAttachments;
-    public @Nullable final DepthAttachment depthAttachment;
+    public final @Nullable DepthAttachment depthAttachment;
 
     private Framebuffer(
         ResourceLocation pipelineLocation,

@@ -1,8 +1,11 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,6 +22,7 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -26,7 +30,6 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public class Pipelines implements PreparableReloadListener {
-    static final Path CONFIG_PATH = Path.of("config/can-pipe.json");
     public static final Map<ResourceLocation, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
 
     private static volatile @Nullable PipelineRaw currentRaw = null;
@@ -40,54 +43,47 @@ public class Pipelines implements PreparableReloadListener {
         assert RenderSystem.isOnRenderThread();
 
         Pipelines.loadingError = null;
-        Pipelines.currentRaw = null;
+        Pipelines.currentRaw = raw;
 
-        Pipeline pipeline = null;
+        // delete previous compilation errors
+        if (Files.exists(CanPipe.getCompilationErrorsDirPath())) {
+            try {
+                Files.walkFileTree(CanPipe.getCompilationErrorsDirPath(), new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        Files.delete(file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                        Files.delete(dir);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         Map<Option.Element<?>, Object> appliedOptions = new HashMap<>();
-
         JsonObject config = new JsonObject();
 
         // read config
-        if (Files.exists(CONFIG_PATH)) {
+        if (Files.exists(CanPipe.getConfigurationFilePath())) {
             try {
-                config = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
+                config = CanPipe.JANKSON.load(Files.newInputStream(CanPipe.getConfigurationFilePath()));
             } catch (IOException | SyntaxError e) {
                 e.printStackTrace();
             }
         }
 
-        // save config
-        try {
-            if (raw != null) {
-                config.put("current", new JsonPrimitive(raw.location.toString()));
-
-                var pipelineOptions = new JsonObject();
-                for (var kv : appliedOptions.entrySet()) {
-                    pipelineOptions.put(kv.getKey().name, new JsonPrimitive(kv.getValue()));
-                }
-
-                JsonObject pipelinesOptions = (JsonObject) config.computeIfAbsent("pipelinesOptions", k -> new JsonObject());
-                pipelinesOptions.put(raw.location.toString(), pipelineOptions);
-            }
-            else {
-                config.put("current", JsonNull.INSTANCE);
-            }
-            Files.writeString(CONFIG_PATH, config.toJson(true, true));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // "load" part
         if (raw != null) {
-            JsonObject pipelinesOptions = config.getObject("pipelinesOptions");
-            pipelinesOptions = pipelinesOptions == null ? new JsonObject() : pipelinesOptions;
+            JsonObject pipelinesOptions = JanksonUtils.objectOrEmpty(config, "pipelinesOptions");
+            JsonObject pipelineOptions = JanksonUtils.objectOrEmpty(pipelinesOptions, raw.location.toString());
 
-            JsonObject pipelineOptions = pipelinesOptions.getObject(raw.location.toString());
-            pipelineOptions = pipelineOptions == null ? new JsonObject() : pipelineOptions;
-
-            for (var entry : pipelineOptions.entrySet()) {
-                var optionElementName = entry.getKey();
-                var optionValue = ((JsonPrimitive) entry.getValue()).getValue();
+            for (var e : pipelineOptions.entrySet()) {
+                String optionElementName = e.getKey();
+                Object optionValue = ((JsonPrimitive) e.getValue()).getValue();
 
                 Option.Element<?> optionElement = null;
                 for (var option : raw.options.values()) {
@@ -100,9 +96,34 @@ public class Pipelines implements PreparableReloadListener {
             }
 
             appliedOptions.putAll(optionsChanges);
+        }
 
+        // save config
+        config.put("current", raw != null ? new JsonPrimitive(raw.location.toString()) : JsonNull.INSTANCE);
+
+        if (raw != null) {
+            var pipelineOptions = new JsonObject();
+
+            for (var kv : appliedOptions.entrySet()) {
+                pipelineOptions.put(kv.getKey().name, new JsonPrimitive(kv.getValue()));
+            }
+
+            JsonObject pipelinesOptions = (JsonObject) config.computeIfAbsent("pipelinesOptions", k -> new JsonObject());
+            pipelinesOptions.put(raw.location.toString(), pipelineOptions);
+        }
+
+        try {
+            Files.writeString(CanPipe.getConfigurationFilePath(), config.toJson(true, true));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // "load" part
+        Pipeline loadedPipeline = null;
+
+        if (raw != null) {
             try {
-                pipeline = new Pipeline(raw, appliedOptions);
+                loadedPipeline = new Pipeline(raw, appliedOptions);
             } catch (Exception e) {
                 Pipelines.loadingError = e;
             }
@@ -113,28 +134,23 @@ public class Pipelines implements PreparableReloadListener {
 
         mc.mainRenderTarget.destroyBuffers();
         mc.mainRenderTarget =
-            pipeline != null ?
-            pipeline.defaultFramebuffer :
+            loadedPipeline != null ?
+            loadedPipeline.defaultFramebuffer :
             new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
 
-        boolean recompileRegions = false;
-
-        // from vanilla to pipeline, or vice versa
-        if ((Pipelines.current == null) != (pipeline == null)) {
-            recompileRegions = true;
-        }
+        Pipeline prevPipeline = Pipelines.current;
 
         if (Pipelines.current != null) {
             Pipelines.current.close();
         }
 
-        Pipelines.current = pipeline;
+        Pipelines.current = loadedPipeline;
 
         if (Pipelines.current != null) {
             ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
         }
 
-        if (recompileRegions) {
+        if ((prevPipeline != null) == (loadedPipeline != null)) {
             mc.levelRenderer.allChanged();
         }
     }
@@ -174,9 +190,11 @@ public class Pipelines implements PreparableReloadListener {
                 RAW_PIPELINES.putAll(rawPipelines);
 
                 PipelineRaw selected = null;
-                if (Files.exists(CONFIG_PATH)) {
+                if (Files.exists(CanPipe.getConfigurationFilePath())) {
                     try {
-                        JsonObject readOptions = CanPipe.JANKSON.load(Files.newInputStream(CONFIG_PATH));
+                        JsonObject readOptions = CanPipe.JANKSON.load(
+                            Files.newInputStream(CanPipe.getConfigurationFilePath())
+                        );
                         String currentLocationStr = readOptions.get(String.class, "current");
                         if (currentLocationStr != null) {
                             selected = RAW_PIPELINES.get(ResourceLocation.parse(currentLocationStr));

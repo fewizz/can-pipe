@@ -1,5 +1,6 @@
 package fewizz.canpipe;
 
+import java.nio.file.Path;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -24,6 +25,16 @@ public class CanPipe {
     public static final String MOD_ID = "canpipe";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final Jankson JANKSON = Jankson.builder().build();
+
+    public static Path getCompilationErrorsDirPath() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.gameDirectory.toPath().resolve("can-pipe-compilation-errors");
+    }
+
+    public static Path getConfigurationFilePath() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.gameDirectory.toPath().resolve("config/can-pipe.json");
+    }
 
     public static class VertexFormatElements {
 

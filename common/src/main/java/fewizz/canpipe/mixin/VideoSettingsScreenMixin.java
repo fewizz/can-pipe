@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import fewizz.canpipe.PipelineOptionsScreen;
+import fewizz.canpipe.mixininterface.VideoSettingsScreenExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -26,9 +27,23 @@ import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.network.chat.Component;
 
 @Mixin(VideoSettingsScreen.class)
-public abstract class VideoSettingsScreenMixin extends OptionsSubScreen {
+public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implements VideoSettingsScreenExtended {
 
     VideoSettingsScreenMixin() { super(null, null, null); }
+
+    MutableObject<Button> settingsButtonRef = new MutableObject<>();
+    MutableObject<CycleButton<Optional<PipelineRaw>>> pipelineButtonRef = new MutableObject<>();
+
+    @Override
+    public void canpipe_onPipelineLoaded() {
+        boolean showSettings =
+            Pipelines.getCurrentRaw() != null &&
+            Pipelines.getLoadingError() == null;
+
+        pipelineButtonRef.getValue().setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showSettings ? 20 : 0));
+        pipelineButtonRef.getValue().setValue(Optional.ofNullable(Pipelines.getCurrentRaw()));
+        settingsButtonRef.getValue().visible = showSettings;
+    }
 
     @SuppressWarnings("unchecked")
     @Inject(
@@ -64,18 +79,6 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen {
             };
         };
 
-        var pipelineButtonRef = new MutableObject<Button>(settingsButton);
-        MutableObject<CycleButton<Optional<PipelineRaw>>> settingsButtonRef = new MutableObject<>();
-
-        Runnable updateSettingsAvailability = () -> {
-            boolean showSettings =
-                Pipelines.getCurrentRaw() != null &&
-                Pipelines.getLoadingError() == null;
-
-            settingsButtonRef.getValue().setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showSettings ? 30 : 0));
-            pipelineButtonRef.getValue().visible = showSettings;
-        };
-
         var pipelineButton = (CycleButton<Optional<PipelineRaw>>) new OptionInstance<Optional<PipelineRaw>>(
             "Pipeline",
             (Optional<PipelineRaw> p) -> {  // widget tooltip
@@ -91,7 +94,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen {
                 // there was an unsuccessful try to load pipeline,
                 // make label reddish
                 if (Pipelines.getCurrent() == null) {
-                    component.withColor(0xFF8888);
+                    component.withColor(0xFF7777);
                 }
                 return component;
             },
@@ -116,14 +119,14 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen {
                 Pipelines.loadAndSetPipeline(p.orElse(null), Map.of());
                 // update value to update label
                 // first check is to avoid recursive pipeline loading
-                settingsButtonRef.getValue().setValue(p);
-                updateSettingsAvailability.run();
+                canpipe_onPipelineLoaded();
             }
         ).createButton(this.options);
 
-        settingsButtonRef.setValue(pipelineButton);
+        settingsButtonRef.setValue(settingsButton);
+        pipelineButtonRef.setValue(pipelineButton);
 
-        updateSettingsAvailability.run();
+        canpipe_onPipelineLoaded();
 
         list.addSmall(pipelineButton, settingsButton);
     }

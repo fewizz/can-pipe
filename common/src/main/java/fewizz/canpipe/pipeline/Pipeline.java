@@ -29,6 +29,7 @@ import blue.endless.jankson.annotation.Nullable;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -52,8 +53,8 @@ public class Pipeline implements AutoCloseable {
     public final ResourceLocation location;
     public final Map<Option.Element<?>, Object> appliedOptions;
 
-    @Nullable public final SkyShadows skyShadows;
-    @Nullable public final Sky sky;
+    public final @Nullable SkyShadows skyShadows;
+    public final @Nullable Sky sky;
 
     public final Framebuffer defaultFramebuffer;
     public final Framebuffer solidFramebuffer;
@@ -66,7 +67,7 @@ public class Pipeline implements AutoCloseable {
     final Map<Pair<ResourceLocation, Type>, Shader> shaders = new HashMap<>();
     final Map<String, Program> programs = new HashMap<>();
     final Map<String, Texture> textures = new HashMap<>();
-    public final Map<String, Framebuffer> framebuffers = new HashMap<>();
+    final Map<String, Framebuffer> framebuffers = new HashMap<>();
     public final Map<VertexFormat, MaterialProgram> materialPrograms = new HashMap<>();
     public final Map<VertexFormat, MaterialProgram> shadowPrograms = new HashMap<>();
 
@@ -254,7 +255,7 @@ public class Pipeline implements AutoCloseable {
                 try {
                     String source = getShaderSource.apply(location).get();
                     return Shader.load(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer);
-                } catch (IOException e) {
+                } catch (IOException | CompilationException e) {
                     throw new RuntimeException(e.getMessage(), e);
                 }
             });

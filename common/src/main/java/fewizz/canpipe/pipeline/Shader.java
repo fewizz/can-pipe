@@ -3,7 +3,6 @@ package fewizz.canpipe.pipeline;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -18,8 +17,10 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL33C;
 
 import com.google.common.collect.Iterators;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.CompiledShader;
 
 import fewizz.canpipe.CanPipe;
@@ -62,7 +63,7 @@ public class Shader extends CompiledShader {
         Map<Option.Element<?>, Object> appliedOptions,
         Function<ResourceLocation, Optional<String>> getShaderSource,
         @Nullable Framebuffer shadowFramebuffer
-    ) throws IOException {
+    ) throws IOException, CompilationException {
         String preprocessedSource =
             "#version " + version + "\n\n" +
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
@@ -83,26 +84,25 @@ public class Shader extends CompiledShader {
             preprocessedSource, location, options, appliedOptions, getShaderSource
         );
 
-        try {
-            return new Shader(
-                CompiledShader.compile(location, type, preprocessedSource).getShaderId(),
-                location,
-                preprocessedSource
+        /* Can't use CompiledShader.compile, because it trims and truncates the log */
+        int id = GlStateManager.glCreateShader(type.glType());
+        GlStateManager.glShaderSource(id, preprocessedSource);
+        GlStateManager.glCompileShader(id);
+
+        if (GlStateManager.glGetShaderi(id, GL33C.GL_COMPILE_STATUS) == 0) {
+            int logLength = GlStateManager.glGetShaderi(id, GL33C.GL_INFO_LOG_LENGTH);
+            String log = GlStateManager.glGetShaderInfoLog(id, logLength);
+            Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
+            Files.createDirectories(compilationErrorsPath);
+            Files.writeString(
+                compilationErrorsPath.resolve(location.toDebugFileName()),
+                preprocessedSource+"\n"+log
             );
-        } catch (CompilationException e) {
-            /*StringBuilder sourceWithLineNumbers = new StringBuilder("\n");
-            var lines = preprocessedSource.lines().collect(Collectors.toCollection(ArrayList::new));
-            int digits = (int) Math.log10(lines.size()) + 1;
-            for (int i = 0; i < lines.size(); ++i) {
-                sourceWithLineNumbers.append(("%1$"+digits+"s|").formatted(i+1));
-                sourceWithLineNumbers.append(lines.get(i));
-                sourceWithLineNumbers.append("\n");
-            }*/
-            // Files.delete(Path.of("logs/can-pipe/").toFile());
-            // Files.
-            throw new RuntimeException(e.getMessage(), e);
-            //throw new RuntimeException(new CompilationException(sourceWithLineNumbers.toString()+e.getMessage()));
+
+            throw new CompilationException("Couldn't compile shader \""+location.toString()+"\": "+log);
         }
+
+        return new Shader(id, location, preprocessedSource);
     }
 
     private static String processIncludesAndDefinitions(

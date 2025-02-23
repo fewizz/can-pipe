@@ -4,12 +4,14 @@ import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
 
 import com.google.common.collect.ImmutableList;
 
+import fewizz.canpipe.mixininterface.VideoSettingsScreenExtended;
 import fewizz.canpipe.pipeline.Option;
 import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -90,7 +92,19 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 this.addEntry(new CategoryEntry(Component.translatable(o.categoryKey)));
 
                 for (Option.Element<?> e : o.elements.values()) {
-                    this.addEntry(new OptionEntry(raw, e, appliedOptions.get(e)));
+                    Consumer<Object> applyOptionValue = (Object value) -> {
+                        Pipelines.loadAndSetPipeline(raw, Map.of(e, value));
+                        if (
+                            minecraft.screen instanceof PipelineOptionsScreen &&
+                            Pipelines.getCurrent() == null
+                        ) {
+                            if (lastScreen instanceof VideoSettingsScreenExtended vss) {
+                                vss.canpipe_onPipelineLoaded();
+                            }
+                            onClose();
+                        }
+                    };
+                    this.addEntry(new OptionEntry(raw, e, appliedOptions.get(e), applyOptionValue));
                 }
             }
         }
@@ -161,12 +175,14 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             private final int nameWidth;
             private final AbstractWidget widget;
 
-
             static final int RIGHT_SHIFT = 0;
             static final int BUTTON_WIDTH = Button.DEFAULT_WIDTH - 25 - RIGHT_SHIFT;
             static final int BUTTON_HEIGHT = 17;
 
-            OptionEntry(PipelineRaw raw, Option.Element<?> e, Object appliedValue) {
+            OptionEntry(
+                PipelineRaw raw, Option.Element<?> e, Object appliedValue,
+                Consumer<Object> applyValue
+            ) {
                 this.name = Component.translatable(e.nameKey);
                 this.nameWidth = minecraft.font.width(this.name);
 
@@ -175,7 +191,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     this.widget = Checkbox.builder(Component.empty(), minecraft.font)
                         .selected(initialValue)
                         .onValueChange((checkbox, state) -> {
-                            Pipelines.loadAndSetPipeline(raw, Map.of(e, state));
+                            applyValue.accept(state);
                         })
                         .build();
                 }
@@ -194,7 +210,6 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         valueToComponent.apply(initialValue),
                         (initialValue - floatElement.min) / (floatElement.max - floatElement.min)
                     ) {
-
                         @Override
                         protected void updateMessage() {
                             this.setMessage(valueToComponent.apply((this.value * (floatElement.max - floatElement.min)) + floatElement.min));
@@ -207,7 +222,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         public void onRelease(double mouseX, double mouseY) {
                             super.onRelease(mouseX, mouseY);
                             var value = (this.value * (floatElement.max - floatElement.min)) + floatElement.min;
-                            Pipelines.loadAndSetPipeline(raw, Map.of(e, value));
+                            applyValue.accept(value);
                         }
                     };
                 }
@@ -235,7 +250,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         public void onRelease(double mouseX, double mouseY) {
                             super.onRelease(mouseX, mouseY);
                             var value = (long)((this.value * (intElement.max - intElement.min)) + intElement.min);
-                            Pipelines.loadAndSetPipeline(raw, Map.of(e, value));
+                            applyValue.accept(value);
                         }
                     };
                 }
@@ -249,7 +264,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                             BUTTON_WIDTH, BUTTON_HEIGHT,
                             null,  // no name needed
                             (CycleButton<String> button, String choice) -> {
-                                Pipelines.loadAndSetPipeline(raw, Map.of(e, choice));
+                                applyValue.accept(choice);
                             }
                         );
                 }
