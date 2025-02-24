@@ -58,5 +58,6 @@ const int frx_playerIsFreezing = 0;
 
 const float frx_playerMood = 1.0;
 uniform vec3 frx_eyePos;
-const vec2 frx_eyeBrightness = vec2(1.0);
-const vec2 frx_smoothedEyeBrightness = vec2(1.0);
+uniform vec2 frx_eyeBrightness;
+// TODO
+#define frx_smoothedEyeBrightness frx_eyeBrightness

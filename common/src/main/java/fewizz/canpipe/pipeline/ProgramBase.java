@@ -22,6 +22,7 @@ import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.FogRenderer;
@@ -36,6 +37,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
@@ -43,6 +45,7 @@ import net.minecraft.world.phys.Vec3;
 public class ProgramBase extends CompiledShaderProgram {
 
     private static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+        // material program // TODO: move to `Program`? Actually unused
         new ShaderProgramConfig.Uniform("canpipe_light0Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_light1Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
 
@@ -74,6 +77,7 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // player.glsl
         new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_eyeBrightness", "float", 2, List.of(0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_heldLight", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_heldLightInnerRadius", "float", 1, List.of((float) Math.PI)),
         new ShaderProgramConfig.Uniform("frx_heldLightOuterRadius", "float", 1, List.of((float) Math.PI)),
@@ -98,12 +102,12 @@ public class ProgramBase extends CompiledShaderProgram {
     public final Set<Uniform> manuallyAppliedUniforms = new HashSet<>();
 
     public final Uniform
+        // view.glsl
         FRX_MODEL_TO_WORLD,
-        FRX_RENDER_FRAMES,
+        CANPIPE_ORIGIN_TYPE,
         FRX_CAMERA_POS,
         FRX_CAMERA_VIEW,
         FRX_LAST_CAMERA_POS,
-        CANPIPE_ORIGIN_TYPE,
         FRX_LAST_VIEW_MATRIX,
         FRX_LAST_PROJECTION_MATRIX,
         FRX_SHADOW_VIEW_MATRIX,
@@ -117,7 +121,16 @@ public class ProgramBase extends CompiledShaderProgram {
         CANPIPE_SHADOW_CENTER_3,
         FRX_VIEW_DISTANCE,
         CANPIPE_VIEW_FLAGS,
+
+        // player.glsl
         FRX_EYE_POS,
+        FRX_EYE_BRIGHTNESS,
+        FRX_HELD_LIGHT,
+        FRX_HELD_LIGHT_OUTER_RADIUS,
+        FRX_HELD_LIGHT_INNER_RADIUS,
+
+        // world.glsl
+        CANPIPE_RENDER_FRAMES,
         CANPIPE_FIXED_OR_DAY_TIME,
         FRX_RENDER_SECONDS,
         FRX_WORLD_DAY,
@@ -126,10 +139,9 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_SKY_ANGLE_RADIANS,
         CANPIPE_WORLD_FLAGS,
         CANPIPE_WEATHER_GRADIENTS,
-        FRX_FOG_COLOR,
-        FRX_HELD_LIGHT,
-        FRX_HELD_LIGHT_OUTER_RADIUS,
-        FRX_HELD_LIGHT_INNER_RADIUS;
+
+        // fog.glsl
+        FRX_FOG_COLOR;
 
     ProgramBase(
         ResourceLocation location,
@@ -142,6 +154,7 @@ public class ProgramBase extends CompiledShaderProgram {
     ) throws CompilationException, IOException {
         super(CompiledShaderProgram.link(vertexShader, fragmentShader, vertexFormat).getProgramId());
         this.location = location;
+        GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
 
         setupUniforms(
             Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList(),
@@ -150,11 +163,10 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // view.glsl
         this.FRX_MODEL_TO_WORLD = getUniform("frx_modelToWorld");  // non-manual
-        this.FRX_RENDER_FRAMES = getManallyAppliedUniform("canpipe_renderFrames");
+        this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");  // non-manual
         this.FRX_CAMERA_POS = getManallyAppliedUniform("frx_cameraPos");
         this.FRX_CAMERA_VIEW = getManallyAppliedUniform("frx_cameraView");
         this.FRX_LAST_CAMERA_POS = getManallyAppliedUniform("frx_lastCameraPos");
-        this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");  // non-manual
         this.FRX_LAST_VIEW_MATRIX = getManallyAppliedUniform("frx_lastViewMatrix");
         this.FRX_LAST_PROJECTION_MATRIX = getManallyAppliedUniform("frx_lastProjectionMatrix");
         this.FRX_SHADOW_VIEW_MATRIX = getManallyAppliedUniform("frx_shadowViewMatrix");
@@ -171,11 +183,13 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // player.glsl
         this.FRX_EYE_POS = getManallyAppliedUniform("frx_eyePos");
+        this.FRX_EYE_BRIGHTNESS = getManallyAppliedUniform("frx_eyeBrightness");
         this.FRX_HELD_LIGHT = getManallyAppliedUniform("frx_heldLight");
         this.FRX_HELD_LIGHT_INNER_RADIUS = getManallyAppliedUniform("frx_heldLightInnerRadius");
         this.FRX_HELD_LIGHT_OUTER_RADIUS = getManallyAppliedUniform("frx_heldLightOuterRadius");
 
         // world.glsl
+        this.CANPIPE_RENDER_FRAMES = getManallyAppliedUniform("canpipe_renderFrames");
         this.CANPIPE_FIXED_OR_DAY_TIME = getManallyAppliedUniform("canpipe_fixedOrDayTime");
         this.FRX_RENDER_SECONDS = getManallyAppliedUniform("frx_renderSeconds");
         this.FRX_WORLD_DAY = getManallyAppliedUniform("frx_worldDay");
@@ -187,8 +201,6 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // fog.glsl
         this.FRX_FOG_COLOR = getManallyAppliedUniform("frx_fogColor");
-
-        GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
     }
 
     private Uniform getManallyAppliedUniform(String name) {
@@ -220,14 +232,24 @@ public class ProgramBase extends CompiledShaderProgram {
 
         GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
         GlStateManager._glUseProgram(this.getProgramId());
+        Camera camera = mc.gameRenderer.getMainCamera();
 
+        // view.glsl
+        if (this.FRX_MODEL_TO_WORLD != null) {
+            // will be re-set for terrain in LevelRenderer.renderSectionLayer
+            // should be zero for everything else
+            this.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F);
+        }
         if (this.FRX_CAMERA_POS != null) {
-            this.FRX_CAMERA_POS.set(mc.gameRenderer.getMainCamera().getPosition().toVector3f());
+            this.FRX_CAMERA_POS.set(camera.getPosition().toVector3f());
             this.FRX_CAMERA_POS.upload();
         }
         if (this.FRX_CAMERA_VIEW != null) {
-            var cam = mc.gameRenderer.getMainCamera();
-            this.FRX_CAMERA_VIEW.set(Vec3.directionFromRotation(cam.getXRot(), cam.getYRot()).toVector3f());
+            this.FRX_CAMERA_VIEW.set(
+                Vec3.directionFromRotation(
+                    camera.getXRot(), camera.getYRot()
+                ).toVector3f()
+            );
             this.FRX_CAMERA_VIEW.upload();
         }
         if (this.FRX_LAST_CAMERA_POS != null) {
@@ -283,7 +305,7 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_VIEW_DISTANCE.upload();
         }
         if (this.CANPIPE_VIEW_FLAGS != null) {
-            BlockPos cameraBlockPos = BlockPos.containing(mc.gameRenderer.getMainCamera().getPosition());
+            BlockPos cameraBlockPos = BlockPos.containing(camera.getPosition());
             int result = 0;
             Iterable<TagKey<Fluid>> fluidTags = () -> {
                 return mc.level.getFluidState(cameraBlockPos).getTags().iterator();
@@ -306,9 +328,22 @@ public class ProgramBase extends CompiledShaderProgram {
             this.CANPIPE_VIEW_FLAGS.upload();
         }
 
+        // player.glsl
         if (this.FRX_EYE_POS != null) {
             this.FRX_EYE_POS.set(mc.player.getEyePosition().toVector3f());
             this.FRX_EYE_POS.upload();
+        }
+        if (this.FRX_EYE_BRIGHTNESS != null) {
+            // copied from canvas thoughtlessly
+            var eyePosBlockPos = BlockPos.containing(mc.player.getEyePosition());
+            int blockLight = mc.level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(eyePosBlockPos);
+            int skyLight = mc.level.getLightEngine().getLayerListener(LightLayer.SKY).getLightValue(eyePosBlockPos);
+            skyLight = Math.max(0, skyLight - mc.level.getSkyDarken());
+            this.FRX_EYE_BRIGHTNESS.set(
+                blockLight / 15.0F,
+                skyLight / 15.0F
+            );
+            this.FRX_EYE_BRIGHTNESS.upload();
         }
 
         Light light = ((Supplier<Light>)() -> {
@@ -339,9 +374,9 @@ public class ProgramBase extends CompiledShaderProgram {
         }
 
         // world
-        if (this.FRX_RENDER_FRAMES != null) {
-            this.FRX_RENDER_FRAMES.set(gra.canpipe_getFrame());
-            this.FRX_RENDER_FRAMES.upload();
+        if (this.CANPIPE_RENDER_FRAMES != null) {
+            this.CANPIPE_RENDER_FRAMES.set(gra.canpipe_getFrame());
+            this.CANPIPE_RENDER_FRAMES.upload();
         }
         if (this.FRX_RENDER_SECONDS != null) {
             this.FRX_RENDER_SECONDS.set(gra.canpipe_getRenderSeconds());
@@ -359,11 +394,6 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_WORLD_TIME != null) {
             this.FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
             this.FRX_WORLD_TIME.upload();
-        }
-        if (this.FRX_MODEL_TO_WORLD != null) {
-            // will be re-set for terrain in LevelRenderer.renderSectionLayer
-            // should be zero for everything else
-            this.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F);
         }
         if (this.FRX_SKY_LIGHT_VECTOR != null) {
             this.FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
