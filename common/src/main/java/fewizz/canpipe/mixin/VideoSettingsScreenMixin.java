@@ -40,7 +40,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             Pipelines.getCurrentRaw() != null &&
             Pipelines.getLoadingError() == null;
 
-        pipelineButtonRef.getValue().setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showSettings ? 20 : 0));
+        pipelineButtonRef.getValue().setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showSettings ? 30 : 0));
         pipelineButtonRef.getValue().setValue(Optional.ofNullable(Pipelines.getCurrentRaw()));
         settingsButtonRef.getValue().visible = showSettings;
     }

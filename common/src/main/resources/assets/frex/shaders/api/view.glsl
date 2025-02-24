@@ -67,10 +67,12 @@ const float frx_viewBrightness = 1.0; // TODO
 
 uniform float frx_viewDistance;
 
-const int frx_cameraInFluid = 0;  // TODO
-const int frx_cameraInWater = 0;  // TODO
-const int frx_cameraInLava = 0;  // TODO
-const int frx_cameraInSnow = 0;  // TODO
+uniform int canpipe_viewFlags;
+
+#define frx_cameraInFluid ((canpipe_viewFlags >> 0) & 1)
+#define frx_cameraInWater ((canpipe_viewFlags >> 1) & 1)
+#define frx_cameraInLava  ((canpipe_viewFlags >> 2) & 1)
+#define frx_cameraInSnow  ((canpipe_viewFlags >> 3) & 1)
 
 #if defined CANPIPE_MATERIAL_SHADER
     #define frx_renderTargetSolid       (canpipe_renderTarget == 0)

@@ -28,11 +28,16 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
 
 public class ProgramBase extends CompiledShaderProgram {
@@ -65,6 +70,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_fogEnd", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_screenSize", "float", 2, List.of(0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_viewDistance", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_viewFlags", "int", 1, List.of(0.0F)),
 
         // player.glsl
         new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
@@ -110,6 +116,7 @@ public class ProgramBase extends CompiledShaderProgram {
         CANPIPE_SHADOW_CENTER_2,
         CANPIPE_SHADOW_CENTER_3,
         FRX_VIEW_DISTANCE,
+        CANPIPE_VIEW_FLAGS,
         FRX_EYE_POS,
         CANPIPE_FIXED_OR_DAY_TIME,
         FRX_RENDER_SECONDS,
@@ -160,6 +167,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.CANPIPE_SHADOW_CENTER_2 = getManallyAppliedUniform("canpipe_shadowCenter_2");
         this.CANPIPE_SHADOW_CENTER_3 = getManallyAppliedUniform("canpipe_shadowCenter_3");
         this.FRX_VIEW_DISTANCE = getManallyAppliedUniform("frx_viewDistance");
+        this.CANPIPE_VIEW_FLAGS = getManallyAppliedUniform("canpipe_viewFlags");
 
         // player.glsl
         this.FRX_EYE_POS = getManallyAppliedUniform("frx_eyePos");
@@ -273,6 +281,29 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_VIEW_DISTANCE != null) {
             this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
             this.FRX_VIEW_DISTANCE.upload();
+        }
+        if (this.CANPIPE_VIEW_FLAGS != null) {
+            BlockPos cameraBlockPos = BlockPos.containing(mc.gameRenderer.getMainCamera().getPosition());
+            int result = 0;
+            Iterable<TagKey<Fluid>> fluidTags = () -> {
+                return mc.level.getFluidState(cameraBlockPos).getTags().iterator();
+            };
+            for (var tag : fluidTags) {
+                result |= 1 << 0;  // frx_cameraInFluid
+                if (tag.equals(FluidTags.WATER)) {
+                    result |= 1 << 1;
+                }
+                if (tag.equals(FluidTags.LAVA)) {
+                    result |= 1 << 2;
+                }
+            }
+
+            if (mc.level.getBlockState(cameraBlockPos).is(Blocks.POWDER_SNOW)) {
+                result |= 1 << 3;
+            }
+
+            this.CANPIPE_VIEW_FLAGS.set(result);
+            this.CANPIPE_VIEW_FLAGS.upload();
         }
 
         if (this.FRX_EYE_POS != null) {
