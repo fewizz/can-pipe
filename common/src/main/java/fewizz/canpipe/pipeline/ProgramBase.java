@@ -81,6 +81,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_heldLight", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_heldLightInnerRadius", "float", 1, List.of((float) Math.PI)),
         new ShaderProgramConfig.Uniform("frx_heldLightOuterRadius", "float", 1, List.of((float) Math.PI)),
+        new ShaderProgramConfig.Uniform("canpipe_playerFlags", "int", 1, List.of(0.0F)),
 
         // world.glsl
         new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F)),
@@ -128,6 +129,7 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_HELD_LIGHT,
         FRX_HELD_LIGHT_OUTER_RADIUS,
         FRX_HELD_LIGHT_INNER_RADIUS,
+        CANPIPE_PLAYER_FLAGS,
 
         // world.glsl
         CANPIPE_RENDER_FRAMES,
@@ -187,6 +189,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_HELD_LIGHT = getManallyAppliedUniform("frx_heldLight");
         this.FRX_HELD_LIGHT_INNER_RADIUS = getManallyAppliedUniform("frx_heldLightInnerRadius");
         this.FRX_HELD_LIGHT_OUTER_RADIUS = getManallyAppliedUniform("frx_heldLightOuterRadius");
+        this.CANPIPE_PLAYER_FLAGS = getManallyAppliedUniform("canpipe_playerFlags");
 
         // world.glsl
         this.CANPIPE_RENDER_FRAMES = getManallyAppliedUniform("canpipe_renderFrames");
@@ -305,8 +308,9 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_VIEW_DISTANCE.upload();
         }
         if (this.CANPIPE_VIEW_FLAGS != null) {
-            BlockPos cameraBlockPos = BlockPos.containing(camera.getPosition());
             int result = 0;
+
+            BlockPos cameraBlockPos = BlockPos.containing(camera.getPosition());
             Iterable<TagKey<Fluid>> fluidTags = () -> {
                 return mc.level.getFluidState(cameraBlockPos).getTags().iterator();
             };
@@ -371,6 +375,41 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_HELD_LIGHT_OUTER_RADIUS != null && light != null) {
             this.FRX_HELD_LIGHT_OUTER_RADIUS.set(light.outerConeAngle);
             this.FRX_HELD_LIGHT_OUTER_RADIUS.upload();
+        }
+        if (this.CANPIPE_PLAYER_FLAGS != null) {
+            int result = 0;
+
+            BlockPos bp = BlockPos.containing(mc.player.getEyePosition());
+            Iterable<TagKey<Fluid>> fluidTags = () -> {
+                return mc.level.getFluidState(bp).getTags().iterator();
+            };
+            for (var tag : fluidTags) {
+                result |= 1 << 0;  // frx_playerEyeInFluid
+                if (tag.equals(FluidTags.WATER)) {
+                    result |= 1 << 1;
+                }
+                if (tag.equals(FluidTags.LAVA)) {
+                    result |= 1 << 2;
+                }
+            }
+
+            // i have questions about naming of some of them
+            result |= (mc.player.isCrouching() ? 1 : 0)                           << 3;
+            result |= (mc.player.isSwimming() ? 1 : 0)                            << 4;
+            result |= (mc.player.isShiftKeyDown() ? 1 : 0)                        << 5;
+            result |= (mc.player.isVisuallySwimming() ? 1 : 0)                    << 6;
+            result |= (mc.player.isCreative() ? 1 : 0)                            << 7;
+            result |= (mc.player.isSpectator() ? 1 : 0)                           << 8;
+            result |= (mc.player.isHandsBusy() ? 1 : 0)                           << 9;
+            result |= (mc.player.isOnFire() ? 1 : 0)                              << 10;
+            result |= (mc.player.isSleeping() ? 1 : 0)                            << 11;
+            result |= (mc.player.isSprinting() ? 1 : 0)                           << 12;
+            result |= (mc.player.isInWaterRainOrBubble() ? 1 : 0)                 << 13;
+            result |= (mc.level.getBlockState(bp).is(Blocks.POWDER_SNOW) ? 1 : 0) << 14;
+            result |= (mc.player.isFreezing() ? 1 : 0)                            << 15;
+
+            this.CANPIPE_PLAYER_FLAGS.set(result);
+            this.CANPIPE_PLAYER_FLAGS.upload();
         }
 
         // world

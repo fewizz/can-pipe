@@ -38,23 +38,24 @@ const int frx_effectBadOmen = 0; // TODO define
 const int frx_effectHeroOfTheVillage = 0; // TODO define
 const int frx_effectDarkness = 0; // TODO define
 
+uniform int canpipe_playerFlags;
 
-const int frx_playerEyeInFluid = 0;
-const int frx_playerEyeInWater = 0;
-const int frx_playerEyeInLava = 0;
-const int frx_playerSneaking = 0;
-const int frx_playerSwimming = 0;
-const int frx_playerSneakingPose = 0;
-const int frx_playerSwimmingPose = 0;
-const int frx_playerCreative = 0;
-const int frx_playerSpectator = 0;
-const int frx_playerRiding = 0;
-const int frx_playerOnFire = 0;
-const int frx_playerSleeping = 0;
-const int frx_playerSprinting = 0;
-const int frx_playerWet = 0;
-const int frx_playerEyeInSnow = 0;
-const int frx_playerIsFreezing = 0;
+#define frx_playerEyeInFluid   ((canpipe_playerFlags >>  0) & 1)
+#define frx_playerEyeInWater   ((canpipe_playerFlags >>  1) & 1)
+#define frx_playerEyeInLava    ((canpipe_playerFlags >>  2) & 1)
+#define frx_playerSneaking     ((canpipe_playerFlags >>  3) & 1)
+#define frx_playerSwimming     ((canpipe_playerFlags >>  4) & 1)
+#define frx_playerSneakingPose ((canpipe_playerFlags >>  5) & 1)
+#define frx_playerSwimmingPose ((canpipe_playerFlags >>  6) & 1)
+#define frx_playerCreative     ((canpipe_playerFlags >>  7) & 1)
+#define frx_playerSpectator    ((canpipe_playerFlags >>  8) & 1)
+#define frx_playerRiding       ((canpipe_playerFlags >>  9) & 1)
+#define frx_playerOnFire       ((canpipe_playerFlags >> 10) & 1)
+#define frx_playerSleeping     ((canpipe_playerFlags >> 11) & 1)
+#define frx_playerSprinting    ((canpipe_playerFlags >> 12) & 1)
+#define frx_playerWet          ((canpipe_playerFlags >> 13) & 1)
+#define frx_playerEyeInSnow    ((canpipe_playerFlags >> 14) & 1)
+#define frx_playerIsFreezing   ((canpipe_playerFlags >> 15) & 1)
 
 const float frx_playerMood = 1.0;
 uniform vec3 frx_eyePos;
