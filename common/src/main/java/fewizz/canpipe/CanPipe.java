@@ -48,24 +48,21 @@ public class CanPipe {
 
     public static class VertexFormatElements {
 
-        public static final VertexFormatElement AO =
-            VertexFormatElement.register(
-                6, 0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1
-            );
-
-        public static final VertexFormatElement SPRITE_INDEX =
-            VertexFormatElement.register(
-                7, 0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.UV, 1
-            );  // UV, because it uses vertexAttrib *I* Pointer in this case
-
-        public static final VertexFormatElement MATERIAL_INDEX =
-            VertexFormatElement.register(
+        public static final VertexFormatElement
+            MATERIAL_FLAGS = VertexFormatElement.register(
+                6, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.UV, 1
+            ),  // UV, because it uses vertexAttrib *I* Pointer in this case
+            AO = VertexFormatElement.register(
+                7, 0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1
+            ),
+            SPRITE_INDEX = VertexFormatElement.register(
                 8, 0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.UV, 1
-            );
-
-        public static final VertexFormatElement TANGENT =
-            VertexFormatElement.register(
-                9, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.NORMAL, 4
+            ),  // UV, because it uses vertexAttrib *I* Pointer in this case
+            MATERIAL_INDEX = VertexFormatElement.register(
+                9, 0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.UV, 1
+            ),
+            TANGENT = VertexFormatElement.register(
+                10, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.NORMAL, 4
             );
 
     }
@@ -77,7 +74,8 @@ public class CanPipe {
             /* 12 */.add("Color", VertexFormatElement.COLOR)
             /* 16 */.add("UV0", VertexFormatElement.UV0)
             /* 24 */.add("UV2", VertexFormatElement.UV2)
-            /* 28 */.add("Normal", VertexFormatElement.NORMAL).padding(1)
+            /* 28 */.add("Normal", VertexFormatElement.NORMAL)
+            /* 31 */.add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
             /* 32 */.add("AO", CanPipe.VertexFormatElements.AO)
             /* 36 */.add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             /* 40 */.add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
@@ -90,7 +88,8 @@ public class CanPipe {
             .add("UV0", VertexFormatElement.UV0)
             .add("UV1", VertexFormatElement.UV1)
             .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL).padding(1)
+            .add("Normal", VertexFormatElement.NORMAL)
+            .add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
             .add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             .add("Tangent", CanPipe.VertexFormatElements.TANGENT)
@@ -101,7 +100,8 @@ public class CanPipe {
             .add("Color", VertexFormatElement.COLOR)
             .add("UV0", VertexFormatElement.UV0)
             .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL).padding(1)
+            .add("Normal", VertexFormatElement.NORMAL)
+            .add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
             .add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             .add("Tangent", CanPipe.VertexFormatElements.TANGENT)
@@ -204,6 +204,10 @@ public class CanPipe {
 
         }
 
+    }
+
+    public static void trap() {
+        int i = 0;
     }
 
 }

@@ -11,6 +11,7 @@
     "GlStateManagerAccessor",
     "GlStateManagerMixin",
     "ItemModelResolverMixin",
+    "ItemRendererMixin",
     "ItemStackLayerRenderStateMixin",
     "ItemStackRenderStateMixin",
     "LevelRendererMixin",

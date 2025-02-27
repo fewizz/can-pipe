@@ -19,4 +19,6 @@ public interface VertexConsumerExtended extends VertexConsumer {
 
     void canpipe_setSharedMaterialMap(MaterialMap materialMap);
 
+    void canpipe_setSharedGlint(boolean glint);
+
 }

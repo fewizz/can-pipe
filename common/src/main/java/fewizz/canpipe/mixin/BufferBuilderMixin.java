@@ -73,6 +73,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private MaterialMap materialMap = null;
 
     @Unique
+    private byte materialFlags = 0;
+
+    @Unique
     private Supplier<TextureAtlasSprite> spriteSupplier = null;
 
     @Unique
@@ -120,6 +123,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 MemoryUtil.memPutByte(l+i*this.vertexSize+2, normalIntValue(tangent.z));
                 MemoryUtil.memPutByte(l+i*this.vertexSize+3, normalIntValue(1.0F));
             }
+        }
+        if ((l = beginElement(CanPipe.VertexFormatElements.MATERIAL_FLAGS)) != -1) {
+            MemoryUtil.memPutByte(l, this.materialFlags);
         }
 
         canpipe_setAO(1.0F);
@@ -263,6 +269,12 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
+    public void canpipe_setSharedGlint(boolean glint) {
+        if (glint) { this.materialFlags |= 1 << 0; }
+        else {       this.materialFlags &= ~(1 << 0); }
+    }
+
+    @Override
     public void canpipe_recomputeNormal(boolean recompute) {
         this.recomputeNormal = recompute;
     }
@@ -280,6 +292,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         return MemoryUtil.memGetFloat(o + (long) element*Float.BYTES);
     }
 
+    @Unique
     private static Vector3f computeTangent(
         float x0, float y0, float z0, float u0, float v0,
         float x1, float y1, float z1, float u1, float v1,

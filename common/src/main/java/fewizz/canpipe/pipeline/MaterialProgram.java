@@ -181,6 +181,7 @@ public class MaterialProgram extends ProgramBase {
                 "layout(location = "+format.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" :
                 "const vec3 in_normal = vec3(0.0, 1.0, 0.0)"
             ) + ";  // Normal\n"+
+            "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_FLAGS)+") in int in_materialFlags;\n"+
             (
                 format.contains(CanPipe.VertexFormatElements.AO) ?
                 "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao" :
@@ -218,6 +219,7 @@ public class MaterialProgram extends ProgramBase {
 
             flat out int canpipe_spriteIndex;
             flat out int canpipe_materialIndex;
+            flat out int canpipe_materialFlags;
 
             uniform vec3 canpipe_light0Direction;  // aka Light0_Direction
             uniform vec3 canpipe_light1Direction;  // aka Light1_Direction
@@ -246,6 +248,7 @@ public class MaterialProgram extends ProgramBase {
                 frx_vertexTangent = in_tangent;
                 canpipe_spriteIndex = in_spriteIndex;
                 canpipe_materialIndex = in_materialIndex;
+                canpipe_materialFlags = in_materialFlags;
 
                 if (frx_isGui && !frx_isHand) {
                     frx_vertexNormal.y *= -1.0;  // compat
@@ -294,6 +297,7 @@ public class MaterialProgram extends ProgramBase {
             in vec4 frx_vertexTangent;
             flat in int canpipe_spriteIndex;
             flat in int canpipe_materialIndex;
+            flat in int canpipe_materialFlags;
 
             in vec4 frx_var0;
             in vec4 frx_var1;

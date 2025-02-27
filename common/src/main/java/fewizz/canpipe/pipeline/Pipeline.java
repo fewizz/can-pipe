@@ -30,6 +30,7 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
+import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -301,7 +302,12 @@ public class Pipeline implements AutoCloseable {
             for (String textureName : JanksonUtils.listOfStrings(materailProgramO, "samplerImages")) {
                 if (textureName.contains(":")) {
                     var mc = Minecraft.getInstance();
-                    add(Optional.of(mc.getTextureManager().getTexture(ResourceLocation.parse(textureName))));
+                    var rl = ResourceLocation.parse(textureName);
+                    // compat, was changed in resource pack format v13
+                    if (rl.equals(ResourceLocation.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
+                        rl = ItemRenderer.ENCHANTED_GLINT_ITEM;
+                    }
+                    add(Optional.of(mc.getTextureManager().getTexture(rl)));
                 }
                 else {
                     add(getOrLoadOptionalTexture.apply(textureName));
