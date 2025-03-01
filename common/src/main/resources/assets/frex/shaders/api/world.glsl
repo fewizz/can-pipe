@@ -3,7 +3,7 @@
 // world.getTimeOfDay() - used for sun location calculations; [0.0-1.0]; for vanilla overworld: 0.0 - noon, 0.5 - midnight, https://www.desmos.com/calculator/6haoppz00u
 
 uniform int canpipe_renderFrames;
-uniform float canpipe_fixedOrDayTime;  // (dimensionType.fixedTime() or else world.getDayTime() % 24000) / 24000.0; [0.0-1.0]; 13.0/24.0 - night, 23.0/24.0 - sunrise
+uniform float canpipe_fixedOrDayTime;  // (dimensionType.fixedTime() or world.getDayTime() % 24000) / 24000.0; [0.0-1.0]; 13.0/24.0 - night, 23.0/24.0 - sunrise
 
 uniform float frx_renderSeconds;
 #define frx_renderFrames uint(canpipe_renderFrames)

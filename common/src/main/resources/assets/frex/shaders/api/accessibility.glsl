@@ -1,4 +1,8 @@
-// #define frx_highContrast 0
-// #define frx_damageTilt 1.0
-#define frx_glintStrength 1.0
-#define frx_glintSpeed 1.0
+uniform float frx_fovEffects;
+uniform float frx_distortionEffects;
+uniform   int frx_hideLightningFlashes;
+uniform float frx_darknessPulsing;
+uniform   int frx_highContrast;
+uniform float frx_damageTilt;
+uniform float frx_glintStrength;
+uniform float frx_glintSpeed;

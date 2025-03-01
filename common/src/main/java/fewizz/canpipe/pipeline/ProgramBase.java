@@ -46,6 +46,16 @@ import net.minecraft.world.phys.Vec3;
 public class ProgramBase extends CompiledShaderProgram {
 
     private static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+        // accessibility.glsl
+        new ShaderProgramConfig.Uniform("frx_fovEffects", "float", 1, List.of(1.0F)),
+        new ShaderProgramConfig.Uniform("frx_distortionEffects", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_hideLightningFlashes", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_darknessPulsing", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_highContrast", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_damageTilt", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_glintStrength", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_glintSpeed", "float", 1, List.of(0.0F)),
+
         // view.glsl
         new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_cameraView", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
@@ -102,6 +112,16 @@ public class ProgramBase extends CompiledShaderProgram {
     public final Set<Uniform> manuallyAppliedUniforms = new HashSet<>();
 
     public final Uniform
+        // accessibility.glsl
+        FRX_FOV_EFFECTS,
+        FRX_DISTORTION_EFFECTS,
+        FRX_HIDE_LIGHTNING_FLASHES,
+        FRX_DARKNESS_PULSING,
+        FRX_HIGH_CONTRAST,
+        FRX_DAMAGE_TILT,
+        FRX_GLINT_STRENGTH,
+        FRX_GLINT_SPEED,
+
         // view.glsl
         FRX_MODEL_TO_WORLD,
         CANPIPE_ORIGIN_TYPE,
@@ -163,6 +183,16 @@ public class ProgramBase extends CompiledShaderProgram {
             Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList(),
             Streams.concat(internalSamplers.stream(), samplers.stream()).map(s -> new ShaderProgramConfig.Sampler(s)).toList()
         );
+
+        // accessibility.glsl
+        this.FRX_FOV_EFFECTS = getManallyAppliedUniform("frx_fovEffects");
+        this.FRX_DISTORTION_EFFECTS = getManallyAppliedUniform("frx_distortionEffects");
+        this.FRX_HIDE_LIGHTNING_FLASHES = getManallyAppliedUniform("frx_hideLightningFlashes");
+        this.FRX_DARKNESS_PULSING = getManallyAppliedUniform("frx_darknessPulsing");
+        this.FRX_HIGH_CONTRAST = getManallyAppliedUniform("frx_highContrast");
+        this.FRX_DAMAGE_TILT = getManallyAppliedUniform("frx_damageTilt");
+        this.FRX_GLINT_STRENGTH = getManallyAppliedUniform("frx_glintStrength");
+        this.FRX_GLINT_SPEED = getManallyAppliedUniform("frx_glintSpeed");
 
         // view.glsl
         this.FRX_MODEL_TO_WORLD = getUniform("frx_modelToWorld");  // non-manual
@@ -236,6 +266,40 @@ public class ProgramBase extends CompiledShaderProgram {
         GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
         GlStateManager._glUseProgram(this.getProgramId());
         Camera camera = mc.gameRenderer.getMainCamera();
+
+        // accessibility.glsl
+        if (this.FRX_FOV_EFFECTS != null) {
+            this.FRX_FOV_EFFECTS.set((float)(double) mc.options.fovEffectScale().get());
+            this.FRX_FOV_EFFECTS.upload();
+        }
+        if (this.FRX_DISTORTION_EFFECTS != null) {
+            this.FRX_DISTORTION_EFFECTS.set((float)(double) mc.options.screenEffectScale().get());
+            this.FRX_DISTORTION_EFFECTS.upload();
+        }
+        if (this.FRX_HIDE_LIGHTNING_FLASHES != null) {
+            this.FRX_HIDE_LIGHTNING_FLASHES.set(mc.options.hideLightningFlash().get() ? 1 : 0);
+            this.FRX_HIDE_LIGHTNING_FLASHES.upload();
+        }
+        if (this.FRX_DARKNESS_PULSING != null) {
+            this.FRX_DARKNESS_PULSING.set((float)(double) mc.options.screenEffectScale().get());
+            this.FRX_DARKNESS_PULSING.upload();
+        }
+        if (this.FRX_HIGH_CONTRAST != null) {
+            this.FRX_HIGH_CONTRAST.set(mc.options.highContrast().get() ? 1 : 0);
+            this.FRX_HIGH_CONTRAST.upload();
+        }
+        if (this.FRX_DAMAGE_TILT != null) {
+            this.FRX_DAMAGE_TILT.set((float)(double) mc.options.damageTiltStrength().get());
+            this.FRX_DAMAGE_TILT.upload();
+        }
+        if (this.FRX_GLINT_STRENGTH != null) {
+            this.FRX_GLINT_STRENGTH.set((float)(double) mc.options.glintStrength().get());
+            this.FRX_GLINT_STRENGTH.upload();
+        }
+        if (this.FRX_GLINT_SPEED != null) {
+            this.FRX_GLINT_SPEED.set((float)(double) mc.options.glintSpeed().get());
+            this.FRX_GLINT_SPEED.upload();
+        }
 
         // view.glsl
         if (this.FRX_MODEL_TO_WORLD != null) {

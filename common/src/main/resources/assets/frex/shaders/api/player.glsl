@@ -63,5 +63,4 @@ uniform int canpipe_playerFlags;
 const float frx_playerMood = 1.0;
 uniform vec3 frx_eyePos;
 uniform vec2 frx_eyeBrightness;
-// TODO
-#define frx_smoothedEyeBrightness frx_eyeBrightness
+#define frx_smoothedEyeBrightness frx_eyeBrightness  // TODO
