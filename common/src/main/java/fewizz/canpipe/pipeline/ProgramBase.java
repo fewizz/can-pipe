@@ -34,6 +34,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -45,10 +46,6 @@ import net.minecraft.world.phys.Vec3;
 public class ProgramBase extends CompiledShaderProgram {
 
     private static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
-        // material program // TODO: move to `Program`? Actually unused
-        new ShaderProgramConfig.Uniform("canpipe_light0Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_light1Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
-
         // view.glsl
         new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_cameraView", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
@@ -82,6 +79,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_heldLightInnerRadius", "float", 1, List.of((float) Math.PI)),
         new ShaderProgramConfig.Uniform("frx_heldLightOuterRadius", "float", 1, List.of((float) Math.PI)),
         new ShaderProgramConfig.Uniform("canpipe_playerFlags", "int", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_effectsFlags", "int", 2, List.of(0.0F, 0.0F)),
 
         // world.glsl
         new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F)),
@@ -95,7 +93,8 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("canpipe_weatherGradients", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
 
         // fog.glsl
-        new ShaderProgramConfig.Uniform("frx_fogColor", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F))
+        new ShaderProgramConfig.Uniform("frx_fogColor", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_fogEnabled", "int", 1, List.of(1.0F))
     );
 
     final ResourceLocation location;
@@ -130,6 +129,7 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_HELD_LIGHT_OUTER_RADIUS,
         FRX_HELD_LIGHT_INNER_RADIUS,
         CANPIPE_PLAYER_FLAGS,
+        CANPIPE_EFFECTS_FLAGS,
 
         // world.glsl
         CANPIPE_RENDER_FRAMES,
@@ -143,7 +143,8 @@ public class ProgramBase extends CompiledShaderProgram {
         CANPIPE_WEATHER_GRADIENTS,
 
         // fog.glsl
-        FRX_FOG_COLOR;
+        FRX_FOG_COLOR,
+        FRX_FOG_ENABLED;
 
     ProgramBase(
         ResourceLocation location,
@@ -190,6 +191,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_HELD_LIGHT_INNER_RADIUS = getManallyAppliedUniform("frx_heldLightInnerRadius");
         this.FRX_HELD_LIGHT_OUTER_RADIUS = getManallyAppliedUniform("frx_heldLightOuterRadius");
         this.CANPIPE_PLAYER_FLAGS = getManallyAppliedUniform("canpipe_playerFlags");
+        this.CANPIPE_EFFECTS_FLAGS = getManallyAppliedUniform("canpipe_effectsFlags");
 
         // world.glsl
         this.CANPIPE_RENDER_FRAMES = getManallyAppliedUniform("canpipe_renderFrames");
@@ -204,6 +206,7 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // fog.glsl
         this.FRX_FOG_COLOR = getManallyAppliedUniform("frx_fogColor");
+        this.FRX_FOG_ENABLED = getManallyAppliedUniform("frx_fogEnabled");
     }
 
     private Uniform getManallyAppliedUniform(String name) {
@@ -223,9 +226,6 @@ public class ProgramBase extends CompiledShaderProgram {
         if (name.equals("FogEnd")) { name = "frx_fogEnd"; }
         if (name.equals("ScreenSize")) { name = "canpipe_screenSize"; }
         if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
-        if (name.equals("Light0_Direction")) { name = "canpipe_light0Direction"; }
-        if (name.equals("Light1_Direction")) { name = "canpipe_light1Direction"; }
-
         return super.getUniform(name);
     }
 
@@ -378,11 +378,9 @@ public class ProgramBase extends CompiledShaderProgram {
         }
         if (this.CANPIPE_PLAYER_FLAGS != null) {
             int result = 0;
-
             BlockPos bp = BlockPos.containing(mc.player.getEyePosition());
-            Iterable<TagKey<Fluid>> fluidTags = () -> {
-                return mc.level.getFluidState(bp).getTags().iterator();
-            };
+            Iterable<TagKey<Fluid>> fluidTags = ()
+                -> mc.level.getFluidState(bp).getTags().iterator();
             for (var tag : fluidTags) {
                 result |= 1 << 0;  // frx_playerEyeInFluid
                 if (tag.equals(FluidTags.WATER)) {
@@ -392,7 +390,6 @@ public class ProgramBase extends CompiledShaderProgram {
                     result |= 1 << 2;
                 }
             }
-
             // i have questions about naming of some of them
             result |= (mc.player.isCrouching() ? 1 : 0)                           << 3;
             result |= (mc.player.isSwimming() ? 1 : 0)                            << 4;
@@ -407,9 +404,46 @@ public class ProgramBase extends CompiledShaderProgram {
             result |= (mc.player.isInWaterRainOrBubble() ? 1 : 0)                 << 13;
             result |= (mc.level.getBlockState(bp).is(Blocks.POWDER_SNOW) ? 1 : 0) << 14;
             result |= (mc.player.isFreezing() ? 1 : 0)                            << 15;
-
             this.CANPIPE_PLAYER_FLAGS.set(result);
             this.CANPIPE_PLAYER_FLAGS.upload();
+        }
+        if (this.CANPIPE_EFFECTS_FLAGS != null) {
+            long result = 0;
+            result |= (mc.player.hasEffect(MobEffects.MOVEMENT_SPEED) ? 1L : 0L)      << 0;
+            result |= (mc.player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) ? 1L : 0L)   << 1;
+            result |= (mc.player.hasEffect(MobEffects.DIG_SPEED) ? 1L : 0L)           << 2;
+            result |= (mc.player.hasEffect(MobEffects.DIG_SLOWDOWN) ? 1L : 0L)        << 3;
+            result |= (mc.player.hasEffect(MobEffects.DAMAGE_BOOST) ? 1L : 0L)        << 4;
+            result |= (mc.player.hasEffect(MobEffects.HEAL) ? 1L : 0L)                << 5;
+            result |= (mc.player.hasEffect(MobEffects.HARM) ? 1L : 0L)                << 6;
+            result |= (mc.player.hasEffect(MobEffects.JUMP) ? 1L : 0L)                << 7;
+            result |= (mc.player.hasEffect(MobEffects.CONFUSION) ? 1L : 0L)           << 8;
+            result |= (mc.player.hasEffect(MobEffects.REGENERATION) ? 1L : 0L)        << 9;
+            result |= (mc.player.hasEffect(MobEffects.DAMAGE_RESISTANCE) ? 1L : 0L)   << 10;
+            result |= (mc.player.hasEffect(MobEffects.FIRE_RESISTANCE) ? 1L : 0L)     << 11;
+            result |= (mc.player.hasEffect(MobEffects.WATER_BREATHING) ? 1L : 0L)     << 12;
+            result |= (mc.player.hasEffect(MobEffects.INVISIBILITY) ? 1L : 0L)        << 13;
+            result |= (mc.player.hasEffect(MobEffects.BLINDNESS) ? 1L : 0L)           << 14;
+            result |= (mc.player.hasEffect(MobEffects.NIGHT_VISION) ? 1L : 0L)        << 15;
+            result |= (mc.player.hasEffect(MobEffects.HUNGER) ? 1L : 0L)              << 16;
+            result |= (mc.player.hasEffect(MobEffects.WEAKNESS) ? 1L : 0L)            << 17;
+            result |= (mc.player.hasEffect(MobEffects.POISON) ? 1L : 0L)              << 18;
+            result |= (mc.player.hasEffect(MobEffects.WITHER) ? 1L : 0L)              << 19;
+            result |= (mc.player.hasEffect(MobEffects.HEALTH_BOOST) ? 1L : 0L)        << 20;
+            result |= (mc.player.hasEffect(MobEffects.ABSORPTION) ? 1L : 0L)          << 21;
+            result |= (mc.player.hasEffect(MobEffects.SATURATION) ? 1L : 0L)          << 22;
+            result |= (mc.player.hasEffect(MobEffects.GLOWING) ? 1L : 0L)             << 23;
+            result |= (mc.player.hasEffect(MobEffects.LEVITATION) ? 1L : 0L)          << 24;
+            result |= (mc.player.hasEffect(MobEffects.LUCK) ? 1L : 0L)                << 25;
+            result |= (mc.player.hasEffect(MobEffects.UNLUCK) ? 1L : 0L)              << 26;
+            result |= (mc.player.hasEffect(MobEffects.SLOW_FALLING) ? 1L : 0L)        << 27;
+            result |= (mc.player.hasEffect(MobEffects.CONDUIT_POWER) ? 1L : 0L)       << 28;
+            result |= (mc.player.hasEffect(MobEffects.DOLPHINS_GRACE) ? 1L : 0L)      << 29;
+            result |= (mc.player.hasEffect(MobEffects.BAD_OMEN) ? 1L : 0L)            << 30;
+            result |= (mc.player.hasEffect(MobEffects.HERO_OF_THE_VILLAGE) ? 1L : 0L) << 31;
+            result |= (mc.player.hasEffect(MobEffects.DARKNESS) ? 1L : 0L)            << 32;
+            this.CANPIPE_EFFECTS_FLAGS.set((int)(result & 0xFFFFFFFFL), (int)(result >>> 32));
+            this.CANPIPE_EFFECTS_FLAGS.upload();
         }
 
         // world

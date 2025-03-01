@@ -33,7 +33,9 @@ public class MaterialProgram extends ProgramBase {
     static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
         new ShaderProgramConfig.Uniform("frxu_cascade", "int", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_renderTarget", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_alphaCutout", "float", 1, List.of(0.0F))
+        new ShaderProgramConfig.Uniform("canpipe_alphaCutout", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_light0Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_light1Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F))
     );
 
     public final Uniform FRXU_CASCADE;
@@ -385,6 +387,13 @@ public class MaterialProgram extends ProgramBase {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public Uniform getUniform(String name) {
+        if (name.equals("Light0_Direction")) { name = "canpipe_light0Direction"; }
+        if (name.equals("Light1_Direction")) { name = "canpipe_light1Direction"; }
+        return super.getUniform(name);
     }
 
     @Override

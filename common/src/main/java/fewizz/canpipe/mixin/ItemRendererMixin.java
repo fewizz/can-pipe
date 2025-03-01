@@ -32,7 +32,7 @@ public class ItemRendererMixin {
         CallbackInfoReturnable<VertexConsumer> cir
     ) {
         // prevent creation of VertexMultiConsumer.Double,
-        // pipeline will handle enchantment glint in material shader
+        // pipeline will handle enchanted item glint in material shader
         if (Pipelines.getCurrent() != null && glint) {
             VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
             vce.canpipe_setSharedGlint(true);
