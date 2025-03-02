@@ -180,6 +180,21 @@ public class Pipeline implements AutoCloseable {
             return result.get();
         };
 
+        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture = (String name) -> {
+            if (name.contains(":")) {
+                var mc = Minecraft.getInstance();
+                var rl = ResourceLocation.parse(name);
+                // compat, was changed in resource pack format v13
+                if (rl.equals(ResourceLocation.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
+                    rl = ItemRenderer.ENCHANTED_GLINT_ITEM;
+                }
+                return Optional.of(mc.getTextureManager().getTexture(rl));
+            }
+            else {
+                return Optional.of(getOrLoadOptionalTexture.apply(name).orElse(null));
+            }
+        };
+
         // "framebuffers"
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer = (String name) -> {
             return Optional.ofNullable(this.framebuffers.computeIfAbsent(name, _name -> {
@@ -279,7 +294,9 @@ public class Pipeline implements AutoCloseable {
             for (var passO : JanksonUtils.listOfObjects(passesJson, "passes")) {
                 Pass.load(
                     passO, optionValueByName,
-                    getOrLoadOptionalFramebuffer, getOrLoadProgram, getOrLoadOptionalTexture
+                    getOrLoadOptionalFramebuffer,
+                    getOrLoadProgram,
+                    getOrLoadPipelineOrResourcepackTexture
                 ).ifPresent(pass -> passes.add(pass));
             }
         };
@@ -300,18 +317,7 @@ public class Pipeline implements AutoCloseable {
         List<String> samplers = JanksonUtils.listOfStrings(materailProgramO, "samplers");
         List<Optional<? extends AbstractTexture>> samplerImages = new ArrayList<>() {{
             for (String textureName : JanksonUtils.listOfStrings(materailProgramO, "samplerImages")) {
-                if (textureName.contains(":")) {
-                    var mc = Minecraft.getInstance();
-                    var rl = ResourceLocation.parse(textureName);
-                    // compat, was changed in resource pack format v13
-                    if (rl.equals(ResourceLocation.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
-                        rl = ItemRenderer.ENCHANTED_GLINT_ITEM;
-                    }
-                    add(Optional.of(mc.getTextureManager().getTexture(rl)));
-                }
-                else {
-                    add(getOrLoadOptionalTexture.apply(textureName));
-                }
+                add(getOrLoadPipelineOrResourcepackTexture.apply(textureName));
             }
         }};
 

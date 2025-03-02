@@ -21,7 +21,6 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.resources.ResourceLocation;
 
 public class Pass extends PassBase {
 
@@ -154,7 +153,7 @@ public class Pass extends PassBase {
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
         Function<String, Program> getOrLoadProgram,
-        Function<String, Optional<Texture>> getOrLoadOptionalTexture
+        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture
     ) {
         String toggleConfig = passO.get(String.class, "toggleConfig");
 
@@ -183,15 +182,7 @@ public class Pass extends PassBase {
 
         List<Optional<? extends AbstractTexture>> textures = new ArrayList<>();
         for (String s : JanksonUtils.listOfStrings(passO, "samplerImages")) {
-            Optional<? extends AbstractTexture> t = null;
-            if (s.contains(":")) {
-                Minecraft mc = Minecraft.getInstance();
-                t = Optional.of(mc.getTextureManager().getTexture(ResourceLocation.parse(s)));
-            }
-            else {
-                t = getOrLoadOptionalTexture.apply(s);
-            }
-            textures.add(t);
+            textures.add(getOrLoadPipelineOrResourcepackTexture.apply(s));
         }
 
         int size = passO.getInt("size", 0);
