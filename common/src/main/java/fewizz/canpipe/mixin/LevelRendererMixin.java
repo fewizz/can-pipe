@@ -341,7 +341,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     Not cleanest way: setClearColor, copyDepthFrom and bindWrite are still called
     */
     @WrapOperation(
-        method = "method_62214", // lambda in the `addMainPass`
+        method = {"method_62214", "lambda$addMainPass$2"}, // lambda in the `addMainPass`
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;clear()V"
@@ -353,7 +353,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @ModifyExpressionValue(
-        method = "method_62214",
+        method = {"method_62214", "lambda$addMainPass$2"},
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/Sheets;translucentItemSheet()Lnet/minecraft/client/renderer/RenderType;"
@@ -367,7 +367,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @ModifyExpressionValue(
-        method = "method_62214",  // lambda in the `addMainPass`
+        method = {"method_62214", "lambda$addMainPass$2"},  // lambda in the `addMainPass`
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/Sheets;translucentItemSheet()Lnet/minecraft/client/renderer/RenderType;"
@@ -384,7 +384,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @Inject(
-        method = "method_62214",  // lambda in the `addMainPass`
+        method = {"method_62214", "lambda$addMainPass$2"},  // lambda in the `addMainPass`
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;endBatch()V",
@@ -400,7 +400,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @WrapOperation(
-        method = "method_62214",  // lambda in the `addMainPass`
+        method = {"method_62214", "lambda$addMainPass$2"},  // lambda in the `addMainPass`
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;copyDepthFrom(Lcom/mojang/blaze3d/pipeline/RenderTarget;)V",

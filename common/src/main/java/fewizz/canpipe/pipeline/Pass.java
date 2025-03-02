@@ -24,7 +24,6 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 
 public class Pass extends PassBase {
 
-
     static class FREXClear extends PassBase {
 
         final String name;
@@ -62,10 +61,10 @@ public class Pass extends PassBase {
         int layer
     ) {
         if (program.samplers.size() > textures.size()) {
-            CanPipe.LOGGER.warn("Program "+program.location+" has more samplers than textures provided by pass "+name);
+            CanPipe.LOGGER.warn("Program "+program.location+" has more samplers than textures provided by pass \""+name+"\"");
         }
         if (program.samplers.size() < textures.size()) {
-            CanPipe.LOGGER.warn("Program "+program.location+" has less samplers than textures provided by pass "+name);
+            CanPipe.LOGGER.warn("Program "+program.location+" has less samplers than textures provided by pass \""+name+"\"");
         }
         for (int i = 0; i < Math.min(program.samplers.size(), textures.size()); ++i) {
             String sampler = program.samplers.get(i);
