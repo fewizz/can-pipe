@@ -64,6 +64,7 @@ public class PipelineRaw {
 
                 var defaultValue = elementO.get(JsonPrimitive.class, "default").getValue();
                 String nameKey = elementO.get(String.class, "nameKey");
+                String descriptionKey = elementO.get(String.class, "descriptionKey");
 
                 var prefix = elementO.get(String.class, "prefix");
                 var choices = JanksonUtils.listOfStrings(elementO, "choices");
@@ -71,23 +72,32 @@ public class PipelineRaw {
 
                 Option.Element<?> element;
                 if (choices != null) {
-                    element = new Option.EnumElement(name, (String) defaultValue, nameKey, prefix, choices);
+                    element = new Option.EnumElement(
+                        name, (String) defaultValue, nameKey, descriptionKey,
+                        prefix, choices
+                    );
                 }
                 else if (defaultValue instanceof Number) {
                     var min = (Number) elementO.get(JsonPrimitive.class, "min").getValue();
                     var max = (Number) elementO.get(JsonPrimitive.class, "max").getValue();
                     if (defaultValue instanceof Double) {
-                        element = new Option.FloatElement(name, (double) defaultValue, nameKey, (double) min, (double) max);
+                        element = new Option.FloatElement(
+                            name, (double) defaultValue, nameKey, descriptionKey,
+                            (double) min, (double) max
+                        );
                     }
                     else if (defaultValue instanceof Long) {
-                        element = new Option.IntegerElement(name, (long) defaultValue, nameKey, (long) min, (long) max);
+                        element = new Option.IntegerElement(
+                            name, (long) defaultValue, nameKey, descriptionKey,
+                            (long) min, (long) max
+                        );
                     }
                     else {
                         throw new NotImplementedException();
                     }
                 }
                 else if (defaultValue instanceof Boolean) {
-                    element = new Option.BooleanElement(name, (boolean) defaultValue, nameKey);
+                    element = new Option.BooleanElement(name, (boolean) defaultValue, nameKey, descriptionKey);
                 }
                 else {
                     throw new NotImplementedException();

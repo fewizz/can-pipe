@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.resources.ResourceLocation;
 
 public class Option {
@@ -25,11 +27,13 @@ public class Option {
         public final String name;
         public final T defaultValue;
         public final String nameKey;
+        @Nullable public final String descriptionKey;
 
-        Element(String name, T defaultValue, String nameKey) {
+        Element(String name, T defaultValue, String nameKey, String descriptionKey) {
             this.name = name;
             this.defaultValue = defaultValue;
             this.nameKey = nameKey;
+            this.descriptionKey = descriptionKey;
         }
 
         public abstract T validate(Object o);
@@ -37,8 +41,9 @@ public class Option {
     }
 
     public static class BooleanElement extends Element<Boolean> {
-        BooleanElement(String name, Boolean defaultValue, String nameKey) {
-            super(name, defaultValue, nameKey);
+
+        BooleanElement(String name, Boolean defaultValue, String nameKey, String descriptionKey) {
+            super(name, defaultValue, nameKey, descriptionKey);
         }
 
         @Override
@@ -52,13 +57,10 @@ public class Option {
         public final List<String> choices;
 
         EnumElement(
-            String name,
-            String defaultValue,
-            String nameKey,
-            String prefix,
-            List<String> choices
+            String name, String defaultValue, String nameKey, String descriptionKey,
+            String prefix, List<String> choices
         ) {
-            super(name, defaultValue, nameKey);
+            super(name, defaultValue, nameKey, descriptionKey);
             Objects.requireNonNull(choices, "\"choices\" is null for enum option element \""+name+"\"");
             this.prefix = prefix;
             this.choices = choices;
@@ -74,16 +76,23 @@ public class Option {
         public final T min;
         public final T max;
 
-        NumberElement(String name, T defaultValue, String nameKey, T min, T max) {
-            super(name, defaultValue, nameKey);
+        NumberElement(
+            String name, T defaultValue, String nameKey, String descriptionKey,
+            T min, T max
+        ) {
+            super(name, defaultValue, nameKey, descriptionKey);
             this.min = min;
             this.max = max;
         }
     }
 
     public static class FloatElement extends NumberElement<Double> {
-        FloatElement(String name, Double defaultValue, String nameKey, Double min, Double max) {
-            super(name, defaultValue, nameKey, min, max);
+
+        FloatElement(
+            String name, Double defaultValue, String nameKey, String descriptionKey,
+            Double min, Double max
+        ) {
+            super(name, defaultValue, nameKey, descriptionKey, min, max);
         }
 
         @Override
@@ -93,8 +102,12 @@ public class Option {
     }
 
     public static class IntegerElement extends NumberElement<Long> {
-        IntegerElement(String name, Long defaultValue, String nameKey, Long min, Long max) {
-            super(name, defaultValue, nameKey, min, max);
+
+        IntegerElement(
+            String name, Long defaultValue, String nameKey, String descriptionKey,
+            Long min, Long max
+        ) {
+            super(name, defaultValue, nameKey, descriptionKey, min, max);
         }
 
         @Override

@@ -24,6 +24,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
@@ -115,8 +117,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         }
 
         @Override
-        protected void renderListBackground(GuiGraphics guiGraphics) {
-        }
+        protected void renderListBackground(GuiGraphics guiGraphics) {}
 
         @Override
         protected void renderScrollbar(GuiGraphics guiGraphics) {
@@ -171,9 +172,9 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         }
 
         public class OptionEntry extends Entry {
-            private final Component name;
-            private final int nameWidth;
-            private final AbstractWidget widget;
+            private final StringWidget nameWidget;
+            // private final int nameWidth;
+            private final AbstractWidget valueWidget;
 
             static final int RIGHT_SHIFT = 0;
             static final int BUTTON_WIDTH = Button.DEFAULT_WIDTH - 25 - RIGHT_SHIFT;
@@ -183,12 +184,12 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 PipelineRaw raw, Option.Element<?> e, Object appliedValue,
                 Consumer<Object> applyValue
             ) {
-                this.name = Component.translatable(e.nameKey);
-                this.nameWidth = minecraft.font.width(this.name);
+                this.nameWidget = new StringWidget(Component.translatable(e.nameKey), minecraft.font);
+                // this.nameWidth = minecraft.font.width(this.nameWidget);
 
                 if (e instanceof Option.BooleanElement boolElement) {
                     var initialValue = appliedValue != null ? boolElement.validate(appliedValue) : boolElement.defaultValue;
-                    this.widget = Checkbox.builder(Component.empty(), minecraft.font)
+                    this.valueWidget = Checkbox.builder(Component.empty(), minecraft.font)
                         .selected(initialValue)
                         .onValueChange((checkbox, state) -> {
                             applyValue.accept(state);
@@ -197,6 +198,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 }
                 else if (e instanceof Option.FloatElement floatElement) {
                     NumberFormat numberFormat = NumberFormat.getInstance();
+                    numberFormat.setMinimumFractionDigits(1);
                     numberFormat.setMaximumFractionDigits(3);
 
                     Function<Double, Component> valueToComponent = (Double v) -> {
@@ -205,7 +207,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                     var initialValue = appliedValue != null ? (double) appliedValue : floatElement.defaultValue;
 
-                    this.widget = new AbstractSliderButton(
+                    this.valueWidget = new AbstractSliderButton(
                         0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
                         valueToComponent.apply(initialValue),
                         (initialValue - floatElement.min) / (floatElement.max - floatElement.min)
@@ -233,7 +235,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                     var initialValue = appliedValue != null ? (long) appliedValue : intElement.defaultValue;
 
-                    this.widget = new AbstractSliderButton(
+                    this.valueWidget = new AbstractSliderButton(
                         0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
                         valueToComponent.apply(initialValue),
                         (double)(initialValue - intElement.min) / (double)(intElement.max - intElement.min)
@@ -255,14 +257,16 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     };
                 }
                 else if (e instanceof Option.EnumElement enumElement) {
-                    this.widget = CycleButton.builder((String s) -> Component.literal(s.substring(0, 1).toUpperCase() + s.substring(1)))
+                    this.valueWidget = CycleButton.builder((String s) -> Component.literal(
+                        (s.substring(0, 1).toUpperCase() + s.substring(1)).replace("_", " ")
+                    ))
                         .withValues(enumElement.choices)
                         .withInitialValue(appliedValue != null ? (String) appliedValue : enumElement.defaultValue)
                         .displayOnlyValue()
                         .create(
                             0, 0,
                             BUTTON_WIDTH, BUTTON_HEIGHT,
-                            null,  // no name needed
+                            Component.empty(),  // no name needed
                             (CycleButton<String> button, String choice) -> {
                                 applyValue.accept(choice);
                             }
@@ -271,33 +275,37 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 else {
                     throw new NotImplementedException();
                 }
+
+                this.nameWidget.setTooltip(
+                    e.descriptionKey != null
+                    ? Tooltip.create(Component.translatable(e.descriptionKey))
+                    : null
+                );
             }
 
             @Override
             public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovering, float partialTick) {
-                guiGraphics.drawString(
-                    minecraft.font,
-                    this.name,
-                    PipelineOptionsList.this.width / 2 - nameWidth - 5 + RIGHT_SHIFT,
-                    top + (height - minecraft.font.lineHeight) / 2,
-                    0xFFFFFFFF
+                this.nameWidget.setPosition(
+                    PipelineOptionsList.this.width / 2 - this.nameWidget.getWidth() - 5 + RIGHT_SHIFT,
+                    top + (height - minecraft.font.lineHeight) / 2
                 );
+                this.nameWidget.render(guiGraphics, mouseX, mouseY, partialTick);
 
-                this.widget.setPosition(
+                this.valueWidget.setPosition(
                     PipelineOptionsList.this.width / 2 + 5 + RIGHT_SHIFT,
-                    top + (height - this.widget.getHeight()) / 2
+                    top + (height - this.valueWidget.getHeight()) / 2
                 );
-                this.widget.render(guiGraphics, mouseX, mouseY, partialTick);
+                this.valueWidget.render(guiGraphics, mouseX, mouseY, partialTick);
             }
 
             @Override
             public List<? extends GuiEventListener> children() {
-                return List.of(this.widget);
+                return List.of(this.valueWidget);
             }
 
             @Override
             public List<? extends NarratableEntry> narratables() {
-                return ImmutableList.of(this.widget);
+                return ImmutableList.of(this.valueWidget);
             }
         }
     }
