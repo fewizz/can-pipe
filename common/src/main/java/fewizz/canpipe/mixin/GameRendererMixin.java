@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
@@ -41,6 +42,9 @@ public class GameRendererMixin implements GameRendererAccessor {
     private float renderDistance;
 
     @Shadow
+    private float fovModifier;
+
+    @Shadow
     Matrix4f getProjectionMatrix(float fov) { return null; }
 
     @Unique
@@ -51,6 +55,9 @@ public class GameRendererMixin implements GameRendererAccessor {
 
     @Unique
     private long canpipe_renderNanos = -1;
+
+    @Unique
+    private Vector3f canpipe_cameraPos = null;
 
     @Unique
     private Vector3f canpipe_lastCameraPos = null;
@@ -93,8 +100,13 @@ public class GameRendererMixin implements GameRendererAccessor {
         // not sure why, but i can't initialize them above (mixin bug?)
         this.canpipe_viewMatrix = new Matrix4f();
         this.canpipe_lastViewMatrix = null;
+
         this.canpipe_projectionMatrix = new Matrix4f();
         this.canpipe_lastProjectionMatrix = null;
+
+        this.canpipe_cameraPos = new Vector3f();
+        this.canpipe_lastCameraPos = null;
+
         this.canpipe_shadowViewMatrix = new Matrix4f();
 
         this.canpipe_shadowProjectionMatrices = new Matrix4f[] {
@@ -114,11 +126,6 @@ public class GameRendererMixin implements GameRendererAccessor {
     void onResize(int w, int h, CallbackInfo ci) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) { p.onWindowSizeChanged(w, h); }
-    }
-
-    @Inject(method = "renderLevel", at = @At("HEAD"))
-    void onBeforeCameraUpdate(CallbackInfo ci) {
-        this.canpipe_lastCameraPos = this.mainCamera.getPosition().toVector3f();
     }
 
     @Inject(
@@ -153,14 +160,17 @@ public class GameRendererMixin implements GameRendererAccessor {
         if (this.canpipe_lastViewMatrix == null) {
             this.canpipe_lastViewMatrix = new Matrix4f(viewMatrix);
             this.canpipe_lastProjectionMatrix = new Matrix4f(projectionMatrix);
+            this.canpipe_lastCameraPos = new Vector3f(this.mainCamera.getPosition().toVector3f());
         }
         else {
-            this.canpipe_lastViewMatrix.set(canpipe_viewMatrix);
-            this.canpipe_lastProjectionMatrix.set(canpipe_projectionMatrix);
+            this.canpipe_lastViewMatrix.set(this.canpipe_viewMatrix);
+            this.canpipe_lastProjectionMatrix.set(this.canpipe_projectionMatrix);
+            this.canpipe_lastCameraPos.set(this.canpipe_cameraPos);
         }
 
         this.canpipe_viewMatrix.set(viewMatrix);
         this.canpipe_projectionMatrix.set(projectionMatrix);
+        this.canpipe_cameraPos.set(this.mainCamera.getPosition().toVector3f());
 
         if (p.skyShadows != null) {
             Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
@@ -216,6 +226,21 @@ public class GameRendererMixin implements GameRendererAccessor {
         this.minecraft.mainRenderTarget.bindWrite(true);
     }
 
+    @ModifyArg(
+        method = "renderLevel",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/GameRenderer;getFov(Lnet/minecraft/client/Camera;FZ)F"
+        ),
+        index = 2
+    )
+    private boolean fixZeroFovOnFirstFrame(boolean useFovSetting) {
+        if (this.fovModifier == 0.0) {
+            return false;
+        }
+        return useFovSetting;
+    }
+
     @Inject(
         method = "renderLevel",
         at = @At(
@@ -261,10 +286,7 @@ public class GameRendererMixin implements GameRendererAccessor {
 
     @Override
     public Vector3f canpipe_getLastCameraPos() {
-        return
-            this.canpipe_lastCameraPos != null ?
-            this.canpipe_lastCameraPos :
-            this.mainCamera.getPosition().toVector3f();
+        return this.canpipe_lastCameraPos;
     }
 
     @Override

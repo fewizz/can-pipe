@@ -20,21 +20,11 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.ShaderDefines;
-import net.minecraft.client.renderer.ShaderProgram;
-import net.minecraft.resources.ResourceLocation;
 
 public class CanPipe {
     public static final String MOD_ID = "canpipe";
     public static final Logger LOGGER = LoggerFactory.getLogger("can-pipe");
     public static final Jankson JANKSON = Jankson.builder().build();
-
-    // TODO remove if unused
-    public static final ShaderProgram BLIT_DEPTH_PROGRAM = new ShaderProgram(
-        ResourceLocation.fromNamespaceAndPath("canpipe", "blit_depth"),
-        DefaultVertexFormat.POSITION,
-        ShaderDefines.EMPTY
-    );
 
     public static Path getCompilationErrorsDirPath() {
         Minecraft mc = Minecraft.getInstance();
@@ -204,10 +194,6 @@ public class CanPipe {
 
         }
 
-    }
-
-    public static void trap() {
-        int i = 0;
     }
 
 }

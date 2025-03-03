@@ -167,7 +167,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         for (int cascade = 0; cascade < 4; ++cascade) {
             for (var shadowProgram : p.shadowPrograms.values()) {
-                shadowProgram.FRXU_CASCADE.set(cascade);
+                if (shadowProgram.FRXU_CASCADE != null) {
+                    shadowProgram.FRXU_CASCADE.set(cascade);
+                }
             }
 
             Frustum shadowFrustum = new Frustum(

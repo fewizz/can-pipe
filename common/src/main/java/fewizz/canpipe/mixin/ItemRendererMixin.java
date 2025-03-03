@@ -9,7 +9,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -47,7 +46,6 @@ public class ItemRendererMixin {
     private static void onRenderItemEnd(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
         if (vertexConsumer instanceof VertexConsumerExtended vce) {
             vce.canpipe_setSharedGlint(false);
-            CanPipe.trap();
         }
     }
 

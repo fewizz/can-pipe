@@ -15,7 +15,9 @@ public class GFX {
         GL33C.glEnable(GL33C.GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
 
-    public static void glFramebufferTextureLayer(int target, int attachment, int texture, int level, int layer) {
+    public static void glFramebufferTextureLayer(
+        int target, int attachment, int texture, int level, int layer
+    ) {
         GL33C.glFramebufferTextureLayer(target, attachment, texture, level, layer);
     }
 
