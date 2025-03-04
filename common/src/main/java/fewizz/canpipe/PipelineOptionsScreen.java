@@ -173,7 +173,6 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
         public class OptionEntry extends Entry {
             private final StringWidget nameWidget;
-            // private final int nameWidth;
             private final AbstractWidget valueWidget;
 
             static final int RIGHT_SHIFT = 0;
@@ -185,7 +184,6 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 Consumer<Object> applyValue
             ) {
                 this.nameWidget = new StringWidget(Component.translatable(e.nameKey), minecraft.font);
-                // this.nameWidth = minecraft.font.width(this.nameWidget);
 
                 if (e instanceof Option.BooleanElement boolElement) {
                     var initialValue = appliedValue != null ? boolElement.validate(appliedValue) : boolElement.defaultValue;

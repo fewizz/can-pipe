@@ -71,7 +71,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                     current.appliedOptions
                 ));
             },
-            null
+            supplier -> supplier.get()
         ) {
             @Override
             public void setX(int x) {
