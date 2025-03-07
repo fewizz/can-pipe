@@ -7,15 +7,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.KHRDebug;
 
 import com.google.common.collect.Streams;
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.light.Light;
@@ -64,9 +67,12 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("canpipe_originType", "int", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_viewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("frx_inverseViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_lastViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_projectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("frx_inverseProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_lastProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("frx_inverseShadowViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_shadowViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_0", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_1", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
@@ -128,8 +134,11 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_CAMERA_POS,
         FRX_CAMERA_VIEW,
         FRX_LAST_CAMERA_POS,
+        FRX_INVERSE_VIEW_MATRIX,
         FRX_LAST_VIEW_MATRIX,
+        FRX_INVERSE_PROJECTION_MATRIX,
         FRX_LAST_PROJECTION_MATRIX,
+        FRX_INVERSE_SHADOW_VIEW_MATRIX,
         FRX_SHADOW_VIEW_MATRIX,
         CANPIPE_SHADOW_PROJECTION_MATRIX_0,
         CANPIPE_SHADOW_PROJECTION_MATRIX_1,
@@ -200,9 +209,12 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_CAMERA_POS = getManallyAppliedUniform("frx_cameraPos");
         this.FRX_CAMERA_VIEW = getManallyAppliedUniform("frx_cameraView");
         this.FRX_LAST_CAMERA_POS = getManallyAppliedUniform("frx_lastCameraPos");
+        this.FRX_INVERSE_VIEW_MATRIX = getUniform("frx_inverseViewMatrix");  // non-manual
         this.FRX_LAST_VIEW_MATRIX = getManallyAppliedUniform("frx_lastViewMatrix");
+        this.FRX_INVERSE_PROJECTION_MATRIX = getUniform("frx_inverseProjectionMatrix");  // non-manual
         this.FRX_LAST_PROJECTION_MATRIX = getManallyAppliedUniform("frx_lastProjectionMatrix");
         this.FRX_SHADOW_VIEW_MATRIX = getManallyAppliedUniform("frx_shadowViewMatrix");
+        this.FRX_INVERSE_SHADOW_VIEW_MATRIX = getManallyAppliedUniform("frx_inverseShadowViewMatrix");
         this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 = getManallyAppliedUniform("canpipe_shadowProjectionMatrix_0");
         this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 = getManallyAppliedUniform("canpipe_shadowProjectionMatrix_1");
         this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 = getManallyAppliedUniform("canpipe_shadowProjectionMatrix_2");
@@ -257,6 +269,17 @@ public class ProgramBase extends CompiledShaderProgram {
         if (name.equals("ScreenSize")) { name = "canpipe_screenSize"; }
         if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
         return super.getUniform(name);
+    }
+
+    @Override
+    public void setDefaultUniforms(Mode mode, Matrix4f viewMatrix, Matrix4f projectionMatrix, Window window) {
+        super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, window);
+        if (this.FRX_INVERSE_VIEW_MATRIX != null) {
+            this.FRX_INVERSE_VIEW_MATRIX.set(viewMatrix.invert(new Matrix4f()));
+        }
+        if (this.FRX_INVERSE_PROJECTION_MATRIX != null) {
+            this.FRX_INVERSE_PROJECTION_MATRIX.set(projectionMatrix.invert(new Matrix4f()));
+        }
     }
 
     public void setFREXUniforms() {
@@ -334,6 +357,10 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_SHADOW_VIEW_MATRIX != null) {
             this.FRX_SHADOW_VIEW_MATRIX.set(gra.canpipe_getShadowViewMatrix());
             this.FRX_SHADOW_VIEW_MATRIX.upload();
+        }
+        if (this.FRX_INVERSE_SHADOW_VIEW_MATRIX != null) {
+            this.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(gra.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
+            this.FRX_INVERSE_SHADOW_VIEW_MATRIX.upload();
         }
         if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 != null) {
             this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(gra.canpipe_getShadowProjectionMatrices()[0]);

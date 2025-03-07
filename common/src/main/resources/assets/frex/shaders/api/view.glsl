@@ -17,11 +17,11 @@ uniform int canpipe_originType;
 #define frx_normalModelMatrix mat3(frx_viewMatrix)
 
 uniform mat4 frx_viewMatrix;  // aka ModelViewMat
-#define frx_inverseViewMatrix inverse(frx_viewMatrix)
+uniform mat4 frx_inverseViewMatrix;
 uniform mat4 frx_lastViewMatrix;
 
 uniform mat4 frx_projectionMatrix;  // aka ProjMat
-#define frx_inverseProjectionMatrix inverse(frx_projectionMatrix)
+uniform mat4 frx_inverseProjectionMatrix;
 uniform mat4 frx_lastProjectionMatrix;
 
 #define frx_viewProjectionMatrix (frx_projectionMatrix*frx_viewMatrix)
@@ -32,7 +32,7 @@ const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO
 const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO
 
 uniform mat4 frx_shadowViewMatrix;
-#define frx_inverseShadowViewMatrix inverse(frx_shadowViewMatrix)
+uniform mat4 frx_inverseShadowViewMatrix;
 
 uniform mat4 canpipe_shadowProjectionMatrix_0;
 uniform mat4 canpipe_shadowProjectionMatrix_1;
