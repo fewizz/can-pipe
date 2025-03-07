@@ -55,13 +55,10 @@ public class MaterialProgram extends ProgramBase {
         boolean depth
     ) throws IOException, CompilationException {
         super(
-            location,
-            vertexFormat,
+            location, vertexFormat,
             List.of("frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"),
-            samplers,
-            DEFAULT_UNIFORMS,
-            vertexShader,
-            fragmentShader
+            samplers, DEFAULT_UNIFORMS,
+            vertexShader, fragmentShader
         );
         this.vertexFormat = vertexFormat;
         this.depth = depth;
@@ -139,32 +136,6 @@ public class MaterialProgram extends ProgramBase {
             usedMaterialIDs.add(id);
         }
 
-        String uvMapping =
-            """
-            uniform sampler2D canpipe_spritesExtents;
-
-            vec2 frx_mapNormalizedUV(vec2 coord) {
-                vec4 extents = texelFetch(
-                    canpipe_spritesExtents,
-                    ivec2(canpipe_spriteIndex % 1024, canpipe_spriteIndex / 1024),
-                    0
-                );
-                return extents.xy + coord * (extents.zw - extents.xy);
-            }
-
-            vec2 frx_normalizeMappedUV(vec2 coord) {
-                if (canpipe_spriteIndex == -1) {
-                    return coord;
-                }
-                vec4 extents = texelFetch(
-                    canpipe_spritesExtents,
-                    ivec2(canpipe_spriteIndex % 1024, canpipe_spriteIndex / 1024),
-                    0
-                );
-                return (coord - extents.xy) / (extents.zw - extents.xy); // (coord / vec2(textureSize(frxs_baseColor, 0))) - extents.xy;
-            }
-            """;
-
         vertexSrc =
             "#define CANPIPE_MATERIAL_SHADER\n"+
             (depthPass ? "#define DEPTH_PASS\n" : "")+
@@ -206,30 +177,10 @@ public class MaterialProgram extends ProgramBase {
             ) + ";\n"+
             """
 
-            out vec4 frx_vertex;
-            out vec2 frx_texcoord;
-            out vec4 frx_vertexColor;
-            out vec3 frx_vertexNormal;
-            out vec3 frx_vertexLight;
-            out float frx_distance;
-            out vec4 frx_vertexTangent;
-
-            out vec4 frx_var0;
-            out vec4 frx_var1;
-            out vec4 frx_var2;
-            out vec4 frx_var3;
-
-            flat out int canpipe_spriteIndex;
-            flat out int canpipe_materialIndex;
-            flat out int canpipe_materialFlags;
-
-            uniform vec3 canpipe_light0Direction;  // aka Light0_Direction
-            uniform vec3 canpipe_light1Direction;  // aka Light1_Direction
-
+            #include frex:shaders/api/vertex.glsl
             #include frex:shaders/api/view.glsl
 
             """ +
-            uvMapping +
             materialsVertexSrc +
             vertexSrc +
             """
@@ -290,53 +241,15 @@ public class MaterialProgram extends ProgramBase {
 
             layout (depth_unchanged) out float gl_FragDepth;
 
-            in vec4 frx_vertex;
-            in vec2 frx_texcoord;
-            in vec4 frx_vertexColor;
-            in vec3 frx_vertexNormal;
-            in vec3 frx_vertexLight;
-            in float frx_distance;
-            in vec4 frx_vertexTangent;
-            flat in int canpipe_spriteIndex;
-            flat in int canpipe_materialIndex;
-            flat in int canpipe_materialFlags;
-
-            in vec4 frx_var0;
-            in vec4 frx_var1;
-            in vec4 frx_var2;
-            in vec4 frx_var3;
-
-            vec4 frx_sampleColor = vec4(0.0);
-            vec4 frx_fragColor = vec4(0.0);
-            vec3 frx_fragLight = vec3(0.0);
-            bool frx_fragEnableAo = false;
-            bool frx_fragEnableDiffuse = false;
-            float frx_fragEmissive = 0.0;
-
-            #ifdef PBR_ENABLED
-                float frx_fragReflectance = 0.04;
-                vec3 frx_fragNormal = vec3(0.0, 0.0, 1.0);
-                float frx_fragHeight = 0.0;
-                float frx_fragRoughness = 1.0;
-                float frx_fragAo = 1.0;
-            #endif // PBR
+            #include frex:shaders/api/fragment.glsl
+            #include frex:shaders/api/sampler.glsl
+            #include frex:shaders/api/material.glsl
+            #include frex:shaders/api/view.glsl
 
             uniform int canpipe_renderTarget;
             uniform float canpipe_alphaCutout;
 
-            uniform sampler2D frxs_baseColor;  // aka Sampler0
-            uniform sampler2D frxs_lightmap;   // aka Sampler2
-
-            #ifdef SHADOW_MAP_PRESENT
-                uniform sampler2DArrayShadow frxs_shadowMap;
-                uniform sampler2DArray frxs_shadowMapTexture;
-            #endif
-
-            #include frex:shaders/api/material.glsl
-            #include frex:shaders/api/view.glsl
-
             """ +
-            uvMapping +
             materialsFragmentSrc +
             fragmentSrc +
             """
@@ -348,8 +261,8 @@ public class MaterialProgram extends ProgramBase {
                 frx_fragEnableAo = frx_matDisableAo == 0;
                 frx_fragEnableDiffuse = frx_matDisableDiffuse == 0;
 
-                #ifdef PBR_ENABLED
-                    // TODO
+                #if defined PBR_ENABLED
+                    // TODO?
                 #endif
 
                 frx_fragColor = frx_sampleColor * frx_vertexColor;
@@ -372,8 +285,16 @@ public class MaterialProgram extends ProgramBase {
             """;
 
         try {
-            var vertexShader = Shader.load(vertexShaderLocation, vertexSrc, Type.VERTEX, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer);
-            var fragmentShader = Shader.load(fragmentShaderLocation, fragmentSrc, Type.FRAGMENT, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer);
+            var vertexShader = Shader.load(
+                vertexShaderLocation, vertexSrc,
+                Type.VERTEX, glslVersion, options, appliedOptions,
+                getShaderSource, shadowFramebuffer
+            );
+            var fragmentShader = Shader.load(
+                fragmentShaderLocation, fragmentSrc,
+                Type.FRAGMENT, glslVersion, options, appliedOptions,
+                getShaderSource, shadowFramebuffer
+            );
 
             return new MaterialProgram(
                 location.withSuffix("-"),
