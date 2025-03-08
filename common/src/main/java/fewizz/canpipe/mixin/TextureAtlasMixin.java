@@ -26,14 +26,10 @@ import net.minecraft.resources.ResourceLocation;
 @Mixin(TextureAtlas.class)
 public class TextureAtlasMixin implements TextureAtlasExtended {
 
-    @Shadow
-    private ResourceLocation location;
+    @Shadow private ResourceLocation location;
+    @Shadow private Map<ResourceLocation, TextureAtlasSprite> texturesByName;
 
-    @Shadow
-    private Map<ResourceLocation, TextureAtlasSprite> texturesByName;
-
-    @Unique
-    AbstractTexture spritesData;
+    @Unique AbstractTexture spritesData;
 
     @Inject(method = "upload", at = @At("TAIL"))
     void onUploadEnd(CallbackInfo ci) {

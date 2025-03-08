@@ -49,55 +49,38 @@ import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
 
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin implements LevelRendererExtended {
 
-    @Final
-    @Shadow
-    private List<Entity> visibleEntities;
+    @Shadow @Final private List<Entity> visibleEntities;
+    @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
+    @Shadow @Final private RenderBuffers renderBuffers;
 
-    @Shadow
-    @Final
-    private LevelTargetBundle targets = new LevelTargetBundle();
+    @Shadow abstract void checkPoseStack(PoseStack poseStack);
+    @Shadow abstract void renderSectionLayer(RenderType renderType, double x, double y, double z, Matrix4f viewMatrix, Matrix4f projectionMatrix);
+    @Shadow abstract void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode);
+    @Shadow abstract boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list);
+    @Shadow abstract void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list);
+    @Shadow abstract void compileSections(Camera camera);
+    @Shadow abstract void applyFrustum(Frustum frustum);
+    @Shadow abstract void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f);
 
-    @Shadow
-    @Final
-    private RenderBuffers renderBuffers;
+    @Unique volatile private boolean canpipe_isRenderingShadows = false;
+    @Unique private float canpipe_eyeBlockLight = 0.0F;
+    @Unique private float canpipe_eyeSkyLight = 0.0F;
+    @Unique private float canpipe_smoothedEyeBlockLight = 0.0F;
+    @Unique private float canpipe_smoothedEyeSkyLight = 0.0F;
 
-    @Unique
-    volatile public boolean canpipe_isRenderingShadows = false;
-
-    @Override
-    public boolean canpipe_getIsRenderingShadows() {
-        return this.canpipe_isRenderingShadows;
-    }
-
-    @Shadow
-    abstract void checkPoseStack(PoseStack poseStack);
-
-    @Shadow
-    abstract void renderSectionLayer(RenderType renderType, double x, double y, double z, Matrix4f viewMatrix, Matrix4f projectionMatrix);
-
-    @Shadow
-    abstract void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode);
-
-    @Shadow
-    abstract boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list);
-
-    @Shadow
-    abstract void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list);
-
-    @Shadow
-    abstract void compileSections(Camera camera);
-
-    @Shadow
-    abstract void applyFrustum(Frustum frustum);
-
-    @Shadow
-    abstract void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f);
+    @Override public boolean canpipe_getIsRenderingShadows() { return this.canpipe_isRenderingShadows; }
+    @Override public float canpipe_getEyeBlockLight() { return this.canpipe_eyeBlockLight; }
+    @Override public float canpipe_getEyeSkyLight() { return this.canpipe_eyeSkyLight; }
+    @Override public float canpipe_getSmoothedEyeBlockLight() { return this.canpipe_smoothedEyeBlockLight; }
+    @Override public float canpipe_getSmoothedEyeSkyLight() { return this.canpipe_smoothedEyeSkyLight; }
 
     @Inject(
         method = "renderLevel",
@@ -122,9 +105,30 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
 
+        Minecraft mc = Minecraft.getInstance();
+
+        var eyePosBlockPos = BlockPos.containing(mc.player.getEyePosition());
+        int blockLight = mc.level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(eyePosBlockPos);
+        int skyLight = mc.level.getLightEngine().getLayerListener(LightLayer.SKY).getLightValue(eyePosBlockPos);
+        skyLight = Math.max(0, skyLight - mc.level.getSkyDarken());
+
+        this.canpipe_eyeBlockLight = blockLight / 15.0F;
+        this.canpipe_eyeSkyLight = skyLight / 15.0F;
+
+        float a = 1.0F - (float) Math.pow(Math.E, -1.0 / p.brightnessSmoothingFrames);
+
+        this.canpipe_smoothedEyeBlockLight =
+            this.canpipe_eyeBlockLight > this.canpipe_smoothedEyeBlockLight && !p.smoothBrightnessBidirectionaly
+            ? this.canpipe_eyeBlockLight
+            : Mth.lerp(a, this.canpipe_smoothedEyeBlockLight, this.canpipe_eyeBlockLight);
+        
+        this.canpipe_smoothedEyeSkyLight =
+            this.canpipe_eyeSkyLight > this.canpipe_smoothedEyeSkyLight && !p.smoothBrightnessBidirectionaly
+            ? this.canpipe_eyeSkyLight
+            : Mth.lerp(a, this.canpipe_smoothedEyeSkyLight, this.canpipe_eyeSkyLight);
+
         this.canpipe_isRenderingShadows = true;
 
-        Minecraft mc = Minecraft.getInstance();
         GameRendererAccessor gra = ((GameRendererAccessor) mc.gameRenderer);
         float renderDistance = mc.gameRenderer.getRenderDistance();
         Vector3f toSunDir = p.getSunOrMoonDir(mc.level, new Vector3f());

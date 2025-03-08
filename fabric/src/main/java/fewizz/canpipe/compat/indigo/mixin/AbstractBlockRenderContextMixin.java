@@ -26,13 +26,8 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
 @Mixin(value=AbstractBlockRenderContext.class)
 public class AbstractBlockRenderContextMixin {
 
-    @Final
-    @Shadow(remap = false)
-    protected AoCalculator aoCalc;
-
-    @Final
-    @Shadow(remap = false)
-    protected BlockRenderInfo blockInfo;
+    @Shadow(remap = false) @Final protected AoCalculator aoCalc;
+    @Shadow(remap = false) @Final protected BlockRenderInfo blockInfo;
 
     @Inject(
         method = "bufferQuad",

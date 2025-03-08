@@ -17,8 +17,7 @@ import net.minecraft.server.packs.resources.ReloadableResourceManager;
 @Mixin(ReloadableResourceManager.class)
 public abstract class ReloadableResourceManagerMixin {
 
-    @Shadow
-    abstract public void registerReloadListener(PreparableReloadListener preparableReloadListener);
+    @Shadow abstract public void registerReloadListener(PreparableReloadListener preparableReloadListener);
 
     @Inject(method = "registerReloadListener", at = @At("HEAD"))
     void onRegister(PreparableReloadListener listener, CallbackInfo ci) {

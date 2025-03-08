@@ -10,8 +10,7 @@ import net.minecraft.world.item.Item;
 @Mixin(ItemStackRenderState.class)
 public class ItemStackRenderStateMixin implements ItemStackRenderStateExtended {
 
-    @Unique
-    Item item;
+    @Unique Item item;
 
     @Override
     public void setItem(Item item) {

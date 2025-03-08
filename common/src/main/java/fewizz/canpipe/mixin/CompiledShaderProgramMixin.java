@@ -21,9 +21,7 @@ import net.minecraft.client.renderer.ShaderProgramConfig;
 @Mixin(CompiledShaderProgram.class)
 public class CompiledShaderProgramMixin {
 
-    @Shadow
-    @Final
-    private Object2IntMap<String> samplerTextures;
+    @Shadow @Final private Object2IntMap<String> samplerTextures;
 
     @WrapOperation(
         method = "apply",

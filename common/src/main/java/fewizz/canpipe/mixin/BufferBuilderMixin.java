@@ -34,52 +34,22 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
-    @Shadow
-    private int vertices;
+    @Shadow private int vertices;
+    @Shadow private int elementsToFill;
+    @Shadow @Final private VertexFormat.Mode mode;
+    @Shadow @Final private ByteBufferBuilder buffer;
+    @Shadow @Final public VertexFormat format;
+    @Shadow @Final private int vertexSize;
+    @Shadow @Final private int[] offsetsByElement;
+    @Shadow private long vertexPointer = -1L;
 
-    @Shadow
-    private int elementsToFill;
+    @Shadow abstract protected long beginElement(VertexFormatElement vertexFormatElement);
+    @Shadow private static byte normalIntValue(float f) {return 0;}
 
-    @Shadow
-    @Final
-    private VertexFormat.Mode mode;
-
-    @Shadow
-    @Final
-    private ByteBufferBuilder buffer;
-
-    @Shadow
-    @Final
-    public VertexFormat format;
-
-    @Shadow
-    @Final
-    private int vertexSize;
-
-    @Shadow
-    @Final
-    private int[] offsetsByElement;
-
-    @Shadow
-    private long vertexPointer = -1L;
-
-    @Shadow
-    abstract protected long beginElement(VertexFormatElement vertexFormatElement);
-
-    @Shadow
-    private static byte normalIntValue(float f) {return 0;}
-
-    @Unique
-    private MaterialMap materialMap = null;
-
-    @Unique
-    private byte materialFlags = 0;
-
-    @Unique
-    private Supplier<TextureAtlasSprite> spriteSupplier = null;
-
-    @Unique
-    private boolean recomputeNormal = false;
+    @Unique private MaterialMap materialMap = null;
+    @Unique private byte materialFlags = 0;
+    @Unique private Supplier<TextureAtlasSprite> spriteSupplier = null;
+    @Unique private boolean recomputeNormal = false;
 
     @Inject(
         method = "endLastVertex",

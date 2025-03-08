@@ -26,6 +26,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.util.Mth;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererAccessor {
@@ -35,8 +36,7 @@ public class GameRendererMixin implements GameRendererAccessor {
     @Shadow private float renderDistance;
     @Shadow private float fovModifier;
 
-    @Shadow
-    Matrix4f getProjectionMatrix(float fov) { return null; }
+    @Shadow Matrix4f getProjectionMatrix(float fov) { return null; }
 
     @Unique private int canpipe_frame = -1;
     @Unique private long canpipe_renderStartNano = -1;

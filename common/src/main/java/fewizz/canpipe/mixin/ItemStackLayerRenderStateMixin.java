@@ -13,8 +13,7 @@ import net.minecraft.client.renderer.item.ItemStackRenderState;
 @Mixin(ItemStackRenderState.LayerRenderState.class)
 public class ItemStackLayerRenderStateMixin {
 
-    @Shadow(aliases = {"this$0"})
-    ItemStackRenderState field_55345;
+    @Shadow(aliases = {"this$0"}) ItemStackRenderState field_55345;
 
     @ModifyArg(
         method = "render",

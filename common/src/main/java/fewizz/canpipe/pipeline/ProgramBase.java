@@ -24,6 +24,7 @@ import fewizz.canpipe.GFX;
 import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.LightTextureExtended;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Camera;
@@ -43,7 +44,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
@@ -95,6 +95,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("canpipe_darknessScale", "float", 1, List.of(1.0F)),
         new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_eyeBrightness", "float", 2, List.of(0.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_smoothedEyeBrightness", "float", 2, List.of(0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_heldLight", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_heldLightInnerRadius", "float", 1, List.of((float) Math.PI)),
         new ShaderProgramConfig.Uniform("frx_heldLightOuterRadius", "float", 1, List.of((float) Math.PI)),
@@ -160,6 +161,7 @@ public class ProgramBase extends CompiledShaderProgram {
         CANPIPE_DARKNESS_SCALE,
         FRX_EYE_POS,
         FRX_EYE_BRIGHTNESS,
+        FRX_SMOOTHED_EYE_BRIGHTNESS,
         FRX_HELD_LIGHT,
         FRX_HELD_LIGHT_OUTER_RADIUS,
         FRX_HELD_LIGHT_INNER_RADIUS,
@@ -237,6 +239,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.CANPIPE_DARKNESS_SCALE = getManallyAppliedUniform("canpipe_darknessScale");
         this.FRX_EYE_POS = getManallyAppliedUniform("frx_eyePos");
         this.FRX_EYE_BRIGHTNESS = getManallyAppliedUniform("frx_eyeBrightness");
+        this.FRX_SMOOTHED_EYE_BRIGHTNESS = getManallyAppliedUniform("frx_smoothedEyeBrightness");
         this.FRX_HELD_LIGHT = getManallyAppliedUniform("frx_heldLight");
         this.FRX_HELD_LIGHT_INNER_RADIUS = getManallyAppliedUniform("frx_heldLightInnerRadius");
         this.FRX_HELD_LIGHT_OUTER_RADIUS = getManallyAppliedUniform("frx_heldLightOuterRadius");
@@ -295,8 +298,10 @@ public class ProgramBase extends CompiledShaderProgram {
         Pipeline p = Pipelines.getCurrent();
 
         GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
-        GlStateManager._glUseProgram(this.getProgramId());
+        LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
         Camera camera = mc.gameRenderer.getMainCamera();
+
+        GlStateManager._glUseProgram(this.getProgramId());
 
         // accessibility.glsl
         if (this.FRX_FOV_EFFECTS != null) {
@@ -453,16 +458,12 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_EYE_POS.upload();
         }
         if (this.FRX_EYE_BRIGHTNESS != null) {
-            // copied from canvas thoughtlessly
-            var eyePosBlockPos = BlockPos.containing(mc.player.getEyePosition());
-            int blockLight = mc.level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(eyePosBlockPos);
-            int skyLight = mc.level.getLightEngine().getLayerListener(LightLayer.SKY).getLightValue(eyePosBlockPos);
-            skyLight = Math.max(0, skyLight - mc.level.getSkyDarken());
-            this.FRX_EYE_BRIGHTNESS.set(
-                blockLight / 15.0F,
-                skyLight / 15.0F
-            );
+            this.FRX_EYE_BRIGHTNESS.set(lre.canpipe_getEyeBlockLight(), lre.canpipe_getEyeSkyLight());
             this.FRX_EYE_BRIGHTNESS.upload();
+        }
+        if (this.FRX_SMOOTHED_EYE_BRIGHTNESS != null) {
+            this.FRX_SMOOTHED_EYE_BRIGHTNESS.set(lre.canpipe_getSmoothedEyeBlockLight(), lre.canpipe_getSmoothedEyeSkyLight());
+            this.FRX_SMOOTHED_EYE_BRIGHTNESS.upload();
         }
 
         Light light = ((Supplier<Light>)() -> {

@@ -54,6 +54,9 @@ public class Pipeline implements AutoCloseable {
     public final ResourceLocation location;
     public final Map<Option.Element<?>, Object> appliedOptions;
 
+    public final boolean smoothBrightnessBidirectionaly;
+    public final int brightnessSmoothingFrames;
+
     public final @Nullable SkyShadows skyShadows;
     public final @Nullable Sky sky;
 
@@ -79,8 +82,6 @@ public class Pipeline implements AutoCloseable {
     private final List<PassBase> onResizePasses = new ArrayList<>();
     private boolean runInitPasses = true;
     private boolean runResizePasses = true;
-
-    // final VertexFormat blockVertexFormat;
 
     public Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) {
         this.location = rawPipeline.location;
@@ -149,6 +150,8 @@ public class Pipeline implements AutoCloseable {
 
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
+        this.smoothBrightnessBidirectionaly = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);
+        this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
 
         JsonObject skyO = pipelineJson.getObject("sky");
         if (skyO != null) {

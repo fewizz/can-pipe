@@ -12,8 +12,7 @@ import net.minecraft.client.renderer.LightTexture;
 @Mixin(LightTexture.class)
 public class LightTextureMixin implements LightTextureExtended {
 
-    @Unique
-    private float darknessScale = 1.0F;
+    @Unique private float darknessScale = 1.0F;
 
     @ModifyExpressionValue(
         method = "updateLightTexture",

@@ -14,10 +14,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 @Mixin(value = QuadViewImpl.class, remap = false)
 public abstract class QuadViewImplMixin implements QuadViewExtended {
 
-    @Unique
-    protected final float[] ao = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
-    @Unique
-    protected TextureAtlasSprite sprite;
+    @Unique protected final float[] ao = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
+    @Unique protected TextureAtlasSprite sprite;
 
     @Override
     public TextureAtlasSprite canpipe_getSprite() {

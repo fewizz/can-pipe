@@ -19,14 +19,9 @@ import net.minecraft.client.renderer.RenderType.CompositeState;
 @Mixin(RenderType.CompositeState.CompositeStateBuilder.class)
 public class CompositeStateBuilderMixin {
 
-    @Shadow
-    private RenderStateShard.ShaderStateShard shaderState;
-
-    @Shadow
-    private RenderStateShard.OutputStateShard outputState;
-
-    @Shadow
-    private RenderStateShard.EmptyTextureStateShard textureState;
+    @Shadow private RenderStateShard.ShaderStateShard shaderState;
+    @Shadow private RenderStateShard.OutputStateShard outputState;
+    @Shadow private RenderStateShard.EmptyTextureStateShard textureState;
 
     @Inject(
         method = "createCompositeState(Lnet/minecraft/client/renderer/RenderType$OutlineProperty;)Lnet/minecraft/client/renderer/RenderType$CompositeState;",
