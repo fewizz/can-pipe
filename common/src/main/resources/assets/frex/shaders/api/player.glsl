@@ -1,7 +1,7 @@
 uniform float frx_effectModifier;
 
 uniform float canpipe_darknessFactor;
-#define frx_darknessEffectFactor canpipe_darknessFactor  // because Lumi checks for definition (header.glsl)
+#define frx_darknessEffectFactor canpipe_darknessFactor  // because Lumi checks for macro definition
 
 uniform vec3 frx_eyePos;
 
@@ -66,4 +66,4 @@ uniform ivec2 canpipe_effectsFlags;
 #define frx_effectBadOmen          ((canpipe_effectsFlags[0] >> 30) & 1)
 #define frx_effectHeroOfTheVillage ((canpipe_effectsFlags[0] >> 31) & 1)
 #define frx_effectDarkness         ((canpipe_effectsFlags[1] >>  0) & 1)
-// for the future
+// for the future                  ((canpipe_effectsFlags[1] >>  1) & 1)

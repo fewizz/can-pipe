@@ -1,4 +1,4 @@
-uniform vec3 frx_cameraView;  // TODO define
+uniform vec3 frx_cameraView;
 const vec3 frx_entityView = vec3(0.0);  // TODO define
 uniform vec3 frx_cameraPos;
 uniform vec3 frx_lastCameraPos;
@@ -63,7 +63,7 @@ vec4 frx_shadowCenter(int index) {
 uniform vec2 canpipe_screenSize;  // aka ScreenSize
 #define frx_viewWidth (canpipe_screenSize.x)
 #define frx_viewHeight (canpipe_screenSize.y)
-const float frx_viewBrightness = 1.0; // TODO
+uniform float frx_viewBrightness;
 
 uniform float frx_viewDistance;
 

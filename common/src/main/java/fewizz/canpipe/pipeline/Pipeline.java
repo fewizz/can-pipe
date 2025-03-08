@@ -289,7 +289,7 @@ public class Pipeline implements AutoCloseable {
         };
 
         // passes
-        BiConsumer<String, List<PassBase>> parsePasses = (name, passes) -> {
+        BiConsumer<String, List<PassBase>> loadPasses = (name, passes) -> {
             JsonObject passesJson = pipelineJson.getObject(name);
             if (passesJson == null) {
                 return;
@@ -304,22 +304,22 @@ public class Pipeline implements AutoCloseable {
             }
         };
 
-        parsePasses.accept("onInit", this.onInitPasses);
-        parsePasses.accept("onResize", this.onResizePasses);
+        loadPasses.accept("onInit", this.onInitPasses);
+        loadPasses.accept("onResize", this.onResizePasses);
 
-        parsePasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
-        parsePasses.accept("fabulous", this.fabulousPasses);
-        parsePasses.accept("afterRenderHand", this.afterRenderHandPasses);
+        loadPasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
+        loadPasses.accept("fabulous", this.fabulousPasses);
+        loadPasses.accept("afterRenderHand", this.afterRenderHandPasses);
 
         // "materialProgram"
-        JsonObject materailProgramO = pipelineJson.getObject("materialProgram");
+        JsonObject materailProgram = pipelineJson.getObject("materialProgram");
 
-        var materialVertexShaderLocation = ResourceLocation.parse(materailProgramO.get(String.class, "vertexSource"));
-        var materialFragmentShaderLocation = ResourceLocation.parse(materailProgramO.get(String.class, "fragmentSource"));
+        var materialVertexShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "vertexSource"));
+        var materialFragmentShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "fragmentSource"));
 
-        List<String> samplers = JanksonUtils.listOfStrings(materailProgramO, "samplers");
+        List<String> samplers = JanksonUtils.listOfStrings(materailProgram, "samplers");
         List<Optional<? extends AbstractTexture>> samplerImages = new ArrayList<>() {{
-            for (String textureName : JanksonUtils.listOfStrings(materailProgramO, "samplerImages")) {
+            for (String textureName : JanksonUtils.listOfStrings(materailProgram, "samplerImages")) {
                 add(getOrLoadPipelineOrResourcepackTexture.apply(textureName));
             }
         }};

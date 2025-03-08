@@ -89,6 +89,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_fogEnd", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_screenSize", "float", 2, List.of(0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_viewDistance", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_viewBrightness", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_viewFlags", "int", 1, List.of(0.0F)),
 
         // player.glsl
@@ -156,6 +157,7 @@ public class ProgramBase extends CompiledShaderProgram {
         CANPIPE_SHADOW_CENTER_2,
         CANPIPE_SHADOW_CENTER_3,
         FRX_VIEW_DISTANCE,
+        FRX_VIEW_BRIGHTNESS,
         CANPIPE_VIEW_FLAGS,
 
         // player.glsl
@@ -235,6 +237,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.CANPIPE_SHADOW_CENTER_2 = getManuallyAppliedUniform("canpipe_shadowCenter_2");
         this.CANPIPE_SHADOW_CENTER_3 = getManuallyAppliedUniform("canpipe_shadowCenter_3");
         this.FRX_VIEW_DISTANCE = getManuallyAppliedUniform("frx_viewDistance");
+        this.FRX_VIEW_BRIGHTNESS = getManuallyAppliedUniform("frx_viewBrightness");
         this.CANPIPE_VIEW_FLAGS = getManuallyAppliedUniform("canpipe_viewFlags");
 
         // player.glsl
@@ -419,6 +422,10 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_VIEW_DISTANCE != null) {
             this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
             this.FRX_VIEW_DISTANCE.upload();
+        }
+        if (this.FRX_VIEW_BRIGHTNESS != null) {
+            this.FRX_VIEW_BRIGHTNESS.set(mc.options.gamma().get().floatValue());
+            this.FRX_VIEW_BRIGHTNESS.upload();
         }
         if (this.CANPIPE_VIEW_FLAGS != null) {
             int result = 0;
