@@ -123,6 +123,7 @@ public class GameRendererMixin implements GameRendererAccessor {
             return;
         }
 
+        float pt = deltaTracker.getGameTimeDeltaPartialTick(false);
         this.canpipe_frame += 1;
         this.canpipe_renderNanos = System.nanoTime() - this.canpipe_renderStartNano;
 
@@ -142,7 +143,7 @@ public class GameRendererMixin implements GameRendererAccessor {
         this.canpipe_cameraPos.set(this.mainCamera.getPosition().toVector3f());
 
         if (p.skyShadows != null) {
-            Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
+            Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f(), pt);
             Vector3f sunPosOffset = toSunDir.mul(this.renderDistance + 32, new Vector3f());
 
             this.canpipe_shadowViewMatrix.setLookAt(

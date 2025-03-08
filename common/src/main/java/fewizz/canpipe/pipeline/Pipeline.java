@@ -453,9 +453,9 @@ public class Pipeline implements AutoCloseable {
         }
     }
 
-    public Vector3f getSunOrMoonDir(Level level, Vector3f result) {
+    public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {
         // 0.0 - noon, 0.5 - midnight
-        float hourAngle = level.getSunAngle(0.0F);
+        float hourAngle = level.getSunAngle(partialTicks);
         float zenithAngle = this.sky != null ? this.sky.defaultZenithAngle() : 0.0F;
         long ticks = (level.dimensionType().fixedTime().orElse(level.getDayTime())) % 24000L;
 

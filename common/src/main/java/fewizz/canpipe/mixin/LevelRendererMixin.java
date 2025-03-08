@@ -106,6 +106,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         }
 
         Minecraft mc = Minecraft.getInstance();
+        float pt = deltaTracker.getGameTimeDeltaPartialTick(false);
 
         var eyePosBlockPos = BlockPos.containing(mc.player.getEyePosition());
         int blockLight = mc.level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(eyePosBlockPos);
@@ -131,7 +132,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         GameRendererAccessor gra = ((GameRendererAccessor) mc.gameRenderer);
         float renderDistance = mc.gameRenderer.getRenderDistance();
-        Vector3f toSunDir = p.getSunOrMoonDir(mc.level, new Vector3f());
+        Vector3f toSunDir = p.getSunOrMoonDir(mc.level, new Vector3f(), pt);
         Vector3f fromSunDir = toSunDir.negate(new Vector3f());
 
         var camPos = camera.getPosition();

@@ -300,10 +300,15 @@ public class ProgramBase extends CompiledShaderProgram {
     public void setFREXUniforms() {
         Minecraft mc = Minecraft.getInstance();
         Pipeline p = Pipelines.getCurrent();
-
         GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
         Camera camera = mc.gameRenderer.getMainCamera();
+        float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        Vec3 eyePosition = new Vec3(
+            Mth.lerp(pt, mc.player.xo, mc.player.getX()),
+            Mth.lerp(pt, mc.player.yo, mc.player.getY()) + mc.player.getEyeHeight(),
+            Mth.lerp(pt, mc.player.zo, mc.player.getZ())
+        );
 
         GlStateManager._glUseProgram(this.getProgramId());
 
@@ -458,7 +463,7 @@ public class ProgramBase extends CompiledShaderProgram {
             this.CANPIPE_DARKNESS_FACTOR.upload();
         }
         if (this.FRX_EYE_POS != null) {
-            this.FRX_EYE_POS.set(mc.player.getEyePosition().toVector3f());
+            this.FRX_EYE_POS.set(eyePosition.toVector3f());
             this.FRX_EYE_POS.upload();
         }
         if (this.FRX_EYE_BRIGHTNESS != null) {
@@ -502,7 +507,7 @@ public class ProgramBase extends CompiledShaderProgram {
         }
         if (this.CANPIPE_PLAYER_FLAGS != null) {
             int result = 0;
-            BlockPos bp = BlockPos.containing(mc.player.getEyePosition());
+            BlockPos bp = BlockPos.containing(eyePosition);
             Iterable<TagKey<Fluid>> fluidTags = ()
                 -> mc.level.getFluidState(bp).getTags().iterator();
             for (var tag : fluidTags) {
@@ -593,11 +598,11 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_WORLD_TIME.upload();
         }
         if (this.FRX_SKY_LIGHT_VECTOR != null) {
-            this.FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
+            this.FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f(), pt));
             this.FRX_SKY_LIGHT_VECTOR.upload();
         }
         if (this.FRX_SKY_ANGLE_RADIANS != null) {
-            this.FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(0.0F));
+            this.FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(pt));
             this.FRX_SKY_ANGLE_RADIANS.upload();
         }
         if (this.CANPIPE_WORLD_FLAGS != null) {

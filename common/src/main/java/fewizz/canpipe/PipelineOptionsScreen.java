@@ -145,7 +145,13 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
 
             @Override
-            public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovering, float partialTick) {
+            public void render(
+                GuiGraphics guiGraphics, int index,
+                int top, int left,
+                int width, int height,
+                int mouseX, int mouseY,
+                boolean hovering, float partialTick
+            ) {
                 guiGraphics.drawString(
                     minecraft.font,
                     this.name,
@@ -212,7 +218,9 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     ) {
                         @Override
                         protected void updateMessage() {
-                            this.setMessage(valueToComponent.apply((this.value * (floatElement.max - floatElement.min)) + floatElement.min));
+                            this.setMessage(valueToComponent.apply(
+                                (this.value * (floatElement.max - floatElement.min)) + floatElement.min
+                            ));
                         }
 
                         @Override
@@ -240,7 +248,9 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     ) {
                         @Override
                         protected void updateMessage() {
-                            setMessage(valueToComponent.apply((long)((this.value * (intElement.max - intElement.min)) + intElement.min)));
+                            setMessage(valueToComponent.apply(
+                                (long) ((this.value * (intElement.max - intElement.min)) + intElement.min)
+                            ));
                         }
 
                         @Override
@@ -282,7 +292,13 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
 
             @Override
-            public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean hovering, float partialTick) {
+            public void render(
+                GuiGraphics guiGraphics, int index,
+                int top, int left,
+                int width, int height,
+                int mouseX, int mouseY,
+                boolean hovering, float partialTick
+            ) {
                 this.nameWidget.setPosition(
                     PipelineOptionsList.this.width / 2 - this.nameWidget.getWidth() - 5 + RIGHT_SHIFT,
                     top + (height - minecraft.font.lineHeight) / 2
