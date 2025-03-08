@@ -40,6 +40,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -92,7 +93,7 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // player.glsl
         new ShaderProgramConfig.Uniform("frx_effectModifier", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_darknessScale", "float", 1, List.of(1.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_darknessFactor", "float", 1, List.of(1.0F)),
         new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_eyeBrightness", "float", 2, List.of(0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_smoothedEyeBrightness", "float", 2, List.of(0.0F, 0.0F)),
@@ -158,7 +159,7 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // player.glsl
         FRX_EFFECT_MODIFIER,
-        CANPIPE_DARKNESS_SCALE,
+        CANPIPE_DARKNESS_FACTOR,
         FRX_EYE_POS,
         FRX_EYE_BRIGHTNESS,
         FRX_SMOOTHED_EYE_BRIGHTNESS,
@@ -236,7 +237,7 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // player.glsl
         this.FRX_EFFECT_MODIFIER = getManallyAppliedUniform("frx_effectModifier");
-        this.CANPIPE_DARKNESS_SCALE = getManallyAppliedUniform("canpipe_darknessScale");
+        this.CANPIPE_DARKNESS_FACTOR = getManallyAppliedUniform("canpipe_darknessFactor");
         this.FRX_EYE_POS = getManallyAppliedUniform("frx_eyePos");
         this.FRX_EYE_BRIGHTNESS = getManallyAppliedUniform("frx_eyeBrightness");
         this.FRX_SMOOTHED_EYE_BRIGHTNESS = getManallyAppliedUniform("frx_smoothedEyeBrightness");
@@ -448,10 +449,10 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_EFFECT_MODIFIER.set(effectModifier);
             this.FRX_EFFECT_MODIFIER.upload();
         }
-        if (this.CANPIPE_DARKNESS_SCALE != null) {
-            float darknessFactor = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getDarknessScale();
-            this.CANPIPE_DARKNESS_SCALE.set(darknessFactor);
-            this.CANPIPE_DARKNESS_SCALE.upload();
+        if (this.CANPIPE_DARKNESS_FACTOR != null) {
+            float darknessScale = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getDarknessScale();
+            this.CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));
+            this.CANPIPE_DARKNESS_FACTOR.upload();
         }
         if (this.FRX_EYE_POS != null) {
             this.FRX_EYE_POS.set(mc.player.getEyePosition().toVector3f());

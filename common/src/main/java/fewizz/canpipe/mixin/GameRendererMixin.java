@@ -26,7 +26,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.util.Mth;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererAccessor {

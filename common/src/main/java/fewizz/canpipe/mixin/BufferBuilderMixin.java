@@ -146,12 +146,12 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 x2, y2, z2, u2, v2
             );
             Vector3f tangent = tangentPair.getLeft();
-            boolean inverse = tangentPair.getRight();
+            boolean inverseBitangent = tangentPair.getRight();
             for (int i = offsetToFirstVertex; i <= 0; ++i) {
                 MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+0, normalIntValue(tangent.x));
                 MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+1, normalIntValue(tangent.y));
                 MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+2, normalIntValue(tangent.z));
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+3, normalIntValue(inverse ? -1.0F : 1.0F));
+                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+3, normalIntValue(inverseBitangent ? -1.0F : 1.0F));
             }
         }
     }
@@ -286,17 +286,17 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         float x1, float y1, float z1, float u1, float v1,
         float x2, float y2, float z2, float u2, float v2
     ) {
-        float dv0 = v0 - v1;
-        float du0 = u0 - u1;
-        float dv1 = v2 - v1;
-        float du1 = u2 - u1;
+        float du0 = u2 - u1;
+        float dv0 = -(v2 - v1);
+        float du1 = u0 - u1;
+        float dv1 = -(v0 - v1);
 
-        float dx0 = x0 - x1;
-        float dy0 = y0 - y1;
-        float dz0 = z0 - z1;
-        float dx1 = x2 - x1;
-        float dy1 = y2 - y1;
-        float dz1 = z2 - z1;
+        float dx0 = x2 - x1;
+        float dy0 = y2 - y1;
+        float dz0 = z2 - z1;
+        float dx1 = x0 - x1;
+        float dy1 = y0 - y1;
+        float dz1 = z0 - z1;
 
         // we don't care about magnitudes, assume that TBN has orthonormal basis
         float determinantSign = Math.signum(du0*dv1 - du1*dv0);
@@ -327,16 +327,16 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         float x1, float y1, float z1,
         float x2, float y2, float z2
     ) {
-        float dx0 = x0 - x1;
-        float dy0 = y0 - y1;
-        float dz0 = z0 - z1;
-        float dx1 = x2 - x1;
-        float dy1 = y2 - y1;
-        float dz1 = z2 - z1;
+        float dx0 = x2 - x1;
+        float dy0 = y2 - y1;
+        float dz0 = z2 - z1;
+        float dx1 = x0 - x1;
+        float dy1 = y0 - y1;
+        float dz1 = z0 - z1;
 
-        float nx = -(dy0*dz1 - dz0*dy1);
-        float ny = -(dz0*dx1 - dx0*dz1);
-        float nz = -(dx0*dy1 - dy0*dx1);
+        float nx = dy0*dz1 - dz0*dy1;
+        float ny = dz0*dx1 - dx0*dz1;
+        float nz = dx0*dy1 - dy0*dx1;
 
         return new Vector3f(nx, ny, nz).normalize();
     }

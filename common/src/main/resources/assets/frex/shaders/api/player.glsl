@@ -1,7 +1,7 @@
 uniform float frx_effectModifier;
 
-uniform float canpipe_darknessScale;
-#define frx_darknessEffectFactor canpipe_darknessScale  // because Lumi checks for definition (header.glsl)
+uniform float canpipe_darknessFactor;
+#define frx_darknessEffectFactor canpipe_darknessFactor  // because Lumi checks for definition (header.glsl)
 
 const float frx_playerMood = 1.0;
 
