@@ -1,5 +1,8 @@
-const float frx_effectModifier = 0.0;
-const float frx_darknessEffectFactor = 0.0;
+uniform float frx_effectModifier;
+
+uniform float canpipe_darknessScale;
+#define frx_darknessEffectFactor canpipe_darknessScale  // because Lumi checks for definition (header.glsl)
+
 uniform vec4 frx_heldLight;
 uniform float frx_heldLightInnerRadius;
 uniform float frx_heldLightOuterRadius;

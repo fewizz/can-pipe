@@ -15,6 +15,7 @@
     "ItemStackLayerRenderStateMixin",
     "ItemStackRenderStateMixin",
     "LevelRendererMixin",
+    "LightTextureMixin",
     "LiquidBlockRendererMixin",
     "MinecraftMixin",
     "ModelBlockRendererMixin",

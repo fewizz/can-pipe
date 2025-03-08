@@ -24,11 +24,13 @@ import fewizz.canpipe.GFX;
 import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.mixininterface.LightTextureExtended;
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -89,6 +91,8 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("canpipe_viewFlags", "int", 1, List.of(0.0F)),
 
         // player.glsl
+        new ShaderProgramConfig.Uniform("frx_effectModifier", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_darknessScale", "float", 1, List.of(1.0F)),
         new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_eyeBrightness", "float", 2, List.of(0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_heldLight", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
@@ -152,6 +156,8 @@ public class ProgramBase extends CompiledShaderProgram {
         CANPIPE_VIEW_FLAGS,
 
         // player.glsl
+        FRX_EFFECT_MODIFIER,
+        CANPIPE_DARKNESS_SCALE,
         FRX_EYE_POS,
         FRX_EYE_BRIGHTNESS,
         FRX_HELD_LIGHT,
@@ -227,6 +233,8 @@ public class ProgramBase extends CompiledShaderProgram {
         this.CANPIPE_VIEW_FLAGS = getManallyAppliedUniform("canpipe_viewFlags");
 
         // player.glsl
+        this.FRX_EFFECT_MODIFIER = getManallyAppliedUniform("frx_effectModifier");
+        this.CANPIPE_DARKNESS_SCALE = getManallyAppliedUniform("canpipe_darknessScale");
         this.FRX_EYE_POS = getManallyAppliedUniform("frx_eyePos");
         this.FRX_EYE_BRIGHTNESS = getManallyAppliedUniform("frx_eyeBrightness");
         this.FRX_HELD_LIGHT = getManallyAppliedUniform("frx_heldLight");
@@ -424,6 +432,22 @@ public class ProgramBase extends CompiledShaderProgram {
         }
 
         // player.glsl
+        if (this.FRX_EFFECT_MODIFIER != null) {
+            float effectModifier = 0.0F;
+            if (mc.player.hasEffect(MobEffects.NIGHT_VISION)) {
+                effectModifier = GameRenderer.getNightVisionScale(mc.player, 0.0F);
+            }
+            else if (mc.player.hasEffect(MobEffects.CONDUIT_POWER)) {
+                effectModifier = mc.player.getWaterVision();
+            }
+            this.FRX_EFFECT_MODIFIER.set(effectModifier);
+            this.FRX_EFFECT_MODIFIER.upload();
+        }
+        if (this.CANPIPE_DARKNESS_SCALE != null) {
+            float darknessFactor = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getDarknessScale();
+            this.CANPIPE_DARKNESS_SCALE.set(darknessFactor);
+            this.CANPIPE_DARKNESS_SCALE.upload();
+        }
         if (this.FRX_EYE_POS != null) {
             this.FRX_EYE_POS.set(mc.player.getEyePosition().toVector3f());
             this.FRX_EYE_POS.upload();
