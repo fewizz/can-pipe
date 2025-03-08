@@ -3,8 +3,6 @@ uniform float frx_effectModifier;
 uniform float canpipe_darknessFactor;
 #define frx_darknessEffectFactor canpipe_darknessFactor  // because Lumi checks for definition (header.glsl)
 
-const float frx_playerMood = 1.0;
-
 uniform vec3 frx_eyePos;
 
 uniform vec2 frx_eyeBrightness;
@@ -13,6 +11,26 @@ uniform vec2 frx_smoothedEyeBrightness;
 uniform vec4 frx_heldLight;
 uniform float frx_heldLightInnerRadius;
 uniform float frx_heldLightOuterRadius;
+
+uniform float frx_playerMood;
+
+uniform int canpipe_playerFlags;
+#define frx_playerEyeInFluid   ((canpipe_playerFlags >>  0) & 1)
+#define frx_playerEyeInWater   ((canpipe_playerFlags >>  1) & 1)
+#define frx_playerEyeInLava    ((canpipe_playerFlags >>  2) & 1)
+#define frx_playerSneaking     ((canpipe_playerFlags >>  3) & 1)
+#define frx_playerSwimming     ((canpipe_playerFlags >>  4) & 1)
+#define frx_playerSneakingPose ((canpipe_playerFlags >>  5) & 1)
+#define frx_playerSwimmingPose ((canpipe_playerFlags >>  6) & 1)
+#define frx_playerCreative     ((canpipe_playerFlags >>  7) & 1)
+#define frx_playerSpectator    ((canpipe_playerFlags >>  8) & 1)
+#define frx_playerRiding       ((canpipe_playerFlags >>  9) & 1)
+#define frx_playerOnFire       ((canpipe_playerFlags >> 10) & 1)
+#define frx_playerSleeping     ((canpipe_playerFlags >> 11) & 1)
+#define frx_playerSprinting    ((canpipe_playerFlags >> 12) & 1)
+#define frx_playerWet          ((canpipe_playerFlags >> 13) & 1)
+#define frx_playerEyeInSnow    ((canpipe_playerFlags >> 14) & 1)
+#define frx_playerIsFreezing   ((canpipe_playerFlags >> 15) & 1)
 
 uniform ivec2 canpipe_effectsFlags;
 #define frx_effectSpeed            ((canpipe_effectsFlags[0] >>  0) & 1)
@@ -49,21 +67,3 @@ uniform ivec2 canpipe_effectsFlags;
 #define frx_effectHeroOfTheVillage ((canpipe_effectsFlags[0] >> 31) & 1)
 #define frx_effectDarkness         ((canpipe_effectsFlags[1] >>  0) & 1)
 // for the future
-
-uniform int canpipe_playerFlags;
-#define frx_playerEyeInFluid   ((canpipe_playerFlags >>  0) & 1)
-#define frx_playerEyeInWater   ((canpipe_playerFlags >>  1) & 1)
-#define frx_playerEyeInLava    ((canpipe_playerFlags >>  2) & 1)
-#define frx_playerSneaking     ((canpipe_playerFlags >>  3) & 1)
-#define frx_playerSwimming     ((canpipe_playerFlags >>  4) & 1)
-#define frx_playerSneakingPose ((canpipe_playerFlags >>  5) & 1)
-#define frx_playerSwimmingPose ((canpipe_playerFlags >>  6) & 1)
-#define frx_playerCreative     ((canpipe_playerFlags >>  7) & 1)
-#define frx_playerSpectator    ((canpipe_playerFlags >>  8) & 1)
-#define frx_playerRiding       ((canpipe_playerFlags >>  9) & 1)
-#define frx_playerOnFire       ((canpipe_playerFlags >> 10) & 1)
-#define frx_playerSleeping     ((canpipe_playerFlags >> 11) & 1)
-#define frx_playerSprinting    ((canpipe_playerFlags >> 12) & 1)
-#define frx_playerWet          ((canpipe_playerFlags >> 13) & 1)
-#define frx_playerEyeInSnow    ((canpipe_playerFlags >> 14) & 1)
-#define frx_playerIsFreezing   ((canpipe_playerFlags >> 15) & 1)

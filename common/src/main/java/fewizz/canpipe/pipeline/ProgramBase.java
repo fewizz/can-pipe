@@ -100,6 +100,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_heldLight", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
         new ShaderProgramConfig.Uniform("frx_heldLightInnerRadius", "float", 1, List.of((float) Math.PI)),
         new ShaderProgramConfig.Uniform("frx_heldLightOuterRadius", "float", 1, List.of((float) Math.PI)),
+        new ShaderProgramConfig.Uniform("frx_playerMood", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_playerFlags", "int", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_effectsFlags", "int", 2, List.of(0.0F, 0.0F)),
 
@@ -166,6 +167,7 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_HELD_LIGHT,
         FRX_HELD_LIGHT_OUTER_RADIUS,
         FRX_HELD_LIGHT_INNER_RADIUS,
+        FRX_PLAYER_MOOD,
         CANPIPE_PLAYER_FLAGS,
         CANPIPE_EFFECTS_FLAGS,
 
@@ -203,67 +205,68 @@ public class ProgramBase extends CompiledShaderProgram {
         );
 
         // accessibility.glsl
-        this.FRX_FOV_EFFECTS = getManallyAppliedUniform("frx_fovEffects");
-        this.FRX_DISTORTION_EFFECTS = getManallyAppliedUniform("frx_distortionEffects");
-        this.FRX_HIDE_LIGHTNING_FLASHES = getManallyAppliedUniform("frx_hideLightningFlashes");
-        this.FRX_DARKNESS_PULSING = getManallyAppliedUniform("frx_darknessPulsing");
-        this.FRX_HIGH_CONTRAST = getManallyAppliedUniform("frx_highContrast");
-        this.FRX_DAMAGE_TILT = getManallyAppliedUniform("frx_damageTilt");
-        this.FRX_GLINT_STRENGTH = getManallyAppliedUniform("frx_glintStrength");
-        this.FRX_GLINT_SPEED = getManallyAppliedUniform("frx_glintSpeed");
+        this.FRX_FOV_EFFECTS = getManuallyAppliedUniform("frx_fovEffects");
+        this.FRX_DISTORTION_EFFECTS = getManuallyAppliedUniform("frx_distortionEffects");
+        this.FRX_HIDE_LIGHTNING_FLASHES = getManuallyAppliedUniform("frx_hideLightningFlashes");
+        this.FRX_DARKNESS_PULSING = getManuallyAppliedUniform("frx_darknessPulsing");
+        this.FRX_HIGH_CONTRAST = getManuallyAppliedUniform("frx_highContrast");
+        this.FRX_DAMAGE_TILT = getManuallyAppliedUniform("frx_damageTilt");
+        this.FRX_GLINT_STRENGTH = getManuallyAppliedUniform("frx_glintStrength");
+        this.FRX_GLINT_SPEED = getManuallyAppliedUniform("frx_glintSpeed");
 
         // view.glsl
         this.FRX_MODEL_TO_WORLD = getUniform("frx_modelToWorld");  // non-manual
         this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");  // non-manual
-        this.FRX_CAMERA_POS = getManallyAppliedUniform("frx_cameraPos");
-        this.FRX_CAMERA_VIEW = getManallyAppliedUniform("frx_cameraView");
-        this.FRX_LAST_CAMERA_POS = getManallyAppliedUniform("frx_lastCameraPos");
+        this.FRX_CAMERA_POS = getManuallyAppliedUniform("frx_cameraPos");
+        this.FRX_CAMERA_VIEW = getManuallyAppliedUniform("frx_cameraView");
+        this.FRX_LAST_CAMERA_POS = getManuallyAppliedUniform("frx_lastCameraPos");
         this.FRX_INVERSE_VIEW_MATRIX = getUniform("frx_inverseViewMatrix");  // non-manual
-        this.FRX_LAST_VIEW_MATRIX = getManallyAppliedUniform("frx_lastViewMatrix");
+        this.FRX_LAST_VIEW_MATRIX = getManuallyAppliedUniform("frx_lastViewMatrix");
         this.FRX_INVERSE_PROJECTION_MATRIX = getUniform("frx_inverseProjectionMatrix");  // non-manual
-        this.FRX_LAST_PROJECTION_MATRIX = getManallyAppliedUniform("frx_lastProjectionMatrix");
-        this.FRX_SHADOW_VIEW_MATRIX = getManallyAppliedUniform("frx_shadowViewMatrix");
-        this.FRX_INVERSE_SHADOW_VIEW_MATRIX = getManallyAppliedUniform("frx_inverseShadowViewMatrix");
-        this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 = getManallyAppliedUniform("canpipe_shadowProjectionMatrix_0");
-        this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 = getManallyAppliedUniform("canpipe_shadowProjectionMatrix_1");
-        this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 = getManallyAppliedUniform("canpipe_shadowProjectionMatrix_2");
-        this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 = getManallyAppliedUniform("canpipe_shadowProjectionMatrix_3");
-        this.CANPIPE_SHADOW_CENTER_0 = getManallyAppliedUniform("canpipe_shadowCenter_0");
-        this.CANPIPE_SHADOW_CENTER_1 = getManallyAppliedUniform("canpipe_shadowCenter_1");
-        this.CANPIPE_SHADOW_CENTER_2 = getManallyAppliedUniform("canpipe_shadowCenter_2");
-        this.CANPIPE_SHADOW_CENTER_3 = getManallyAppliedUniform("canpipe_shadowCenter_3");
-        this.FRX_VIEW_DISTANCE = getManallyAppliedUniform("frx_viewDistance");
-        this.CANPIPE_VIEW_FLAGS = getManallyAppliedUniform("canpipe_viewFlags");
+        this.FRX_LAST_PROJECTION_MATRIX = getManuallyAppliedUniform("frx_lastProjectionMatrix");
+        this.FRX_SHADOW_VIEW_MATRIX = getManuallyAppliedUniform("frx_shadowViewMatrix");
+        this.FRX_INVERSE_SHADOW_VIEW_MATRIX = getManuallyAppliedUniform("frx_inverseShadowViewMatrix");
+        this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 = getManuallyAppliedUniform("canpipe_shadowProjectionMatrix_0");
+        this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 = getManuallyAppliedUniform("canpipe_shadowProjectionMatrix_1");
+        this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 = getManuallyAppliedUniform("canpipe_shadowProjectionMatrix_2");
+        this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 = getManuallyAppliedUniform("canpipe_shadowProjectionMatrix_3");
+        this.CANPIPE_SHADOW_CENTER_0 = getManuallyAppliedUniform("canpipe_shadowCenter_0");
+        this.CANPIPE_SHADOW_CENTER_1 = getManuallyAppliedUniform("canpipe_shadowCenter_1");
+        this.CANPIPE_SHADOW_CENTER_2 = getManuallyAppliedUniform("canpipe_shadowCenter_2");
+        this.CANPIPE_SHADOW_CENTER_3 = getManuallyAppliedUniform("canpipe_shadowCenter_3");
+        this.FRX_VIEW_DISTANCE = getManuallyAppliedUniform("frx_viewDistance");
+        this.CANPIPE_VIEW_FLAGS = getManuallyAppliedUniform("canpipe_viewFlags");
 
         // player.glsl
-        this.FRX_EFFECT_MODIFIER = getManallyAppliedUniform("frx_effectModifier");
-        this.CANPIPE_DARKNESS_FACTOR = getManallyAppliedUniform("canpipe_darknessFactor");
-        this.FRX_EYE_POS = getManallyAppliedUniform("frx_eyePos");
-        this.FRX_EYE_BRIGHTNESS = getManallyAppliedUniform("frx_eyeBrightness");
-        this.FRX_SMOOTHED_EYE_BRIGHTNESS = getManallyAppliedUniform("frx_smoothedEyeBrightness");
-        this.FRX_HELD_LIGHT = getManallyAppliedUniform("frx_heldLight");
-        this.FRX_HELD_LIGHT_INNER_RADIUS = getManallyAppliedUniform("frx_heldLightInnerRadius");
-        this.FRX_HELD_LIGHT_OUTER_RADIUS = getManallyAppliedUniform("frx_heldLightOuterRadius");
-        this.CANPIPE_PLAYER_FLAGS = getManallyAppliedUniform("canpipe_playerFlags");
-        this.CANPIPE_EFFECTS_FLAGS = getManallyAppliedUniform("canpipe_effectsFlags");
+        this.FRX_EFFECT_MODIFIER = getManuallyAppliedUniform("frx_effectModifier");
+        this.CANPIPE_DARKNESS_FACTOR = getManuallyAppliedUniform("canpipe_darknessFactor");
+        this.FRX_EYE_POS = getManuallyAppliedUniform("frx_eyePos");
+        this.FRX_EYE_BRIGHTNESS = getManuallyAppliedUniform("frx_eyeBrightness");
+        this.FRX_SMOOTHED_EYE_BRIGHTNESS = getManuallyAppliedUniform("frx_smoothedEyeBrightness");
+        this.FRX_HELD_LIGHT = getManuallyAppliedUniform("frx_heldLight");
+        this.FRX_HELD_LIGHT_INNER_RADIUS = getManuallyAppliedUniform("frx_heldLightInnerRadius");
+        this.FRX_HELD_LIGHT_OUTER_RADIUS = getManuallyAppliedUniform("frx_heldLightOuterRadius");
+        this.FRX_PLAYER_MOOD = getManuallyAppliedUniform("frx_playerMood");
+        this.CANPIPE_PLAYER_FLAGS = getManuallyAppliedUniform("canpipe_playerFlags");
+        this.CANPIPE_EFFECTS_FLAGS = getManuallyAppliedUniform("canpipe_effectsFlags");
 
         // world.glsl
-        this.CANPIPE_RENDER_FRAMES = getManallyAppliedUniform("canpipe_renderFrames");
-        this.CANPIPE_FIXED_OR_DAY_TIME = getManallyAppliedUniform("canpipe_fixedOrDayTime");
-        this.FRX_RENDER_SECONDS = getManallyAppliedUniform("frx_renderSeconds");
-        this.FRX_WORLD_DAY = getManallyAppliedUniform("frx_worldDay");
-        this.FRX_WORLD_TIME = getManallyAppliedUniform("frx_worldTime");
-        this.FRX_SKY_LIGHT_VECTOR = getManallyAppliedUniform("frx_skyLightVector");
-        this.FRX_SKY_ANGLE_RADIANS = getManallyAppliedUniform("frx_skyAngleRadians");
-        this.CANPIPE_WORLD_FLAGS = getManallyAppliedUniform("canpipe_worldFlags");
-        this.CANPIPE_WEATHER_GRADIENTS = getManallyAppliedUniform("canpipe_weatherGradients");
+        this.CANPIPE_RENDER_FRAMES = getManuallyAppliedUniform("canpipe_renderFrames");
+        this.CANPIPE_FIXED_OR_DAY_TIME = getManuallyAppliedUniform("canpipe_fixedOrDayTime");
+        this.FRX_RENDER_SECONDS = getManuallyAppliedUniform("frx_renderSeconds");
+        this.FRX_WORLD_DAY = getManuallyAppliedUniform("frx_worldDay");
+        this.FRX_WORLD_TIME = getManuallyAppliedUniform("frx_worldTime");
+        this.FRX_SKY_LIGHT_VECTOR = getManuallyAppliedUniform("frx_skyLightVector");
+        this.FRX_SKY_ANGLE_RADIANS = getManuallyAppliedUniform("frx_skyAngleRadians");
+        this.CANPIPE_WORLD_FLAGS = getManuallyAppliedUniform("canpipe_worldFlags");
+        this.CANPIPE_WEATHER_GRADIENTS = getManuallyAppliedUniform("canpipe_weatherGradients");
 
         // fog.glsl
-        this.FRX_FOG_COLOR = getManallyAppliedUniform("frx_fogColor");
-        this.FRX_FOG_ENABLED = getManallyAppliedUniform("frx_fogEnabled");
+        this.FRX_FOG_COLOR = getManuallyAppliedUniform("frx_fogColor");
+        this.FRX_FOG_ENABLED = getManuallyAppliedUniform("frx_fogEnabled");
     }
 
-    private Uniform getManallyAppliedUniform(String name) {
+    private Uniform getManuallyAppliedUniform(String name) {
         Uniform u = this.getUniform(name);
         if (u != null) {
             this.manuallyAppliedUniforms.add(u);
@@ -492,6 +495,10 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_HELD_LIGHT_OUTER_RADIUS != null && light != null) {
             this.FRX_HELD_LIGHT_OUTER_RADIUS.set(light.outerConeAngle);
             this.FRX_HELD_LIGHT_OUTER_RADIUS.upload();
+        }
+        if (this.FRX_PLAYER_MOOD != null) {
+            this.FRX_PLAYER_MOOD.set(mc.player.getCurrentMood());
+            this.FRX_PLAYER_MOOD.upload();
         }
         if (this.CANPIPE_PLAYER_FLAGS != null) {
             int result = 0;
