@@ -115,6 +115,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_moonSize", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_skyAngleRadians", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_sunriseOrSunsetColor", "float", 3, List.of(1.0F, 1.0F, 1.0F)),
+        new ShaderProgramConfig.Uniform("frx_skyFlashStrength", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_worldFlags", "int", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_weatherGradients", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
 
@@ -185,6 +186,7 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_SKY_LIGHT_VECTOR,
         FRX_SKY_ANGLE_RADIANS,
         CANPIPE_SUNRISE_OR_SUNSET_COLOR,
+        FRX_SKY_FLASH_STRENGTH,
         CANPIPE_WORLD_FLAGS,
         CANPIPE_WEATHER_GRADIENTS,
 
@@ -267,6 +269,7 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_SKY_LIGHT_VECTOR = getManuallyAppliedUniform("frx_skyLightVector");
         this.FRX_SKY_ANGLE_RADIANS = getManuallyAppliedUniform("frx_skyAngleRadians");
         this.CANPIPE_SUNRISE_OR_SUNSET_COLOR = getManuallyAppliedUniform("canpipe_sunriseOrSunsetColor");
+        this.FRX_SKY_FLASH_STRENGTH = getManuallyAppliedUniform("frx_skyFlashStrength");
         this.CANPIPE_WORLD_FLAGS = getManuallyAppliedUniform("canpipe_worldFlags");
         this.CANPIPE_WEATHER_GRADIENTS = getManuallyAppliedUniform("canpipe_weatherGradients");
 
@@ -634,8 +637,12 @@ public class ProgramBase extends CompiledShaderProgram {
                 result.div(255.0F);
             }
             this.CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
-            System.out.println(result);
             this.CANPIPE_SUNRISE_OR_SUNSET_COLOR.upload();
+        }
+        if (this.FRX_SKY_FLASH_STRENGTH != null) {
+            float skyFlashStrength = Math.max(0.0F, mc.level.getSkyFlashTime()-pt);
+            this.FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);
+            this.FRX_SKY_FLASH_STRENGTH.upload();
         }
         if (this.CANPIPE_WORLD_FLAGS != null) {
             int value = mc.level.dimensionType().hasSkyLight() ? 1 : 0;

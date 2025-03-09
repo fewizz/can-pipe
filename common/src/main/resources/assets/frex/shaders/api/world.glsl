@@ -26,7 +26,7 @@ uniform vec3 canpipe_sunriseOrSunsetColor;  // vec3(1.0) if unavailable
     abs(canpipe_fixedOrDayTime*24.0-23.0) \
 ))  /* https://www.desmos.com/calculator/a6ouxizdbp */
 
-const float frx_skyFlashStrength = 0.0;  // TODO
+uniform float frx_skyFlashStrength;
 
 const float frx_ambientIntensity = 1.0;  // TODO
 const vec4 frx_emissiveColor = vec4(1.0);  // TODO
@@ -40,7 +40,6 @@ uniform vec4 canpipe_weatherGradients;
 const vec3 frx_vanillaClearColor = vec3(0.0);  // TODO
 
 uniform int canpipe_worldFlags;
-
 #define frx_worldHasSkylight     ((canpipe_worldFlags >> 0) & 1)
 #define frx_worldIsOverworld int(((canpipe_worldFlags >> 1) & 3) == 0)
 #define frx_worldIsNether    int(((canpipe_worldFlags >> 1) & 3) == 1)
