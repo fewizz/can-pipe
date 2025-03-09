@@ -1,6 +1,7 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.function.Supplier;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.KHRDebug;
 
@@ -116,6 +118,8 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_skyAngleRadians", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_sunriseOrSunsetColor", "float", 3, List.of(1.0F, 1.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_skyFlashStrength", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_ambientIntensity", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("frx_emissiveColor", "float", 4, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_worldFlags", "int", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_weatherGradients", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
 
@@ -187,6 +191,8 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_SKY_ANGLE_RADIANS,
         CANPIPE_SUNRISE_OR_SUNSET_COLOR,
         FRX_SKY_FLASH_STRENGTH,
+        FRX_AMBIENT_INTENSITY,
+        FRX_EMISSIVE_COLOR,
         CANPIPE_WORLD_FLAGS,
         CANPIPE_WEATHER_GRADIENTS,
 
@@ -270,6 +276,8 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_SKY_ANGLE_RADIANS = getManuallyAppliedUniform("frx_skyAngleRadians");
         this.CANPIPE_SUNRISE_OR_SUNSET_COLOR = getManuallyAppliedUniform("canpipe_sunriseOrSunsetColor");
         this.FRX_SKY_FLASH_STRENGTH = getManuallyAppliedUniform("frx_skyFlashStrength");
+        this.FRX_AMBIENT_INTENSITY = getManuallyAppliedUniform("frx_ambientIntensity");
+        this.FRX_EMISSIVE_COLOR = getManuallyAppliedUniform("frx_emissiveColor");
         this.CANPIPE_WORLD_FLAGS = getManuallyAppliedUniform("canpipe_worldFlags");
         this.CANPIPE_WEATHER_GRADIENTS = getManuallyAppliedUniform("canpipe_weatherGradients");
 
@@ -644,6 +652,18 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);
             this.FRX_SKY_FLASH_STRENGTH.upload();
         }
+        if (this.FRX_AMBIENT_INTENSITY != null) {
+            // Not sure why partial tick is 1.0 (LightTexture.updateLigthTexture)
+            this.FRX_AMBIENT_INTENSITY.set(mc.level.getSkyDarken(1.0F));
+            this.FRX_AMBIENT_INTENSITY.upload();
+        }
+        if (this.FRX_EMISSIVE_COLOR != null) {
+            Vector4f emissiveColor = (
+                (LightTextureExtended) mc.gameRenderer.lightTexture()
+            ).canpipe_getEmissiveColor();
+            this.FRX_EMISSIVE_COLOR.set(emissiveColor);
+            this.FRX_EMISSIVE_COLOR.upload();
+        }
         if (this.CANPIPE_WORLD_FLAGS != null) {
             int value = mc.level.dimensionType().hasSkyLight() ? 1 : 0;
 
@@ -668,10 +688,10 @@ public class ProgramBase extends CompiledShaderProgram {
         }
         if (this.CANPIPE_WEATHER_GRADIENTS != null) {
             this.CANPIPE_WEATHER_GRADIENTS.set(
-                mc.level.getRainLevel(0),
-                mc.level.getThunderLevel(0),
-                mc.level.getRainLevel(0),    // TODO: smoothed
-                mc.level.getThunderLevel(0)  // TODO: smoothed
+                mc.level.getRainLevel(pt),
+                mc.level.getThunderLevel(pt),
+                mc.level.getRainLevel(pt),    // TODO: smoothed
+                mc.level.getThunderLevel(pt)  // TODO: smoothed
             );
             this.CANPIPE_WEATHER_GRADIENTS.upload();
         }
@@ -681,9 +701,9 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_FOG_COLOR.set(
                 FogRenderer.computeFogColor(
                     mc.gameRenderer.getMainCamera(),
-                    0,
+                    pt,
                     mc.level, mc.options.getEffectiveRenderDistance(),
-                    mc.gameRenderer.getDarkenWorldAmount(0)
+                    mc.gameRenderer.getDarkenWorldAmount(pt)
                 )
             );
             this.FRX_FOG_COLOR.upload();

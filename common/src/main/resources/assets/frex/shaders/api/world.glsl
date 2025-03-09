@@ -27,9 +27,8 @@ uniform vec3 canpipe_sunriseOrSunsetColor;  // vec3(1.0) if unavailable
 ))  /* https://www.desmos.com/calculator/a6ouxizdbp */
 
 uniform float frx_skyFlashStrength;
-
-const float frx_ambientIntensity = 1.0;  // TODO
-const vec4 frx_emissiveColor = vec4(1.0);  // TODO
+uniform float frx_ambientIntensity;
+uniform vec4 frx_emissiveColor;
 
 uniform vec4 canpipe_weatherGradients;
 #define frx_rainGradient            (canpipe_weatherGradients.x)
