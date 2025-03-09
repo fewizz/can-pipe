@@ -112,7 +112,9 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_worldTime", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_skyLightVector", "float", 3, List.of(0.0F, 1.0F, 0.0F)),
+        new ShaderProgramConfig.Uniform("frx_moonSize", "float", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("frx_skyAngleRadians", "float", 1, List.of(0.0F)),
+        new ShaderProgramConfig.Uniform("canpipe_sunriseOrSunsetColor", "float", 3, List.of(1.0F, 1.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("canpipe_worldFlags", "int", 1, List.of(0.0F)),
         new ShaderProgramConfig.Uniform("canpipe_weatherGradients", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
 
@@ -179,8 +181,10 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_RENDER_SECONDS,
         FRX_WORLD_DAY,
         FRX_WORLD_TIME,
+        FRX_MOON_SIZE,
         FRX_SKY_LIGHT_VECTOR,
         FRX_SKY_ANGLE_RADIANS,
+        CANPIPE_SUNRISE_OR_SUNSET_COLOR,
         CANPIPE_WORLD_FLAGS,
         CANPIPE_WEATHER_GRADIENTS,
 
@@ -259,8 +263,10 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_RENDER_SECONDS = getManuallyAppliedUniform("frx_renderSeconds");
         this.FRX_WORLD_DAY = getManuallyAppliedUniform("frx_worldDay");
         this.FRX_WORLD_TIME = getManuallyAppliedUniform("frx_worldTime");
+        this.FRX_MOON_SIZE = getManuallyAppliedUniform("frx_moonSize");
         this.FRX_SKY_LIGHT_VECTOR = getManuallyAppliedUniform("frx_skyLightVector");
         this.FRX_SKY_ANGLE_RADIANS = getManuallyAppliedUniform("frx_skyAngleRadians");
+        this.CANPIPE_SUNRISE_OR_SUNSET_COLOR = getManuallyAppliedUniform("canpipe_sunriseOrSunsetColor");
         this.CANPIPE_WORLD_FLAGS = getManuallyAppliedUniform("canpipe_worldFlags");
         this.CANPIPE_WEATHER_GRADIENTS = getManuallyAppliedUniform("canpipe_weatherGradients");
 
@@ -604,6 +610,10 @@ public class ProgramBase extends CompiledShaderProgram {
             this.FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
             this.FRX_WORLD_TIME.upload();
         }
+        if (this.FRX_MOON_SIZE != null) {
+            this.FRX_MOON_SIZE.set(mc.level.getMoonBrightness());
+            this.FRX_MOON_SIZE.upload();
+        }
         if (this.FRX_SKY_LIGHT_VECTOR != null) {
             this.FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f(), pt));
             this.FRX_SKY_LIGHT_VECTOR.upload();
@@ -611,6 +621,21 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_SKY_ANGLE_RADIANS != null) {
             this.FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(pt));
             this.FRX_SKY_ANGLE_RADIANS.upload();
+        }
+        if (this.CANPIPE_SUNRISE_OR_SUNSET_COLOR != null) {
+            var timeOfDay = mc.level.getTimeOfDay(pt);
+            var result = new Vector3f(1.0F);
+            if (
+                mc.level.dimensionType().hasSkyLight()
+                && mc.level.effects().isSunriseOrSunset(timeOfDay)
+            ) {
+                int color = mc.level.effects().getSunriseOrSunsetColor(timeOfDay);
+                result.set((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
+                result.div(255.0F);
+            }
+            this.CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
+            System.out.println(result);
+            this.CANPIPE_SUNRISE_OR_SUNSET_COLOR.upload();
         }
         if (this.CANPIPE_WORLD_FLAGS != null) {
             int value = mc.level.dimensionType().hasSkyLight() ? 1 : 0;

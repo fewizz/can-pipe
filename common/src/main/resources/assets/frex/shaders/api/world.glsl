@@ -7,16 +7,25 @@ uniform float canpipe_fixedOrDayTime;  // (dimensionType.fixedTime() or world.ge
 
 uniform float frx_renderSeconds;
 #define frx_renderFrames uint(canpipe_renderFrames)
+
 uniform float frx_worldDay;   // (world.getDayTime() / 24000) % 2147483647L (why float?)
 uniform float frx_worldTime;  // (world.getDayTime() % 24000) / 24000.0; [0.0-1.0]
-const float frx_moonSize = 1.0;  // TODO
+
+uniform float frx_moonSize;
 
 uniform float frx_skyAngleRadians;  // world.getTimeOfDay() * 2PI for vanilla
 uniform vec3 frx_skyLightVector;  // points to the sun or moon
 #define frx_skyLightColor (frx_worldIsMoonlit == 1.0 ? vec3(1.0, 0.5475, 0.5475) : vec3(1.0))  // unhardcode?
 #define frx_skyLightIlluminance (frx_worldIsMoonlit == 1.0 ? 2000.0 : 32000.0)  // unhardcode?
-const vec3 frx_skyLightAtmosphericColor = vec3(1.0);  // TODO
-#define frx_skyLightTransitionFactor min(1.0, min(abs(canpipe_fixedOrDayTime*24.0-13.0), abs(canpipe_fixedOrDayTime*24-23.0)))  /*https://www.desmos.com/calculator/a6ouxizdbp*/
+
+uniform vec3 canpipe_sunriseOrSunsetColor;  // vec3(1.0) if unavailable
+#define frx_skyLightAtmosphericColor canpipe_sunriseOrSunsetColor
+
+#define frx_skyLightTransitionFactor min(1.0, min( \
+    abs(canpipe_fixedOrDayTime*24.0-13.0), \
+    abs(canpipe_fixedOrDayTime*24.0-23.0) \
+))  /* https://www.desmos.com/calculator/a6ouxizdbp */
+
 const float frx_skyFlashStrength = 0.0;  // TODO
 
 const float frx_ambientIntensity = 1.0;  // TODO
@@ -40,4 +49,4 @@ uniform int canpipe_worldFlags;
 #define frx_worldIsThundering    ((canpipe_worldFlags >> 4) & 1)
 #define frx_worldIsSkyDarkened   ((canpipe_worldFlags >> 5) & 1)
 
-#define frx_worldIsMoonlit float(canpipe_fixedOrDayTime > 13.0/24.0 && canpipe_fixedOrDayTime < 23.0/24.0)
+#define frx_worldIsMoonlit float(frx_worldHasSkylight == 1 && canpipe_fixedOrDayTime > 13.0/24.0 && canpipe_fixedOrDayTime < 23.0/24.0)
