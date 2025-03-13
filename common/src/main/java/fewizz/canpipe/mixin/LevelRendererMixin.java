@@ -149,7 +149,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Vector3f fromSunDir = toSunDir.negate(new Vector3f());
 
         var camPos = camera.getPosition();
-        var sunPosOffset = new Vec3(toSunDir.mul(renderDistance + 32, new Vector3f()));
+        var sunPosOffset = new Vec3(toSunDir.mul(renderDistance + 48, new Vector3f()));
         var sunPos = camPos.add(sunPosOffset);
 
         Camera shadowCamera = new Camera() {{

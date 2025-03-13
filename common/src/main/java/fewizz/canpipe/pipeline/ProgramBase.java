@@ -79,10 +79,6 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_lastProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_inverseShadowViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("frx_shadowViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_0", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_1", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_2", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_shadowProjectionMatrix_3", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("canpipe_shadowCenter_0", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("canpipe_shadowCenter_1", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
         new ShaderProgramConfig.Uniform("canpipe_shadowCenter_2", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
@@ -155,10 +151,6 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_LAST_PROJECTION_MATRIX,
         FRX_INVERSE_SHADOW_VIEW_MATRIX,
         FRX_SHADOW_VIEW_MATRIX,
-        CANPIPE_SHADOW_PROJECTION_MATRIX_0,
-        CANPIPE_SHADOW_PROJECTION_MATRIX_1,
-        CANPIPE_SHADOW_PROJECTION_MATRIX_2,
-        CANPIPE_SHADOW_PROJECTION_MATRIX_3,
         CANPIPE_SHADOW_CENTER_0,
         CANPIPE_SHADOW_CENTER_1,
         CANPIPE_SHADOW_CENTER_2,
@@ -240,10 +232,6 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_LAST_PROJECTION_MATRIX = getManuallyAppliedUniform("frx_lastProjectionMatrix");
         this.FRX_SHADOW_VIEW_MATRIX = getManuallyAppliedUniform("frx_shadowViewMatrix");
         this.FRX_INVERSE_SHADOW_VIEW_MATRIX = getManuallyAppliedUniform("frx_inverseShadowViewMatrix");
-        this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 = getManuallyAppliedUniform("canpipe_shadowProjectionMatrix_0");
-        this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 = getManuallyAppliedUniform("canpipe_shadowProjectionMatrix_1");
-        this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 = getManuallyAppliedUniform("canpipe_shadowProjectionMatrix_2");
-        this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 = getManuallyAppliedUniform("canpipe_shadowProjectionMatrix_3");
         this.CANPIPE_SHADOW_CENTER_0 = getManuallyAppliedUniform("canpipe_shadowCenter_0");
         this.CANPIPE_SHADOW_CENTER_1 = getManuallyAppliedUniform("canpipe_shadowCenter_1");
         this.CANPIPE_SHADOW_CENTER_2 = getManuallyAppliedUniform("canpipe_shadowCenter_2");
@@ -403,22 +391,6 @@ public class ProgramBase extends CompiledShaderProgram {
         if (this.FRX_INVERSE_SHADOW_VIEW_MATRIX != null) {
             this.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(gra.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
             this.FRX_INVERSE_SHADOW_VIEW_MATRIX.upload();
-        }
-        if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_0 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.set(gra.canpipe_getShadowProjectionMatrices()[0]);
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_0.upload();
-        }
-        if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_1 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.set(gra.canpipe_getShadowProjectionMatrices()[1]);
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_1.upload();
-        }
-        if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_2 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.set(gra.canpipe_getShadowProjectionMatrices()[2]);
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_2.upload();
-        }
-        if (this.CANPIPE_SHADOW_PROJECTION_MATRIX_3 != null) {
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.set(gra.canpipe_getShadowProjectionMatrices()[3]);
-            this.CANPIPE_SHADOW_PROJECTION_MATRIX_3.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_0 != null) {
             this.CANPIPE_SHADOW_CENTER_0.set(gra.canpipe_getShadowCenters()[0]);

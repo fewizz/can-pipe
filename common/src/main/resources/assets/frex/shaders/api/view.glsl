@@ -34,28 +34,27 @@ const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO
 uniform mat4 frx_shadowViewMatrix;
 uniform mat4 frx_inverseShadowViewMatrix;
 
-uniform mat4 canpipe_shadowProjectionMatrix_0;
-uniform mat4 canpipe_shadowProjectionMatrix_1;
-uniform mat4 canpipe_shadowProjectionMatrix_2;
-uniform mat4 canpipe_shadowProjectionMatrix_3;
-
 uniform vec4 canpipe_shadowCenter_0;
 uniform vec4 canpipe_shadowCenter_1;
 uniform vec4 canpipe_shadowCenter_2;
 uniform vec4 canpipe_shadowCenter_3;
-
-mat4 frx_shadowProjectionMatrix(int index) {
-    if (index == 0) { return canpipe_shadowProjectionMatrix_0; }
-    if (index == 1) { return canpipe_shadowProjectionMatrix_1; }
-    if (index == 2) { return canpipe_shadowProjectionMatrix_2; }
-    return canpipe_shadowProjectionMatrix_3;
-}
 
 vec4 frx_shadowCenter(int index) {
     if (index == 0) { return canpipe_shadowCenter_0; }
     if (index == 1) { return canpipe_shadowCenter_1; }
     if (index == 2) { return canpipe_shadowCenter_2; }
     return canpipe_shadowCenter_3;
+}
+
+mat4 frx_shadowProjectionMatrix(int index) {
+    vec4 center = frx_shadowCenter(index);
+    float radius = center.w;
+    return transpose(mat4(
+        1.0/radius, 0.0,         0.0,                      -center.x/radius,
+        0.0,        1.0/radius,  0.0,                      -center.y/radius,
+        0.0,        0.0,        -2.0/(-center.z + radius), -1.0,
+        0.0,        0.0,         0.0,                       1.0
+    ));
 }
 
 #define frx_shadowViewProjectionMatrix(index) (frx_shadowProjectionMatrix(index)*frx_shadowViewMatrix)

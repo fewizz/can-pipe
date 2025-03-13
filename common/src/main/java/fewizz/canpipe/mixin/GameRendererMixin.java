@@ -1,5 +1,7 @@
 package fewizz.canpipe.mixin;
 
+import java.text.NumberFormat;
+
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -14,8 +16,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
@@ -35,7 +35,7 @@ public class GameRendererMixin implements GameRendererAccessor {
     @Shadow private float renderDistance;
     @Shadow private float fovModifier;
 
-    @Shadow Matrix4f getProjectionMatrix(float fov) { return null; }
+    @Shadow public Matrix4f getProjectionMatrix(float fov) { return null; }
 
     @Unique private int canpipe_frame = -1;
     @Unique private long canpipe_renderStartNano = -1;
@@ -50,7 +50,6 @@ public class GameRendererMixin implements GameRendererAccessor {
     @Unique private Matrix4f[] canpipe_shadowProjectionMatrices = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
     @Unique private Vector4f[] canpipe_shadowCenters = null;
-    @Unique private Float canpipe_depthFarOverride = null;
 
     @Override
     public int canpipe_getFrame() {
@@ -144,7 +143,7 @@ public class GameRendererMixin implements GameRendererAccessor {
 
         if (p.skyShadows != null) {
             Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f(), pt);
-            Vector3f sunPosOffset = toSunDir.mul(this.renderDistance + 32, new Vector3f());
+            Vector3f sunPosOffset = toSunDir.mul(this.renderDistance + 48, new Vector3f());
 
             this.canpipe_shadowViewMatrix.setLookAt(
                 sunPosOffset,                                  // eye pos
@@ -157,34 +156,26 @@ public class GameRendererMixin implements GameRendererAccessor {
 
             for (int cascade = 0; cascade < 4; ++cascade) {
                 float cascadeRadius;
+                Vector4f center;
 
                 if (cascade == 0) {
-                    cascadeRadius = this.renderDistance + 32;
+                    // TODO this can be more efficient
+                    cascadeRadius = (this.renderDistance + 48.0F);
+                    center = new Vector4f(0.0F, 0.0F, 0.0F, 1.0F);
                 }
                 else {
                     cascadeRadius = p.skyShadows.cascadeRadii().get(cascade-1);
+                    center = new Vector4f(
+                        mainCamera.getLookVector().mul(cascadeRadius, new Vector3f()),
+                        1.0F
+                    );
                 }
 
-                this.canpipe_depthFarOverride = cascadeRadius;
-                float fov = (float) this.minecraft.options.fov().get().intValue();
-                var pm = this.getProjectionMatrix(fov);
-                Frustum cascadeFrustum = new Frustum(viewMatrix, pm);
-                this.canpipe_depthFarOverride = null;
-
-                Vector3f min = new Vector3f(+Float.MAX_VALUE);
-                Vector3f max = new Vector3f(-Float.MAX_VALUE);
-
-                for (Vector4f point : cascadeFrustum.getFrustumPoints()) {
-                    point.mul(this.canpipe_shadowViewMatrix);
-                    point.div(point.w);
-                    min.min(point.xyz(new Vector3f()));
-                    max.max(point.xyz(new Vector3f()));
-                }
+                center.mul(canpipe_shadowViewMatrix);
+                center.div(center.w);
 
                 float depthTextureSize = (float) p.skyShadows.framebuffer().depthAttachment.texture().extent.x;
                 float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
-
-                Vector3f center = new Vector3f().add(min).add(max).div(2.0F);
 
                 Vector3f dPos = this.canpipe_cameraPos.sub(this.canpipe_lastCameraPos, new Vector3f());
                 Vector3f dShadowPos = dPos.mul(shadowRotationMatrix).div(metersPerPixel);
@@ -197,15 +188,31 @@ public class GameRendererMixin implements GameRendererAccessor {
                 center.y -= (center.y % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].y * metersPerPixel;
                 center.z -= (center.z % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].z * metersPerPixel;
 
-                this.canpipe_shadowProjectionMatrices[cascade].setOrtho(
-                    +center.x - cascadeRadius,  // left
-                    +center.x + cascadeRadius,  // right
-                    +center.y - cascadeRadius,  // bottom
-                    +center.y + cascadeRadius,  // up
-                    0.0F,                       // near
-                    -center.z + cascadeRadius   // far
-                );
                 this.canpipe_shadowCenters[cascade].set(center.x, center.y, center.z, cascadeRadius);
+
+                // sometimes cascade is out of frustum bounds
+                // we don't want to render chunks and entiteis more than needed, right? (help)
+                Vector3f min = new Vector3f(+Float.MAX_VALUE);
+                Vector3f max = new Vector3f(-Float.MAX_VALUE);
+
+                // could be more efficient
+                for (Vector4f point : new Frustum(viewMatrix, projectionMatrix).getFrustumPoints()) {
+                    point.mul(this.canpipe_shadowViewMatrix);
+                    point.div(point.w);
+                    min.min(point.xyz(new Vector3f()));
+                    max.max(point.xyz(new Vector3f()));
+                }
+
+                // those matrices aren't passed into shadow material programs,
+                // no need to worry about constant radius
+                this.canpipe_shadowProjectionMatrices[cascade].setOrtho(
+                    Math.max(min.x, center.x - cascadeRadius),  // left
+                    Math.min(max.x, center.x + cascadeRadius),  // right
+                    Math.max(min.y, center.y - cascadeRadius),  // bottom
+                    Math.min(max.y, center.y + cascadeRadius),  // up
+                    0.0F,                       // near
+                    Math.min(-min.z, -center.z + cascadeRadius)   // far
+                );
             }
         }
 
@@ -261,14 +268,6 @@ public class GameRendererMixin implements GameRendererAccessor {
         if (p != null) {
             p.onAfterRenderHand(canpipe_viewMatrix, canpipe_projectionMatrix);
         }
-    }
-
-    @WrapMethod(method = "getDepthFar")
-    float wrapGetDepthFar(Operation<Float> original) {
-        if (this.canpipe_depthFarOverride != null) {
-            return this.canpipe_depthFarOverride;
-        }
-        return original.call();
     }
 
     @Override
