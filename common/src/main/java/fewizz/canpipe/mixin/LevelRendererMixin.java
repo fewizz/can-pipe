@@ -75,12 +75,16 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Unique private float canpipe_eyeSkyLight = 0.0F;
     @Unique private float canpipe_smoothedEyeBlockLight = 0.0F;
     @Unique private float canpipe_smoothedEyeSkyLight = 0.0F;
+    @Unique private float canpipe_smoothedRainGradient = 0.0F;
+    @Unique private float canpipe_smoothedThunderGradient = 0.0F;
 
     @Override public boolean canpipe_getIsRenderingShadows() { return this.canpipe_isRenderingShadows; }
     @Override public float canpipe_getEyeBlockLight() { return this.canpipe_eyeBlockLight; }
     @Override public float canpipe_getEyeSkyLight() { return this.canpipe_eyeSkyLight; }
     @Override public float canpipe_getSmoothedEyeBlockLight() { return this.canpipe_smoothedEyeBlockLight; }
     @Override public float canpipe_getSmoothedEyeSkyLight() { return this.canpipe_smoothedEyeSkyLight; }
+    @Override public float canpipe_getSmoothedRainGradient() { return this.canpipe_smoothedRainGradient; }
+    @Override public float canpipe_getSmoothedThunderGradient() { return this.canpipe_smoothedThunderGradient; }
 
     @Inject(
         method = "renderLevel",
@@ -101,7 +105,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     ) {
         Pipeline p = Pipelines.getCurrent();
 
-        if (p == null || p.skyShadows == null) {
+        if (p == null) {
             return;
         }
 
@@ -116,17 +120,26 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         this.canpipe_eyeBlockLight = blockLight / 15.0F;
         this.canpipe_eyeSkyLight = skyLight / 15.0F;
 
-        float a = 1.0F - (float) Math.pow(Math.E, -1.0 / p.brightnessSmoothingFrames);
+        float brightnessDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.brightnessSmoothingFrames);
+        float rainDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.rainSmoothingFrames);
+        float thunderDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.thunderSmoothingFrames);
 
         this.canpipe_smoothedEyeBlockLight =
             this.canpipe_eyeBlockLight > this.canpipe_smoothedEyeBlockLight && !p.smoothBrightnessBidirectionaly
             ? this.canpipe_eyeBlockLight
-            : Mth.lerp(a, this.canpipe_smoothedEyeBlockLight, this.canpipe_eyeBlockLight);
+            : Mth.lerp(brightnessDelta, this.canpipe_smoothedEyeBlockLight, this.canpipe_eyeBlockLight);
         
         this.canpipe_smoothedEyeSkyLight =
             this.canpipe_eyeSkyLight > this.canpipe_smoothedEyeSkyLight && !p.smoothBrightnessBidirectionaly
             ? this.canpipe_eyeSkyLight
-            : Mth.lerp(a, this.canpipe_smoothedEyeSkyLight, this.canpipe_eyeSkyLight);
+            : Mth.lerp(brightnessDelta, this.canpipe_smoothedEyeSkyLight, this.canpipe_eyeSkyLight);
+
+        this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(pt));
+        this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(pt));
+
+        if (p.skyShadows == null) {
+            return;
+        }
 
         this.canpipe_isRenderingShadows = true;
 

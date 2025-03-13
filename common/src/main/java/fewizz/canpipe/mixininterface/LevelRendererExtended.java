@@ -7,5 +7,7 @@ public interface LevelRendererExtended {
     float canpipe_getEyeSkyLight();
     float canpipe_getSmoothedEyeBlockLight();
     float canpipe_getSmoothedEyeSkyLight();
+    float canpipe_getSmoothedRainGradient();
+    float canpipe_getSmoothedThunderGradient();
 
 }

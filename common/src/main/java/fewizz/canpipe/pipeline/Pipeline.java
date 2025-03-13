@@ -55,7 +55,11 @@ public class Pipeline implements AutoCloseable {
     public final Map<Option.Element<?>, Object> appliedOptions;
 
     public final boolean smoothBrightnessBidirectionaly;
+
+    // I wonder why smoothing is frame dependent, not time?
     public final int brightnessSmoothingFrames;
+    public final int rainSmoothingFrames;
+    public final int thunderSmoothingFrames;
 
     public final @Nullable SkyShadows skyShadows;
     public final @Nullable Sky sky;
@@ -152,6 +156,8 @@ public class Pipeline implements AutoCloseable {
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
         this.smoothBrightnessBidirectionaly = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);
         this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
+        this.rainSmoothingFrames = pipelineJson.getInt("rainSmoothingFrames", 500);
+        this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
 
         JsonObject skyO = pipelineJson.getObject("sky");
         if (skyO != null) {

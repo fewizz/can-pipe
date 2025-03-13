@@ -690,8 +690,8 @@ public class ProgramBase extends CompiledShaderProgram {
             this.CANPIPE_WEATHER_GRADIENTS.set(
                 mc.level.getRainLevel(pt),
                 mc.level.getThunderLevel(pt),
-                mc.level.getRainLevel(pt),    // TODO: smoothed
-                mc.level.getThunderLevel(pt)  // TODO: smoothed
+                lre.canpipe_getSmoothedRainGradient(),
+                lre.canpipe_getSmoothedThunderGradient()
             );
             this.CANPIPE_WEATHER_GRADIENTS.upload();
         }
