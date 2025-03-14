@@ -16,6 +16,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.CompiledShader.Type;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -393,12 +394,6 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
-        for (MaterialProgram p : this.materialPrograms.values()) {
-            if (p.CANPIPE_ORIGIN_TYPE != null) {
-                p.CANPIPE_ORIGIN_TYPE.set(0);  // camera
-            }
-        }
-
         var mc = Minecraft.getInstance();
 
         Stream.of(
@@ -438,10 +433,17 @@ public class Pipeline implements AutoCloseable {
         RenderSystem.viewport(0, 0, mc.getMainRenderTarget().width, mc.getMainRenderTarget().height);
 
         for (MaterialProgram p : this.materialPrograms.values()) {
+            GlStateManager._glUseProgram(p.getProgramId());
             if (p.CANPIPE_ORIGIN_TYPE != null) {
                 p.CANPIPE_ORIGIN_TYPE.set(3);  // hand
+                p.CANPIPE_ORIGIN_TYPE.upload();
+            }
+            if (p.FRX_MODEL_TO_WORLD != null) {
+                p.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F, 1.0F);
+                p.FRX_MODEL_TO_WORLD.upload();
             }
         }
+        GlStateManager._glUseProgram(0);
     }
 
     public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
@@ -453,10 +455,13 @@ public class Pipeline implements AutoCloseable {
         RenderSystem.viewport(0, 0, mc.getMainRenderTarget().width, mc.getMainRenderTarget().height);
 
         for (MaterialProgram p : this.materialPrograms.values()) {
+            GlStateManager._glUseProgram(p.getProgramId());
             if (p.CANPIPE_ORIGIN_TYPE != null) {
                 p.CANPIPE_ORIGIN_TYPE.set(2);  // screen
+                p.CANPIPE_ORIGIN_TYPE.upload();
             }
         }
+        GlStateManager._glUseProgram(0);
     }
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {

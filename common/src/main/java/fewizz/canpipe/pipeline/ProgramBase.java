@@ -1,7 +1,6 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -221,8 +220,8 @@ public class ProgramBase extends CompiledShaderProgram {
         this.FRX_GLINT_SPEED = getManuallyAppliedUniform("frx_glintSpeed");
 
         // view.glsl
-        this.FRX_MODEL_TO_WORLD = getUniform("frx_modelToWorld");  // non-manual
-        this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");  // non-manual
+        this.FRX_MODEL_TO_WORLD = getManuallyAppliedUniform("frx_modelToWorld");
+        this.CANPIPE_ORIGIN_TYPE = getManuallyAppliedUniform("canpipe_originType");
         this.FRX_CAMERA_POS = getManuallyAppliedUniform("frx_cameraPos");
         this.FRX_CAMERA_VIEW = getManuallyAppliedUniform("frx_cameraView");
         this.FRX_LAST_CAMERA_POS = getManuallyAppliedUniform("frx_lastCameraPos");
@@ -356,10 +355,15 @@ public class ProgramBase extends CompiledShaderProgram {
 
         // view.glsl
         if (this.FRX_MODEL_TO_WORLD != null) {
-            // will be re-set for terrain in LevelRenderer.renderSectionLayer
-            // should be zero for everything else
-            this.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F);
+            var cameraPos = camera.getPosition();
+            this.FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
+            this.FRX_MODEL_TO_WORLD.upload();
         }
+        if (this.CANPIPE_ORIGIN_TYPE != null) {
+            this.CANPIPE_ORIGIN_TYPE.set(0);  // screen
+            this.CANPIPE_ORIGIN_TYPE.upload();
+        }
+
         if (this.FRX_CAMERA_POS != null) {
             this.FRX_CAMERA_POS.set(camera.getPosition().toVector3f());
             this.FRX_CAMERA_POS.upload();

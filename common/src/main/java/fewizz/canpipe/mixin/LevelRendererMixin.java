@@ -66,7 +66,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow abstract void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode);
     @Shadow abstract boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list);
     @Shadow abstract void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list);
-    @Shadow abstract void compileSections(Camera camera);
     @Shadow abstract void applyFrustum(Frustum frustum);
     @Shadow abstract void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f);
 
@@ -201,7 +200,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                     setPosition(camPos);
                     setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
                 }}, shadowFrustum, false, false);
-                this.compileSections(camera);
             }
             else {
                 this.applyFrustum(shadowFrustum);
@@ -271,21 +269,17 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         method = "renderSectionLayer",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vertex/VertexBuffer;bind()V"
+            target = "Lnet/minecraft/client/renderer/CompiledShaderProgram;apply()V",
+            shift = Shift.AFTER
         )
     )
-    void beforeSectionRender(
+    void onTerrainProgramApply(
         CallbackInfo ci,
-        @Local CompiledShaderProgram program,
-        @Local SectionRenderDispatcher.RenderSection section
+        @Local CompiledShaderProgram program
     ) {
-        if (program instanceof ProgramBase pb) {
-            if (pb.FRX_MODEL_TO_WORLD != null) {
-                BlockPos pos = section.getOrigin();
-                pb.FRX_MODEL_TO_WORLD.set(pos.getX(), pos.getY(),pos.getZ(), 1.0F);
-                pb.FRX_MODEL_TO_WORLD.upload();
-                pb.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F, 1.0F);
-            }
+        if (program instanceof ProgramBase pb && pb.CANPIPE_ORIGIN_TYPE != null) {
+            pb.CANPIPE_ORIGIN_TYPE.set(1); // region
+            pb.CANPIPE_ORIGIN_TYPE.upload();
         }
     }
 
@@ -293,19 +287,43 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         method = "renderSectionLayer",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/CompiledShaderProgram;apply()V",
-            shift = Shift.AFTER
+            target = "Lcom/mojang/blaze3d/vertex/VertexBuffer;bind()V"
         )
     )
-    void afterSectionsRenderApplyProgram(
+    void beforeSectionRendering(
+        CallbackInfo ci,
+        @Local CompiledShaderProgram program,
+        @Local SectionRenderDispatcher.RenderSection section
+    ) {
+        if (program instanceof ProgramBase pb && pb.FRX_MODEL_TO_WORLD != null) {
+            BlockPos pos = section.getOrigin();
+            pb.FRX_MODEL_TO_WORLD.set(pos.getX(), pos.getY(),pos.getZ(), 1.0F);
+            pb.FRX_MODEL_TO_WORLD.upload();
+        }
+    }
+
+    @Inject(
+        method = "renderSectionLayer",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/CompiledShaderProgram;clear()V"
+        )
+    )
+    void afterAllSectionsRendered(
         CallbackInfo ci,
         @Local CompiledShaderProgram program
     ) {
         if (program instanceof ProgramBase pb) {
+            // set back to camera origin
             if (pb.CANPIPE_ORIGIN_TYPE != null) {
-                pb.CANPIPE_ORIGIN_TYPE.set(1); // region
+                pb.CANPIPE_ORIGIN_TYPE.set(0);
                 pb.CANPIPE_ORIGIN_TYPE.upload();
-                pb.CANPIPE_ORIGIN_TYPE.set(0);  // camera
+            }
+            if (pb.FRX_MODEL_TO_WORLD != null) {
+                var mc = Minecraft.getInstance();
+                var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
+                pb.FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
+                pb.FRX_MODEL_TO_WORLD.upload();
             }
         }
     }

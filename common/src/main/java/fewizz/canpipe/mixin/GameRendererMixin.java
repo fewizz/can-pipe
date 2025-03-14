@@ -1,7 +1,5 @@
 package fewizz.canpipe.mixin;
 
-import java.text.NumberFormat;
-
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -16,6 +14,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import fewizz.canpipe.mixininterface.GameRendererAccessor;
@@ -50,6 +50,7 @@ public class GameRendererMixin implements GameRendererAccessor {
     @Unique private Matrix4f[] canpipe_shadowProjectionMatrices = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
     @Unique private Vector4f[] canpipe_shadowCenters = null;
+    @Unique private Float canpipe_depthFarOverride = null;
 
     @Override
     public int canpipe_getFrame() {
@@ -154,6 +155,12 @@ public class GameRendererMixin implements GameRendererAccessor {
             );
             var shadowRotationMatrix = new Matrix3f(this.canpipe_shadowViewMatrix);
 
+            this.canpipe_depthFarOverride = this.renderDistance + 48.0F;
+                float fov = (float) this.minecraft.options.fov().get().intValue();
+                var pm = this.getProjectionMatrix(fov);
+                Frustum cascadeFrustum = new Frustum(viewMatrix, pm);
+                this.canpipe_depthFarOverride = null;
+
             for (int cascade = 0; cascade < 4; ++cascade) {
                 float cascadeRadius;
                 Vector4f center;
@@ -196,7 +203,7 @@ public class GameRendererMixin implements GameRendererAccessor {
                 Vector3f max = new Vector3f(-Float.MAX_VALUE);
 
                 // could be more efficient
-                for (Vector4f point : new Frustum(viewMatrix, projectionMatrix).getFrustumPoints()) {
+                for (Vector4f point : cascadeFrustum.getFrustumPoints()) {
                     point.mul(this.canpipe_shadowViewMatrix);
                     point.div(point.w);
                     min.min(point.xyz(new Vector3f()));
@@ -211,7 +218,7 @@ public class GameRendererMixin implements GameRendererAccessor {
                     Math.max(min.y, center.y - cascadeRadius),  // bottom
                     Math.min(max.y, center.y + cascadeRadius),  // up
                     0.0F,                       // near
-                    Math.min(-min.z, -center.z + cascadeRadius)   // far
+                   -Math.max(min.z, center.z - cascadeRadius)   // far
                 );
             }
         }
@@ -268,6 +275,14 @@ public class GameRendererMixin implements GameRendererAccessor {
         if (p != null) {
             p.onAfterRenderHand(canpipe_viewMatrix, canpipe_projectionMatrix);
         }
+    }
+
+    @WrapMethod(method = "getDepthFar")
+    float wrapGetDepthFar(Operation<Float> original) {
+        if (this.canpipe_depthFarOverride != null) {
+            return this.canpipe_depthFarOverride;
+        }
+        return original.call();
     }
 
     @Override

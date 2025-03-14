@@ -3,7 +3,9 @@ const vec3 frx_entityView = vec3(0.0);  // TODO define
 uniform vec3 frx_cameraPos;
 uniform vec3 frx_lastCameraPos;
 
+// chunk block pos when frx_modelOriginRegion is true, camera pos when frx_modelOriginCamera is true, vec3(0.0) otherwise
 uniform vec4 frx_modelToWorld;
+// chunk block pos - camera pos when rendering chunks, vec3(0.0) otherwise
 uniform vec3 canpipe_modelToCamera;
 #define frx_modelToCamera vec4(canpipe_modelToCamera, 0.0)
 uniform int canpipe_originType;

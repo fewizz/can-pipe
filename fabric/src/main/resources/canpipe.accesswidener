@@ -14,6 +14,7 @@ accessible  field   com/mojang/blaze3d/vertex/ByteBufferBuilder  pointer  J
 accessible  field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
 mutable     field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
 
+accessible  class   net/minecraft/client/renderer/RenderStateShard$EmptyTextureStateShard
 accessible  class   net/minecraft/client/renderer/RenderStateShard$OutputStateShard
 accessible  class   net/minecraft/client/renderer/RenderStateShard$TextureStateShard
 accessible  field   net/minecraft/client/renderer/RenderStateShard$TextureStateShard  texture  Ljava/util/Optional;
