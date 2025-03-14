@@ -1,36 +1,32 @@
 {
 	"schemaVersion": 1,
-	"id": "canpipe",
-	"version": "1",
-	"name": "Canvas Pipeline",
-	"description": "Some description",
+	"id": "${mod_id}",
+	"version": "${version}",
+	"name": "${mod_name}",
+	"description": "${description}",
 	"authors": [
-		"Me!"
+		"fewizz"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/fewizz/can-pipe"
 	},
-	"license": "CC0-1.0",
-	"icon": "assets/canpipe/icon.png",
-	"environment": "*",
+	"license": "${license}",
+	"icon": "assets/${mod_id}/icon.png",
+	"environment": "client",
 	"mixins": [
 		{
-			"config": "canpipe.mixins.json",
+			"config": "${mod_id}.mixins.json",
 			"environment": "client"
 		},
 		{
-			"config": "canpipe.indigo.mixins.json",
+			"config": "${mod_id}.indigo.mixins.json",
 			"environment": "client"
 		}
 	],
-	"accessWidener" : "canpipe.accesswidener",
+	"accessWidener" : "${mod_id}.accesswidener",
 	"depends": {
 		"fabricloader": ">=0.16.2",
-		"minecraft": "~1.21.1",
+		"minecraft": "${minecraft_version}",
 		"java": ">=21"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }

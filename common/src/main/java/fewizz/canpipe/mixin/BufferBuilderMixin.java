@@ -87,17 +87,19 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             z1 = this.canpipe_getPos(posPtr, offsetToFirstVertex+1, 2),
             x2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 0),
             y2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 1),
-            z2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 2);
+            z2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 2),
+            x3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 0),
+            y3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 1),
+            z3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 2);
 
         Vector3f normal0 = computeNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
 
         if (normalPtr != -1) {
-            if (this.mode.primitiveLength == 4) {
-                float
-                    x3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 0),
-                    y3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 1),
-                    z3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 2);
-
+            if (
+                this.mode.primitiveLength == 4 &&
+                // not coplanar
+                Math.abs(normal0.x*(x3-x1) + normal0.y*(y3-y1) + normal0.z*(z3-z1)) >= 0.0001F
+            ) {
                 Vector3f normal1 = computeNormal(x2, y2, z2, x3, y3, z3, x0, y0, z0);
 
                 Vector3f mid = new Vector3f(normal0).add(normal1).normalize();

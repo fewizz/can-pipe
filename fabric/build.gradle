@@ -7,6 +7,10 @@ repositories {
         name = 'ParchmentMC'
         url = 'https://maven.parchmentmc.org'
     }
+    maven {
+        name = "Terraformers"
+        url = "https://maven.terraformersmc.com/"
+    }
 }
 
 dependencies {
@@ -25,6 +29,8 @@ dependencies {
 
     modImplementation "blue.endless:jankson:1.2.3"
     include "blue.endless:jankson:1.2.3"
+
+    modImplementation "com.terraformersmc:modmenu:13.0.2"
 }
 
 loom {
@@ -50,9 +56,24 @@ compileJava.source project(":common").sourceSets.main.allSource
 processResources {
     from project(":common").sourceSets.main.resources
 
-    inputs.property "version", project.version
+    var expandProps = [
+        'version'                      : version,
+        'group'                        : project.group,
+        'minecraft_version'            : minecraft_version,
+        'minecraft_version_range'      : minecraft_version_range,
+        'mod_name'                     : mod_name,
+        'mod_author'                   : mod_author,
+        'mod_id'                       : mod_id,
+        'license'                      : license,
+        'description'                  : project.description,
+        'neoforge_version'             : neoforge_version,
+        'neoforge_loader_version_range': neoforge_loader_version_range,
+        'credits'                      : credits,
+        'java_version'                 : java_version
+    ]
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand expandProps
     }
+    inputs.properties(expandProps)
 }

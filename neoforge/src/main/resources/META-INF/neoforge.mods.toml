@@ -6,7 +6,7 @@ license = "${license}"
 modId = "${mod_id}"
 version = "${version}"
 displayName = "${mod_name}"
-logoFile="${mod_id}.png"
+logoFile="assets/${mod_id}/icon.png"
 credits="${credits}"
 description = '''${description}'''
 
