@@ -16,8 +16,6 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.JanksonUtils;
-import it.unimi.dsi.fastutil.ints.IntIntImmutablePair;
-import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -34,6 +32,8 @@ public class Texture extends AbstractTexture {
     final boolean isWidthWindowSizeDependent;
     final boolean isHeightWindowSizeDependent;
 
+    private record IntParam(int name, int value){};
+
     private Texture(
         ResourceLocation pipelineLocation,
         String name,
@@ -43,7 +43,7 @@ public class Texture extends AbstractTexture {
         int pixelFormat,
         int pixeDataType,
         int maxLod,
-        IntIntPair params[]
+        List<IntParam> params
     ) {
         this.name = name;
         this.extent = extent;
@@ -56,17 +56,17 @@ public class Texture extends AbstractTexture {
         this.isHeightWindowSizeDependent = extent.y == 0;
 
         Minecraft mc = Minecraft.getInstance();
-        if (isWidthWindowSizeDependent) {
+        if (this.isWidthWindowSizeDependent) {
             extent.x = mc.getWindow().getWidth();
         }
-        if (isHeightWindowSizeDependent) {
+        if (this.isHeightWindowSizeDependent) {
             extent.y = mc.getWindow().getHeight();
         }
 
         bind();
 
         for (var p : params) {
-            GlStateManager._texParameter(target, p.firstInt(), p.secondInt());
+            GlStateManager._texParameter(target, p.name, p.value);
         }
 
         if (maxLod > 0) {
@@ -83,44 +83,48 @@ public class Texture extends AbstractTexture {
     private void allocate() {
         bind();
 
-        for (int i = 0; i <= maxLod; ++i) {
-            int w = this.extent.x >> i;
-            int h = this.extent.y >> i;
+        for (int lod = 0; lod <= this.maxLod; ++lod) {
+            int w = this.extent.x >> lod;
+            int h = this.extent.y >> lod;
+            int d = this.extent.z >> lod;
 
-            if (target == GL33C.GL_TEXTURE_2D) {
-                GlStateManager._texImage2D(target, i, internalFormat, w, h, 0, pixelFormat, pixelDataType, (IntBuffer) null);
-            } else if (target == GL33C.GL_TEXTURE_3D) {
-                GFX.glTexImage3D(target, i, internalFormat, w, h, this.extent.z >> i, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
-            } else if (target == GL33C.GL_TEXTURE_2D_ARRAY) {
-                GFX.glTexImage3D(target, i, internalFormat, w, h, this.extent.z, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
-            } else if (target == GL33C.GL_TEXTURE_CUBE_MAP) {
+            if (this.target == GL33C.GL_TEXTURE_2D) {
+                GlStateManager._texImage2D(this.target, lod, this.internalFormat, w, h, 0, this.pixelFormat, this.pixelDataType, (IntBuffer) null);
+            } else if (this.target == GL33C.GL_TEXTURE_3D) {
+                GFX.glTexImage3D(this.target, lod, this.internalFormat, w, h, d, 0, this.pixelFormat, this.pixelDataType, (ByteBuffer) null);
+            } else if (this.target == GL33C.GL_TEXTURE_2D_ARRAY) {
+                GFX.glTexImage3D(this.target, lod, this.internalFormat, w, h, this.extent.z, 0, this.pixelFormat, this.pixelDataType, (ByteBuffer) null);
+            } else if (this.target == GL33C.GL_TEXTURE_CUBE_MAP) {
                 for (int face = 0; face < 6; ++face) {
-                    GlStateManager._texImage2D(GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, i, internalFormat, w, h, 0, pixelFormat, pixelDataType, (IntBuffer) null);
+                    GlStateManager._texImage2D(GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, lod, this.internalFormat, w, h, 0, this.pixelFormat, this.pixelDataType, (IntBuffer) null);
                 }
-            } else if (target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
+            } else if (this.target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
                 /* "... depth must be a multiple of six indicating 6N layer-faces in the
                 cube map array, otherwise the error INVALID_VALUE is generated." */
-                GFX.glTexImage3D(GL40C.GL_TEXTURE_CUBE_MAP_ARRAY, i, internalFormat, w, h, this.extent.z * 6, 0, pixelFormat, pixelDataType, (ByteBuffer) null);
+                GFX.glTexImage3D(GL40C.GL_TEXTURE_CUBE_MAP_ARRAY, lod, this.internalFormat, w, h, this.extent.z * 6, 0, this.pixelFormat, this.pixelDataType, (ByteBuffer) null);
             } else {
                 throw new NotImplementedException();
             }
         }
     }
 
-    public void onWindowSizeChanged(int w, int h) {
-        if (isWidthWindowSizeDependent) {
-            this.extent.x = w;
+    public void onWindowSizeChanged(int width, int height) {
+        boolean reallocate = false;
+        if (this.isWidthWindowSizeDependent) {
+            reallocate |= this.extent.x != width;
+            this.extent.x = width;
         }
-        if (isHeightWindowSizeDependent) {
-            this.extent.y = h;
+        if (this.isHeightWindowSizeDependent) {
+            reallocate |= this.extent.y != height;
+            this.extent.y = height;
         }
-        if (isWidthWindowSizeDependent || isHeightWindowSizeDependent) {
+        if (reallocate) {
             allocate();
         }
     }
 
     public void bind() {
-        GFX.glBindTexture(target, getId());
+        GFX.glBindTexture(this.target, getId());
     }
 
     @Override
@@ -128,54 +132,49 @@ public class Texture extends AbstractTexture {
         this.releaseId();
     }
 
-    static Texture load(
-        JsonObject json,
-        ResourceLocation pipelineLocation
-    ) {
+    static Texture load(JsonObject json, ResourceLocation pipelineLocation) {
         String name = json.get(String.class, "name");
 
         int maxLod = json.getInt("lod", 0);
-        int depth = json.getInt("depth", 0);
         int size = json.getInt("size", 0);
-        int width = json.getInt("width", size);
-        int height = json.getInt("height", size);
+
+        Vector3i extent = new Vector3i(
+            json.getInt("width", size),
+            json.getInt("height", size),
+            json.getInt("depth", 0)
+        );
 
         String targetStr = json.get(String.class, "target");
 
-        Function<String, Integer> glConstantCode = (String constantName) -> {
+        Function<String, Integer> glConst = (String constantName) -> {
             // Not 3.3, because GL_TEXTURE_CUBE_MAP_ARRAY is in 4.0
             try {
                 return GL40C.class.getField("GL_"+constantName).getInt(null);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Couldn't find GL constant \""+constantName+"\"", e);
             }
         };
 
-        int target = targetStr != null ? glConstantCode.apply(targetStr) : GL33C.GL_TEXTURE_2D;
+        int target = targetStr != null ? glConst.apply(targetStr) : GL33C.GL_TEXTURE_2D;
 
         String internalFormatStr = json.get(String.class, "internalFormat");
-        int internalFormat = internalFormatStr != null ? glConstantCode.apply(internalFormatStr) : GL33C.GL_RGBA8;
+        int internalFormat = internalFormatStr != null ? glConst.apply(internalFormatStr) : GL33C.GL_RGBA8;
 
         String pixelFormatStr = json.get(String.class, "pixelFormat");
-        int pixelFormat = pixelFormatStr != null ? glConstantCode.apply(pixelFormatStr) : GL33C.GL_RGBA;
+        int pixelFormat = pixelFormatStr != null ? glConst.apply(pixelFormatStr) : GL33C.GL_RGBA;
 
         String pixelDataTypeStr = json.get(String.class, "pixelDataType");
-        int pixelDataType = pixelDataTypeStr != null ? glConstantCode.apply(pixelDataTypeStr) : GL33C.GL_UNSIGNED_BYTE;
+        int pixelDataType = pixelDataTypeStr != null ? glConst.apply(pixelDataTypeStr) : GL33C.GL_UNSIGNED_BYTE;
 
-        List<IntIntPair> params = new ArrayList<>();
+        List<IntParam> params = new ArrayList<>();
 
-        for (var paramsO : JanksonUtils.listOfObjects(json, "texParams")) {
-            int name0 = glConstantCode.apply(paramsO.get(String.class, "name"));
-            int value = glConstantCode.apply(paramsO.get(String.class, "val"));
-            params.add(IntIntImmutablePair.of(name0, value));
+        for (var paramsObject : JanksonUtils.listOfObjects(json, "texParams")) {
+            int paramName = glConst.apply(paramsObject.get(String.class, "name"));
+            int paramValue = glConst.apply(paramsObject.get(String.class, "val"));
+            params.add(new IntParam(paramName, paramValue));
         }
 
-        return new Texture(
-            pipelineLocation, name,
-            new Vector3i(width, height, depth),
-            target, internalFormat, pixelFormat,
-            pixelDataType, maxLod, params.toArray(new IntIntPair[]{})
-        );
+        return new Texture(pipelineLocation, name, extent, target, internalFormat, pixelFormat,pixelDataType, maxLod, params);
     }
 
 }
