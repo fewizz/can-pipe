@@ -25,7 +25,6 @@ import com.mojang.blaze3d.shaders.CompiledShader;
 
 import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
-import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.resources.ResourceLocation;
 
 public class Shader extends CompiledShader {
@@ -36,6 +35,7 @@ public class Shader extends CompiledShader {
     static final Pattern INCLUDE_PATTERN = Pattern.compile("^\\s*#include\\s+([[a-z][0-9]._]+:[[a-z][0-9]._/]+)");
 
     static final Pattern FLOAT_PATTERN = Pattern.compile("[0-9]+\\.[0-9]+");
+
     /**
     Naive pattern for matching expressions like <code>#if X op Y</code>
     , where X, Y is either option name or floating-point number,
@@ -55,33 +55,33 @@ public class Shader extends CompiledShader {
     }
 
     static Shader load(
-        ResourceLocation location,
-        String source,
-        Type type,
-        int version,
+        ResourceLocation location, String source, Type type, int version,
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         Function<ResourceLocation, Optional<String>> getShaderSource,
         @Nullable Framebuffer shadowFramebuffer
-    ) throws IOException, CompilationException {
-        String preprocessedSource =
+    ) {
+        String header =
             "#version " + version + "\n\n" +
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
-            "#define " + type.name() + "_SHADER\n\n" +
-            (
-                shadowFramebuffer != null ?
-                "#define SHADOW_MAP_PRESENT\n"+
-                "#define SHADOW_MAP_SIZE "+shadowFramebuffer.depthAttachment.texture().extent.x + "\n\n"
-                :
-                ""
-            ) +
-            // some shaderpacks define them, some not
-            (type == Type.VERTEX && !CONTAINS_VERTEX_IN.test(source) ? "in vec3 in_vertex;\n\n" : "") +
-            (type == Type.VERTEX && !CONTAINS_UV_IN.test(source) ? "in vec2 in_uv;\n\n" : "") +
-            source;
+            "#define " + type.name() + "_SHADER\n\n";
 
-        preprocessedSource = processIncludesAndDefinitions(
-            preprocessedSource, location, options, appliedOptions, getShaderSource
+        if (shadowFramebuffer != null) {
+            header +=
+                "#define SHADOW_MAP_PRESENT\n"+
+                "#define SHADOW_MAP_SIZE "+shadowFramebuffer.depthAttachment.texture().extent.x + "\n\n";
+        }
+
+        // some shaderpacks define them, some - not
+        if (type == Type.VERTEX && !CONTAINS_VERTEX_IN.test(source)) {
+            header += "in vec3 in_vertex;\n\n";
+        }
+        if (type == Type.VERTEX && !CONTAINS_UV_IN.test(source)) {
+            header += "in vec2 in_uv;\n\n";
+        }
+
+        String preprocessedSource = processIncludesAndDefinitions(
+            header + source, location, options, appliedOptions, getShaderSource
         );
 
         /* Can't use CompiledShader.compile, because it trims and truncates the log */
@@ -93,13 +93,17 @@ public class Shader extends CompiledShader {
             int logLength = GlStateManager.glGetShaderi(id, GL33C.GL_INFO_LOG_LENGTH);
             String log = GlStateManager.glGetShaderInfoLog(id, logLength);
             Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
-            Files.createDirectories(compilationErrorsPath);
-            Files.writeString(
-                compilationErrorsPath.resolve(location.toDebugFileName()),
-                preprocessedSource+"\n"+log
-            );
+            try {
+                Files.createDirectories(compilationErrorsPath);
+                Files.writeString(
+                    compilationErrorsPath.resolve(location.toDebugFileName()),
+                    preprocessedSource+"\n"+log
+                );
+            } catch (IOException e) {
+                CanPipe.LOGGER.warn("Couldn't save shader \""+location.toString()+"\" compilation error result", e);
+            }
 
-            throw new CompilationException("Couldn't compile shader \""+location.toString()+"\": "+log);
+            throw new RuntimeException("Couldn't compile shader \""+location.toString()+"\": "+log);
         }
 
         return new Shader(id, location, preprocessedSource);
@@ -111,7 +115,7 @@ public class Shader extends CompiledShader {
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         Function<ResourceLocation, Optional<String>> getShaderSource
-    ) throws IOException {
+    ) {
         Set<ResourceLocation> preprocessed = new HashSet<>();
         Set<String> definedDefinitions = new HashSet<>();
 
@@ -120,11 +124,9 @@ public class Shader extends CompiledShader {
         for (
             Pair<String, Int2BooleanFunction> lc :
             (Iterable<Pair<String, Int2BooleanFunction>>)
-            (
-                () -> linesIterator(includePreprocessedLinesIterator(
-                    source, sourceLocation, preprocessed, options, appliedOptions, getShaderSource
-                ))
-            )
+            () -> linesIterator(includePreprocessedLinesIterator(
+                source, sourceLocation, preprocessed, options, appliedOptions, getShaderSource
+            ))
         ) {
             String line = lc.getLeft();
             Int2BooleanFunction isCommentedAt = lc.getRight();
@@ -193,8 +195,7 @@ public class Shader extends CompiledShader {
 
     private static Iterator<String>
     includePreprocessedLinesIterator(
-        String source,
-        ResourceLocation sourceLocation,
+        String source, ResourceLocation sourceLocation,
         Set<ResourceLocation> preprocessed,
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,

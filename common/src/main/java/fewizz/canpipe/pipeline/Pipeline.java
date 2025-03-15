@@ -30,7 +30,6 @@ import blue.endless.jankson.annotation.Nullable;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -257,10 +256,10 @@ public class Pipeline implements AutoCloseable {
         this.weatherFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "weather"));
         this.cloudsFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "clouds"));
 
-        Map<ResourceLocation, String> _shaderSourceCache = new HashMap<>();
+        Map<ResourceLocation, String> shaderSourceCache = new HashMap<>();
 
         Function<ResourceLocation, Optional<String>> getShaderSource = (ResourceLocation location) -> {
-            String source = _shaderSourceCache.computeIfAbsent(location, (loc) -> {
+            String source = shaderSourceCache.computeIfAbsent(location, (loc) -> {
                 try {
                     Minecraft mc = Minecraft.getInstance();
                     var resource = mc.getResourceManager().getResource(location);
@@ -278,19 +277,15 @@ public class Pipeline implements AutoCloseable {
         // "programs"
         BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
             return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
-                try {
-                    String source = getShaderSource.apply(location).get();
-                    return Shader.load(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer);
-                } catch (IOException | CompilationException e) {
-                    throw new RuntimeException(e.getMessage(), e);
-                }
+                String source = getShaderSource.apply(location).get();
+                return Shader.load(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer);
             });
         };
 
         Function<String, Program> getOrLoadProgram = (String name) -> {
             return this.programs.computeIfAbsent(name, _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
-                JsonObject programO = programs.stream().filter(p -> p.get(String.class, "name").equals(name)).findFirst().get();
+                JsonObject programO = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
                 return Program.load(programO, location, getOrLoadShader);
             });
         };
@@ -337,54 +332,23 @@ public class Pipeline implements AutoCloseable {
             CanPipe.VertexFormats.PARTICLE,
         }) {
             this.materialPrograms.put(
-                vertexFormat, MaterialProgram.create(
-                    vertexFormat,
-                    glslVersion,
-                    enablePBR,
-                    false,
-                    shadowFramebuffer,
-                    location,
-                    materialVertexShaderLocation,
-                    materialFragmentShaderLocation,
-                    options,
-                    appliedOptions,
-                    samplers,
-                    samplerImages,
-                    getShaderSource
+                vertexFormat, MaterialProgram.load(
+                    vertexFormat, glslVersion, enablePBR, false, shadowFramebuffer,
+                    location, materialVertexShaderLocation, materialFragmentShaderLocation,
+                    options, appliedOptions, samplers, samplerImages, getShaderSource
                 )
             );
 
             if (this.skyShadows != null) {
                 this.shadowPrograms.put(
-                    vertexFormat, MaterialProgram.create(
-                        vertexFormat,
-                        glslVersion,
-                        enablePBR,
-                        true, // depth pass
-                        shadowFramebuffer,
-                        location,
-                        this.skyShadows.vertexShaderLocation,
-                        this.skyShadows.fragmentShaderLocation,
-                        options,
-                        appliedOptions,
-                        List.of(),
-                        List.of(),
-                        getShaderSource
+                    vertexFormat, MaterialProgram.load(
+                        vertexFormat, glslVersion, enablePBR, true /* depth pass */, shadowFramebuffer,
+                        location, this.skyShadows.vertexShaderLocation, this.skyShadows.fragmentShaderLocation,
+                        options, appliedOptions, List.of(), List.of(), getShaderSource
                     )
                 );
             }
         }
-
-        // var blockProgram = this.materialPrograms.get(CanPipe.VertexFormats.BLOCK);
-        // for (
-        //     String attrName : new String[] {
-        //         "in_vertex", "in_color", "in_uv", "in_uv1", "in_lightmap",
-        //         "in_normal", "in_ao", "in_spriteIndex", "in_materialIndex",
-        //         "in_tangent"
-        //     }
-        // ) {
-        //     System.out.println(attrName + ": "+GlStateManager._glGetAttribLocation(blockProgram.getProgramId(), attrName));
-        // }
     }
 
     public void onWindowSizeChanged(int w, int h) {

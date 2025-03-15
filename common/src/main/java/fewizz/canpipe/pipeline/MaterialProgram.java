@@ -1,6 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,7 +21,6 @@ import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.client.renderer.ShaderProgramConfig;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.resources.model.ModelManager;
@@ -38,36 +36,33 @@ public class MaterialProgram extends ProgramBase {
         new ShaderProgramConfig.Uniform("canpipe_light1Direction", "float", 3, List.of(0.0F, 0.0F, 0.0F))
     );
 
+    static final List<String> DEFAULT_SAMPLER_NAMES = List.of(
+        "frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"
+    );
+
     public final Uniform FRXU_CASCADE;
     public final Uniform CANPIPE_RENDER_TARGET;
     public final Uniform CANPIPE_ALPHA_CUTOUT;
 
     public final VertexFormat vertexFormat;
-    public final boolean depth;
+    public final boolean shadow;
 
     private MaterialProgram(
-        ResourceLocation location,
-        VertexFormat vertexFormat,
-        Shader vertexShader,
-        Shader fragmentShader,
-        List<String> samplers,
-        List<Optional<? extends AbstractTexture>> textures,
-        boolean depth
-    ) throws IOException, CompilationException {
+        String name, VertexFormat vertexFormat, Shader vertexShader, Shader fragmentShader,
+        List<String> samplers, List<Optional<? extends AbstractTexture>> textures, boolean shadow
+    ) {
         super(
-            location, vertexFormat,
-            List.of("frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"),
-            samplers, DEFAULT_UNIFORMS,
-            vertexShader, fragmentShader
+            name, vertexFormat, DEFAULT_SAMPLER_NAMES, samplers,
+            DEFAULT_UNIFORMS, vertexShader, fragmentShader
         );
         this.vertexFormat = vertexFormat;
-        this.depth = depth;
+        this.shadow = shadow;
 
         if (samplers.size() > textures.size()) {
-            CanPipe.LOGGER.warn("Material program "+location+" has more samplers than textures");
+            CanPipe.LOGGER.warn("Material program has more samplers than textures");
         }
         if (samplers.size() < textures.size()) {
-            CanPipe.LOGGER.warn("Material program "+location+" has less samplers than textures");
+            CanPipe.LOGGER.warn("Material program has less samplers than textures");
         }
 
         this.FRXU_CASCADE = getUniform("frxu_cascade");
@@ -89,7 +84,33 @@ public class MaterialProgram extends ProgramBase {
         }
     }
 
-    public static MaterialProgram create(
+    @Override
+    public Uniform getUniform(String name) {
+        if (name.equals("Light0_Direction")) { name = "canpipe_light0Direction"; }
+        if (name.equals("Light1_Direction")) { name = "canpipe_light1Direction"; }
+        return super.getUniform(name);
+    }
+
+    @Override
+    public void bindSampler(String name, int id) {
+        if (name.equals("Sampler0")) {
+            name = "frxs_baseColor";
+
+            // binding texture atlas? then we should also bind it's data texture (cursed way)
+            var mc = Minecraft.getInstance();
+            for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
+                var atlas = mc.getModelManager().getAtlas(atlasLoc);
+                if (atlas.getId() == id) {
+                    super.bindSampler("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).getSpriteData());
+                }
+            }
+        }
+        if (name.equals("Sampler2")) { name = "frxs_lightmap"; }
+
+        super.bindSampler(name, id);
+    }
+
+    public static MaterialProgram load(
         VertexFormat format,
         int glslVersion,
         boolean enablePBR,
@@ -284,56 +305,16 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
-        try {
-            var vertexShader = Shader.load(
-                vertexShaderLocation, vertexSrc,
-                Type.VERTEX, glslVersion, options, appliedOptions,
-                getShaderSource, shadowFramebuffer
-            );
-            var fragmentShader = Shader.load(
-                fragmentShaderLocation, fragmentSrc,
-                Type.FRAGMENT, glslVersion, options, appliedOptions,
-                getShaderSource, shadowFramebuffer
-            );
+        var vertexShader = Shader.load(
+            vertexShaderLocation, vertexSrc, Type.VERTEX, glslVersion,
+            options, appliedOptions, getShaderSource, shadowFramebuffer
+        );
+        var fragmentShader = Shader.load(
+            fragmentShaderLocation, fragmentSrc, Type.FRAGMENT, glslVersion,
+            options, appliedOptions, getShaderSource, shadowFramebuffer
+        );
 
-            return new MaterialProgram(
-                location.withSuffix("-"),
-                format,
-                vertexShader,
-                fragmentShader,
-                samplers,
-                textures,
-                depthPass
-            );
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public Uniform getUniform(String name) {
-        if (name.equals("Light0_Direction")) { name = "canpipe_light0Direction"; }
-        if (name.equals("Light1_Direction")) { name = "canpipe_light1Direction"; }
-        return super.getUniform(name);
-    }
-
-    @Override
-    public void bindSampler(String name, int id) {
-        if (name.equals("Sampler0")) {
-            name = "frxs_baseColor";
-
-            // binding texture atlas? then we should also bind it's data texture (cursed way)
-            var mc = Minecraft.getInstance();
-            for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
-                var atlas = mc.getModelManager().getAtlas(atlasLoc);
-                if (atlas.getId() == id) {
-                    super.bindSampler("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).getSpriteData());
-                }
-            }
-        }
-        if (name.equals("Sampler2")) { name = "frxs_lightmap"; }
-
-        super.bindSampler(name, id);
+        return new MaterialProgram("materialProgram", format, vertexShader, fragmentShader, samplers, textures, depthPass);
     }
 
 }

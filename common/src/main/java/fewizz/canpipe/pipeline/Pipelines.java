@@ -36,10 +36,7 @@ public class Pipelines implements PreparableReloadListener {
     private static volatile @Nullable Throwable loadingError = null;
     private static volatile @Nullable Pipeline current = null;
 
-    public static void loadAndSetPipeline(
-        @Nullable PipelineRaw raw,
-        Map<Option.Element<?>, Object> optionsChanges
-    ) {
+    public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Map<Option.Element<?>, Object> optionsChanges) {
         assert RenderSystem.isOnRenderThread();
 
         Pipelines.loadingError = null;

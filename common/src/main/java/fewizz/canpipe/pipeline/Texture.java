@@ -35,14 +35,8 @@ public class Texture extends AbstractTexture {
     private record IntParam(int name, int value){};
 
     private Texture(
-        ResourceLocation pipelineLocation,
-        String name,
-        Vector3i extent,
-        int target,
-        int internalFormat,
-        int pixelFormat,
-        int pixeDataType,
-        int maxLod,
+        ResourceLocation pipelineLocation, String name, Vector3i extent,
+        int target, int internalFormat, int pixelFormat, int pixeDataType, int maxLod,
         List<IntParam> params
     ) {
         this.name = name;

@@ -24,23 +24,6 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 
 public class Pass extends PassBase {
 
-    static class FREXClear extends PassBase {
-
-        final String name;
-        final Framebuffer framebuffer;
-
-        FREXClear(String name, Framebuffer framebuffer) {
-            this.name = name;
-            this.framebuffer = framebuffer;
-        }
-
-        @Override
-        public void apply(Matrix4f view, Matrix4f projection) {
-            framebuffer.bindAndClearFully();
-        }
-
-    };
-
     final String name;
     final Framebuffer framebuffer;
     final Program program;
@@ -52,19 +35,15 @@ public class Pass extends PassBase {
     final int layer;
 
     private Pass(
-        String name,
-        Framebuffer framebuffer,
-        Program program,
+        String name, Framebuffer framebuffer, Program program,
         List<Optional<? extends AbstractTexture>> textures,
-        Vector2i extent,
-        int lod,
-        int layer
+        Vector2i extent, int lod, int layer
     ) {
         if (program.samplers.size() > textures.size()) {
-            CanPipe.LOGGER.warn("Program "+program.location+" has more samplers than textures provided by pass \""+name+"\"");
+            CanPipe.LOGGER.warn("Program \""+program.name+"\" has more samplers than textures provided by pass \""+name+"\"");
         }
         if (program.samplers.size() < textures.size()) {
-            CanPipe.LOGGER.warn("Program "+program.location+" has less samplers than textures provided by pass \""+name+"\"");
+            CanPipe.LOGGER.warn("Program \""+program.name+"\" has less samplers than textures provided by pass \""+name+"\"");
         }
         for (int i = 0; i < Math.min(program.samplers.size(), textures.size()); ++i) {
             String sampler = program.samplers.get(i);
@@ -96,40 +75,38 @@ public class Pass extends PassBase {
         w >>= this.lod;
         h >>= this.lod;
 
-        if (program.FRXU_SIZE != null) {
-            program.FRXU_SIZE.set((int) w, (int) h);
+        if (this.program.FRXU_SIZE != null) {
+            this.program.FRXU_SIZE.set((int) w, (int) h);
         }
-        if (program.FRXU_LOD != null) {
-            program.FRXU_LOD.set(this.lod);
+        if (this.program.FRXU_LOD != null) {
+            this.program.FRXU_LOD.set(this.lod);
         }
-        if (program.FRXU_LAYER != null) {
-            program.FRXU_LAYER.set(this.layer);
+        if (this.program.FRXU_LAYER != null) {
+            this.program.FRXU_LAYER.set(this.layer);
         }
-        if (program.FRXU_FRAME_PROJECTION_MATRIX != null) {
-            program.FRXU_FRAME_PROJECTION_MATRIX.set(new Matrix4f().ortho2D(0, w, 0, h));
+        if (this.program.FRXU_FRAME_PROJECTION_MATRIX != null) {
+            this.program.FRXU_FRAME_PROJECTION_MATRIX.set(new Matrix4f().ortho2D(0, w, 0, h));
         }
 
         RenderSystem.viewport(0, 0, (int) w, (int) h);
 
-        framebuffer.bindWrite(false);
+        this.framebuffer.bindWrite(false);
 
-        // program.setDefaultUniforms(view, projection, w, h, this.lod, this.layer);
-        for (int i = 0; i < Math.min(program.samplers.size(), this.textures.size()); ++i) {
-            String sampler = program.samplers.get(i);
+        for (int i = 0; i < Math.min(this.program.samplers.size(), this.textures.size()); ++i) {
+            String sampler = this.program.samplers.get(i);
             this.textures.get(i).ifPresent(texture -> {
-                program.bindSampler(sampler, texture);
+                this.program.bindSampler(sampler, texture);
             });
-            
         }
-        program.apply();
+        this.program.apply();
 
         // assuming that active texture unit is GL_TEXTURE0,
         // if we couldn't find first sampler location,
         // then attach first texture to the texture unit GL_TEXTURE0.
         // compat with canvas, for cases like this:
         // https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5
-        if (program.samplers.size() > 0 && !program.samplerExists(program.samplers.get(0))) {
-            this.textures.get(0).ifPresent(t -> t.bind());
+        if (this.program.samplers.size() > 0 && !this.program.samplerExists(this.program.samplers.get(0))) {
+            this.textures.get(0).ifPresent(texture -> texture.bind());
         }
 
         RenderSystem.disableDepthTest();
@@ -143,26 +120,26 @@ public class Pass extends PassBase {
 
         RenderSystem.enableDepthTest();
 
-        framebuffer.unbindWrite();
-        program.clear();
+        this.framebuffer.unbindWrite();
+        this.program.clear();
     }
 
     static Optional<PassBase> load(
-        JsonObject passO,
+        JsonObject json,
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
         Function<String, Program> getOrLoadProgram,
         Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture
     ) {
-        String toggleConfig = passO.get(String.class, "toggleConfig");
+        String toggleConfig = json.get(String.class, "toggleConfig");
 
         // pass is disabled, skipping
         if (toggleConfig != null && !(boolean) optionValueByName.apply(toggleConfig)) {
             return Optional.empty();
         }
 
-        String passName = passO.get(String.class, "name");
-        String framebufferName = passO.get(String.class, "framebuffer");
+        String passName = json.get(String.class, "name");
+        String framebufferName = json.get(String.class, "framebuffer");
         Optional<Framebuffer> framebuffer = getOrLoadOptionalFramebuffer.apply(framebufferName);
         if (framebuffer.isEmpty()) {
             // canvas behaviour
@@ -170,7 +147,7 @@ public class Pass extends PassBase {
             return Optional.empty();
         }
 
-        String programName = passO.get(String.class, "program");
+        String programName = json.get(String.class, "program");
 
         if (programName.equals("frex_clear")) {
             return Optional.of(new Pass.FREXClear(passName, framebuffer.get()));
@@ -180,16 +157,36 @@ public class Pass extends PassBase {
         Objects.nonNull(program);
 
         List<Optional<? extends AbstractTexture>> textures = new ArrayList<>();
-        for (String s : JanksonUtils.listOfStrings(passO, "samplerImages")) {
+        for (String s : JanksonUtils.listOfStrings(json, "samplerImages")) {
             textures.add(getOrLoadPipelineOrResourcepackTexture.apply(s));
         }
 
-        int size = passO.getInt("size", 0);
-        int width = passO.getInt("width", size);
-        int height = passO.getInt("height", size);
-        int lod = passO.getInt("lod", 0);
-        int layer = passO.getInt("layer", 0);
+        int size = json.getInt("size", 0);
+        Vector2i extent = new Vector2i(
+            json.getInt("width", size),
+            json.getInt("height", size)
+        );
+        int lod = json.getInt("lod", 0);
+        int layer = json.getInt("layer", 0);
 
-        return Optional.of(new Pass(passName, framebuffer.get(), program, textures, new Vector2i(width, height), lod, layer));
+        return Optional.of(new Pass(passName, framebuffer.get(), program, textures, extent, lod, layer));
     }
+
+    static class FREXClear extends PassBase {
+
+        final String name;
+        final Framebuffer framebuffer;
+
+        FREXClear(String name, Framebuffer framebuffer) {
+            this.name = name;
+            this.framebuffer = framebuffer;
+        }
+
+        @Override
+        public void apply(Matrix4f view, Matrix4f projection) {
+            framebuffer.bindAndClearFully();
+        }
+
+    };
+
 }

@@ -22,12 +22,7 @@ public class PipelineRaw {
     @NotNull public final Map<ResourceLocation, Option> options;
     @NotNull public final JsonObject json;
 
-    PipelineRaw(
-        ResourceLocation location,
-        String nameKey,
-        Map<ResourceLocation, Option> options,
-        JsonObject json
-    ) {
+    PipelineRaw(ResourceLocation location, String nameKey, Map<ResourceLocation, Option> options, JsonObject json) {
         this.location = location;
         this.nameKey = nameKey;
         this.options = options;

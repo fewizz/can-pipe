@@ -1,6 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +15,7 @@ import org.lwjgl.opengl.KHRDebug;
 import com.google.common.collect.Streams;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.shaders.CompiledShader;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -50,7 +50,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
 
-public class ProgramBase extends CompiledShaderProgram {
+public abstract class ProgramBase extends CompiledShaderProgram {
 
     private static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
         // accessibility.glsl
@@ -123,7 +123,7 @@ public class ProgramBase extends CompiledShaderProgram {
         new ShaderProgramConfig.Uniform("frx_fogEnabled", "int", 1, List.of(1.0F))
     );
 
-    final ResourceLocation location;
+    final String name;
     final Map<Integer, Integer> samplerTargetByID = new Int2IntArrayMap();
     public final Set<Uniform> manuallyAppliedUniforms = new HashSet<>();
 
@@ -191,18 +191,22 @@ public class ProgramBase extends CompiledShaderProgram {
         FRX_FOG_COLOR,
         FRX_FOG_ENABLED;
 
+    private static int _link(String name, CompiledShader vertexShader, CompiledShader fragmentShader, VertexFormat vertexFormat) {
+        try {
+            return CompiledShaderProgram.link(vertexShader, fragmentShader, vertexFormat).getProgramId();
+        } catch (CompilationException e) {
+            throw new RuntimeException("Couldn't link program \""+name+"\": "+e.getMessage(), e);
+        }
+    }
+
     ProgramBase(
-        ResourceLocation location,
-        VertexFormat vertexFormat,
-        List<String> internalSamplers,
-        List<String> samplers,
-        List<ShaderProgramConfig.Uniform> uniforms,
-        Shader vertexShader,
-        Shader fragmentShader
-    ) throws CompilationException, IOException {
-        super(CompiledShaderProgram.link(vertexShader, fragmentShader, vertexFormat).getProgramId());
-        this.location = location;
-        GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), location.toString());
+        String name, VertexFormat vertexFormat,
+        List<String> internalSamplers, List<String> samplers, List<ShaderProgramConfig.Uniform> uniforms,
+        Shader vertexShader, Shader fragmentShader
+    ) {
+        super(ProgramBase._link(name, vertexShader, fragmentShader, vertexFormat));
+        this.name = name;
+        GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), name);
 
         setupUniforms(
             Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList(),
