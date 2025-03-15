@@ -2,17 +2,19 @@ package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -26,7 +28,6 @@ import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
-import blue.endless.jankson.annotation.Nullable;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
@@ -47,17 +48,13 @@ public class Pipeline implements AutoCloseable {
         float offsetBiasUnits
     ) {}
 
-    public static record Sky(
-        float defaultZenithAngle
-    ) {}
+    public static record Sky(float defaultZenithAngle) {}
 
     public final ResourceLocation location;
     public final Map<Option.Element<?>, Object> appliedOptions;
 
     public final boolean smoothBrightnessBidirectionaly;
-
-    // I wonder why smoothing is frame dependent, not time?
-    public final int brightnessSmoothingFrames;
+    public final int brightnessSmoothingFrames;  // I wonder why smoothing is frame dependent, not time?
     public final int rainSmoothingFrames;
     public final int thunderSmoothingFrames;
 
@@ -72,24 +69,27 @@ public class Pipeline implements AutoCloseable {
     public final Framebuffer weatherFramebuffer;
     public final Framebuffer cloudsFramebuffer;
 
-    final Map<Pair<ResourceLocation, Type>, Shader> shaders = new HashMap<>();
-    final Map<String, Program> programs = new HashMap<>();
-    final Map<String, Texture> textures = new HashMap<>();
-    final Map<String, Framebuffer> framebuffers = new HashMap<>();
-    public final Map<VertexFormat, MaterialProgram> materialPrograms = new HashMap<>();
-    public final Map<VertexFormat, MaterialProgram> shadowPrograms = new HashMap<>();
+    public final Map<VertexFormat, MaterialProgram> materialPrograms;
+    public final Map<VertexFormat, MaterialProgram> shadowMaterialPrograms;
 
-    private final List<PassBase> onInitPasses = new ArrayList<>();
-    private final List<PassBase> beforeWorldRenderPasses = new ArrayList<>();
-    private final List<PassBase> fabulousPasses = new ArrayList<>();
-    private final List<PassBase> afterRenderHandPasses = new ArrayList<>();
-    private final List<PassBase> onResizePasses = new ArrayList<>();
+    // private
+    private final Map<String, Program> programs = new HashMap<>();
+    private final Map<Pair<ResourceLocation, Type>, Shader> shaders = new HashMap<>();
+    private final Map<String, Texture> textures = new HashMap<>();
+    private final Map<String, Framebuffer> framebuffers = new HashMap<>();
+
+    private final PassBase[]
+        onInitPasses,
+        beforeWorldRenderPasses,
+        fabulousPasses,
+        afterRenderHandPasses,
+        onResizePasses;
     private boolean runInitPasses = true;
     private boolean runResizePasses = true;
 
-    public Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) {
+    public Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) { try {
         this.location = rawPipeline.location;
-        this.appliedOptions = appliedOptions;
+        this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
 
         JsonObject pipelineJson = rawPipeline.json.clone();
         var options = rawPipeline.options;
@@ -152,17 +152,15 @@ public class Pipeline implements AutoCloseable {
         }}
         ApplyOptions.doApply(pipelineJson, optionValueByName);
 
-        int glslVersion = pipelineJson.getInt("glslVersion", 330);
-        boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
         this.smoothBrightnessBidirectionaly = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);
         this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
         this.rainSmoothingFrames = pipelineJson.getInt("rainSmoothingFrames", 500);
         this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
 
-        JsonObject skyO = pipelineJson.getObject("sky");
-        if (skyO != null) {
+        JsonObject skyJson = pipelineJson.getObject("sky");
+        if (skyJson != null) {
             this.sky = new Sky(
-                (float) Math.toRadians(skyO.getFloat("defaultZenithAngle", 0.0F))
+                (float) Math.toRadians(skyJson.getFloat("defaultZenithAngle", 0.0F))
             );
         }
         else {
@@ -275,6 +273,8 @@ public class Pipeline implements AutoCloseable {
         };
 
         // "programs"
+        int glslVersion = pipelineJson.getInt("glslVersion", 330);
+
         BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
             return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
                 String source = getShaderSource.apply(location).get();
@@ -290,30 +290,8 @@ public class Pipeline implements AutoCloseable {
             });
         };
 
-        // passes
-        BiConsumer<String, List<PassBase>> loadPasses = (name, passes) -> {
-            JsonObject passesJson = pipelineJson.getObject(name);
-            if (passesJson == null) {
-                return;
-            }
-            for (var passO : JanksonUtils.listOfObjects(passesJson, "passes")) {
-                Pass.load(
-                    passO, optionValueByName,
-                    getOrLoadOptionalFramebuffer,
-                    getOrLoadProgram,
-                    getOrLoadPipelineOrResourcepackTexture
-                ).ifPresent(pass -> passes.add(pass));
-            }
-        };
-
-        loadPasses.accept("onInit", this.onInitPasses);
-        loadPasses.accept("onResize", this.onResizePasses);
-
-        loadPasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
-        loadPasses.accept("fabulous", this.fabulousPasses);
-        loadPasses.accept("afterRenderHand", this.afterRenderHandPasses);
-
         // "materialProgram"
+        boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
         JsonObject materailProgram = pipelineJson.getObject("materialProgram");
 
         var materialVertexShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "vertexSource"));
@@ -326,30 +304,59 @@ public class Pipeline implements AutoCloseable {
             }
         }};
 
-        for (var vertexFormat : new VertexFormat[] {
+        var vertexFormats = new VertexFormat[] {
             CanPipe.VertexFormats.BLOCK,
             CanPipe.VertexFormats.NEW_ENTITY,
-            CanPipe.VertexFormats.PARTICLE,
-        }) {
-            this.materialPrograms.put(
-                vertexFormat, MaterialProgram.load(
-                    vertexFormat, glslVersion, enablePBR, false, shadowFramebuffer,
-                    location, materialVertexShaderLocation, materialFragmentShaderLocation,
-                    options, appliedOptions, samplers, samplerImages, getShaderSource
-                )
-            );
+            CanPipe.VertexFormats.PARTICLE
+        };
+        this.materialPrograms = Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
+            vertexFormat -> vertexFormat,
+            vertexFormat -> MaterialProgram.load(
+                vertexFormat, glslVersion, enablePBR, false, shadowFramebuffer,
+                location, materialVertexShaderLocation, materialFragmentShaderLocation,
+                options, appliedOptions, samplers, samplerImages, getShaderSource
+            )
+        ));
 
-            if (this.skyShadows != null) {
-                this.shadowPrograms.put(
-                    vertexFormat, MaterialProgram.load(
-                        vertexFormat, glslVersion, enablePBR, true /* depth pass */, shadowFramebuffer,
-                        location, this.skyShadows.vertexShaderLocation, this.skyShadows.fragmentShaderLocation,
-                        options, appliedOptions, List.of(), List.of(), getShaderSource
-                    )
-                );
-            }
+        if (this.skyShadows != null) {
+            this.shadowMaterialPrograms = Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
+                vertexFormat -> vertexFormat,
+                vertexFormat -> MaterialProgram.load(
+                    vertexFormat, glslVersion, enablePBR, true /* depth pass */, shadowFramebuffer,
+                    location, this.skyShadows.vertexShaderLocation, this.skyShadows.fragmentShaderLocation,
+                    options, appliedOptions, List.of(), List.of(), getShaderSource
+                )
+            ));
+        } else {
+            this.shadowMaterialPrograms = Map.of();
         }
-    }
+
+        // passes
+        Function<String, PassBase[]> loadPasses = (name) -> {
+            JsonObject passesJson = pipelineJson.getObject(name);
+            List<PassBase> result = new ArrayList<>();
+            if (passesJson != null) {
+                for (var passO : JanksonUtils.listOfObjects(passesJson, "passes")) {
+                    Pass.load(
+                        passO, optionValueByName,
+                        getOrLoadOptionalFramebuffer,
+                        getOrLoadProgram,
+                        getOrLoadPipelineOrResourcepackTexture
+                    ).ifPresent(pass -> result.add(pass));
+                }
+            }
+            return result.toArray(new PassBase[]{});
+        };
+
+        this.onInitPasses = loadPasses.apply("onInit");
+        this.onResizePasses = loadPasses.apply("onResize");
+        this.beforeWorldRenderPasses = loadPasses.apply("beforeWorldRender");
+        this.fabulousPasses = loadPasses.apply("fabulous");
+        this.afterRenderHandPasses = loadPasses.apply("afterRenderHand");
+    } catch (Exception e) {
+        this.close();
+        throw e;
+    }}
 
     public void onWindowSizeChanged(int w, int h) {
         this.textures.forEach((n, t) -> t.onWindowSizeChanged(w, h));
@@ -362,7 +369,7 @@ public class Pipeline implements AutoCloseable {
 
         Stream.of(
             this.materialPrograms.values().stream(),
-            this.shadowPrograms.values().stream(),
+            this.shadowMaterialPrograms.values().stream(),
             this.programs.values().stream()
         ).flatMap(p -> p).forEach(p -> {
             p.setDefaultUniforms(Mode.QUADS, view, projection, mc.getWindow());

@@ -183,7 +183,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         shadowFramebuffer.bindAndClearFully();
 
         for (int cascade = 0; cascade < 4; ++cascade) {
-            for (var shadowProgram : p.shadowPrograms.values()) {
+            for (var shadowProgram : p.shadowMaterialPrograms.values()) {
                 if (shadowProgram.FRXU_CASCADE != null) {
                     shadowProgram.FRXU_CASCADE.set(cascade);
                 }
