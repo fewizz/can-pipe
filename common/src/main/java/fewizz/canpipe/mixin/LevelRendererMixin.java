@@ -136,7 +136,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(pt));
         this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(pt));
 
-        if (p.skyShadows == null) {
+        if (p.shadows == null) {
             return;
         }
 
@@ -169,13 +169,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         RenderSystem.enablePolygonOffset();
         RenderSystem.polygonOffset(
-            p.skyShadows.offsetSlopeFactor(),
-            p.skyShadows.offsetBiasUnits()
+            p.shadows.offsetSlopeFactor(),
+            p.shadows.offsetBiasUnits()
         );
 
         RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
 
-        Framebuffer shadowFramebuffer = p.skyShadows.framebuffer();
+        Framebuffer shadowFramebuffer = p.shadows.framebuffer();
         mc.mainRenderTarget = shadowFramebuffer;
 
         try {
@@ -183,7 +183,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         shadowFramebuffer.bindAndClearFully();
 
         for (int cascade = 0; cascade < 4; ++cascade) {
-            for (var shadowProgram : p.shadowMaterialPrograms.values()) {
+            for (var shadowProgram : p.shadows.materialPrograms().values()) {
                 if (shadowProgram.FRXU_CASCADE != null) {
                     shadowProgram.FRXU_CASCADE.set(cascade);
                 }

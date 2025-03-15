@@ -142,7 +142,7 @@ public class CanPipe {
 
                 MaterialProgram program =
                     ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows() ?
-                    p.shadowMaterialPrograms.get(replacedFormat) :
+                    p.shadows.materialPrograms().get(replacedFormat) :
                     p.materialPrograms.get(replacedFormat);
 
                 RenderSystem.setShader(program);

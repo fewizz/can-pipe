@@ -142,7 +142,7 @@ public class GameRendererMixin implements GameRendererAccessor {
         this.canpipe_projectionMatrix.set(projectionMatrix);
         this.canpipe_cameraPos.set(this.mainCamera.getPosition().toVector3f());
 
-        if (p.skyShadows != null) {
+        if (p.shadows != null) {
             Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f(), pt);
             Vector3f sunPosOffset = toSunDir.mul(this.renderDistance + 48, new Vector3f());
 
@@ -171,7 +171,7 @@ public class GameRendererMixin implements GameRendererAccessor {
                     center = new Vector4f(0.0F, 0.0F, 0.0F, 1.0F);
                 }
                 else {
-                    cascadeRadius = p.skyShadows.cascadeRadii().get(cascade-1);
+                    cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
                     center = new Vector4f(
                         mainCamera.getLookVector().mul(cascadeRadius, new Vector3f()),
                         1.0F
@@ -181,7 +181,7 @@ public class GameRendererMixin implements GameRendererAccessor {
                 center.mul(canpipe_shadowViewMatrix);
                 center.div(center.w);
 
-                float depthTextureSize = (float) p.skyShadows.framebuffer().depthAttachment.texture().extent.x;
+                float depthTextureSize = (float) p.shadows.framebuffer().depthAttachment.texture().extent.x;
                 float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
 
                 Vector3f dPos = this.canpipe_cameraPos.sub(this.canpipe_lastCameraPos, new Vector3f());

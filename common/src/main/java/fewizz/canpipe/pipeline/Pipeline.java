@@ -39,27 +39,22 @@ import net.minecraft.world.level.Level;
 
 public class Pipeline implements AutoCloseable {
 
-    public static record SkyShadows(
+    public static record Shadows(
+        Map<VertexFormat, MaterialProgram> materialPrograms,
         Framebuffer framebuffer,
-        ResourceLocation vertexShaderLocation,
-        ResourceLocation fragmentShaderLocation,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
         float offsetBiasUnits
     ) {}
 
-    public static record Sky(float defaultZenithAngle) {}
-
     public final ResourceLocation location;
     public final Map<Option.Element<?>, Object> appliedOptions;
 
+    public final float defaultZenithAngle;
     public final boolean smoothBrightnessBidirectionaly;
     public final int brightnessSmoothingFrames;  // I wonder why smoothing is frame dependent, not time?
     public final int rainSmoothingFrames;
     public final int thunderSmoothingFrames;
-
-    public final @Nullable SkyShadows skyShadows;
-    public final @Nullable Sky sky;
 
     public final Framebuffer defaultFramebuffer;
     public final Framebuffer solidFramebuffer;
@@ -70,7 +65,8 @@ public class Pipeline implements AutoCloseable {
     public final Framebuffer cloudsFramebuffer;
 
     public final Map<VertexFormat, MaterialProgram> materialPrograms;
-    public final Map<VertexFormat, MaterialProgram> shadowMaterialPrograms;
+
+    public final @Nullable Shadows shadows;
 
     // private
     private final Map<String, Program> programs = new HashMap<>();
@@ -152,20 +148,11 @@ public class Pipeline implements AutoCloseable {
         }}
         ApplyOptions.doApply(pipelineJson, optionValueByName);
 
+        this.defaultZenithAngle = JanksonUtils.objectOrEmpty(pipelineJson, "sky").getFloat("defaultZenithAngle", 0.0F);
         this.smoothBrightnessBidirectionaly = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);
         this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
         this.rainSmoothingFrames = pipelineJson.getInt("rainSmoothingFrames", 500);
         this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
-
-        JsonObject skyJson = pipelineJson.getObject("sky");
-        if (skyJson != null) {
-            this.sky = new Sky(
-                (float) Math.toRadians(skyJson.getFloat("defaultZenithAngle", 0.0F))
-            );
-        }
-        else {
-            this.sky = null;
-        }
 
         // "images"
         Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
@@ -227,32 +214,15 @@ public class Pipeline implements AutoCloseable {
             return result.get();
         };
 
-        JsonObject skyShadowsO = pipelineJson.getObject("skyShadows");
-        if (skyShadowsO != null) {
-            this.skyShadows = new SkyShadows(
-                getOrLoadFramebuffer.apply(skyShadowsO.get(String.class, "framebuffer")),
-                ResourceLocation.parse(skyShadowsO.get(String.class, "vertexSource")),
-                ResourceLocation.parse(skyShadowsO.get(String.class, "fragmentSource")),
-                JanksonUtils.listOfIntegers(skyShadowsO, "cascadeRadius"),
-                skyShadowsO.getFloat("offsetSlopeFactor", 1.1F),
-                skyShadowsO.getFloat("offsetBiasUnits", 4.0F)
-            );
-        }
-        else {
-            this.skyShadows = null;
-        }
-
-        Framebuffer shadowFramebuffer = this.skyShadows != null ? this.skyShadows.framebuffer : null;
-
-        JsonObject targetsO = pipelineJson.getObject("drawTargets");
+        JsonObject targetsJson = pipelineJson.getObject("drawTargets");
 
         this.defaultFramebuffer = getOrLoadFramebuffer.apply(pipelineJson.get(String.class, "defaultFramebuffer"));
-        this.solidFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "solidTerrain"));
-        this.translucentTerrainFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "translucentTerrain"));
-        this.translucentItemEntityFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "translucentEntity"));
-        this.particlesFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "translucentParticles"));
-        this.weatherFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "weather"));
-        this.cloudsFramebuffer = getOrLoadFramebuffer.apply(targetsO.get(String.class, "clouds"));
+        this.solidFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "solidTerrain"));
+        this.translucentTerrainFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentTerrain"));
+        this.translucentItemEntityFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentEntity"));
+        this.particlesFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentParticles"));
+        this.weatherFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "weather"));
+        this.cloudsFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "clouds"));
 
         Map<ResourceLocation, String> shaderSourceCache = new HashMap<>();
 
@@ -272,26 +242,9 @@ public class Pipeline implements AutoCloseable {
             return Optional.ofNullable(source);
         };
 
-        // "programs"
-        int glslVersion = pipelineJson.getInt("glslVersion", 330);
-
-        BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
-            return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
-                String source = getShaderSource.apply(location).get();
-                return Shader.load(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer);
-            });
-        };
-
-        Function<String, Program> getOrLoadProgram = (String name) -> {
-            return this.programs.computeIfAbsent(name, _name -> {
-                List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
-                JsonObject programO = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
-                return Program.load(programO, location, getOrLoadShader);
-            });
-        };
-
         // "materialProgram"
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
+        int glslVersion = pipelineJson.getInt("glslVersion", 330);
         JsonObject materailProgram = pipelineJson.getObject("materialProgram");
 
         var materialVertexShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "vertexSource"));
@@ -309,27 +262,58 @@ public class Pipeline implements AutoCloseable {
             CanPipe.VertexFormats.NEW_ENTITY,
             CanPipe.VertexFormats.PARTICLE
         };
+
+        JsonObject shadowsJson = pipelineJson.getObject("skyShadows");
+        if (shadowsJson != null) {
+            Framebuffer framebuffer = getOrLoadFramebuffer.apply(shadowsJson.get(String.class, "framebuffer"));
+            var vertexShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "vertexSource"));
+            var fragmentShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "fragmentSource"));
+            this.shadows = new Shadows(
+                Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
+                    vertexFormat -> vertexFormat,
+                    vertexFormat -> MaterialProgram.load(
+                        vertexFormat, glslVersion, enablePBR, true, framebuffer,
+                        location, vertexShaderLocation, fragmentShaderLocation,
+                        options, appliedOptions, List.of(), List.of(), getShaderSource
+                    )
+                )),
+                framebuffer,
+                JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius"),
+                shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
+                shadowsJson.getFloat("offsetBiasUnits", 4.0F)
+            );
+        }
+        else {
+            this.shadows = null;
+        }
+
         this.materialPrograms = Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
             vertexFormat -> vertexFormat,
             vertexFormat -> MaterialProgram.load(
-                vertexFormat, glslVersion, enablePBR, false, shadowFramebuffer,
+                vertexFormat, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffer : null,
                 location, materialVertexShaderLocation, materialFragmentShaderLocation,
                 options, appliedOptions, samplers, samplerImages, getShaderSource
             )
         ));
 
-        if (this.skyShadows != null) {
-            this.shadowMaterialPrograms = Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
-                vertexFormat -> vertexFormat,
-                vertexFormat -> MaterialProgram.load(
-                    vertexFormat, glslVersion, enablePBR, true /* depth pass */, shadowFramebuffer,
-                    location, this.skyShadows.vertexShaderLocation, this.skyShadows.fragmentShaderLocation,
-                    options, appliedOptions, List.of(), List.of(), getShaderSource
-                )
-            ));
-        } else {
-            this.shadowMaterialPrograms = Map.of();
-        }
+        // "programs"
+        BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
+            return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
+                String source = getShaderSource.apply(location).get();
+                return Shader.load(
+                    location, source, type, glslVersion, options, appliedOptions, getShaderSource,
+                    this.shadows != null ? this.shadows.framebuffer : null
+                );
+            });
+        };
+
+        Function<String, Program> getOrLoadProgram = (String name) -> {
+            return this.programs.computeIfAbsent(name, _name -> {
+                List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
+                JsonObject programO = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
+                return Program.load(programO, location, getOrLoadShader);
+            });
+        };
 
         // passes
         Function<String, PassBase[]> loadPasses = (name) -> {
@@ -367,14 +351,15 @@ public class Pipeline implements AutoCloseable {
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
         var mc = Minecraft.getInstance();
 
-        Stream.of(
-            this.materialPrograms.values().stream(),
-            this.shadowMaterialPrograms.values().stream(),
-            this.programs.values().stream()
-        ).flatMap(p -> p).forEach(p -> {
+        this.materialPrograms.values().forEach(MaterialProgram::setFREXUniforms);
+        if (this.shadows != null) {
+            this.shadows.materialPrograms.values().forEach(MaterialProgram::setFREXUniforms);
+        }
+
+        for (var p : this.programs.values()) {
             p.setDefaultUniforms(Mode.QUADS, view, projection, mc.getWindow());
             p.setFREXUniforms();
-        });
+        }
 
         if (this.runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
@@ -438,13 +423,12 @@ public class Pipeline implements AutoCloseable {
     public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {
         // 0.0 - noon, 0.5 - midnight
         float hourAngle = level.getSunAngle(partialTicks);
-        float zenithAngle = this.sky != null ? this.sky.defaultZenithAngle() : 0.0F;
         long ticks = (level.dimensionType().fixedTime().orElse(level.getDayTime())) % 24000L;
 
         result.set(
             (float) (-Math.sin(hourAngle)),
-            (float) ( Math.cos(hourAngle) *  Math.cos(zenithAngle)),
-            (float) ( Math.cos(hourAngle) * -Math.sin(zenithAngle))
+            (float) ( Math.cos(hourAngle) *  Math.cos(this.defaultZenithAngle)),
+            (float) ( Math.cos(hourAngle) * -Math.sin(this.defaultZenithAngle))
         );
 
         if (ticks > 13000L && ticks < 23000L) {  // moon
