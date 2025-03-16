@@ -61,13 +61,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
     @Shadow @Final private RenderBuffers renderBuffers;
 
-    @Shadow abstract void checkPoseStack(PoseStack poseStack);
-    @Shadow abstract void renderSectionLayer(RenderType renderType, double x, double y, double z, Matrix4f viewMatrix, Matrix4f projectionMatrix);
-    @Shadow abstract void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode);
-    @Shadow abstract boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list);
-    @Shadow abstract void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list);
-    @Shadow abstract void applyFrustum(Frustum frustum);
-    @Shadow abstract void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f);
+    @Shadow private void checkPoseStack(PoseStack poseStack) {}
+    @Shadow private void renderSectionLayer(RenderType renderType, double x, double y, double z, Matrix4f viewMatrix, Matrix4f projectionMatrix) {}
+    @Shadow private void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode) {}
+    @Shadow private boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list) { return false; }
+    @Shadow private void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list) {}
+    @Shadow private void applyFrustum(Frustum frustum) {}
+    @Shadow private void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f) {}
 
     @Unique volatile private boolean canpipe_isRenderingShadows = false;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
@@ -378,6 +378,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     TODO: probably related to `runVanillaClear` pipeline optoin
     Not cleanest way: setClearColor, copyDepthFrom and bindWrite are still called
     */
+    @SuppressWarnings("UnresolvedMixinReference")
     @WrapOperation(
         method = {"method_62214", "lambda$addMainPass$2"}, // lambda in the `addMainPass`
         at = @At(

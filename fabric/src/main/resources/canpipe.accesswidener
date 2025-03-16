@@ -35,7 +35,9 @@ accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_E
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_CUTOUT_NO_CULL_Z_OFFSET_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_TRANSLUCENT_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_TRANSLUCENT_EMISSIVE_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ENTITY_NO_OUTLINE_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+accessible  field   net/minecraft/client/renderer/RenderStateShard  RENDERTYPE_EYES_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 accessible  field   net/minecraft/client/renderer/RenderStateShard  PARTICLE_SHADER  Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
 
 accessible  field   net/minecraft/client/renderer/RenderStateShard  TRANSLUCENT_TARGET  Lnet/minecraft/client/renderer/RenderStateShard$OutputStateShard;

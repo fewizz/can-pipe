@@ -43,8 +43,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow @Final private int[] offsetsByElement;
     @Shadow private long vertexPointer = -1L;
 
-    @Shadow abstract protected long beginElement(VertexFormatElement vertexFormatElement);
-    @Shadow private static byte normalIntValue(float f) {return 0;}
+    @Shadow private long beginElement(VertexFormatElement vertexFormatElement) { return -1; }
+    @Shadow private static byte normalIntValue(float f) { return 0; }
 
     @Unique private MaterialMap materialMap = null;
     @Unique private byte materialFlags = 0;
