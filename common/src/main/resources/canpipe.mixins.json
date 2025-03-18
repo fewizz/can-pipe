@@ -19,6 +19,8 @@
     "LiquidBlockRendererMixin",
     "MinecraftMixin",
     "ModelBlockRendererMixin",
+    "ModelPartCubeMixin",
+    "ModelPartPolygonMixin",
     "ReloadableResourceManagerMixin",
     "RenderStateShardMixin",
     "RenderTypeMixin",

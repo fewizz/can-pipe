@@ -30,7 +30,7 @@ public class Program extends ProgramBase {
     final List<String> samplers;
 
     private Program(String name, List<String> samplers, Shader vertexShader, Shader fragmentShader) {
-        super(name, DefaultVertexFormat.POSITION_TEX, List.of(), samplers,DEFAULT_UNIFORMS, vertexShader, fragmentShader);
+        super(name, DefaultVertexFormat.POSITION_TEX, List.of(), samplers, DEFAULT_UNIFORMS, vertexShader, fragmentShader);
         this.FRXU_SIZE = this.getUniform("frxu_size");
         this.FRXU_LOD = this.getUniform("frxu_lod");
         this.FRXU_LAYER = this.getUniform("frxu_layer");

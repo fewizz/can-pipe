@@ -178,6 +178,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Framebuffer shadowFramebuffer = p.shadows.framebuffer();
         mc.mainRenderTarget = shadowFramebuffer;
 
+        boolean prevEntityShadows = mc.options.entityShadows().get();
+        mc.options.entityShadows().set(false);
+
         try {
 
         shadowFramebuffer.bindAndClearFully();
@@ -231,6 +234,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         } finally {
             mc.mainRenderTarget = originalMainRenderTarget;
+            mc.options.entityShadows().set(prevEntityShadows);
         }
 
         mc.mainRenderTarget.bindWrite(true);

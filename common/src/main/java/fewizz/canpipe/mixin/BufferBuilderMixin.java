@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -12,9 +13,9 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -22,6 +23,8 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.NormalAndTangent;
+import fewizz.canpipe.TangentSetter;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.Materials;
@@ -51,14 +54,19 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private Supplier<TextureAtlasSprite> spriteSupplier = null;
     @Unique private boolean recomputeNormal = false;
 
-    @Inject(
+    @ModifyExpressionValue(
         method = "endLastVertex",
         at = @At(
             value = "FIELD",  // after checking that this.vertices != 0
-            target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;elementsToFill:I"
+            target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;elementsToFill:I",
+            ordinal = 0
         )
     )
-    private void endLastVertex(CallbackInfo ci) {
+    private int  endLastVertex(int elementsToFill) {
+        if (elementsToFill == 0) {
+            return 0;
+        }
+
         long normalPtr = this.beginElement(VertexFormatElement.NORMAL);
         long tangentPtr = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
         long materialFlagsPtr = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
@@ -71,8 +79,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
         if (!lastVertex || !(normalPtr != -1 || tangentPtr != -1)) {
-            return;
+            return this.elementsToFill;
         }
+
+        // CanPipe.trap();
 
         long posPtr = this.vertexPointer + this.offsetsByElement[VertexFormatElement.POSITION.id()];
 
@@ -92,7 +102,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             y3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 1),
             z3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 2);
 
-        Vector3f normal0 = computeNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+        Vector3f normal0 = NormalAndTangent.computeNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
 
         if (normalPtr != -1) {
             if (
@@ -100,7 +110,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 // not coplanar
                 Math.abs(normal0.x*(x3-x1) + normal0.y*(y3-y1) + normal0.z*(z3-z1)) >= 0.0001F
             ) {
-                Vector3f normal1 = computeNormal(x2, y2, z2, x3, y3, z3, x0, y0, z0);
+                Vector3f normal1 = NormalAndTangent.computeNormal(x2, y2, z2, x3, y3, z3, x0, y0, z0);
 
                 Vector3f mid = new Vector3f(normal0).add(normal1).normalize();
 
@@ -141,7 +151,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 v1 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+1, 1),
                 u2 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+2, 0),
                 v2 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+2, 1);
-            Pair<Vector3f, Boolean> tangentPair = computeTangent(
+            Pair<Vector3f, Boolean> tangentPair = NormalAndTangent.computeTangent(
                 normal0,
                 x0, y0, z0, u0, v0,
                 x1, y1, z1, u1, v1,
@@ -156,6 +166,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+3, normalIntValue(inverseBitangent ? -1.0F : 1.0F));
             }
         }
+
+        return this.elementsToFill;
     }
 
     @Inject(
@@ -252,6 +264,20 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         this.recomputeNormal = recompute;
     }
 
+    @Override
+    public void canpipe_setTangent(Consumer<TangentSetter> tangentSetterConsumer) {
+        long ptr = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
+        if (ptr == -1) {
+            return;
+        }
+        tangentSetterConsumer.accept((float x, float y, float z, boolean inverseBitangent) -> {
+            MemoryUtil.memPutByte(ptr+0, normalIntValue(x));
+            MemoryUtil.memPutByte(ptr+1, normalIntValue(y));
+            MemoryUtil.memPutByte(ptr+2, normalIntValue(z));
+            MemoryUtil.memPutByte(ptr+3, normalIntValue(inverseBitangent ? -1.0F : 1.0F));
+        });
+    }
+
     @Unique
     private final float canpipe_getUV(long uvPtr, int vertexOffset, int element) {
         return MemoryUtil.memGetFloat(uvPtr + (vertexOffset*this.vertexSize + element*Float.BYTES));
@@ -266,81 +292,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique
     private final float canpipe_getPos(long posPtr, int vertexOffset, int element) {
         return MemoryUtil.memGetFloat(posPtr + (vertexOffset*this.vertexSize + element*Float.BYTES));
-    }
-
-    /**
-     * Taken from
-     * <a href="https://github.com/vram-guild/frex/blob/1.19/common/src/main/java/io/vram/frex/base/renderer/mesh/BaseQuadView.java#L261">
-     * BaseQuadView.computePackedFaceTangent
-     * </a>
-     * method, but i have so many questions...
-     * <p>
-     * Why {@code inverseLength} is named like that?
-     * Resulting {@code vec3(tx, ty, tz)} is almost never has length 1.0, and
-     * {@code PackedVector3f.pack(tx, ty, tz, inverted)} packs unnormalized vector, clamping components
-     * <p>
-     * Why bitangent isn't provided to shaders? tangent and bitanget are not necessarily orthogonal
-    */
-    @Unique
-    private static Pair<Vector3f, Boolean> computeTangent(
-        Vector3f normal,
-        float x0, float y0, float z0, float u0, float v0,
-        float x1, float y1, float z1, float u1, float v1,
-        float x2, float y2, float z2, float u2, float v2
-    ) {
-        float du0 = u2 - u1;
-        float dv0 = -(v2 - v1);
-        float du1 = u0 - u1;
-        float dv1 = -(v0 - v1);
-
-        float dx0 = x2 - x1;
-        float dy0 = y2 - y1;
-        float dz0 = z2 - z1;
-        float dx1 = x0 - x1;
-        float dy1 = y0 - y1;
-        float dz1 = z0 - z1;
-
-        // we don't care about magnitudes, assume that TBN has orthonormal basis
-        float determinantSign = Math.signum(du0*dv1 - du1*dv0);
-
-        float tx = determinantSign * ( dv1*dx0 + -dv0*dx1);
-        float ty = determinantSign * ( dv1*dy0 + -dv0*dy1);
-        float tz = determinantSign * ( dv1*dz0 + -dv0*dz1);
-
-        float bx = determinantSign * (-du1*dx0 +  du0*dx1);
-        float by = determinantSign * (-du1*dy0 +  du0*dy1);
-        float bz = determinantSign * (-du1*dz0 +  du0*dz1);
-
-        // cross product of tangent and bitangent
-        float cx = ty*bz - tz*by;
-        float cy = tz*bx - tx*bz;
-        float cz = tx*by - ty*bx;
-
-        return Pair.of(
-            new Vector3f(tx, ty, tz).normalize(),
-            // if true, then bitangent should be inversed
-            normal.x*cx + normal.y*cy + normal.z*cz < 0.0
-        );
-    }
-
-    @Unique
-    private static Vector3f computeNormal(
-        float x0, float y0, float z0,
-        float x1, float y1, float z1,
-        float x2, float y2, float z2
-    ) {
-        float dx0 = x2 - x1;
-        float dy0 = y2 - y1;
-        float dz0 = z2 - z1;
-        float dx1 = x0 - x1;
-        float dy1 = y0 - y1;
-        float dz1 = z0 - z1;
-
-        float nx = dy0*dz1 - dz0*dy1;
-        float ny = dz0*dx1 - dx0*dz1;
-        float nz = dx0*dy1 - dy0*dx1;
-
-        return new Vector3f(nx, ny, nz).normalize();
     }
 
 }

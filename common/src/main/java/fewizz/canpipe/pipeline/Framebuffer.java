@@ -51,16 +51,12 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         List<ColorAttachment> colorAttachments,
         @Nullable DepthAttachment depthAttachment
     ) {
-        super(false /* useDepth */);
+        super(depthAttachment != null);
         this.name = name;
         this.colorAttachments = colorAttachments;
         this.depthAttachment = depthAttachment;
         createBuffers(0, 0);
-        GFX.glObjectLabel(
-            GL33C.GL_FRAMEBUFFER,
-            this.frameBufferId,
-            pipelineLocation.toString()+"-"+name
-        );
+        GFX.glObjectLabel(GL33C.GL_FRAMEBUFFER, this.frameBufferId, pipelineLocation.toString()+"-"+name);
     }
 
     @Override
@@ -85,7 +81,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
     }
 
     @Override
-    public void createBuffers(int w, int h) {
+    public void createBuffers(int width, int height) {
         Vector3i extent = new Vector3i();
         int lod = 0;
 
