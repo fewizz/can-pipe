@@ -50,6 +50,7 @@ import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
@@ -140,7 +141,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
 
+        Profiler.get().popPush("canpipe_shadows");
         this.canpipe_isRenderingShadows = true;
+
+        Profiler.get().push("preparations");
 
         GameRendererAccessor gra = ((GameRendererAccessor) mc.gameRenderer);
         float renderDistance = mc.gameRenderer.getRenderDistance();
@@ -186,6 +190,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         shadowFramebuffer.bindAndClearFully();
 
         for (int cascade = 0; cascade < 4; ++cascade) {
+            Profiler.get().popPush("cascade " +cascade);
+
             for (var shadowProgram : p.shadows.materialPrograms().values()) {
                 if (shadowProgram.FRXU_CASCADE != null) {
                     shadowProgram.FRXU_CASCADE.set(cascade);
@@ -199,14 +205,18 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
 
             if (cascade == 0) {
+                Profiler.get().push("setupRender");
                 this.setupRender(new Camera() {{
                     setPosition(camPos);
                     setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
                 }}, shadowFrustum, false, false);
             }
             else {
+                Profiler.get().push("applyFrustum");
                 this.applyFrustum(shadowFrustum);
             }
+
+            Profiler.get().popPush("render sections");
 
             GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().getId(), 0, cascade);
 
@@ -216,21 +226,26 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.renderSectionLayer(RenderType.cutout(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
             RenderSystem.enableCull();
 
+            Profiler.get().popPush("collect entities");
+
             this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
 
             MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
+
+            Profiler.get().popPush("render entities");
 
             this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
             this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
             this.checkPoseStack(poseStack);
             this.visibleEntities.clear();
             bufferSource.endBatch();
+
+            Profiler.get().pop();
         }
         shadowFramebuffer.unbindWrite();
         RenderSystem.disablePolygonOffset();
 
         modelViewMatrixStack.popMatrix();
-        this.canpipe_isRenderingShadows = false;
 
         } finally {
             mc.mainRenderTarget = originalMainRenderTarget;
@@ -238,6 +253,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         }
 
         mc.mainRenderTarget.bindWrite(true);
+
+        Profiler.get().pop();
+
+        this.canpipe_isRenderingShadows = false;
     }
 
     @WrapOperation(
