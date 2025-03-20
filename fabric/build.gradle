@@ -25,13 +25,15 @@ dependencies {
     modCompileOnly fabricApi.module("fabric-renderer-indigo", fabric_version)
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
-    modImplementation(fabricApi.module("fabric-resource-loader-v0", fabric_version))
+    modImplementation fabricApi.module("fabric-resource-loader-v0", fabric_version)
 
     modImplementation "blue.endless:jankson:1.2.3"
     include "blue.endless:jankson:1.2.3"
 
     modImplementation "com.terraformersmc:modmenu:13.0.2"
 }
+
+compileJava.source project(":common").sourceSets.main.allSource
 
 loom {
     accessWidenerPath = file("src/main/resources/canpipe.accesswidener")
@@ -50,8 +52,6 @@ loom {
 base {
     archivesName = mod_id
 }
-
-compileJava.source project(":common").sourceSets.main.allSource
 
 processResources {
     from project(":common").sourceSets.main.resources

@@ -1,5 +1,7 @@
 package fewizz.canpipe.mixin;
 
+import java.text.NumberFormat;
+
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -25,7 +27,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.culling.Frustum;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererAccessor {
@@ -155,31 +156,36 @@ public class GameRendererMixin implements GameRendererAccessor {
             );
             var shadowRotationMatrix = new Matrix3f(this.canpipe_shadowViewMatrix);
 
+            // sometimes cascade is out of frustum bounds
+            // we don't want to render chunks and entiteis more than needed, right? (help)
             this.canpipe_depthFarOverride = this.renderDistance + 48.0F;
-                float fov = (float) this.minecraft.options.fov().get().intValue();
-                var pm = this.getProjectionMatrix(fov);
-                Frustum cascadeFrustum = new Frustum(viewMatrix, pm);
-                this.canpipe_depthFarOverride = null;
+
+            Vector3f min = new Vector3f();
+            Vector3f max = new Vector3f();
+
+            new Matrix4f(this.canpipe_shadowViewMatrix).mul(
+                this.getProjectionMatrix(
+                    this.minecraft.options.fov().get().floatValue()
+                ).mul(viewMatrix).invert()
+            ).frustumAabb(min, max);  // frustum AABB in shadow view space
+
+            this.canpipe_depthFarOverride = null;
 
             for (int cascade = 0; cascade < 4; ++cascade) {
                 float cascadeRadius;
-                Vector4f center;
+                Vector3f center;
 
                 if (cascade == 0) {
-                    // TODO this can be more efficient
+                    // TODO we can do better
                     cascadeRadius = (this.renderDistance + 48.0F);
-                    center = new Vector4f(0.0F, 0.0F, 0.0F, 1.0F);
+                    center = new Vector3f(0.0F, 0.0F, 0.0F);
                 }
                 else {
                     cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
-                    center = new Vector4f(
-                        mainCamera.getLookVector().mul(cascadeRadius, new Vector3f()),
-                        1.0F
-                    );
+                    center = new Vector3f(mainCamera.getLookVector()).mul(cascadeRadius);
                 }
 
-                center.mul(canpipe_shadowViewMatrix);
-                center.div(center.w);
+                center.mulProject(canpipe_shadowViewMatrix);
 
                 float depthTextureSize = (float) p.shadows.framebuffer().depthAttachment.texture().extent.x;
                 float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
@@ -196,19 +202,6 @@ public class GameRendererMixin implements GameRendererAccessor {
                 center.z -= (center.z % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].z * metersPerPixel;
 
                 this.canpipe_shadowCenters[cascade].set(center.x, center.y, center.z, cascadeRadius);
-
-                // sometimes cascade is out of frustum bounds
-                // we don't want to render chunks and entiteis more than needed, right? (help)
-                Vector3f min = new Vector3f(+Float.MAX_VALUE);
-                Vector3f max = new Vector3f(-Float.MAX_VALUE);
-
-                // could be more efficient
-                for (Vector4f point : cascadeFrustum.getFrustumPoints()) {
-                    point.mul(this.canpipe_shadowViewMatrix);
-                    point.div(point.w);
-                    min.min(point.xyz(new Vector3f()));
-                    max.max(point.xyz(new Vector3f()));
-                }
 
                 // those matrices aren't passed into shadow material programs,
                 // no need to worry about constant radius
