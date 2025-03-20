@@ -168,10 +168,7 @@ public class GameRendererMixin implements GameRendererAccessor {
                     center = new Vector3f(0.0F, 0.0F, 0.0F);
                 }
                 else {
-                    cascadeRadius = Math.min(
-                        this.renderDistance / 3.0F,  // hack, TODO
-                        p.shadows.cascadeRadii().get(cascade-1)
-                    );
+                    cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
                     center = new Vector3f(mainCamera.getLookVector()).mul(cascadeRadius);
                 }
 
