@@ -185,7 +185,7 @@ public class Pipeline implements AutoCloseable {
                 return Optional.of(mc.getTextureManager().getTexture(rl));
             }
             else {
-                return Optional.of(getOrLoadOptionalTexture.apply(name).orElse(null));
+                return Optional.ofNullable(getOrLoadOptionalTexture.apply(name).orElse(null));
             }
         };
 

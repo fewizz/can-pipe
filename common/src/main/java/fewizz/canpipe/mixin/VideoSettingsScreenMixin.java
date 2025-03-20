@@ -84,7 +84,9 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             (Optional<PipelineRaw> p) -> {  // widget tooltip
                 var e = Pipelines.getLoadingError();
                 if (e == null) return null;
-                return Tooltip.create(Component.literal(e.getMessage()));
+                return Tooltip.create(Component.literal(
+                    e.getMessage() != null ? e.getMessage() : e.toString()
+                ));
             },
             (Component c, Optional<PipelineRaw> p) -> {  // widget's new message, before on value changed
                 // no pipeline is loaded

@@ -154,22 +154,9 @@ public class GameRendererMixin implements GameRendererAccessor {
                     ? new Vector3f(0.0F, 1.0F, 0.0F)
                     : new Vector3f(0.0F, 0.0F, 1.0F)
             );
+
             var shadowRotationMatrix = new Matrix3f(this.canpipe_shadowViewMatrix);
-
-            // sometimes cascade is out of frustum bounds
-            // we don't want to render chunks and entiteis more than needed, right? (help)
-            this.canpipe_depthFarOverride = this.renderDistance + 48.0F;
-
-            Vector3f min = new Vector3f();
-            Vector3f max = new Vector3f();
-
-            new Matrix4f(this.canpipe_shadowViewMatrix).mul(
-                this.getProjectionMatrix(
-                    this.minecraft.options.fov().get().floatValue()
-                ).mul(viewMatrix).invert()
-            ).frustumAabb(min, max);  // frustum AABB in shadow view space
-
-            this.canpipe_depthFarOverride = null;
+            var inverseShadowViewMatrix = new Matrix4f(this.canpipe_shadowViewMatrix).invert();
 
             for (int cascade = 0; cascade < 4; ++cascade) {
                 float cascadeRadius;
@@ -177,11 +164,14 @@ public class GameRendererMixin implements GameRendererAccessor {
 
                 if (cascade == 0) {
                     // TODO we can do better
-                    cascadeRadius = (this.renderDistance + 48.0F);
+                    cascadeRadius = this.renderDistance + 48.0F;
                     center = new Vector3f(0.0F, 0.0F, 0.0F);
                 }
                 else {
-                    cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
+                    cascadeRadius = Math.min(
+                        this.renderDistance / 3.0F,  // hack, TODO
+                        p.shadows.cascadeRadii().get(cascade-1)
+                    );
                     center = new Vector3f(mainCamera.getLookVector()).mul(cascadeRadius);
                 }
 
@@ -202,6 +192,39 @@ public class GameRendererMixin implements GameRendererAccessor {
                 center.z -= (center.z % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].z * metersPerPixel;
 
                 this.canpipe_shadowCenters[cascade].set(center.x, center.y, center.z, cascadeRadius);
+
+                // sometimes cascade is out of frustum bounds
+                // we don't want to render chunks and entiteis more than needed, right?
+                // (help)
+                this.canpipe_depthFarOverride = 0.0F;
+
+                for (int x = -1; x <= 1; x += 2) {
+                    for (int y = -1; y <= 1; y += 2) {
+                        for (int z = -1; z <= 1; z += 2) {
+                            var edge = new Vector3f(
+                                center.x + cascadeRadius*x,
+                                center.y + cascadeRadius*y,
+                                center.z + cascadeRadius*z
+                            ).mulProject(inverseShadowViewMatrix).mulProject(viewMatrix);
+
+                            this.canpipe_depthFarOverride = Math.min(
+                                Math.max(this.canpipe_depthFarOverride, -edge.z),
+                                this.renderDistance + 48.0F
+                            );
+                        }
+                    }
+                }
+
+                Vector3f min = new Vector3f();
+                Vector3f max = new Vector3f();
+
+                new Matrix4f(this.canpipe_shadowViewMatrix).mul(
+                    this.getProjectionMatrix(
+                        this.minecraft.options.fov().get().floatValue()
+                    ).mul(viewMatrix).invert()
+                ).frustumAabb(min, max);  // frustum AABB in shadow view space
+
+                this.canpipe_depthFarOverride = null;
 
                 // those matrices aren't passed into shadow material programs,
                 // no need to worry about constant radius

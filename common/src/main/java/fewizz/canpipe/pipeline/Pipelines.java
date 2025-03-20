@@ -122,6 +122,7 @@ public class Pipelines implements PreparableReloadListener {
             try {
                 loadedPipeline = new Pipeline(raw, appliedOptions);
             } catch (Exception e) {
+                e.printStackTrace();
                 Pipelines.loadingError = e;
             }
         }
