@@ -11,6 +11,11 @@
 		"sources": "https://github.com/fewizz/can-pipe"
 	},
 	"license": "${license}",
+	"entrypoints": { 
+		"client": [
+			"fewizz.canpipe.CanPipeClientInitializer"
+		]
+	},
 	"icon": "assets/${mod_id}/icon.png",
 	"environment": "client",
 	"mixins": [

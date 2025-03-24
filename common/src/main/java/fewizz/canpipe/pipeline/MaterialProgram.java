@@ -146,7 +146,7 @@ public class MaterialProgram extends ProgramBase {
 
         String materialsVertexSrc = "";
         IntList usedMaterialIDs = new IntArrayList();
-        for (Material m : Materials.MATERIALS.values()) {
+        for (Material m : Materials.allCopy()) {
             String src = depthPass ? m.depthVertexShaderSource : m.vertexShaderSource;
             if (src == null) {
                 continue;
@@ -242,7 +242,7 @@ public class MaterialProgram extends ProgramBase {
 
         String materialsFragmentSrc = "";
         usedMaterialIDs.clear();
-        for (Material m : Materials.MATERIALS.values()) {
+        for (Material m : Materials.allCopy()) {
             String src = depthPass ? m.depthFragmentShaderSource : m.fragmentShaderSource;
             if (src == null) {
                 continue;

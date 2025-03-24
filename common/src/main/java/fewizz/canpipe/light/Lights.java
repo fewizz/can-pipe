@@ -12,12 +12,15 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-public class Lights implements PreparableReloadListener {
+final public class Lights implements PreparableReloadListener {
 
-    private static final Map<ResourceLocation, Light> LIGHTS = new HashMap<>();
+    public static final Lights INSTANCE = new Lights();
+    private Lights() {}
 
-    public static Light get(ResourceLocation itemLocation) {
-        return LIGHTS.get(itemLocation);
+    private final Map<ResourceLocation, Light> lights = new HashMap<>();
+
+    public static Light get(ResourceLocation location) {
+        return INSTANCE.lights.get(location);
     }
 
     @Override
@@ -40,7 +43,7 @@ public class Lights implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<ResourceLocation, Resource> lightJsons) -> {
-                LIGHTS.clear();
+                lights.clear();
 
                 for (var e : lightJsons.entrySet()) {
                     ResourceLocation fullLocation = e.getKey();
@@ -51,7 +54,7 @@ public class Lights implements PreparableReloadListener {
 
                     try {
                         JsonObject json = CanPipe.JANKSON.load(e.getValue().open());
-                        LIGHTS.put(location, new Light(json));
+                        lights.put(location, new Light(json));
                     } catch (Exception e1) {
                         e1.printStackTrace();
                     }

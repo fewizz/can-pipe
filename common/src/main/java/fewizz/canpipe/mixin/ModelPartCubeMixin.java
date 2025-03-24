@@ -11,7 +11,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.NormalAndTangent;
+import fewizz.canpipe.mixinclass.NormalAndTangent;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.model.geom.ModelPart;
 

@@ -1,8 +1,9 @@
-package fewizz.canpipe;
+package fewizz.canpipe.mixinclass;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
@@ -31,7 +32,7 @@ public class WrappingMultiBufferSourceThatSetsItemMaterialIndex implements Multi
         ) {
             MaterialMap materialMap = null;
             if (this.item instanceof BlockItem bi) {
-                materialMap = MaterialMaps.getForBlock(bi.getBlock());
+                materialMap = MaterialMaps.INSTANCE.getForBlock(bi.getBlock());
             }
             ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(materialMap);
         }

@@ -18,7 +18,7 @@ public class MaterialMap {
         String defaultMaterialStr = json.get(String.class, "defaultMaterial");
         if (defaultMaterialStr != null) {
             ResourceLocation materialLocation = ResourceLocation.parse(defaultMaterialStr);
-            this.defaultMaterial = Materials.MATERIALS.get(materialLocation);
+            this.defaultMaterial = Materials.INSTANCE.get(materialLocation);
         }
         else {
             this.defaultMaterial = null;
@@ -31,7 +31,7 @@ public class MaterialMap {
             String materialLocationStr = spriteMapObject.get(String.class, "material");
             this.spriteMap.put(
                 ResourceLocation.parse(spriteLocationStr),
-                Materials.MATERIALS.get(ResourceLocation.parse(materialLocationStr))
+                Materials.INSTANCE.get(ResourceLocation.parse(materialLocationStr))
             );
         }
     }

@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
 
-import fewizz.canpipe.NormalAndTangent;
+import fewizz.canpipe.mixinclass.NormalAndTangent;
 import net.minecraft.client.model.geom.ModelPart;
 
 

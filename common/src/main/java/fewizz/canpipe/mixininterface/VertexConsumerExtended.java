@@ -5,8 +5,8 @@ import java.util.function.Supplier;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.TangentSetter;
 import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.mixinclass.TangentSetter;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 public interface VertexConsumerExtended extends VertexConsumer {

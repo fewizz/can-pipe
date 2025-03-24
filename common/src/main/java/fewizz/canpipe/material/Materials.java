@@ -1,6 +1,8 @@
 package fewizz.canpipe.material;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -16,10 +18,25 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-public class Materials implements PreparableReloadListener {
+final public class Materials implements PreparableReloadListener {
 
-    public static final Map<ResourceLocation, Material> MATERIALS = new HashMap<>();
-    public static final Object2IntMap<Material> ID = new Object2IntOpenHashMap<>();
+    public static final Materials INSTANCE = new Materials();
+    private Materials() {}
+
+    public final Map<ResourceLocation, Material> materials = new HashMap<>();
+    public final Object2IntMap<Material> id = new Object2IntOpenHashMap<>();
+
+    public static int id(Material material) {
+        return INSTANCE.id.getInt(material);
+    }
+
+    public static Material get(ResourceLocation location) {
+        return INSTANCE.materials.get(location);
+    }
+
+    public static Collection<Material> allCopy() {
+        return Collections.unmodifiableCollection(INSTANCE.materials.values());
+    }
 
     @Override
     public CompletableFuture<Void> reload(
@@ -40,8 +57,8 @@ public class Materials implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<ResourceLocation, Resource> materialsJson) -> {
-                MATERIALS.clear();
-                ID.clear();
+                this.materials.clear();
+                this.id.clear();
 
                 int id = 0;
                 for (var e : materialsJson.entrySet()) {
@@ -57,8 +74,8 @@ public class Materials implements PreparableReloadListener {
                             location,
                             materialJson
                         );
-                        MATERIALS.put(location, material);
-                        ID.put(material, id);
+                        this.materials.put(location, material);
+                        this.id.put(material, id);
                         ++id;
                     } catch (IOException | SyntaxError ex) {
                         ex.printStackTrace();
@@ -67,10 +84,6 @@ public class Materials implements PreparableReloadListener {
             },
             applyExecutor
         );
-    }
-
-    public static int id(Material material) {
-        return ID.getInt(material);
     }
 
 }

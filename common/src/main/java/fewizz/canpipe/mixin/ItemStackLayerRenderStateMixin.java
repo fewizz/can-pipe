@@ -5,7 +5,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-import fewizz.canpipe.WrappingMultiBufferSourceThatSetsItemMaterialIndex;
+import fewizz.canpipe.mixinclass.WrappingMultiBufferSourceThatSetsItemMaterialIndex;
 import fewizz.canpipe.mixininterface.ItemStackRenderStateExtended;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.item.ItemStackRenderState;

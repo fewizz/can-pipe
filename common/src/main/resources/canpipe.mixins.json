@@ -25,7 +25,6 @@
     "ModelBlockRendererMixin",
     "ModelPartCubeMixin",
     "ModelPartPolygonMixin",
-    "ReloadableResourceManagerMixin",
     "RenderStateShardMixin",
     "RenderTypeMixin",
     "SectionCompilerMixin",

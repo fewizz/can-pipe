@@ -17,17 +17,20 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 
-public class MaterialMaps implements PreparableReloadListener {
+final public class MaterialMaps implements PreparableReloadListener {
 
-    private static final Map<Fluid, MaterialMap> FLUIDS = new HashMap<>();
-    private static final Map<Block, MaterialMap> BLOCKS = new HashMap<>();
+    public static final MaterialMaps INSTANCE = new MaterialMaps();
+    private MaterialMaps() {}
+
+    private final Map<Fluid, MaterialMap> fluids = new HashMap<>();
+    private final Map<Block, MaterialMap> blocks = new HashMap<>();
 
     public static MaterialMap getForBlock(Block block) {
-        return BLOCKS.get(block);
+        return INSTANCE.blocks.get(block);
     }
 
     public static MaterialMap getForFluid(Fluid fluid) {
-        return FLUIDS.get(fluid);
+        return INSTANCE.fluids.get(fluid);
     }
 
     @Override
@@ -50,8 +53,8 @@ public class MaterialMaps implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<ResourceLocation, Resource> materialMapsJson) -> {
-                FLUIDS.clear();
-                BLOCKS.clear();
+                this.fluids.clear();
+                this.blocks.clear();
 
                 for (var e : materialMapsJson.entrySet()) {
                     ResourceLocation location = e.getKey();
@@ -69,13 +72,13 @@ public class MaterialMaps implements PreparableReloadListener {
                         if (type.equals("fluid")) {
                             var fluid = BuiltInRegistries.FLUID.get(location.withPath(subpath));
                             if (fluid.isEmpty()) continue;
-                            FLUIDS.put(fluid.get().value(), materialMap);
+                            this.fluids.put(fluid.get().value(), materialMap);
                         }
                         if (type.equals("block")) {
                             if (subpath.equals("grass")) subpath = "short_grass"; // compat
                             var block = BuiltInRegistries.BLOCK.get(location.withPath(subpath));
                             if (block.isEmpty()) continue;
-                            BLOCKS.put(block.get().value(), materialMap);
+                            this.blocks.put(block.get().value(), materialMap);
                         }
                     } catch (IOException | SyntaxError ex) {
                         ex.printStackTrace();

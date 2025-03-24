@@ -23,11 +23,11 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.NormalAndTangent;
-import fewizz.canpipe.TangentSetter;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.Materials;
+import fewizz.canpipe.mixinclass.NormalAndTangent;
+import fewizz.canpipe.mixinclass.TangentSetter;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;
@@ -217,7 +217,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 }
             }
 
-            int index = material != null ? Materials.id(material) : -1;
+            int index = material != null ? Materials.INSTANCE.id(material) : -1;
             for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
                 MemoryUtil.memPutInt(materialIndexPtr+i*this.vertexSize, index);
             }

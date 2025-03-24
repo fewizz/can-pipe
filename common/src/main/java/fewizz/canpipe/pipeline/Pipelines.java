@@ -29,7 +29,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-public class Pipelines implements PreparableReloadListener {
+final public class Pipelines implements PreparableReloadListener {
+
+    public static final Pipelines INSTANCE = new Pipelines();
+    private Pipelines() {}
+
     public static final Map<ResourceLocation, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
 
     private static volatile @Nullable PipelineRaw currentRaw = null;
