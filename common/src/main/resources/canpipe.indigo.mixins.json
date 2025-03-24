@@ -1,14 +1,15 @@
 {
 	"required": false,
-	"package": "fewizz.canpipe.compat.indigo.mixin",
 	"compatibilityLevel": "JAVA_21",
+	"package": "fewizz.canpipe.compat.indigo.mixin",
+	"refmap": "canpipe-refmap.json",
+	"injectors": {
+		"defaultRequire": 1
+	},
 	"mixins": [
 		"AbstractBlockRenderContextMixin",
 		"AbstractRenderContextMixin",
 		"MutableQuadViewImplMixin",
 		"QuadViewImplMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	}
+	]
 }

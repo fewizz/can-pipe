@@ -19,7 +19,10 @@ public class MinecraftMixin {
         GFX.glEnableCubemapSeamless();
     }
 
-    @ModifyReturnValue(method = "useShaderTransparency", at = @At("RETURN"))
+    @ModifyReturnValue(
+        method = "useShaderTransparency",
+        at = @At("RETURN")
+    )
     private static boolean useShaderTransparency(boolean original) {
         return original || Pipelines.getCurrent() != null;
     }

@@ -1,7 +1,11 @@
 {
   "required": true,
-  "package": "fewizz.canpipe.mixin",
   "compatibilityLevel": "JAVA_21",
+  "package": "fewizz.canpipe.mixin",
+  "refmap": "canpipe-refmap.json",
+  "injectors": {
+    "defaultRequire": 1
+  },
   "mixins": [
     "BufferBuilderMixin",
     "CameraAccessor",
@@ -31,8 +35,5 @@
     "TextureAtlasSpriteMixin",
     "VertexConsumerMixin",
     "VideoSettingsScreenMixin"
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  }
+  ]
 }

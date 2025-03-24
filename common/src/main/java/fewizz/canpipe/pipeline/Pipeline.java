@@ -148,7 +148,7 @@ public class Pipeline implements AutoCloseable {
         }}
         ApplyOptions.doApply(pipelineJson, optionValueByName);
 
-        this.defaultZenithAngle = JanksonUtils.objectOrEmpty(pipelineJson, "sky").getFloat("defaultZenithAngle", 0.0F);
+        this.defaultZenithAngle = (float) Math.toRadians(JanksonUtils.objectOrEmpty(pipelineJson, "sky").getFloat("defaultZenithAngle", 0.0F));
         this.smoothBrightnessBidirectionaly = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);
         this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
         this.rainSmoothingFrames = pipelineJson.getInt("rainSmoothingFrames", 500);

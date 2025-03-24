@@ -41,9 +41,9 @@ loom {
     runs {
         client {
             client()
-            setConfigName('Fabric')
-            ideConfigGenerated(true)
-            runDir('../run')
+            setConfigName 'Fabric'
+            ideConfigGenerated true
+            runDir '../run'
             appendProjectPathToConfigName = false
         }
     }
