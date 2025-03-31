@@ -25,7 +25,8 @@ public class NormalAndTangent extends Vector3f {
      * Resulting {@code vec3(tx, ty, tz)} is almost never has length 1.0, and
      * {@code PackedVector3f.pack(tx, ty, tz, inverted)} packs unnormalized vector, clamping components
      * <p>
-     * Why bitangent isn't provided to shaders? tangent and bitanget are not necessarily orthogonal
+     * Why bitangent isn't provided to shaders?
+     * Canvas assumes that tangent and bitanget are not necessarily orthogonal?
     */
     public static Pair<Vector3f, Boolean> computeTangent(
         Vector3f normal,
