@@ -11,17 +11,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.opengl.GlProgram;
 
 import fewizz.canpipe.pipeline.ProgramBase;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import net.minecraft.client.renderer.CompiledShaderProgram;
-import net.minecraft.client.renderer.ShaderProgramConfig;
 
-@Mixin(CompiledShaderProgram.class)
+@Mixin(GlProgram.class)
 public class CompiledShaderProgramMixin {
 
-    @Shadow @Final private Object2IntMap<String> samplerTextures;
+    /*@Shadow @Final private Object2IntMap<String> samplerTextures;
 
     @WrapOperation(
         method = "apply",
@@ -38,9 +36,9 @@ public class CompiledShaderProgramMixin {
         else {
             original.call(id);
         }
-    }
+    }*/
 
-    @Inject(
+    /*@Inject(
         method = "clear",
         at = @At(
             value = "INVOKE_ASSIGN",
@@ -61,9 +59,9 @@ public class CompiledShaderProgramMixin {
                 pb.onClearSampler(id, textureUnit);
             }
         }
-    }
+    }*/
 
-    @WrapOperation(
+    /*@WrapOperation(
         method = "apply",
         at = @At(
             value = "INVOKE",
@@ -78,6 +76,6 @@ public class CompiledShaderProgramMixin {
             return;
         }
         original.call(instance);
-    }
+    }*/
 
 }

@@ -10,12 +10,18 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
 
+import com.mojang.blaze3d.opengl.DirectStateAccess;
+import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTexture;
 
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
@@ -44,6 +50,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
     public final List<ColorAttachment> colorAttachments;
     public final @Nullable DepthAttachment depthAttachment;
     public final String name;
+    private int id;
 
     private Framebuffer(
         ResourceLocation pipelineLocation,
@@ -51,32 +58,30 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         List<ColorAttachment> colorAttachments,
         @Nullable DepthAttachment depthAttachment
     ) {
-        super(depthAttachment != null);
+        super(name, depthAttachment != null);
         this.name = name;
         this.colorAttachments = colorAttachments;
         this.depthAttachment = depthAttachment;
-        createBuffers(0, 0);
-        GFX.glObjectLabel(GL33C.GL_FRAMEBUFFER, this.frameBufferId, pipelineLocation.toString()+"-"+name);
+        createBuffers(-1, -1);
+        GFX.glObjectLabel(GL33C.GL_FRAMEBUFFER, this.id, pipelineLocation.toString()+"-"+name);
+    }
+
+    public int glID() {
+        return this.id;
     }
 
     @Override
     public void destroyBuffers() {
-        RenderSystem.assertOnRenderThreadOrInit();
-        this.unbindRead();
-        this.unbindWrite();
-
-        this.depthBufferId = -1;
-        this.colorTextureId = -1;
-
+        RenderSystem.assertOnRenderThread();
         this.close();
     }
 
     @Override
     public void close() {
-        if (this.frameBufferId > -1) {
+        if (this.id > -1) {
             GlStateManager._glBindFramebuffer(36160, 0);
-            GlStateManager._glDeleteFramebuffers(this.frameBufferId);
-            this.frameBufferId = -1;
+            GlStateManager._glDeleteFramebuffers(this.id);
+            this.id = -1;
         }
     }
 
@@ -87,12 +92,16 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
 
         if (this.colorAttachments.size() > 0) {
             var firstColor = this.colorAttachments.get(0);
-            this.colorTextureId = firstColor.texture.getId();
+            this.colorTexture = firstColor.texture;
+            this.colorTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
+			this.colorTexture.setTextureFilter(FilterMode.NEAREST, true);
             extent.max(firstColor.texture.extent);
             lod = Math.max(lod, firstColor.lod);
         }
         if (this.depthAttachment != null) {
-            this.depthBufferId = this.depthAttachment.texture.getId();
+            this.depthTexture = this.depthAttachment.texture;
+            this.depthTexture.setTextureFilter(FilterMode.NEAREST, false);
+            this.depthTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
             extent.max(this.depthAttachment.texture.extent);
             lod = Math.max(lod, this.depthAttachment.lod.orElse(0));
         }
@@ -103,22 +112,22 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         this.width = extent.x >> lod;
         this.height = extent.y >> lod;
 
-        this.frameBufferId = GlStateManager.glGenFramebuffers();
-        GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, this.frameBufferId);
+        this.id = GlStateManager.glGenFramebuffers();
+        GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, this.id);
         GFX.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
 
         for (int attachmentIndex = 0; attachmentIndex < colorAttachments.size(); ++attachmentIndex) {
             var attachment = colorAttachments.get(attachmentIndex);
 
             if (attachment.texture.target == GL33C.GL_TEXTURE_2D) {
-                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.target, attachment.texture.getId(), attachment.lod);
+                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.target, attachment.texture.glId(), attachment.lod);
             } else if (attachment.texture.target == GL33C.GL_TEXTURE_2D_ARRAY || attachment.texture.target == GL33C.GL_TEXTURE_3D) {
-                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.getId(), attachment.lod, attachment.layer);
+                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.glId(), attachment.lod, attachment.layer);
             } else if (attachment.texture.target == GL33C.GL_TEXTURE_CUBE_MAP) {
                 int face = attachment.face != -1 ? attachment.face : attachment.layer;  // for compatibility
-                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, attachment.texture.getId(), attachment.lod);
+                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, attachment.texture.glId(), attachment.lod);
             } else if (attachment.texture.target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
-                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.getId(), attachment.lod, attachment.layer * 6 + attachment.face);
+                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.glId(), attachment.lod, attachment.layer * 6 + attachment.face);
             } else {
                 throw new NotImplementedException();
             }
@@ -126,25 +135,38 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
 
         if (this.depthAttachment != null) {
             if (this.depthAttachment.texture.target == GL33C.GL_TEXTURE_2D) {
-                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, this.depthAttachment.texture.target, this.depthAttachment.texture.getId(), this.depthAttachment.lod.orElse(0));
+                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, this.depthAttachment.texture.target, this.depthAttachment.texture.glId(), this.depthAttachment.lod.orElse(0));
             } else if (this.depthAttachment.texture.target == GL33C.GL_TEXTURE_2D_ARRAY || this.depthAttachment.texture.target == GL33C.GL_TEXTURE_3D) {
-                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, this.depthAttachment.texture.getId(), this.depthAttachment.lod.orElse(0), this.depthAttachment.layer.orElse(0));
+                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, this.depthAttachment.texture.glId(), this.depthAttachment.lod.orElse(0), this.depthAttachment.layer.orElse(0));
             } else {
                 throw new NotImplementedException();
             }
         }
 
-        try {
-            this.checkStatus();
-        }
-        catch (Exception e) {
-            this.close();
-            throw new RuntimeException("Error occurred while trying to initialize framebuffer \""+name+"\": " + e.getMessage(), e);
-        }
-        this.unbindWrite();
+        GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, 0);
     }
 
     @Override
+    public GpuTexture getColorTexture() {
+        var texture = this.colorTexture != null ? this.colorTexture : this.depthTexture;
+        return new GlTexture(
+            this.name, texture.getFormat(),
+            this.width, this.height,
+            texture.getMipLevels(), ((GlTexture)texture).glId()
+        ) {
+
+            @Override public void close() {}
+            @Override public boolean isClosed() { return false; }
+            @Override public void flushModeChanges() {}
+
+            @Override
+            public int getFbo(DirectStateAccess directStateAccess, @Nullable GpuTexture gpuTexture) {
+                return glID();
+            }
+        };
+    }
+
+    /*@Override
     public void clear() {
         RenderSystem.assertOnRenderThreadOrInit();
         this.bindWrite(false);
@@ -156,29 +178,31 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         this.bindWrite(false);
         GFX.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
         this.unbindWrite();
-    }
+    }*/
 
     /**
      * Called by <code>frex_clear</code>-type passes<p>
      * Note that {@link RenderTarget#clear} clears only first color and depth attachemnts
      */
     public void bindAndClearFully() {
-        RenderSystem.assertOnRenderThreadOrInit();
-        this.bindWrite(true);
+        RenderSystem.assertOnRenderThread();
+        GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, this.id);
 
         if (this.depthAttachment != null) {
-            GlStateManager._clearDepth(this.depthAttachment.clearDepth);
+            GL11.glClearDepth(this.depthAttachment.clearDepth);
             Texture depthTexture = this.depthAttachment.texture;
 
             if (depthTexture.target == GL33C.GL_TEXTURE_2D_ARRAY || depthTexture.target == GL33C.GL_TEXTURE_3D) {
-                for (int lod = this.depthAttachment.lod.orElse(depthTexture.maxLod); lod >= this.depthAttachment.lod.orElse(0); --lod) {
+                for (int lod = this.depthAttachment.lod.orElse(depthTexture.getMipLevels()-1); lod >= this.depthAttachment.lod.orElse(0); --lod) {
                     for (int layer = this.depthAttachment.layer.orElse(depthTexture.extent.z-1); layer >= this.depthAttachment.layer.orElse(0); --layer) {
-                        GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthTexture.getId(), lod, layer);
+                        GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthTexture.glId(), lod, layer);
+                        GlStateManager._depthMask(true);
                         GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
                     }
                 }
             }
             else {
+                GlStateManager._depthMask(true);
                 GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
             }
         }
@@ -186,7 +210,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         for (int i = 0; i < this.colorAttachments.size(); ++i) {
             var a = this.colorAttachments.get(i);
             GFX.glDrawBuffers(new int[] {GL33C.GL_COLOR_ATTACHMENT0 + i});
-            GlStateManager._clearColor(a.clearColor.x, a.clearColor.y, a.clearColor.z, a.clearColor.w);
+            GL11.glClearColor(a.clearColor.x, a.clearColor.y, a.clearColor.z, a.clearColor.w);
             GlStateManager._clear(GL33C.GL_COLOR_BUFFER_BIT);
         }
 

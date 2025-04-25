@@ -19,7 +19,7 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderCont
 @Mixin(value = AbstractRenderContext.class)
 public class AbstractRenderContextMixin {
 
-    @Inject(
+    /*@Inject(
         method = "bufferQuad("+
             "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
             "Lcom/mojang/blaze3d/vertex/VertexConsumer;"+
@@ -86,6 +86,6 @@ public class AbstractRenderContextMixin {
             }
         }
 
-    }
+    }*/
 
 }

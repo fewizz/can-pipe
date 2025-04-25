@@ -2,40 +2,34 @@ package fewizz.canpipe.pipeline;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.KHRDebug;
 
 import com.google.common.collect.Streams;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.shaders.CompiledShader;
-import com.mojang.blaze3d.shaders.Uniform;
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.opengl.GlProgram;
+import com.mojang.blaze3d.opengl.GlShaderModule;
+import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.opengl.Uniform;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
-import fewizz.canpipe.GFX;
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
-import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.LightTextureExtended;
-import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
-import net.minecraft.client.renderer.ShaderProgramConfig;
-import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -50,82 +44,84 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
 
-public abstract class ProgramBase extends CompiledShaderProgram {
+public abstract class ProgramBase extends GlProgram {
 
-    private static final List<ShaderProgramConfig.Uniform> DEFAULT_UNIFORMS = List.of(
+    // WHY THE HELL Uniform.set(Vector4f vector4f) is not overloaded???
+
+    private static final List<RenderPipeline.UniformDescription> DEFAULT_UNIFORMS = List.of(
         // accessibility.glsl
-        new ShaderProgramConfig.Uniform("frx_fovEffects", "float", 1, List.of(1.0F)),
-        new ShaderProgramConfig.Uniform("frx_distortionEffects", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_hideLightningFlashes", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_darknessPulsing", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_highContrast", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_damageTilt", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_glintStrength", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_glintSpeed", "float", 1, List.of(0.0F)),
+        new RenderPipeline.UniformDescription("frx_fovEffects", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_distortionEffects", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_hideLightningFlashes", UniformType.INT),
+        new RenderPipeline.UniformDescription("frx_darknessPulsing", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_highContrast", UniformType.INT),
+        new RenderPipeline.UniformDescription("frx_damageTilt", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_glintStrength", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_glintSpeed", UniformType.FLOAT),
 
         // view.glsl
-        new ShaderProgramConfig.Uniform("frx_cameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_cameraView", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_lastCameraPos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_modelToWorld", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_originType", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_modelToCamera", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_viewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_inverseViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_lastViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_projectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_inverseProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_lastProjectionMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_inverseShadowViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_shadowViewMatrix", "matrix4x4", 16, List.of(1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_shadowCenter_0", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_shadowCenter_1", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_shadowCenter_2", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_shadowCenter_3", "float", 4, List.of(0.0F, 0.0F, 0.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_fogStart", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_fogEnd", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_screenSize", "float", 2, List.of(0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_viewDistance", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_viewBrightness", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_viewFlags", "int", 1, List.of(0.0F)),
+        new RenderPipeline.UniformDescription("frx_cameraPos", UniformType.VEC3),
+        new RenderPipeline.UniformDescription("frx_cameraView", UniformType.VEC3),
+        new RenderPipeline.UniformDescription("frx_lastCameraPos", UniformType.VEC3),
+        new RenderPipeline.UniformDescription("frx_modelToWorld", UniformType.VEC4),
+        new RenderPipeline.UniformDescription("canpipe_originType", UniformType.INT),
+        new RenderPipeline.UniformDescription("canpipe_modelToCamera", UniformType.VEC3),
+        new RenderPipeline.UniformDescription("frx_viewMatrix", UniformType.MATRIX4X4),
+        new RenderPipeline.UniformDescription("frx_inverseViewMatrix", UniformType.MATRIX4X4),
+        new RenderPipeline.UniformDescription("frx_lastViewMatrix", UniformType.MATRIX4X4),
+        new RenderPipeline.UniformDescription("frx_projectionMatrix", UniformType.MATRIX4X4),
+        new RenderPipeline.UniformDescription("frx_inverseProjectionMatrix", UniformType.MATRIX4X4),
+        new RenderPipeline.UniformDescription("frx_lastProjectionMatrix", UniformType.MATRIX4X4),
+        new RenderPipeline.UniformDescription("frx_inverseShadowViewMatrix", UniformType.MATRIX4X4),
+        new RenderPipeline.UniformDescription("frx_shadowViewMatrix", UniformType.MATRIX4X4),
+        new RenderPipeline.UniformDescription("canpipe_shadowCenter_0", UniformType.VEC4),
+        new RenderPipeline.UniformDescription("canpipe_shadowCenter_1", UniformType.VEC4),
+        new RenderPipeline.UniformDescription("canpipe_shadowCenter_2", UniformType.VEC4),
+        new RenderPipeline.UniformDescription("canpipe_shadowCenter_3", UniformType.VEC4),
+        new RenderPipeline.UniformDescription("frx_fogStart", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_fogEnd", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("canpipe_screenSize", UniformType.VEC2),
+        new RenderPipeline.UniformDescription("frx_viewDistance", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_viewBrightness", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("canpipe_viewFlags", UniformType.INT),
 
         // player.glsl
-        new ShaderProgramConfig.Uniform("frx_effectModifier", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_darknessFactor", "float", 1, List.of(1.0F)),
-        new ShaderProgramConfig.Uniform("frx_eyePos", "float", 3, List.of(0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_eyeBrightness", "float", 2, List.of(0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_smoothedEyeBrightness", "float", 2, List.of(0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_heldLight", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_heldLightInnerRadius", "float", 1, List.of((float) Math.PI)),
-        new ShaderProgramConfig.Uniform("frx_heldLightOuterRadius", "float", 1, List.of((float) Math.PI)),
-        new ShaderProgramConfig.Uniform("frx_playerMood", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_playerFlags", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_effectsFlags", "int", 2, List.of(0.0F, 0.0F)),
+        new RenderPipeline.UniformDescription("frx_effectModifier", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("canpipe_darknessFactor", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_eyePos", UniformType.VEC3),
+        new RenderPipeline.UniformDescription("frx_eyeBrightness", UniformType.VEC2),
+        new RenderPipeline.UniformDescription("frx_smoothedEyeBrightness", UniformType.VEC2),
+        new RenderPipeline.UniformDescription("frx_heldLight", UniformType.VEC4),
+        new RenderPipeline.UniformDescription("frx_heldLightInnerRadius", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_heldLightOuterRadius", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_playerMood", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("canpipe_playerFlags", UniformType.INT),
+        new RenderPipeline.UniformDescription("canpipe_effectsFlags", UniformType.valueOf("IVEC2")),
 
         // world.glsl
-        new ShaderProgramConfig.Uniform("canpipe_renderFrames", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_fixedOrDayTime", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_renderSeconds", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_worldDay", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_worldTime", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_skyLightVector", "float", 3, List.of(0.0F, 1.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_moonSize", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_skyAngleRadians", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_sunriseOrSunsetColor", "float", 3, List.of(1.0F, 1.0F, 1.0F)),
-        new ShaderProgramConfig.Uniform("frx_skyFlashStrength", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_ambientIntensity", "float", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("frx_emissiveColor", "float", 4, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_worldFlags", "int", 1, List.of(0.0F)),
-        new ShaderProgramConfig.Uniform("canpipe_weatherGradients", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
+        new RenderPipeline.UniformDescription("canpipe_renderFrames", UniformType.INT),
+        new RenderPipeline.UniformDescription("canpipe_fixedOrDayTime", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_renderSeconds", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_worldDay", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_worldTime", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_skyLightVector", UniformType.VEC3),
+        new RenderPipeline.UniformDescription("frx_moonSize", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_skyAngleRadians", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("canpipe_sunriseOrSunsetColor", UniformType.VEC3),
+        new RenderPipeline.UniformDescription("frx_skyFlashStrength", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_ambientIntensity", UniformType.FLOAT),
+        new RenderPipeline.UniformDescription("frx_emissiveColor", UniformType.VEC4),
+        new RenderPipeline.UniformDescription("canpipe_worldFlags", UniformType.INT),
+        new RenderPipeline.UniformDescription("canpipe_weatherGradients", UniformType.VEC4),
 
         // fog.glsl
-        new ShaderProgramConfig.Uniform("frx_fogColor", "float", 4, List.of(0.0F, 0.0F, 0.0F, 0.0F)),
-        new ShaderProgramConfig.Uniform("frx_fogEnabled", "int", 1, List.of(1.0F))
+        new RenderPipeline.UniformDescription("frx_fogColor", UniformType.VEC4),
+        new RenderPipeline.UniformDescription("frx_fogEnabled", UniformType.INT)
     );
 
-    final String name;
-    final Map<Integer, Integer> samplerTargetByID = new Int2IntArrayMap();
     public final Set<Uniform> manuallyAppliedUniforms = new HashSet<>();
+    public final Shader vertexShader;
+    public final Shader fragmentShader;
 
     public final Uniform
         // accessibility.glsl
@@ -191,9 +187,9 @@ public abstract class ProgramBase extends CompiledShaderProgram {
         FRX_FOG_COLOR,
         FRX_FOG_ENABLED;
 
-    private static int _link(String name, CompiledShader vertexShader, CompiledShader fragmentShader, VertexFormat vertexFormat) {
+    private static int _link(String name, GlShaderModule vertexShader, GlShaderModule fragmentShader, VertexFormat vertexFormat, String debugLabel) {
         try {
-            return CompiledShaderProgram.link(vertexShader, fragmentShader, vertexFormat).getProgramId();
+            return GlProgram.link(vertexShader, fragmentShader, vertexFormat, debugLabel).getProgramId();
         } catch (CompilationException e) {
             throw new RuntimeException("Couldn't link program \""+name+"\": "+e.getMessage(), e);
         }
@@ -201,16 +197,17 @@ public abstract class ProgramBase extends CompiledShaderProgram {
 
     ProgramBase(
         String name, VertexFormat vertexFormat,
-        List<String> internalSamplers, List<String> samplers, List<ShaderProgramConfig.Uniform> uniforms,
+        List<String> samplers, List<RenderPipeline.UniformDescription> uniforms,
         Shader vertexShader, Shader fragmentShader
     ) {
-        super(ProgramBase._link(name, vertexShader, fragmentShader, vertexFormat));
-        this.name = name;
-        GFX.glObjectLabel(KHRDebug.GL_PROGRAM, getProgramId(), name);
+        super(ProgramBase._link(name, vertexShader, fragmentShader, vertexFormat, name), name);
+
+        this.vertexShader = vertexShader;
+        this.fragmentShader = fragmentShader;
 
         setupUniforms(
             Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList(),
-            Streams.concat(internalSamplers.stream(), samplers.stream()).map(s -> new ShaderProgramConfig.Sampler(s)).toList()
+            samplers
         );
 
         // accessibility.glsl
@@ -298,20 +295,17 @@ public abstract class ProgramBase extends CompiledShaderProgram {
     }
 
     @Override
-    public void setDefaultUniforms(Mode mode, Matrix4f viewMatrix, Matrix4f projectionMatrix, Window window) {
-        super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, window);
-        if (this.FRX_INVERSE_VIEW_MATRIX != null) {
-            this.FRX_INVERSE_VIEW_MATRIX.set(viewMatrix.invert(new Matrix4f()));
-        }
-        if (this.FRX_INVERSE_PROJECTION_MATRIX != null) {
-            this.FRX_INVERSE_PROJECTION_MATRIX.set(projectionMatrix.invert(new Matrix4f()));
+    public void setDefaultUniforms(Mode mode, Matrix4f viewMatrix, Matrix4f projectionMatrix, float w, float h) {
+        super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, w, h);
+        if (this.CANPIPE_ORIGIN_TYPE != null) {
+            this.CANPIPE_ORIGIN_TYPE.set(CanPipe.GlobalState.originType);
         }
     }
 
     public void setFREXUniforms() {
         Minecraft mc = Minecraft.getInstance();
         Pipeline p = Pipelines.getCurrent();
-        GameRendererAccessor gra = (GameRendererAccessor) mc.gameRenderer;
+        GameRendererExtended gre = (GameRendererExtended) mc.gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
         Camera camera = mc.gameRenderer.getMainCamera();
         float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
@@ -322,6 +316,15 @@ public abstract class ProgramBase extends CompiledShaderProgram {
         );
 
         GlStateManager._glUseProgram(this.getProgramId());
+
+        if (this.FRX_INVERSE_VIEW_MATRIX != null) {
+            this.FRX_INVERSE_VIEW_MATRIX.set(gre.canpipe_getViewMatrix().invert(new Matrix4f()));
+            this.FRX_INVERSE_VIEW_MATRIX.upload();
+        }
+        if (this.FRX_INVERSE_PROJECTION_MATRIX != null) {
+            this.FRX_INVERSE_PROJECTION_MATRIX.set(gre.canpipe_getProjectionMatrix().invert(new Matrix4f()));
+            this.FRX_INVERSE_PROJECTION_MATRIX.upload();
+        }
 
         // accessibility.glsl
         if (this.FRX_FOV_EFFECTS != null) {
@@ -374,46 +377,48 @@ public abstract class ProgramBase extends CompiledShaderProgram {
         }
         if (this.FRX_CAMERA_VIEW != null) {
             this.FRX_CAMERA_VIEW.set(
-                Vec3.directionFromRotation(
-                    camera.getXRot(), camera.getYRot()
-                ).toVector3f()
+                Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).toVector3f()
             );
             this.FRX_CAMERA_VIEW.upload();
         }
         if (this.FRX_LAST_CAMERA_POS != null) {
-            this.FRX_LAST_CAMERA_POS.set(gra.canpipe_getLastCameraPos());
+            this.FRX_LAST_CAMERA_POS.set(gre.canpipe_getLastCameraPos());
             this.FRX_LAST_CAMERA_POS.upload();
         }
         if (this.FRX_LAST_VIEW_MATRIX != null) {
-            this.FRX_LAST_VIEW_MATRIX.set(gra.canpipe_getLastViewMatrix());
+            this.FRX_LAST_VIEW_MATRIX.set(gre.canpipe_getLastViewMatrix());
             this.FRX_LAST_VIEW_MATRIX.upload();
         }
         if (this.FRX_LAST_PROJECTION_MATRIX != null) {
-            this.FRX_LAST_PROJECTION_MATRIX.set(gra.canpipe_getLastProjectionMatrix());
+            this.FRX_LAST_PROJECTION_MATRIX.set(gre.canpipe_getLastProjectionMatrix());
             this.FRX_LAST_PROJECTION_MATRIX.upload();
         }
         if (this.FRX_SHADOW_VIEW_MATRIX != null) {
-            this.FRX_SHADOW_VIEW_MATRIX.set(gra.canpipe_getShadowViewMatrix());
+            this.FRX_SHADOW_VIEW_MATRIX.set(gre.canpipe_getShadowViewMatrix());
             this.FRX_SHADOW_VIEW_MATRIX.upload();
         }
         if (this.FRX_INVERSE_SHADOW_VIEW_MATRIX != null) {
-            this.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(gra.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
+            this.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(gre.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
             this.FRX_INVERSE_SHADOW_VIEW_MATRIX.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_0 != null) {
-            this.CANPIPE_SHADOW_CENTER_0.set(gra.canpipe_getShadowCenters()[0]);
+            var c = gre.canpipe_getShadowCenters()[0];
+            this.CANPIPE_SHADOW_CENTER_0.set(c.x, c.y, c.z, c.w);
             this.CANPIPE_SHADOW_CENTER_0.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_1 != null) {
-            this.CANPIPE_SHADOW_CENTER_1.set(gra.canpipe_getShadowCenters()[1]);
+            var c = gre.canpipe_getShadowCenters()[1];
+            this.CANPIPE_SHADOW_CENTER_1.set(c.x, c.y, c.z, c.w);
             this.CANPIPE_SHADOW_CENTER_1.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_2 != null) {
-            this.CANPIPE_SHADOW_CENTER_2.set(gra.canpipe_getShadowCenters()[2]);
+            var c = gre.canpipe_getShadowCenters()[2];
+            this.CANPIPE_SHADOW_CENTER_2.set(c.x, c.y, c.z, c.w);
             this.CANPIPE_SHADOW_CENTER_2.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_3 != null) {
-            this.CANPIPE_SHADOW_CENTER_3.set(gra.canpipe_getShadowCenters()[3]);
+            var c = gre.canpipe_getShadowCenters()[3];
+            this.CANPIPE_SHADOW_CENTER_3.set(c.x, c.y, c.z, c.w);
             this.CANPIPE_SHADOW_CENTER_3.upload();
         }
         if (this.FRX_VIEW_DISTANCE != null) {
@@ -534,7 +539,7 @@ public abstract class ProgramBase extends CompiledShaderProgram {
             result |= (mc.player.isOnFire() ? 1 : 0)                              << 10;
             result |= (mc.player.isSleeping() ? 1 : 0)                            << 11;
             result |= (mc.player.isSprinting() ? 1 : 0)                           << 12;
-            result |= (mc.player.isInWaterRainOrBubble() ? 1 : 0)                 << 13;
+            result |= (mc.player.isInWaterOrRain() ? 1 : 0)                 << 13;
             result |= (mc.level.getBlockState(bp).is(Blocks.POWDER_SNOW) ? 1 : 0) << 14;
             result |= (mc.player.isFreezing() ? 1 : 0)                            << 15;
             this.CANPIPE_PLAYER_FLAGS.set(result);
@@ -542,17 +547,17 @@ public abstract class ProgramBase extends CompiledShaderProgram {
         }
         if (this.CANPIPE_EFFECTS_FLAGS != null) {
             long result = 0;
-            result |= (mc.player.hasEffect(MobEffects.MOVEMENT_SPEED) ? 1L : 0L)      << 0;
-            result |= (mc.player.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) ? 1L : 0L)   << 1;
-            result |= (mc.player.hasEffect(MobEffects.DIG_SPEED) ? 1L : 0L)           << 2;
-            result |= (mc.player.hasEffect(MobEffects.DIG_SLOWDOWN) ? 1L : 0L)        << 3;
-            result |= (mc.player.hasEffect(MobEffects.DAMAGE_BOOST) ? 1L : 0L)        << 4;
-            result |= (mc.player.hasEffect(MobEffects.HEAL) ? 1L : 0L)                << 5;
-            result |= (mc.player.hasEffect(MobEffects.HARM) ? 1L : 0L)                << 6;
-            result |= (mc.player.hasEffect(MobEffects.JUMP) ? 1L : 0L)                << 7;
-            result |= (mc.player.hasEffect(MobEffects.CONFUSION) ? 1L : 0L)           << 8;
+            result |= (mc.player.hasEffect(MobEffects.SPEED) ? 1L : 0L)      << 0;
+            result |= (mc.player.hasEffect(MobEffects.SLOWNESS) ? 1L : 0L)   << 1;
+            result |= (mc.player.hasEffect(MobEffects.HASTE) ? 1L : 0L)           << 2;
+            result |= (mc.player.hasEffect(MobEffects.MINING_FATIGUE) ? 1L : 0L)        << 3;
+            result |= (mc.player.hasEffect(MobEffects.STRENGTH) ? 1L : 0L)        << 4;
+            result |= (mc.player.hasEffect(MobEffects.INSTANT_HEALTH) ? 1L : 0L)                << 5;
+            result |= (mc.player.hasEffect(MobEffects.INSTANT_DAMAGE) ? 1L : 0L)                << 6;
+            result |= (mc.player.hasEffect(MobEffects.JUMP_BOOST) ? 1L : 0L)                << 7;
+            result |= (mc.player.hasEffect(MobEffects.NAUSEA) ? 1L : 0L)           << 8;
             result |= (mc.player.hasEffect(MobEffects.REGENERATION) ? 1L : 0L)        << 9;
-            result |= (mc.player.hasEffect(MobEffects.DAMAGE_RESISTANCE) ? 1L : 0L)   << 10;
+            result |= (mc.player.hasEffect(MobEffects.RESISTANCE) ? 1L : 0L)   << 10;
             result |= (mc.player.hasEffect(MobEffects.FIRE_RESISTANCE) ? 1L : 0L)     << 11;
             result |= (mc.player.hasEffect(MobEffects.WATER_BREATHING) ? 1L : 0L)     << 12;
             result |= (mc.player.hasEffect(MobEffects.INVISIBILITY) ? 1L : 0L)        << 13;
@@ -581,11 +586,11 @@ public abstract class ProgramBase extends CompiledShaderProgram {
 
         // world
         if (this.CANPIPE_RENDER_FRAMES != null) {
-            this.CANPIPE_RENDER_FRAMES.set(gra.canpipe_getFrame());
+            this.CANPIPE_RENDER_FRAMES.set(gre.canpipe_getFrame());
             this.CANPIPE_RENDER_FRAMES.upload();
         }
         if (this.FRX_RENDER_SECONDS != null) {
-            this.FRX_RENDER_SECONDS.set(gra.canpipe_getRenderSeconds());
+            this.FRX_RENDER_SECONDS.set(gre.canpipe_getRenderSeconds());
             this.FRX_RENDER_SECONDS.upload();
         }
         if (this.CANPIPE_FIXED_OR_DAY_TIME != null) {
@@ -641,7 +646,7 @@ public abstract class ProgramBase extends CompiledShaderProgram {
             Vector4f emissiveColor = (
                 (LightTextureExtended) mc.gameRenderer.lightTexture()
             ).canpipe_getEmissiveColor();
-            this.FRX_EMISSIVE_COLOR.set(emissiveColor);
+            this.FRX_EMISSIVE_COLOR.set(emissiveColor.x, emissiveColor.y, emissiveColor.z, emissiveColor.w);
             this.FRX_EMISSIVE_COLOR.upload();
         }
         if (this.CANPIPE_WORLD_FLAGS != null) {
@@ -678,14 +683,13 @@ public abstract class ProgramBase extends CompiledShaderProgram {
 
         // fog.glsl
         if (this.FRX_FOG_COLOR != null) {
-            this.FRX_FOG_COLOR.set(
-                FogRenderer.computeFogColor(
-                    mc.gameRenderer.getMainCamera(),
-                    pt,
-                    mc.level, mc.options.getEffectiveRenderDistance(),
-                    mc.gameRenderer.getDarkenWorldAmount(pt)
-                )
+            var fogColor = FogRenderer.computeFogColor(
+                mc.gameRenderer.getMainCamera(),
+                pt,
+                mc.level, mc.options.getEffectiveRenderDistance(),
+                mc.gameRenderer.getDarkenWorldAmount(pt)
             );
+            this.FRX_FOG_COLOR.set(fogColor.x, fogColor.y, fogColor.z, fogColor.w);
             this.FRX_FOG_COLOR.upload();
         }
 
@@ -693,55 +697,12 @@ public abstract class ProgramBase extends CompiledShaderProgram {
     }
 
     protected boolean samplerExists(String sampler) {
-        for (int i = 0; i < this.samplers.size(); ++i) {
-            if (this.samplers.get(i).name().equals(sampler)) {
+        for (int i = 0; i < this.getSamplers().size(); ++i) {
+            if (this.getSamplers().get(i).equals(sampler)) {
                 return true;
             }
         }
         return false;
-    }
-
-    /**
-     * Doesn't know about texture targets.
-     * Use {@link ProgramBase#bindSampler(String, AbstractTexture)} instead.
-     * */
-    @Override
-    public void bindSampler(String sampler, int textureID) {
-        super.bindSampler(sampler, textureID);
-    }
-
-    public void bindSampler(String sampler, AbstractTexture texture) {
-        this.bindSampler(sampler, texture.getId());
-        int target = GL33C.GL_TEXTURE_2D;
-        if (texture instanceof Texture t) {
-            target = t.target;
-        }
-        this.samplerTargetByID.put(texture.getId(), target);
-    }
-
-    /**
-     * Replaces {@link RenderSystem#bindTexture} on {@link CompiledShaderProgram#apply},
-     * because vanilla supports only {@link GL33C#GL_TEXTURE_2D} texture target
-    */
-    public void onTextureBindOnApply(int textureID) {
-        GFX.glBindTexture(this.samplerTargetByID.getOrDefault(textureID, GL33C.GL_TEXTURE_2D), textureID);
-    }
-
-    /**
-     * Called on {@link CompiledShaderProgram#clear}
-     * for particular texture/active texture.
-     * We need this, because
-     * <a href="https://community.khronos.org/t/binding-different-targets-to-same-unit/76935">
-     * different targets could be bound to same texture unit
-     * </a>.
-     * Vanilla doesn't know about texture targets other that {@link GL33C#GL_TEXTURE_2D}
-    */
-    public void onClearSampler(int textureID, int textureUnit) {
-        int target = samplerTargetByID.getOrDefault(textureID, GL33C.GL_TEXTURE_2D);
-        if (target != GL33C.GL_TEXTURE_2D) {
-            GlStateManager._activeTexture(GL33C.GL_TEXTURE0 + textureUnit);
-            GFX.glBindTexture(target, textureID);  // unbind non-TEXTURE_2D
-        }
     }
 
 }

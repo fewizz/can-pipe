@@ -18,9 +18,11 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.shaders.CompiledShader.Type;
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.opengl.GlRenderPipeline;
+import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
@@ -32,7 +34,6 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
@@ -70,9 +71,11 @@ public class Pipeline implements AutoCloseable {
 
     // private
     private final Map<String, Program> programs = new HashMap<>();
-    private final Map<Pair<ResourceLocation, Type>, Shader> shaders = new HashMap<>();
+    private final Map<Pair<ResourceLocation, ShaderType>, Shader> shaders = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
+
+    private final Map<RenderPipeline, GlRenderPipeline> glRenderPipelineCache = new HashMap<>();
 
     private final PassBase[]
         onInitPasses,
@@ -174,7 +177,7 @@ public class Pipeline implements AutoCloseable {
             return result.get();
         };
 
-        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture = (String name) -> {
+        Function<String, Optional<GlTexture>> getOrLoadPipelineOrResourcepackTexture = (String name) -> {
             if (name.contains(":")) {
                 var mc = Minecraft.getInstance();
                 var rl = ResourceLocation.parse(name);
@@ -182,7 +185,7 @@ public class Pipeline implements AutoCloseable {
                 if (rl.equals(ResourceLocation.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
                     rl = ItemRenderer.ENCHANTED_GLINT_ITEM;
                 }
-                return Optional.of(mc.getTextureManager().getTexture(rl));
+                return Optional.of((GlTexture) mc.getTextureManager().getTexture(rl).getTexture());
             }
             else {
                 return Optional.ofNullable(getOrLoadOptionalTexture.apply(name).orElse(null));
@@ -251,7 +254,7 @@ public class Pipeline implements AutoCloseable {
         var materialFragmentShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "fragmentSource"));
 
         List<String> samplers = JanksonUtils.listOfStrings(materailProgram, "samplers");
-        List<Optional<? extends AbstractTexture>> samplerImages = new ArrayList<>() {{
+        List<Optional<? extends GlTexture>> samplerImages = new ArrayList<>() {{
             for (String textureName : JanksonUtils.listOfStrings(materailProgram, "samplerImages")) {
                 add(getOrLoadPipelineOrResourcepackTexture.apply(textureName));
             }
@@ -272,8 +275,8 @@ public class Pipeline implements AutoCloseable {
                 Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
                     vertexFormat -> vertexFormat,
                     vertexFormat -> MaterialProgram.load(
-                        vertexFormat, glslVersion, enablePBR, true, framebuffer,
-                        location, vertexShaderLocation, fragmentShaderLocation,
+                        location, vertexFormat, glslVersion, enablePBR, true, framebuffer,
+                        vertexShaderLocation, fragmentShaderLocation,
                         options, appliedOptions, List.of(), List.of(), getShaderSource
                     )
                 )),
@@ -290,14 +293,14 @@ public class Pipeline implements AutoCloseable {
         this.materialPrograms = Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
             vertexFormat -> vertexFormat,
             vertexFormat -> MaterialProgram.load(
-                vertexFormat, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffer : null,
-                location, materialVertexShaderLocation, materialFragmentShaderLocation,
+                location, vertexFormat, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffer : null,
+                materialVertexShaderLocation, materialFragmentShaderLocation,
                 options, appliedOptions, samplers, samplerImages, getShaderSource
             )
         ));
 
         // "programs"
-        BiFunction<ResourceLocation, Type, Shader> getOrLoadShader = (ResourceLocation location, Type type) -> {
+        BiFunction<ResourceLocation, ShaderType, Shader> getOrLoadShader = (ResourceLocation location, ShaderType type) -> {
             return this.shaders.computeIfAbsent(Pair.of(location, type), locationAndType -> {
                 String source = getShaderSource.apply(location).get();
                 return Shader.load(
@@ -310,8 +313,8 @@ public class Pipeline implements AutoCloseable {
         Function<String, Program> getOrLoadProgram = (String name) -> {
             return this.programs.computeIfAbsent(name, _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
-                JsonObject programO = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
-                return Program.load(programO, location, getOrLoadShader);
+                JsonObject programJson = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
+                return Program.load(programJson, location, getOrLoadShader);
             });
         };
 
@@ -320,9 +323,9 @@ public class Pipeline implements AutoCloseable {
             JsonObject passesJson = pipelineJson.getObject(name);
             List<PassBase> result = new ArrayList<>();
             if (passesJson != null) {
-                for (var passO : JanksonUtils.listOfObjects(passesJson, "passes")) {
+                for (var passJson : JanksonUtils.listOfObjects(passesJson, "passes")) {
                     Pass.load(
-                        passO, optionValueByName,
+                        passJson, optionValueByName,
                         getOrLoadOptionalFramebuffer,
                         getOrLoadProgram,
                         getOrLoadPipelineOrResourcepackTexture
@@ -349,17 +352,12 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
-        var mc = Minecraft.getInstance();
-
         this.materialPrograms.values().forEach(MaterialProgram::setFREXUniforms);
         if (this.shadows != null) {
             this.shadows.materialPrograms.values().forEach(MaterialProgram::setFREXUniforms);
         }
 
-        for (var p : this.programs.values()) {
-            p.setDefaultUniforms(Mode.QUADS, view, projection, mc.getWindow());
-            p.setFREXUniforms();
-        }
+        this.programs.values().forEach(Program::setFREXUniforms);
 
         if (this.runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
@@ -378,6 +376,8 @@ public class Pipeline implements AutoCloseable {
         for (PassBase pass : this.beforeWorldRenderPasses) {
             pass.apply(view, projection);
         }
+
+        Minecraft.getInstance().mainRenderTarget = this.solidFramebuffer;
     }
 
     public void onAfterWorldRender(Matrix4f view, Matrix4f projection) {
@@ -385,39 +385,16 @@ public class Pipeline implements AutoCloseable {
             pass.apply(view, projection);
         }
 
-        Minecraft mc = Minecraft.getInstance();
-        RenderSystem.viewport(0, 0, mc.getMainRenderTarget().width, mc.getMainRenderTarget().height);
-
-        for (MaterialProgram p : this.materialPrograms.values()) {
-            GlStateManager._glUseProgram(p.getProgramId());
-            if (p.CANPIPE_ORIGIN_TYPE != null) {
-                p.CANPIPE_ORIGIN_TYPE.set(3);  // hand
-                p.CANPIPE_ORIGIN_TYPE.upload();
-            }
-            if (p.FRX_MODEL_TO_WORLD != null) {
-                p.FRX_MODEL_TO_WORLD.set(0.0F, 0.0F, 0.0F, 1.0F);
-                p.FRX_MODEL_TO_WORLD.upload();
-            }
-        }
-        GlStateManager._glUseProgram(0);
+        CanPipe.GlobalState.originType = 3;  // hand
     }
 
     public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
+        Minecraft.getInstance().mainRenderTarget = this.defaultFramebuffer;
+        CanPipe.GlobalState.originType = 2;  // screen
+
         for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply(view, projection);
         }
-
-        Minecraft mc = Minecraft.getInstance();
-        RenderSystem.viewport(0, 0, mc.getMainRenderTarget().width, mc.getMainRenderTarget().height);
-
-        for (MaterialProgram p : this.materialPrograms.values()) {
-            GlStateManager._glUseProgram(p.getProgramId());
-            if (p.CANPIPE_ORIGIN_TYPE != null) {
-                p.CANPIPE_ORIGIN_TYPE.set(2);  // screen
-                p.CANPIPE_ORIGIN_TYPE.upload();
-            }
-        }
-        GlStateManager._glUseProgram(0);
     }
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {
@@ -444,6 +421,27 @@ public class Pipeline implements AutoCloseable {
         this.textures.values().forEach(Texture::close);
         this.shaders.values().forEach(Shader::close);
         this.programs.values().forEach(ProgramBase::close);
+    }
+
+    public GlRenderPipeline getOrCreateGlRenderPipeline(RenderPipeline renderPipeline) {
+        return this.glRenderPipelineCache.computeIfAbsent(renderPipeline, rp -> {
+            var location = renderPipeline.getLocation();
+            ProgramBase program = null;
+            if (location.getNamespace().equals("canpipe") && location.getPath().equals("material")) {
+                program = this.materialPrograms.get(renderPipeline.getVertexFormat());
+            }
+            else if (location.getNamespace().equals("canpipe") && location.getPath().equals("material-shadow")) {
+                program = this.shadows.materialPrograms.get(renderPipeline.getVertexFormat());
+            }
+            else {
+                for (var p : this.programs.values()) {
+                    if (p.renderPipeline == renderPipeline) {
+                        program = p;
+                    }
+                }
+            }
+            return program != null ? new GlRenderPipeline(renderPipeline, program) : null;
+        });
     }
 
 }

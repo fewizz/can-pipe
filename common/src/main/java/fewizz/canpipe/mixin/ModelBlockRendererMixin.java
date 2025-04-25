@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipe;
@@ -18,10 +18,6 @@ import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
 @Mixin(ModelBlockRenderer.class)
@@ -32,7 +28,7 @@ public class ModelBlockRendererMixin {
         method = {"renderModelFaceAO", "renderModelFaceFlat"},
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/block/model/BakedQuad;isShade()Z"
+            target = "Lnet/minecraft/client/renderer/block/model/BakedQuad;shade()Z"
         )
     )
     boolean dontShade(boolean shade) {
@@ -51,14 +47,9 @@ public class ModelBlockRendererMixin {
         )
     )
     void onBeforeData(
-        BlockAndTintGetter blockAndTintGetter,
-        BlockState bs,
-        BlockPos bp,
-        VertexConsumer vc,
-        PoseStack.Pose pose,
-        BakedQuad bakedQuad,
-        float r, float g, float b, float a, int ao0, int ao1, int ao2, int ao3, int overlay,
-        CallbackInfo ci
+        CallbackInfo ci,
+        @Local(argsOnly = true) BlockState bs,
+        @Local(argsOnly = true) VertexConsumer vc
     ) {
         if (Pipelines.getCurrent() != null) {
             ((VertexConsumerExtended) vc).canpipe_recomputeNormal(true);
@@ -87,14 +78,9 @@ public class ModelBlockRendererMixin {
         )
     )
     void onAfterData(
-        BlockAndTintGetter blockAndTintGetter,
-        BlockState bs,
-        BlockPos bp,
-        VertexConsumer vc,
-        PoseStack.Pose pose,
-        BakedQuad bakedQuad,
-        float r, float g, float b, float a, int ao0, int ao1, int ao2, int ao3, int overlay,
-        CallbackInfo ci
+        CallbackInfo ci,
+        @Local(argsOnly = true) BlockState bs,
+        @Local(argsOnly = true) VertexConsumer vc
     ) {
         if (Pipelines.getCurrent() != null) {
             ((VertexConsumerExtended) vc).canpipe_recomputeNormal(false);
@@ -109,17 +95,14 @@ public class ModelBlockRendererMixin {
         }
     }
 
-    @Inject(
+    /*@Inject(
         method = "renderModel",
         at = @At("HEAD")
     )
-    void onBeforeSingleBlockData(
-        PoseStack.Pose pose,
-        VertexConsumer vc,
-        @Nullable BlockState bs,
-        BakedModel bakedModel,
-        float r, float g, float b, int light, int overlay,
-        CallbackInfo ci
+    private static void onBeforeSingleBlockData(
+        CallbackInfo ci,
+        @Local(argsOnly = true) VertexConsumer vc,
+        @Local(argsOnly = true) @Nullable BlockState bs
     ) {
         if (Pipelines.getCurrent() != null) {
             ((VertexConsumerExtended) vc).canpipe_recomputeNormal(true);
@@ -139,13 +122,10 @@ public class ModelBlockRendererMixin {
         method = "renderModel",
         at = @At("TAIL")
     )
-    void onAfterSingleBlockData(
-        PoseStack.Pose pose,
-        VertexConsumer vc,
-        @Nullable BlockState bs,
-        BakedModel bakedModel,
-        float r, float g, float b, int light, int overlay,
-        CallbackInfo ci
+    private static void onAfterSingleBlockData(
+        CallbackInfo ci,
+        @Local(argsOnly = true) VertexConsumer vc,
+        @Local(argsOnly = true) @Nullable BlockState bs
     ) {
         if (Pipelines.getCurrent() != null) {
             ((VertexConsumerExtended) vc).canpipe_recomputeNormal(false);
@@ -158,6 +138,6 @@ public class ModelBlockRendererMixin {
                 ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(null);
             }
         }
-    }
+    }*/
 
 }

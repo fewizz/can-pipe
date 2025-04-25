@@ -18,7 +18,7 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
-import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
@@ -27,7 +27,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 
 @Mixin(GameRenderer.class)
-public class GameRendererMixin implements GameRendererAccessor {
+public class GameRendererMixin implements GameRendererExtended {
 
     @Shadow @Final Minecraft minecraft;
     @Shadow @Final private Camera mainCamera;
@@ -87,7 +87,7 @@ public class GameRendererMixin implements GameRendererAccessor {
 
     @Override
     public float canpipe_getRenderSeconds() {
-        return (float) (this.canpipe_renderNanos / 1000000000.0);
+        return (float) (this.canpipe_renderNanos / 1_000_000_000.0);
     }
 
     @Inject(method = "resize", at = @At("HEAD"))
@@ -235,7 +235,6 @@ public class GameRendererMixin implements GameRendererAccessor {
         }
 
         p.onBeforeWorldRender(this.canpipe_viewMatrix, this.canpipe_projectionMatrix);
-        this.minecraft.mainRenderTarget.bindWrite(true);
     }
 
     @ModifyArg(
@@ -276,7 +275,6 @@ public class GameRendererMixin implements GameRendererAccessor {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             p.onAfterWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
-            this.minecraft.mainRenderTarget.bindWrite(false);
         }
     }
 
@@ -302,8 +300,18 @@ public class GameRendererMixin implements GameRendererAccessor {
     }
 
     @Override
+    public Matrix4f canpipe_getViewMatrix() {
+        return this.canpipe_viewMatrix;
+    }
+
+    @Override
     public Matrix4f canpipe_getLastViewMatrix() {
         return this.canpipe_lastViewMatrix;
+    }
+
+    @Override
+    public Matrix4f canpipe_getProjectionMatrix() {
+        return this.canpipe_projectionMatrix;
     }
 
     @Override

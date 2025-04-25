@@ -8,14 +8,12 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import fewizz.canpipe.GFX;
-import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.ShaderManager;
-import net.minecraft.client.renderer.ShaderProgram;
 
 @Mixin(ShaderManager.class)
 public class ShaderManagerMixin {
 
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = "linkProgram",
         at = @At(
             value = "INVOKE",
@@ -36,6 +34,6 @@ public class ShaderManagerMixin {
             shaderProgram.configId().toString()
         );
         return program;
-    }
+    }*/
 
 }

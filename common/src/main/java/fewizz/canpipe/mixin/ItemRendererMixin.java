@@ -18,7 +18,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 @Mixin(ItemRenderer.class)
 public class ItemRendererMixin {
 
-    @Inject(
+    /*@Inject(
         method = "getFoilBuffer",
         at = @At("HEAD"),
         cancellable = true
@@ -47,6 +47,6 @@ public class ItemRendererMixin {
         if (vertexConsumer instanceof VertexConsumerExtended vce) {
             vce.canpipe_setSharedGlint(false);
         }
-    }
+    }*/
 
 }

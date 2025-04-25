@@ -28,7 +28,7 @@ public interface VertexConsumerMixin {
     )
     default void setSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
         if (this instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(() -> bakedQuad.getSprite());
+            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(() -> bakedQuad.sprite());
         }
     }
 
@@ -76,7 +76,7 @@ public interface VertexConsumerMixin {
     ) {
         if (this instanceof BufferBuilder bb) {
             if (bb.format.contains(CanPipe.VertexFormatElements.AO)) {
-                ((VertexConsumerExtended) bb).canpipe_setAO(ao[vertexIndex + 4 /* because of mixin above */]);
+                ((VertexConsumerExtended) bb).canpipe_setAO(ao[vertexIndex + 4]);  // because of the change above
             }
         }
     }

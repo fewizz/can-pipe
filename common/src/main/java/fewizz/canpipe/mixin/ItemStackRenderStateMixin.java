@@ -8,9 +8,9 @@ import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.item.Item;
 
 @Mixin(ItemStackRenderState.class)
-public class ItemStackRenderStateMixin implements ItemStackRenderStateExtended {
+public class ItemStackRenderStateMixin /*implements ItemStackRenderStateExtended*/ {
 
-    @Unique Item item;
+    /*@Unique Item item;
 
     @Override
     public void setItem(Item item) {
@@ -20,6 +20,6 @@ public class ItemStackRenderStateMixin implements ItemStackRenderStateExtended {
     @Override
     public Item getItem() {
         return this.item;
-    }
+    }*/
 
 }

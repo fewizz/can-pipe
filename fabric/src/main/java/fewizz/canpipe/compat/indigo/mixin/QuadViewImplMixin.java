@@ -12,9 +12,9 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.QuadViewImpl;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 @Mixin(value = QuadViewImpl.class, remap = false)
-public abstract class QuadViewImplMixin implements QuadViewExtended {
+public abstract class QuadViewImplMixin /*implements QuadViewExtended*/ {
 
-    @Unique protected final float[] ao = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
+    /*@Unique protected final float[] ao = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
     @Unique protected TextureAtlasSprite sprite;
 
     @Override
@@ -34,6 +34,6 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
             return false;
         }
         return original;
-    }
+    }*/
 
 }

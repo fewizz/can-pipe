@@ -14,6 +14,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.LiquidBlockRenderer;
@@ -41,7 +42,7 @@ public class LiquidBlockRendererMixin {
 
             @SuppressWarnings("deprecation")
             TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
-            var sprites = ((TextureAtlasAccessor) atlas).canpipe_getSprites();
+            var sprites = ((TextureAtlasExtended) atlas).canpipe_getSprites();
 
             vce.canpipe_setSpriteSupplier(() -> {
                 MutableObject<TextureAtlasSprite> result = new MutableObject<>();

@@ -18,16 +18,20 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengl.GL43C;
 
 import com.google.common.collect.Iterators;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.shaders.CompiledShader;
+import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.blaze3d.opengl.GlShaderModule;
+import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.shaders.ShaderType;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.GFX;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
 import net.minecraft.resources.ResourceLocation;
 
-public class Shader extends CompiledShader {
+public class Shader extends GlShaderModule {
 
     static final Predicate<String> CONTAINS_VERTEX_IN = Pattern.compile("\\s*in\\s+vec(3|4)\\s+in_vertex").asPredicate();
     static final Predicate<String> CONTAINS_UV_IN = Pattern.compile("\\s*in\\s+vec2\\s+in_uv").asPredicate();
@@ -49,13 +53,13 @@ public class Shader extends CompiledShader {
     @SuppressWarnings("unused")
     private final String source;  // for debugging
 
-    private Shader(int id, ResourceLocation location, String source) {
-        super(id, location);
+    private Shader(int id, ResourceLocation location, String source, ShaderType type) {
+        super(id, location, type);
         this.source = source;
     }
 
     static Shader load(
-        ResourceLocation location, String source, Type type, int version,
+        ResourceLocation location, String source, ShaderType type, int version,
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         Function<ResourceLocation, Optional<String>> getShaderSource,
@@ -73,10 +77,10 @@ public class Shader extends CompiledShader {
         }
 
         // some shaderpacks define them, some - not
-        if (type == Type.VERTEX && !CONTAINS_VERTEX_IN.test(source)) {
+        if (type == ShaderType.VERTEX && !CONTAINS_VERTEX_IN.test(source)) {
             header += "in vec3 in_vertex;\n\n";
         }
-        if (type == Type.VERTEX && !CONTAINS_UV_IN.test(source)) {
+        if (type == ShaderType.VERTEX && !CONTAINS_UV_IN.test(source)) {
             header += "in vec2 in_uv;\n\n";
         }
 
@@ -85,7 +89,8 @@ public class Shader extends CompiledShader {
         );
 
         /* Can't use CompiledShader.compile, because it trims and truncates the log */
-        int id = GlStateManager.glCreateShader(type.glType());
+        int id = GlStateManager.glCreateShader(GlConst.toGl(type));
+        GFX.glObjectLabel(GL43C.GL_SHADER, id, location.toString());
         GlStateManager.glShaderSource(id, preprocessedSource);
         GlStateManager.glCompileShader(id);
 
@@ -106,7 +111,7 @@ public class Shader extends CompiledShader {
             throw new RuntimeException("Couldn't compile shader \""+location.toString()+"\": "+log);
         }
 
-        return new Shader(id, location, preprocessedSource);
+        return new Shader(id, location, preprocessedSource, type);
     }
 
     private static String processIncludesAndDefinitions(

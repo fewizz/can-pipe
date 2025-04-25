@@ -21,14 +21,16 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.GFX;
-import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
@@ -37,7 +39,6 @@ import fewizz.canpipe.pipeline.ProgramBase;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.CompiledShaderProgram;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
@@ -99,7 +100,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         boolean shouldRenderBlockOutline,
         Camera camera,
         GameRenderer gameRenderer,
-        Matrix4f modelViewMatrix,
+        Matrix4f viewMatrix,
         Matrix4f projectionMatrix,
         CallbackInfo ci
     ) {
@@ -146,7 +147,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         Profiler.get().push("preparations");
 
-        GameRendererAccessor gra = ((GameRendererAccessor) mc.gameRenderer);
+        GameRendererExtended gre = ((GameRendererExtended) mc.gameRenderer);
         float renderDistance = mc.gameRenderer.getRenderDistance();
         Vector3f toSunDir = p.getSunOrMoonDir(mc.level, new Vector3f(), pt);
         Vector3f fromSunDir = toSunDir.negate(new Vector3f());
@@ -167,15 +168,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
         modelViewMatrixStack.pushMatrix();
-        modelViewMatrixStack.mul(modelViewMatrix);
+        modelViewMatrixStack.mul(viewMatrix);
 
         PoseStack poseStack = new PoseStack();
-
-        RenderSystem.enablePolygonOffset();
-        RenderSystem.polygonOffset(
-            p.shadows.offsetSlopeFactor(),
-            p.shadows.offsetBiasUnits()
-        );
 
         RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
 
@@ -199,8 +194,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             }
 
             Frustum shadowFrustum = new Frustum(
-                gra.canpipe_getShadowViewMatrix(),
-                gra.canpipe_getShadowProjectionMatrices()[cascade]
+                gre.canpipe_getShadowViewMatrix(),
+                gre.canpipe_getShadowProjectionMatrices()[cascade]
             );
             shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
 
@@ -218,13 +213,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             Profiler.get().popPush("render sections");
 
-            GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().getId(), 0, cascade);
+            GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, shadowFramebuffer.glID());
+            GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().glId(), 0, cascade);
 
-            RenderSystem.disableCull();  // Light can pass through chunk edge. Not ideal solution
-            this.renderSectionLayer(RenderType.solid(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
-            this.renderSectionLayer(RenderType.cutoutMipped(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
-            this.renderSectionLayer(RenderType.cutout(), camPos.x, camPos.y, camPos.z, modelViewMatrix, projectionMatrix);
-            RenderSystem.enableCull();
+            this.renderSectionLayer(RenderType.solid(), camPos.x, camPos.y, camPos.z, viewMatrix, projectionMatrix);
+            this.renderSectionLayer(RenderType.cutoutMipped(), camPos.x, camPos.y, camPos.z, viewMatrix, projectionMatrix);
+            this.renderSectionLayer(RenderType.cutout(), camPos.x, camPos.y, camPos.z, viewMatrix, projectionMatrix);
 
             Profiler.get().popPush("collect entities");
 
@@ -242,8 +236,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             Profiler.get().pop();
         }
-        shadowFramebuffer.unbindWrite();
-        RenderSystem.disablePolygonOffset();
 
         modelViewMatrixStack.popMatrix();
 
@@ -251,8 +243,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             mc.mainRenderTarget = originalMainRenderTarget;
             mc.options.entityShadows().set(prevEntityShadows);
         }
-
-        mc.mainRenderTarget.bindWrite(true);
 
         Profiler.get().pop();
 
@@ -290,23 +280,14 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Inject(
         method = "renderSectionLayer",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/CompiledShaderProgram;apply()V",
-            shift = Shift.AFTER
-        )
+        at = @At("HEAD")
     )
-    void onTerrainProgramApply(
-        CallbackInfo ci,
-        @Local CompiledShaderProgram program
+    void onTerrainProgramApply(CallbackInfo ci
     ) {
-        if (program instanceof ProgramBase pb && pb.CANPIPE_ORIGIN_TYPE != null) {
-            pb.CANPIPE_ORIGIN_TYPE.set(1); // region
-            pb.CANPIPE_ORIGIN_TYPE.upload();
-        }
+        CanPipe.GlobalState.originType = 1; // region
     }
 
-    @Inject(
+    /*@Inject(
         method = "renderSectionLayer",
         at = @At(
             value = "INVOKE",
@@ -323,32 +304,14 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             pb.FRX_MODEL_TO_WORLD.set(pos.getX(), pos.getY(),pos.getZ(), 1.0F);
             pb.FRX_MODEL_TO_WORLD.upload();
         }
-    }
+    }*/
 
     @Inject(
         method = "renderSectionLayer",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/CompiledShaderProgram;clear()V"
-        )
+        at = @At("RETURN")
     )
-    void afterAllSectionsRendered(
-        CallbackInfo ci,
-        @Local CompiledShaderProgram program
-    ) {
-        if (program instanceof ProgramBase pb) {
-            // set back to camera origin
-            if (pb.CANPIPE_ORIGIN_TYPE != null) {
-                pb.CANPIPE_ORIGIN_TYPE.set(0);
-                pb.CANPIPE_ORIGIN_TYPE.upload();
-            }
-            if (pb.FRX_MODEL_TO_WORLD != null) {
-                var mc = Minecraft.getInstance();
-                var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
-                pb.FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
-                pb.FRX_MODEL_TO_WORLD.upload();
-            }
-        }
+    void afterAllSectionsRendered(CallbackInfo ci) {
+        CanPipe.GlobalState.originType = 0; // camera
     }
 
     @ModifyArg(
@@ -397,11 +360,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return this.canpipe_isRenderingShadows ? true : original;
     }
 
-    /**
-    TODO: probably related to `runVanillaClear` pipeline optoin
-    Not cleanest way: setClearColor, copyDepthFrom and bindWrite are still called
-    */
-    @SuppressWarnings("UnresolvedMixinReference")
+    // TODO: probably related to `runVanillaClear` pipeline optoin
+    // Not cleanest way: setClearColor, copyDepthFrom and bindWrite are still called
+    /*@SuppressWarnings("UnresolvedMixinReference")
     @WrapOperation(
         method = {"method_62214", "lambda$addMainPass$2"}, // lambda in the `addMainPass`
         at = @At(
@@ -475,6 +436,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
         original.call(instance, other);
-    }
+    }*/
 
 }

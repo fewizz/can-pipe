@@ -17,7 +17,7 @@ import net.minecraft.world.level.Level;
 @Mixin(ItemModelResolver.class)
 public class ItemModelResolverMixin {
 
-    @Inject(
+    /*@Inject(
         method = "updateForTopItem",
         at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/item/ItemStackRenderState;isLeftHand:Z")
     )
@@ -32,6 +32,6 @@ public class ItemModelResolverMixin {
         CallbackInfo ci
     ) {
         ((ItemStackRenderStateExtended) itemStackRenderState).setItem(itemStack.getItem());
-    }
+    }*/
 
 }

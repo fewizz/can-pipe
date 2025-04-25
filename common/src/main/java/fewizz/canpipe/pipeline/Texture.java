@@ -11,41 +11,49 @@ import org.joml.Vector3i;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.DirectStateAccess;
+import com.mojang.blaze3d.opengl.GlStateManager;
+import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.TextureFormat;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.mixin.GlStateManagerAccessor;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 
 
-public class Texture extends AbstractTexture {
-    final String name;
+public class Texture extends GlTexture {
     public final Vector3i extent;
-    final int target;
+    public final int target;
     final int internalFormat;
     final int pixelFormat;
     final int pixelDataType;
-    final int maxLod;
     final boolean isWidthWindowSizeDependent;
     final boolean isHeightWindowSizeDependent;
 
-    private record IntParam(int name, int value){};
+    private record IntParam(int name, int value) {};
 
     private Texture(
         ResourceLocation pipelineLocation, String name, Vector3i extent,
         int target, int internalFormat, int pixelFormat, int pixeDataType, int maxLod,
-        List<IntParam> params
+        List<IntParam> params,
+        TextureFormat format
     ) {
-        this.name = name;
+        super(name, format, -1, -1, maxLod+1, GlStateManager._genTexture());
+        GlStateManagerAccessor.canpipe_setTextureTarget(this.id, target);
+        GlStateManager._bindTexture(this.id);
+        GFX.glObjectLabel(GL33C.GL_TEXTURE, glId(), pipelineLocation.toString()+"-"+name);
+
         this.extent = extent;
         this.target = target;
         this.internalFormat = internalFormat;
         this.pixelFormat = pixelFormat;
         this.pixelDataType = pixeDataType;
-        this.maxLod = maxLod;
         this.isWidthWindowSizeDependent = extent.x == 0;
         this.isHeightWindowSizeDependent = extent.y == 0;
 
@@ -57,8 +65,6 @@ public class Texture extends AbstractTexture {
             extent.y = mc.getWindow().getHeight();
         }
 
-        bind();
-
         for (var p : params) {
             GlStateManager._texParameter(target, p.name, p.value);
         }
@@ -67,17 +73,16 @@ public class Texture extends AbstractTexture {
             GlStateManager._texParameter(target, GL33C.GL_TEXTURE_MIN_LOD, 0);
             GlStateManager._texParameter(target, GL33C.GL_TEXTURE_MAX_LOD, maxLod);
             GlStateManager._texParameter(target, GL33C.GL_TEXTURE_MAX_LEVEL, maxLod);
-            GlStateManager._texParameter(target, GL33C.GL_TEXTURE_LOD_BIAS, 0.0F);
+            GlStateManager._texParameter(target, GL33C.GL_TEXTURE_LOD_BIAS, 0);
         }
 
         allocate();
-        GFX.glObjectLabel(GL33C.GL_TEXTURE, getId(), pipelineLocation.toString()+"-"+name);
     }
 
     private void allocate() {
-        bind();
+        GlStateManager._bindTexture(this.id);
 
-        for (int lod = 0; lod <= this.maxLod; ++lod) {
+        for (int lod = 0; lod < this.getMipLevels(); ++lod) {
             int w = this.extent.x >> lod;
             int h = this.extent.y >> lod;
             int d = this.extent.z >> lod;
@@ -117,13 +122,29 @@ public class Texture extends AbstractTexture {
         }
     }
 
-    public void bind() {
-        GFX.glBindTexture(this.target, getId());
+    @Override
+    public void flushModeChanges() {}
+
+    @Override
+    public void setAddressMode(AddressMode addressMode) {}
+
+    @Override
+    public void setTextureFilter(FilterMode filterMode, FilterMode filterMode2, boolean bl) {}
+
+
+    @Override
+    public int getWidth(int w) {
+        return this.extent.x;
     }
 
     @Override
-    public void close() {
-        this.releaseId();
+    public int getHeight(int w) {
+        return this.extent.y;
+    }
+
+    @Override
+    public int getFbo(DirectStateAccess directStateAccess, GpuTexture gpuTexture) {
+        throw new UnsupportedOperationException();
     }
 
     static Texture load(JsonObject json, ResourceLocation pipelineLocation) {
@@ -152,7 +173,8 @@ public class Texture extends AbstractTexture {
         int target = targetStr != null ? glConst.apply(targetStr) : GL33C.GL_TEXTURE_2D;
 
         String internalFormatStr = json.get(String.class, "internalFormat");
-        int internalFormat = internalFormatStr != null ? glConst.apply(internalFormatStr) : GL33C.GL_RGBA8;
+        if (internalFormatStr == null) { internalFormatStr = "RGBA8"; }
+        int internalFormat = glConst.apply(internalFormatStr);
 
         String pixelFormatStr = json.get(String.class, "pixelFormat");
         int pixelFormat = pixelFormatStr != null ? glConst.apply(pixelFormatStr) : GL33C.GL_RGBA;
@@ -168,7 +190,10 @@ public class Texture extends AbstractTexture {
             params.add(new IntParam(paramName, paramValue));
         }
 
-        return new Texture(pipelineLocation, name, extent, target, internalFormat, pixelFormat,pixelDataType, maxLod, params);
+        return new Texture(
+            pipelineLocation, name, extent, target, internalFormat, pixelFormat,pixelDataType, maxLod, params,
+            TextureFormat.valueOf(internalFormatStr)
+        );
     }
 
 }

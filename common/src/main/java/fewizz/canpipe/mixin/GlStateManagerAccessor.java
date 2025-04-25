@@ -1,22 +1,14 @@
 package fewizz.canpipe.mixin;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 
-@Mixin(value = GlStateManager.class, remap = false)
+@Mixin(value = GlStateManager.class, remap = false, priority = 1001)
 public interface GlStateManagerAccessor {
 
-    @Accessor("TEXTURES")
-    public static GlStateManager.TextureState[] canpipe_getTEXTURES() {
-        throw new NotImplementedException();
-    }
-
-    @Accessor("activeTexture")
-    public static int canpipe_getActiveTexture() {
-        throw new NotImplementedException();
-    }
+    @Invoker("canpipe_setTextureTarget")
+    public static void canpipe_setTextureTarget(int id, int target) {}
 
 }

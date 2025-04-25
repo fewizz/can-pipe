@@ -7,6 +7,8 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -19,7 +21,9 @@ import fewizz.canpipe.pipeline.MaterialProgram;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.client.renderer.RenderType;
 
 public class CanPipe {
     public static final String MOD_ID = "canpipe";
@@ -101,7 +105,17 @@ public class CanPipe {
 
     public static class RenderStateShards  {
 
-        public static class MaterialProgramStateShard extends RenderStateShard.ShaderStateShard {
+        public static RenderStateShard.OutputStateShard SOLID_TARGET = new RenderStateShard.OutputStateShard("solid_target", () -> {
+            /*RenderTarget renderTarget = Minecraft.getInstance().levelRenderer.getTranslucentTarget();
+            return renderTarget != null ? renderTarget : Minecraft.getInstance().getMainRenderTarget();*/
+            Pipeline p = Pipelines.getCurrent();
+            if (p != null) {
+                return p.solidFramebuffer;
+            }
+            return Minecraft.getInstance().getMainRenderTarget();
+        });
+
+        /*public static class MaterialProgramStateShard extends RenderStateShard.ShaderStateShard {
 
             final float alphaCutout;
             final Supplier<Integer> renderTargetIndexGetter;
@@ -156,44 +170,39 @@ public class CanPipe {
                 }
             }
 
-        }
+        }*/
 
         public static class OutputStateShard extends RenderStateShard.OutputStateShard {
-
-            final RenderStateShard.OutputStateShard original;
-            final Function<Pipeline, Framebuffer> framebufferGetter;
 
             public OutputStateShard(
                 String name,
                 RenderStateShard.OutputStateShard original,
                 Function<Pipeline, Framebuffer> framebufferGetter
             ) {
-                super(name, () -> {}, () -> {});
-                this.original = original;
-                this.framebufferGetter = framebufferGetter;
-            }
+                super(name, () -> {
+                    Pipeline p = Pipelines.getCurrent();
 
-            @Override
-            public void setupRenderState() {
-                var p = Pipelines.getCurrent();
-                var mc = Minecraft.getInstance();
-
-                // bind original framebuffer if
-                if (
-                    // no pipeline is active
-                    p == null
-                    // rendering shadows (shadows framebuffer overrides mc.mainRenderTarget)
-                    || ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()
-                ) {
-                    original.setupRenderState();
-                    return;
-                }
-
-                framebufferGetter.apply(p).bindWrite(false);
+                    if (p != null && CanPipe.GlobalState.originType != 3) {
+                        Minecraft mc = Minecraft.getInstance();
+                        if (((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
+                            return p.shadows.framebuffer();
+                        }
+                        else {
+                            return framebufferGetter.apply(p);
+                        }
+                    }
+                    else {
+                        return original.getRenderTarget();
+                    }
+                });
             }
 
         }
 
+    }
+
+    public static class GlobalState {
+        public static int originType = 2;  // screen
     }
 
 }

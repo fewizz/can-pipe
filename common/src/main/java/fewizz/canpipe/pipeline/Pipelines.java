@@ -23,7 +23,7 @@ import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.mixininterface.GameRendererAccessor;
+import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -149,7 +149,7 @@ final public class Pipelines implements PreparableReloadListener {
         Pipelines.current = loadedPipeline;
 
         if (Pipelines.current != null) {
-            ((GameRendererAccessor) mc.gameRenderer).canpipe_onPipelineActivated();
+            ((GameRendererExtended) mc.gameRenderer).canpipe_onPipelineActivated();
         }
 
         if ((prevPipeline != null) != (loadedPipeline != null)) {

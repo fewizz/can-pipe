@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 
 import fewizz.canpipe.mixininterface.LightTextureExtended;
 import net.minecraft.client.renderer.LightTexture;
@@ -30,7 +30,7 @@ public class LightTextureMixin implements LightTextureExtended {
 
     @Override
     public Vector4f canpipe_getEmissiveColor() {
-        return new Vector4f(emissiveColor);
+        return new Vector4f(1.0F);  // new Vector4f(emissiveColor);
     }
 
     @ModifyExpressionValue(
@@ -47,7 +47,7 @@ public class LightTextureMixin implements LightTextureExtended {
         return darknessScale;
     }
 
-    @Inject(
+    /*@Inject(
         method = "updateLightTexture",
         at = @At(
             value = "INVOKE",
@@ -56,6 +56,6 @@ public class LightTextureMixin implements LightTextureExtended {
     )
     void fetchEmissiveColor(CallbackInfo ci) {
         GlStateManager._readPixels(15, 15, 1, 1, GL33C.GL_RGBA, GL33C.GL_FLOAT, emissiveColor);
-    }
+    }*/
 
 }
