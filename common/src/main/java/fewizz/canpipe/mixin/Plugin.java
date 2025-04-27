@@ -1,12 +1,36 @@
 package fewizz.canpipe.mixin;
 
+import static org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT;
+import static org.lwjgl.opengl.GL11C.GL_FLOAT;
+import static org.lwjgl.opengl.GL11C.GL_RED;
+import static org.lwjgl.opengl.GL11C.GL_RGB16;
+import static org.lwjgl.opengl.GL11C.GL_RGB8;
+import static org.lwjgl.opengl.GL11C.GL_RGBA;
+import static org.lwjgl.opengl.GL11C.GL_RGBA12;
+import static org.lwjgl.opengl.GL11C.GL_RGBA16;
+import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL14C.GL_DEPTH_COMPONENT32;
+import static org.lwjgl.opengl.GL30C.GL_DEPTH_COMPONENT32F;
+import static org.lwjgl.opengl.GL30C.GL_R11F_G11F_B10F;
+import static org.lwjgl.opengl.GL30C.GL_R16F;
+import static org.lwjgl.opengl.GL30C.GL_R32F;
+import static org.lwjgl.opengl.GL30C.GL_R8;
+import static org.lwjgl.opengl.GL30C.GL_RG16;
+import static org.lwjgl.opengl.GL30C.GL_RG8;
+import static org.lwjgl.opengl.GL30C.GL_RGB16F;
+import static org.lwjgl.opengl.GL30C.GL_RGB32UI;
+import static org.lwjgl.opengl.GL30C.GL_RGBA16F;
+import static org.lwjgl.opengl.GL30C.GL_RGBA32F;
+import static org.lwjgl.opengl.GL31C.GL_R8_SNORM;
+
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.StreamSupport;
-
-import static org.lwjgl.opengl.GL33C.*;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
@@ -28,10 +52,48 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 import com.google.common.collect.Streams;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.opengl.GlCommandEncoder;
+import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.blaze3d.opengl.GlDevice;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.TextureUtil;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.TextureFormat;
+
+import net.minecraft.client.Screenshot;
 
 public class Plugin implements IMixinConfigPlugin, Opcodes {
 
-    public record AdditionalTextureFormat(
+    /**
+     * internalFormat - will be used in {@link GlConst#toGlInternalId(TextureFormat)}, which in used in
+     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
+     * 
+     * format - will be used in {@link GlConst#toGlExternalId(TextureFormat)}, which is used in
+     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)} and
+     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
+     * 
+     * type - will be used in {@link GlConst#toGlType(TextureFormat)}, which is used in
+     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)} and
+     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)}
+     * 
+     * pixelSize - will be used in {@link TextureFormat#pixelSize()}, which is used in
+     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)},
+     * {@link TextureUtil#writeAsPNG(Path, String, GpuTexture, int, IntUnaryOperator)} and
+     * {@link Screenshot#takeScreenshot(RenderTarget, Consumer)}
+     * 
+     * hasColorAspect - will be used in {@link TextureFormat#hasColorAspect()}, which is checked in
+     * {@link GlCommandEncoder#clearColorTexture(GpuTexture, int)},
+     * {@link GlCommandEncoder#clearColorAndDepthTextures(GpuTexture, int, GpuTexture, double)} and
+     * {@link GlCommandEncoder#presentTexture(GpuTexture)}
+     * 
+     * hasDepthAspect - will be used in {@link TextureFormat#hasDepthAspect()}, which is checked in
+     * {@link GlCommandEncoder#clearColorAndDepthTextures(GpuTexture, int, GpuTexture, double)},
+     * {@link GlCommandEncoder#clearDepthTexture(GpuTexture, double)},
+     * {@link GlCommandEncoder#copyTextureToTexture(GpuTexture, GpuTexture, int, int, int, int, int, int, int)} and
+     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
+     */
+    public record TexFormat(
         int internalFormat,
         int format,
         int type,
@@ -40,24 +102,26 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         boolean hasDepthAspect
     ) {}
 
-    private static final Map<String, AdditionalTextureFormat> ADDITIONAL_TEXTURE_FORMATS = new HashMap<>() {{
-        put("RGBA16F", new AdditionalTextureFormat(GL_RGBA16F, GL_RGBA, GL_FLOAT, 4*2, true, false));
-        put("DEPTH_COMPONENT32F", new AdditionalTextureFormat(GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
-        put("DEPTH_COMPONENT", new AdditionalTextureFormat(GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
-        put("DEPTH_COMPONENT32", new AdditionalTextureFormat(GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
-        put("R8", new AdditionalTextureFormat(GL_R8, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
-        put("R16F", new AdditionalTextureFormat(GL_R16F, GL_RED, GL_FLOAT, 1*2, true, false));
-        put("R32F", new AdditionalTextureFormat(GL_R32F, GL_RED, GL_FLOAT, 1*4, true, false));
-        put("RG8", new AdditionalTextureFormat(GL_RG8, GL_RG, GL_UNSIGNED_BYTE, 2*1, true, false));
-        put("RG16", new AdditionalTextureFormat(GL_RG16, GL_RG, GL_UNSIGNED_SHORT, 2*2, true, false));
-        put("RGB8", new AdditionalTextureFormat(GL_RGB8, GL_RGB, GL_UNSIGNED_BYTE, 3*1, true, false));
-        put("RGB16", new AdditionalTextureFormat(GL_RGB16, GL_RGB, GL_UNSIGNED_SHORT, 3*2, true, false));
-        put("RGB16F", new AdditionalTextureFormat(GL_RGB16F, GL_RGB, GL_FLOAT, 3*2, true, false));
-        put("RGB32UI", new AdditionalTextureFormat(GL_RGB32UI, GL_RGB, GL_UNSIGNED_INT, 3*4, true, false));
-        put("RGBA12", new AdditionalTextureFormat(GL_RGBA12, GL_RGBA, GL_UNSIGNED_BYTE, 4*(12/8), true, false));
-        put("RGBA16", new AdditionalTextureFormat(GL_RGBA16, GL_RGBA, GL_UNSIGNED_SHORT, 4*2, true, false));
-        put("RGBA32F", new AdditionalTextureFormat(GL_RGBA32F, GL_RGBA, GL_FLOAT, 4*4, true, false));
-        put("R11F_G11F_B10F", new AdditionalTextureFormat(GL_R11F_G11F_B10F, GL_RGB, -1, (11+11+10)/8, true, false));
+    private static final Map<String, TexFormat> ADDITIONAL_TEXTURE_FORMATS = new HashMap<>() {{
+        put("DEPTH_COMPONENT32F", new TexFormat(GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
+        put("DEPTH_COMPONENT", new TexFormat(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
+        put("DEPTH_COMPONENT32", new TexFormat(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
+        put("RED", new TexFormat(GL_RED, GL_RED, GL_FLOAT, 1*4, true, false));
+        put("R8", new TexFormat(GL_R8, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
+        put("R8_SNORM", new TexFormat(GL_R8_SNORM, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
+        put("R16F", new TexFormat(GL_R16F, GL_RED, GL_FLOAT, 1*4, true, false));
+        put("R32F", new TexFormat(GL_R32F, GL_RED, GL_FLOAT, 1*4, true, false));
+        put("RG8", new TexFormat(GL_RG8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RG16", new TexFormat(GL_RG16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB8", new TexFormat(GL_RGB8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB16", new TexFormat(GL_RGB16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB16F", new TexFormat(GL_RGB16F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB32UI", new TexFormat(GL_RGB32UI, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGBA12", new TexFormat(GL_RGBA12, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGBA16", new TexFormat(GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGBA16F", new TexFormat(GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGBA32F", new TexFormat(GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("R11F_G11F_B10F", new TexFormat(GL_R11F_G11F_B10F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
     }};
 
     @Override

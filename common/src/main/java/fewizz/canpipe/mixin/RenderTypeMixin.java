@@ -2,29 +2,20 @@ package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArgs;
-import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.CanPipe.RenderStateShards;
 import fewizz.canpipe.mixininterface.CompositeRenderTypeExtended;
 import fewizz.canpipe.mixininterface.CompositeStateExtended;
 import fewizz.canpipe.pipeline.MaterialProgram;
-import fewizz.canpipe.pipeline.Pipeline;
-import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.RenderStateShard.OutputStateShard;
-import net.minecraft.client.renderer.RenderType.CompositeState.CompositeStateBuilder;
 import net.minecraft.resources.ResourceLocation;
 
 @Mixin(RenderType.class)

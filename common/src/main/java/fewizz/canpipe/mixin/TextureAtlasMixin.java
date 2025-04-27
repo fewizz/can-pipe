@@ -13,10 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
-import com.mojang.blaze3d.platform.NativeImage.Format;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.TextureFormat;
@@ -67,10 +65,10 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
                 spritesData, byteBuff.asIntBuffer(), Format.RGBA, 0, 0, 0, width, height
             );*/ //, so:
             GlStateManager._bindTexture(((GlTexture)spritesData).glId());
-            GlStateManager._pixelStore(3314, width);
-            GlStateManager._pixelStore(3316, 0);
-            GlStateManager._pixelStore(3315, 0);
-            GlStateManager._pixelStore(3317, 4);
+            GlStateManager._pixelStore(GL33C.GL_UNPACK_ROW_LENGTH, width);
+            GlStateManager._pixelStore(GL33C.GL_UNPACK_SKIP_PIXELS, 0);
+            GlStateManager._pixelStore(GL33C.GL_UNPACK_SKIP_ROWS, 0);
+            GlStateManager._pixelStore(GL33C.GL_UNPACK_ALIGNMENT, 4);
             GlStateManager._texSubImage2D(
                 GL33C.GL_TEXTURE_2D, 0, 0, 0, width, height,
                 GL33C.GL_RGBA, GL33C.GL_FLOAT, byteBuff.asIntBuffer()
