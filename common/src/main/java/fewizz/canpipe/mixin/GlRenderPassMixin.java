@@ -11,6 +11,7 @@ import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlRenderPass;
 import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTexture;
 
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
@@ -67,12 +68,7 @@ public class GlRenderPassMixin {
         GlRenderPipeline result = null;
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            result = p.getOrCreateGlRenderPipeline(renderPipeline);
-            if (result != null && result.program() instanceof MaterialProgram materialProgram) {
-                materialProgram.samplerToTexture.forEach((sampler, texture) -> {
-                    bindSampler(sampler, texture);
-                });
-            }
+            result = p.onRenderPassSetRenderPipeline((RenderPass)(Object)this, renderPipeline);
         }
         return result != null ? result : operation.call(instance, renderPipeline);
     }

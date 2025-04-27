@@ -19,12 +19,11 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.opengl.GlRenderPipeline;
-import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
@@ -423,8 +422,10 @@ public class Pipeline implements AutoCloseable {
         this.programs.values().forEach(ProgramBase::close);
     }
 
-    public GlRenderPipeline getOrCreateGlRenderPipeline(RenderPipeline renderPipeline) {
-        return this.glRenderPipelineCache.computeIfAbsent(renderPipeline, rp -> {
+    public GlRenderPipeline onRenderPassSetRenderPipeline(
+        RenderPass renderPass, RenderPipeline renderPipeline
+    ) {
+        var glPipeline = this.glRenderPipelineCache.computeIfAbsent(renderPipeline, rp -> {
             var location = renderPipeline.getLocation();
             ProgramBase program = null;
             if (location.getNamespace().equals("canpipe") && location.getPath().equals("material")) {
@@ -442,6 +443,16 @@ public class Pipeline implements AutoCloseable {
             }
             return program != null ? new GlRenderPipeline(renderPipeline, program) : null;
         });
-    }
 
+        if (glPipeline != null && glPipeline.program() instanceof MaterialProgram materialProgram) {
+            materialProgram.samplerToTexture.forEach((sampler, texture) -> {
+                renderPass.bindSampler(sampler, texture);
+            });
+            materialProgram.CANPIPE_ALPHA_CUTOUT.set(
+                Float.parseFloat(renderPipeline.getShaderDefines().values().get("CANPIPE_ALPHA_CUTOUT"))
+            );
+        }
+
+        return glPipeline;
+    }
 }

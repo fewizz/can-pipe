@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.mixininterface.CompositeRenderTypeExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -23,22 +22,22 @@ import net.minecraft.client.renderer.RenderType;
 @Mixin(RenderType.CompositeRenderType.class)
 public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
 
-    @Unique private Map<Pipeline, RenderPipeline> canpipe_materialRenderPipeline;
+    @Unique private Map<Pipeline, RenderPipeline> canpipe_materialRenderPipelinesCache;
     @Unique private Function<Pipeline, RenderPipeline> canpipe_materialRenderPipelineCreationFunction;
 
-    @Unique private Map<Pipeline, RenderPipeline> canpipe_materialShadowRenderPipeline;
+    @Unique private Map<Pipeline, RenderPipeline> canpipe_materialShadowRenderPipelinesCache;
     @Unique private Function<Pipeline, RenderPipeline> canpipe_materialShadowRenderPipelineCreationFunction;
 
     @Override
     public void canpipe_setMaterialRenderPipelineCreationFunction(Function<Pipeline, RenderPipeline> pipeline) {
         this.canpipe_materialRenderPipelineCreationFunction = pipeline;
-        this.canpipe_materialRenderPipeline = Collections.synchronizedMap(new WeakHashMap<>());
+        this.canpipe_materialRenderPipelinesCache = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
     @Override
     public void canpipe_setMaterialShadowRenderPipelineCreationFunction(Function<Pipeline, RenderPipeline> pipeline) {
         this.canpipe_materialShadowRenderPipelineCreationFunction = pipeline;
-        this.canpipe_materialShadowRenderPipeline = Collections.synchronizedMap(new WeakHashMap<>());
+        this.canpipe_materialShadowRenderPipelinesCache = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
     @ModifyExpressionValue(
@@ -58,7 +57,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
                 this.canpipe_materialShadowRenderPipelineCreationFunction != null &&
                 ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()
             ) {
-                return this.canpipe_materialShadowRenderPipeline.computeIfAbsent(
+                return this.canpipe_materialShadowRenderPipelinesCache.computeIfAbsent(
                     p, this.canpipe_materialShadowRenderPipelineCreationFunction
                 );
             }
@@ -66,7 +65,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
                 this.canpipe_materialRenderPipelineCreationFunction != null &&
                 !((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()
             ) {
-                return this.canpipe_materialRenderPipeline.computeIfAbsent(
+                return this.canpipe_materialRenderPipelinesCache.computeIfAbsent(
                     p, this.canpipe_materialRenderPipelineCreationFunction
                 );
             }

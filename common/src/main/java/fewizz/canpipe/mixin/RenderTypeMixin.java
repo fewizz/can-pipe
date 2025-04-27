@@ -80,42 +80,6 @@ public class RenderTypeMixin {
             var compositeStateBuilder = cse.canpipe_builderFromCurrentState();
             var originalOutputState = cse.canpipe_getOutputState();
 
-            /*if (originalOutputState == RenderStateShard.MAIN_TARGET) {
-                compositeStateBuilder.setOutputState(new CanPipe.RenderStateShards.OutputStateShard(
-                    name, originalOutputState, (Pipeline p) -> {
-                        return p.solidFramebuffer;
-                    }
-                ));
-            }
-            else if (originalOutputState == RenderStateShard.TRANSLUCENT_TARGET) {
-                compositeStateBuilder.setOutputState(new CanPipe.RenderStateShards.OutputStateShard(
-                    name, originalOutputState, (Pipeline p) -> {
-                        return p.translucentTerrainFramebuffer;
-                    }
-                ));
-            }
-            else if (originalOutputState == RenderStateShard.ITEM_ENTITY_TARGET) {
-                compositeStateBuilder.setOutputState(new CanPipe.RenderStateShards.OutputStateShard(
-                    name, originalOutputState, (Pipeline p) -> {
-                        return p.translucentItemEntityFramebuffer;
-                    }
-                ));
-            }
-            else if (originalOutputState == RenderStateShard.PARTICLES_TARGET) {
-                compositeStateBuilder.setOutputState(new CanPipe.RenderStateShards.OutputStateShard(
-                    name, originalOutputState, (Pipeline p) -> {
-                        return p.particlesFramebuffer;
-                    }
-                ));
-            }
-            else if (originalOutputState == RenderStateShard.WEATHER_TARGET) {
-                compositeStateBuilder.setOutputState(new CanPipe.RenderStateShards.OutputStateShard(
-                    name, originalOutputState, (Pipeline p) -> {
-                        return p.weatherFramebuffer;
-                    }
-                ));
-            }*/
-
             renderType = operation.call(
                 name, bufferSize, affectsCrumbling, sortOnUpload, renderPipeline,
                 compositeStateBuilder.createCompositeState(cse.canpipe_getOutlineProperty())
@@ -136,6 +100,26 @@ public class RenderTypeMixin {
                 throw new RuntimeException(renderPipeline.getVertexFormat().toString());
             }
 
+            float alphaCutout;
+            if (
+                originalOutputState == RenderStateShard.ITEM_ENTITY_TARGET ||
+                originalOutputState == RenderStateShard.PARTICLES_TARGET ||
+                renderPipeline == RenderPipelines.CUTOUT ||
+                renderPipeline == RenderPipelines.ENTITY_CUTOUT ||
+                renderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
+                renderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
+                renderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
+                renderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE
+            ) {
+                alphaCutout = 0.1F;
+            }
+            else if (renderPipeline == RenderPipelines.CUTOUT_MIPPED) {
+                alphaCutout = 0.5F;
+            }
+            else {
+                alphaCutout = 0.0F;
+            }
+
             ((CompositeRenderTypeExtended) (Object) renderType).canpipe_setMaterialRenderPipelineCreationFunction(p -> {
                 var pipeline = RenderPipeline.builder()
                     .withLocation(ResourceLocation.fromNamespaceAndPath("canpipe", "material"))
@@ -147,7 +131,8 @@ public class RenderTypeMixin {
                     .withCull(renderPipeline.isCull())
                     .withColorWrite(renderPipeline.isWriteColor(), renderPipeline.isWriteAlpha())
                     .withDepthWrite(renderPipeline.isWriteDepth())
-                    .withVertexFormat(format, renderPipeline.getVertexFormatMode());
+                    .withVertexFormat(format, renderPipeline.getVertexFormatMode())
+                    .withShaderDefine("CANPIPE_ALPHA_CUTOUT", alphaCutout);
 
                 if (renderPipeline.getBlendFunction().isPresent()) {
                     pipeline.withBlend(renderPipeline.getBlendFunction().get());
@@ -170,7 +155,8 @@ public class RenderTypeMixin {
                     .withCull(false)  // Light can pass through chunk edge. Not ideal solution
                     .withColorWrite(renderPipeline.isWriteColor(), renderPipeline.isWriteAlpha())
                     .withDepthWrite(renderPipeline.isWriteDepth())
-                    .withVertexFormat(format, renderPipeline.getVertexFormatMode());
+                    .withVertexFormat(format, renderPipeline.getVertexFormatMode())
+                    .withShaderDefine("CANPIPE_ALPHA_CUTOUT", alphaCutout);
 
                 if (renderPipeline.getBlendFunction().isPresent()) {
                     pipeline.withBlend(renderPipeline.getBlendFunction().get());

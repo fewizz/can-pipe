@@ -1,5 +1,6 @@
 package fewizz.canpipe.pipeline;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class MaterialProgram extends ProgramBase {
 
     public final VertexFormat vertexFormat;
     public final boolean shadow;
-    public final Map<String, GlTexture> samplerToTexture = new HashMap<>();
+    public final Map<String, GlTexture> samplerToTexture;
 
     private MaterialProgram(
         ResourceLocation pipelineLocation, VertexFormat vertexFormat,
@@ -71,6 +72,7 @@ public class MaterialProgram extends ProgramBase {
             CanPipe.LOGGER.warn("Material program has less samplers than textures");
         }
 
+        Map<String, GlTexture> samplerToTexture = new HashMap<>();
         for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
             String sampler = samplers.get(i);
             Optional<? extends GlTexture> texture = textures.get(i);
@@ -80,10 +82,11 @@ public class MaterialProgram extends ProgramBase {
                 }
             }
             else {
-                this.samplerToTexture.put(sampler, texture.get());
+                samplerToTexture.put(sampler, texture.get());
             }
         }
 
+        this.samplerToTexture = Collections.unmodifiableMap(samplerToTexture);
         this.vertexFormat = vertexFormat;
         this.shadow = shadow;
 
