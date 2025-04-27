@@ -19,14 +19,11 @@
 	"icon": "assets/${mod_id}/icon.png",
 	"environment": "client",
 	"mixins": [
-		{
-			"config": "${mod_id}.mixins.json",
-			"environment": "client"
-		},
-		{
-			"config": "${mod_id}.indigo.mixins.json",
-			"environment": "client"
-		}
+		"${mod_id}.mixins.01_texture_formats.json",
+		"${mod_id}.mixins.02_texture_targets.json",
+		"${mod_id}.mixins.03_uniform_ivec2.json",
+		"${mod_id}.mixins.04_core.json",
+		"${mod_id}.mixins.compat.indigo.json"
 	],
 	"accessWidener" : "${mod_id}.accesswidener",
 	"depends": {

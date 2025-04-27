@@ -11,7 +11,16 @@ credits="${credits}"
 description = '''${description}'''
 
 [[mixins]]
-config = "${mod_id}.mixins.json"
+config = "${mod_id}.mixins.01_texture_formats.json"
+
+[[mixins]]
+config = "${mod_id}.mixins.02_texture_targets.json"
+
+[[mixins]]
+config = "${mod_id}.mixins.03_uniform_ivec2.json"
+
+[[mixins]]
+config = "${mod_id}.mixins.04_core.json"
 
 [[dependencies.${mod_id}]]
 modId = "neoforge"

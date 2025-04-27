@@ -22,7 +22,7 @@ import com.mojang.blaze3d.textures.TextureFormat;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.mixin.GlStateManagerAccessor;
+import fewizz.canpipe.mixin.m02_texture_targets.GlStateManagerAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 

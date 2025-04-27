@@ -1,0 +1,13 @@
+{
+	"required": false,
+	"compatibilityLevel": "JAVA_21",
+	"package": "fewizz.canpipe.compat.indigo.mixin",
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"client": [
+		"AbstractRenderContextMixin",
+		"MutableQuadViewImplMixin",
+		"QuadViewImplMixin"
+	]
+}

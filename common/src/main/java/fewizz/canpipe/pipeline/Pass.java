@@ -18,7 +18,7 @@ import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.mixin.RenderSystemAccessor;
+import fewizz.canpipe.mixin.m04_core.RenderSystemAccessor;
 import net.minecraft.client.Minecraft;
 
 public class Pass extends PassBase {

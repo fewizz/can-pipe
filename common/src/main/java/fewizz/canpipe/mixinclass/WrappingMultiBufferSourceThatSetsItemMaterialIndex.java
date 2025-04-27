@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 
-/** Used only by {@link fewizz.canpipe.mixin.ItemStackLayerRenderStateMixin ItemStackLayerRenderStateMixin} */
+/** Used only by {@link fewizz.canpipe.mixin.m03_core.ItemStackLayerRenderStateMixin ItemStackLayerRenderStateMixin} */
 public class WrappingMultiBufferSourceThatSetsItemMaterialIndex implements MultiBufferSource {
 
     MultiBufferSource source;
@@ -32,7 +32,7 @@ public class WrappingMultiBufferSourceThatSetsItemMaterialIndex implements Multi
         ) {
             MaterialMap materialMap = null;
             if (this.item instanceof BlockItem bi) {
-                materialMap = MaterialMaps.INSTANCE.getForBlock(bi.getBlock());
+                materialMap = MaterialMaps.getForBlock(bi.getBlock());
             }
             ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(materialMap);
         }
