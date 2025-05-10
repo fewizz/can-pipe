@@ -47,6 +47,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private Matrix4f canpipe_lastViewMatrix = null;
     @Unique private Matrix4f canpipe_shadowViewMatrix = null;
     @Unique private Matrix4f[] canpipe_shadowProjectionMatrices = null;
+    @Unique private Matrix4f[] canpipe_strippedProjectionMatrices = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
     @Unique private Vector4f[] canpipe_shadowCenters = null;
     @Unique private Float canpipe_depthFarOverride = null;
@@ -75,6 +76,9 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_shadowViewMatrix = new Matrix4f();
 
         this.canpipe_shadowProjectionMatrices = new Matrix4f[] {
+            new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f()
+        };
+        this.canpipe_strippedProjectionMatrices = new Matrix4f[] {
             new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f()
         };
         this.canpipe_shadowInnerOffsets = new Vector3f[] {
@@ -210,6 +214,11 @@ public class GameRendererMixin implements GameRendererExtended {
                     }
                 }
 
+                this.canpipe_strippedProjectionMatrices[cascade] =
+                    this.getProjectionMatrix(
+                        this.minecraft.options.fov().get().floatValue()
+                    ).mul(viewMatrix);
+
                 Vector3f min = new Vector3f();
                 Vector3f max = new Vector3f();
 
@@ -327,6 +336,11 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override
     public Matrix4f[] canpipe_getShadowProjectionMatrices() {
         return this.canpipe_shadowProjectionMatrices;
+    }
+
+    @Override
+    public Matrix4f[] canpipe_getStrippedProjectionMatrices() {
+        return this.canpipe_strippedProjectionMatrices;
     }
 
     @Override

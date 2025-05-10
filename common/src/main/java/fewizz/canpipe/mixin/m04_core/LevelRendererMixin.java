@@ -1,10 +1,13 @@
 package fewizz.canpipe.mixin.m04_core;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.joml.Matrix4f;
+import static org.joml.Matrix4fc.*;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,6 +37,7 @@ import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -44,18 +48,21 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 @Mixin(LevelRenderer.class)
 public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Shadow @Final private List<Entity> visibleEntities;
+    @Shadow @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
     @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
     @Shadow @Final private RenderBuffers renderBuffers;
 
@@ -189,25 +196,101 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 }
             }
 
-            Frustum shadowFrustum = new Frustum(
+            var m = gre.canpipe_getStrippedProjectionMatrices()[cascade];
+            var mPlanes = new Vector4f[6];
+            for (int i = 0; i < 6; ++i) {
+                mPlanes[i] = m.frustumPlane(i, new Vector4f());
+            }
+            var mCorners = new Vector3f[8];
+            for (int i = 0; i < 8; ++i) {
+                mCorners[i] = m.frustumCorner(i, new Vector3f());
+            }
+
+            Frustum stupidShadowFrustum = new Frustum(
                 gre.canpipe_getShadowViewMatrix(),
                 gre.canpipe_getShadowProjectionMatrices()[cascade]
-            );
-            shadowFrustum.prepare(camPos.x, camPos.y, camPos.z);
+            ) {
+                { prepare(camPos.x, camPos.y, camPos.z); }
+
+                @Override
+                public boolean isVisible(AABB aabb) {
+                    return super.isVisible(aabb) && (
+                        checkFrustumSide(aabb, PLANE_NX, CORNER_NXNYNZ, CORNER_NXPYNZ, CORNER_NXPYPZ, CORNER_NXNYPZ) ||
+                        checkFrustumSide(aabb, PLANE_PX, CORNER_PXNYPZ, CORNER_PXPYPZ, CORNER_PXPYNZ, CORNER_PXNYNZ) ||
+                        checkFrustumSide(aabb, PLANE_NY, CORNER_PXNYNZ, CORNER_PXNYPZ, CORNER_NXNYPZ, CORNER_NXNYNZ) ||
+                        checkFrustumSide(aabb, PLANE_PY, CORNER_PXPYPZ, CORNER_PXPYNZ, CORNER_NXPYNZ, CORNER_NXPYPZ) ||
+                        checkFrustumSide(aabb, PLANE_NZ, CORNER_PXNYNZ, CORNER_NXNYNZ, CORNER_NXPYNZ, CORNER_PXPYNZ) ||
+                        checkFrustumSide(aabb, PLANE_PZ, CORNER_PXNYPZ, CORNER_PXPYPZ, CORNER_NXPYPZ, CORNER_NXNYPZ)
+                    );
+                }
+
+                private boolean checkFrustumSide(
+                    AABB aabb, int planeIdx, int corner0, int corner1, int corner2, int corner3
+                ) {
+                    var plane = mPlanes[planeIdx];
+                    if (plane.xyz(new Vector3f()).dot(toSunDir) < 0.0F) {
+                        return false;
+                    }
+
+                    if (!aabbIsInsidePlane(
+                        aabb,
+                        plane.xyz(new Vector3f()).mul(-plane.w),
+                        plane.xyz(new Vector3f())
+                    )) {
+                        return false;
+                    }
+
+                    var corners = new Vector3f[] {
+                        mCorners[corner0], mCorners[corner1], mCorners[corner2], mCorners[corner3]
+                    };
+
+                    for (int k = 0; k < 4; ++k) {
+                        int v = (k+1) % 4;
+                        var normal = new Vector3f(corners[k]).sub(corners[v]).cross(new Vector3f(toSunDir)).normalize();
+                        if (!aabbIsInsidePlane(aabb, corners[k], normal)) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+
+                private boolean aabbIsInsidePlane(AABB aabb, Vector3f p, Vector3f normal) {
+                    Vector3f tmp = new Vector3f();
+                    for (int x = 0; x <= 1; ++x) { for (int y = 0; y <= 1; ++y) { for (int z = 0; z <= 1; ++z) {
+                        tmp
+                            .set(aabb.getXsize(), aabb.getYsize(), aabb.getZsize())
+                            .mul(x, y, z)
+                            .add(
+                                (float) (aabb.minX - camera.getPosition().x),
+                                (float) (aabb.minY - camera.getPosition().y),
+                                (float) (aabb.minZ - camera.getPosition().z)
+                            );
+
+                        if (tmp.sub(p).dot(normal) >= 0.0F) {
+                            return true;
+                        }
+                    }}}
+                    return false;
+                }
+
+            };
 
             if (cascade == 0) {
                 Profiler.get().push("setupRender");
                 this.setupRender(new Camera() {{
                     setPosition(camPos);
                     setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
-                }}, shadowFrustum, false, false);
+                }}, stupidShadowFrustum, false, false);
             }
             else {
                 Profiler.get().push("applyFrustum");
-                this.applyFrustum(shadowFrustum);
+                this.applyFrustum(stupidShadowFrustum);
             }
 
             Profiler.get().popPush("render sections");
+
+            // System.out.println("cascade: "+cascade+", visible sections: "+this.visibleSections.size());
 
             GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, shadowFramebuffer.glID());
             GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().glId(), 0, cascade);
@@ -218,7 +301,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             Profiler.get().popPush("collect entities");
 
-            this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
+            this.collectVisibleEntities(camera, stupidShadowFrustum, this.visibleEntities);
 
             MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 

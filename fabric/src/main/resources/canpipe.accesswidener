@@ -1,5 +1,7 @@
 accessWidener v2 named
 
+accessible  field   net/minecraft/client/renderer/culling/Frustum  matrix  Lorg/joml/Matrix4f;
+
 accessible  method  com/mojang/blaze3d/opengl/GlProgram <init> (ILjava/lang/String;)V
 accessible  class   com/mojang/blaze3d/opengl/GlDevice$ShaderCompilationKey
 

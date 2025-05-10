@@ -21,6 +21,7 @@ public interface GameRendererExtended {
 
     public Matrix4f canpipe_getShadowViewMatrix();
     public Matrix4f[] canpipe_getShadowProjectionMatrices();
+    public Matrix4f[] canpipe_getStrippedProjectionMatrices();
     public Vector4f[] canpipe_getShadowCenters();
 
     public void canpipe_onPipelineActivated();
