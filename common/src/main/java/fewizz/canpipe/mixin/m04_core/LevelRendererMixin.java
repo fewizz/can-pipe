@@ -1,15 +1,10 @@
 package fewizz.canpipe.mixin.m04_core;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import org.joml.Matrix4f;
-import static org.joml.Matrix4fc.*;
 import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,6 +29,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.GFX;
+import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
@@ -57,7 +53,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 @Mixin(LevelRenderer.class)
@@ -198,136 +193,21 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 }
             }
 
-            var m = gre.canpipe_getStrippedProjectionMatrices()[cascade];
-            var mPlanes = new Vector4f[6];
-            for (int i = 0; i < 6; ++i) {
-                mPlanes[i] = m.frustumPlane(i, new Vector4f());
-            }
-            var mCorners = new Vector3f[8];
-            for (int i = 0; i < 8; ++i) {
-                mCorners[i] = m.frustumCorner(i, new Vector3f());
-            }
-
-            Frustum stupidShadowFrustum = new Frustum(
-                gre.canpipe_getShadowViewMatrix(),
-                gre.canpipe_getShadowProjectionMatrices()[cascade]
-            ) {
-                { prepare(camPos.x, camPos.y, camPos.z); }
-
-                // Still has some false positives, but it is good enough
-                @Override
-                public boolean isVisible(AABB aabb) {
-                    // check if in shadow frustum
-                    if (!super.isVisible(aabb)) {
-                        return false;
-                    }
-
-                    // also check that AABB is in projection from sun to view frustum
-
-                    Vector3f[] aabbCorners = new Vector3f[8];
-                    for (int x = 0; x <= 1; ++x) {
-                        for (int y = 0; y <= 1; ++y) {
-                            for (int z = 0; z <= 1; ++z) {
-                                aabbCorners[x + y*2 + z*4] =
-                                    new Vector3f()
-                                    .set(aabb.getXsize(), aabb.getYsize(), aabb.getZsize())
-                                    .mul(x, y, z)
-                                    .add(
-                                        (float) (aabb.minX - camera.getPosition().x),
-                                        (float) (aabb.minY - camera.getPosition().y),
-                                        (float) (aabb.minZ - camera.getPosition().z)
-                                    );
-                            }
-                        }
-                    }
-
-                    return (
-                        checkFrustumSide(aabb, aabbCorners, PLANE_NX, CORNER_NXNYPZ, CORNER_NXPYPZ, CORNER_NXPYNZ, CORNER_NXNYNZ) ||
-                        checkFrustumSide(aabb, aabbCorners, PLANE_PX, CORNER_PXNYNZ, CORNER_PXPYNZ, CORNER_PXPYPZ, CORNER_PXNYPZ) ||
-                        checkFrustumSide(aabb, aabbCorners, PLANE_NY, CORNER_PXNYNZ, CORNER_PXNYPZ, CORNER_NXNYPZ, CORNER_NXNYNZ) ||
-                        checkFrustumSide(aabb, aabbCorners, PLANE_PY, CORNER_PXPYPZ, CORNER_PXPYNZ, CORNER_NXPYNZ, CORNER_NXPYPZ) ||
-                        checkFrustumSide(aabb, aabbCorners, PLANE_NZ, CORNER_PXNYNZ, CORNER_NXNYNZ, CORNER_NXPYNZ, CORNER_PXPYNZ) ||
-                        checkFrustumSide(aabb, aabbCorners, PLANE_PZ, CORNER_PXNYPZ, CORNER_PXPYPZ, CORNER_NXPYPZ, CORNER_NXNYPZ)
-                    );
-                }
-
-                private boolean checkFrustumSide(
-                    AABB aabb, Vector3f[] aabbCorners, int planeIdx, int corner0, int corner1, int corner2, int corner3
-                ) {
-                    var plane = mPlanes[planeIdx];
-
-                    if (plane.xyz(new Vector3f()).dot(toSunDir) < 0.0F) {
-                        return false;
-                    }
-
-                    BiFunction<Vector3f, Vector3f, Boolean> isInside = (Vector3f pos, Vector3f normal) -> {
-                        for (var aabbCorner : aabbCorners) {
-                            if (new Vector3f(aabbCorner).sub(pos).dot(normal) >= 0.0F) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    };
-
-                    if (!isInside.apply(
-                        plane.xyz(new Vector3f()).mul(-plane.w),
-                        plane.xyz(new Vector3f())
-                    )) {
-                        return false;
-                    }
-
-                    var frustumCorners = new Vector3f[] {
-                        mCorners[corner0],
-                        mCorners[corner1],
-                        mCorners[corner2],
-                        mCorners[corner3],
-                        new Vector3f(toSunDir).mul(10000.0F).add(mCorners[corner0]),
-                        new Vector3f(toSunDir).mul(10000.0F).add(mCorners[corner1]),
-                        new Vector3f(toSunDir).mul(10000.0F).add(mCorners[corner2]),
-                        new Vector3f(toSunDir).mul(10000.0F).add(mCorners[corner3])
-                    };
-
-                    for (int k = 0; k < 4; ++k) {
-                        int v = (k+1)%4;
-                        var normal = new Vector3f(frustumCorners[k]).sub(frustumCorners[v]).cross(toSunDir).normalize();
-
-                        if (!isInside.apply(frustumCorners[k], normal)) {
-                            return false;
-                        }
-                    }
-                    
-                    Function<Function<Vector3f, Boolean>, Boolean> anyForEachFrustumCorner = (
-                        Function<Vector3f, Boolean> exp
-                    ) -> {
-                        for (var frustumCorner : frustumCorners) {
-                            if (exp.apply(frustumCorner)) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    };
-
-                    return
-                        anyForEachFrustumCorner.apply(c -> c.x > aabb.minX - camera.getPosition().x) &&
-                        anyForEachFrustumCorner.apply(c -> c.y > aabb.minY - camera.getPosition().y) &&
-                        anyForEachFrustumCorner.apply(c -> c.z > aabb.minZ - camera.getPosition().z) &&
-                        anyForEachFrustumCorner.apply(c -> c.x < aabb.maxX - camera.getPosition().x) &&
-                        anyForEachFrustumCorner.apply(c -> c.y < aabb.maxY - camera.getPosition().y) &&
-                        anyForEachFrustumCorner.apply(c -> c.z < aabb.maxZ - camera.getPosition().z);
-                }
-
-            };
+            Frustum shadowFrustum = new ShadowFrustum(
+                gre.canpipe_getShadowViewMatrix(), gre.canpipe_getShadowProjectionMatrices()[cascade],
+                gre.canpipe_getShortenedViewProjectionMatrices()[cascade], camera, toSunDir
+            );
 
             if (cascade == 0) {
                 Profiler.get().push("setupRender");
                 this.setupRender(new Camera() {{
                     setPosition(camPos);
                     setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
-                }}, stupidShadowFrustum, false, false);
+                }}, shadowFrustum, false, false);
             }
             else {
                 Profiler.get().push("applyFrustum");
-                this.applyFrustum(stupidShadowFrustum);
+                this.applyFrustum(shadowFrustum);
             }
 
             Profiler.get().popPush("render sections");
@@ -343,7 +223,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             Profiler.get().popPush("collect entities");
 
-            this.collectVisibleEntities(camera, stupidShadowFrustum, this.visibleEntities);
+            this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
 
             MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 

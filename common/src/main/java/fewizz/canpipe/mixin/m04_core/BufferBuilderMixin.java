@@ -23,11 +23,11 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.helpers.NormalAndTangent;
+import fewizz.canpipe.helpers.TangentSetter;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.Materials;
-import fewizz.canpipe.mixinclass.NormalAndTangent;
-import fewizz.canpipe.mixinclass.TangentSetter;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;

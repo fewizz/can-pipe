@@ -1,4 +1,4 @@
-package fewizz.canpipe.mixinclass;
+package fewizz.canpipe.helpers;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
