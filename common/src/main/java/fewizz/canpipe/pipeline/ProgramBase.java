@@ -119,7 +119,6 @@ public abstract class ProgramBase extends GlProgram {
         new RenderPipeline.UniformDescription("frx_fogEnabled", UniformType.INT)
     );
 
-    public final Set<Uniform> manuallyAppliedUniforms = new HashSet<>();
     public final Shader vertexShader;
     public final Shader fragmentShader;
 
@@ -222,13 +221,13 @@ public abstract class ProgramBase extends GlProgram {
 
         // view.glsl
         this.FRX_MODEL_TO_WORLD = getManuallyAppliedUniform("frx_modelToWorld");
-        this.CANPIPE_ORIGIN_TYPE = getManuallyAppliedUniform("canpipe_originType");
+        this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");  // non-manual
         this.FRX_CAMERA_POS = getManuallyAppliedUniform("frx_cameraPos");
         this.FRX_CAMERA_VIEW = getManuallyAppliedUniform("frx_cameraView");
         this.FRX_LAST_CAMERA_POS = getManuallyAppliedUniform("frx_lastCameraPos");
-        this.FRX_INVERSE_VIEW_MATRIX = getUniform("frx_inverseViewMatrix");  // non-manual
+        this.FRX_INVERSE_VIEW_MATRIX = getManuallyAppliedUniform("frx_inverseViewMatrix");
         this.FRX_LAST_VIEW_MATRIX = getManuallyAppliedUniform("frx_lastViewMatrix");
-        this.FRX_INVERSE_PROJECTION_MATRIX = getUniform("frx_inverseProjectionMatrix");  // non-manual
+        this.FRX_INVERSE_PROJECTION_MATRIX = getManuallyAppliedUniform("frx_inverseProjectionMatrix");
         this.FRX_LAST_PROJECTION_MATRIX = getManuallyAppliedUniform("frx_lastProjectionMatrix");
         this.FRX_SHADOW_VIEW_MATRIX = getManuallyAppliedUniform("frx_shadowViewMatrix");
         this.FRX_INVERSE_SHADOW_VIEW_MATRIX = getManuallyAppliedUniform("frx_inverseShadowViewMatrix");
@@ -277,7 +276,8 @@ public abstract class ProgramBase extends GlProgram {
     private Uniform getManuallyAppliedUniform(String name) {
         Uniform u = this.getUniform(name);
         if (u != null) {
-            this.manuallyAppliedUniforms.add(u);
+            // it won't be uploaded in GlCommandEncoder.trySetup()
+            this.getUniforms().remove(u);
         }
         return u;
     }

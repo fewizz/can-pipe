@@ -212,8 +212,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             Profiler.get().popPush("render sections");
 
-            System.out.println("cascade: "+cascade+", visible sections: "+this.visibleSections.size());
-
             GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, shadowFramebuffer.glID());
             GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().glId(), 0, cascade);
 

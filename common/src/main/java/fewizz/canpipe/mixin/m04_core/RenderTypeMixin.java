@@ -131,7 +131,7 @@ public class RenderTypeMixin {
 
                 MaterialProgram program = p.materialPrograms.get(format);
                 for (String sampler : program.getSamplers()) { pipeline.withSampler(sampler); }
-                for (var u : program.getUniforms()) { pipeline.withUniform(u.getName(), u.getType()); }
+                // for (var u : program.getUniforms()) { pipeline.withUniform(u.getName(), u.getType()); }
 
                 return pipeline.build();
             });
@@ -155,7 +155,7 @@ public class RenderTypeMixin {
 
                 MaterialProgram program = p.shadows.materialPrograms().get(format);
                 for (String sampler : program.getSamplers()) { pipeline.withSampler(sampler); }
-                for (var u : program.getUniforms()) { pipeline.withUniform(u.getName(), u.getType()); }
+                // for (var u : program.getUniforms()) { pipeline.withUniform(u.getName(), u.getType()); }
 
                 return pipeline.build();
             });
