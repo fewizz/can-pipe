@@ -19,14 +19,16 @@ import fewizz.canpipe.pipeline.MaterialProgram;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.ModelManager;
 
 @Mixin(GlRenderPass.class)
 public class GlRenderPassMixin {
 
     @Shadow protected GlRenderPipeline pipeline;
-	@Shadow public void bindSampler(String string, GpuTexture gpuTexture) {}
+    @Shadow public void bindSampler(String string, GpuTexture gpuTexture) {}
 
+    @SuppressWarnings("deprecation")
     @WrapMethod(method="bindSampler")
     void onBindSampler(String name, GpuTexture texture, Operation<Void> original) {
         if (pipeline != null && pipeline.program() instanceof MaterialProgram) {
@@ -34,16 +36,23 @@ public class GlRenderPassMixin {
                 name = "frxs_baseColor";
 
                 var mc = Minecraft.getInstance();
+                TextureAtlas atlas = null;
                 for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
-                    var atlas = mc.getModelManager().getAtlas(atlasLoc);
-                    if (atlas.getTexture() == texture) {
-                        original.call(
-                            "canpipe_spritesExtents",
-                            ((TextureAtlasExtended) atlas).canpipe_getSpriteData()
-                        );
+                    var possibleAtlas = mc.getModelManager().getAtlas(atlasLoc);
+                    if (possibleAtlas.getTexture() == texture) {
+                        atlas = possibleAtlas;
                         break;
                     }
                 }
+                if (atlas == null) {
+                    // we just need to bind something,
+                    // nothin will be read from it
+                    atlas = mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
+                }
+                original.call(
+                    "canpipe_spritesExtents",
+                    ((TextureAtlasExtended) atlas).canpipe_getSpriteData()
+                );
             }
             else if (name.equals("Sampler2")) {
                 name = "frxs_lightmap";

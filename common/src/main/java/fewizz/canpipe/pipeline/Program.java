@@ -42,6 +42,7 @@ public class Program extends ProgramBase {
             .withLocation(pipelineLocation.withSuffix("-"+name))
             .withVertexShader(vertexShader.getId())
             .withFragmentShader(fragmentShader.getId())
+            .withDepthWrite(false)
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
             .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS);
 

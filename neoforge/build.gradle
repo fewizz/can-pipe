@@ -51,6 +51,7 @@ processResources {
         'license'                         : license,
         'description'                     : project.description,
         'neoforge_current_version'        : neoforge_current_version,
+        'neoforge_minimal_version'        : neoforge_minimal_version,
         'neoforge_loader_version_range'   : neoforge_loader_version_range,
         'credits'                         : credits,
         'java_version'                    : java_version

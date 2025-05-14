@@ -3,6 +3,7 @@ package fewizz.canpipe.compat.indigo.mixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
@@ -68,7 +69,7 @@ public class AbstractRenderContextMixin {
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V",
-            shift = At.Shift.AFTER
+            shift = Shift.AFTER
         ),
         locals = LocalCapture.CAPTURE_FAILHARD
     )

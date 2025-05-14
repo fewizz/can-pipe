@@ -80,6 +80,7 @@ public class MaterialProgram extends ProgramBase {
                 if (this.samplerExists(sampler)) {
                     throw new NullPointerException("Couldn't find texture for sampler \""+sampler+"\"");
                 }
+                this.getSamplers().remove(sampler);
             }
             else {
                 samplerToTexture.put(sampler, texture.get());

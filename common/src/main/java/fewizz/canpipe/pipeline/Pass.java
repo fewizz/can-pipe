@@ -81,7 +81,7 @@ public class Pass extends PassBase {
 
         try (
             RenderPass renderPass = RenderSystem.getDevice()
-				.createCommandEncoder()
+                .createCommandEncoder()
                 .createRenderPass(this.framebuffer.getColorTexture(), OptionalInt.empty())
         ) {
             renderPass.setPipeline(this.program.renderPipeline);

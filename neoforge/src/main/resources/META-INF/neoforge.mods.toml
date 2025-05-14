@@ -25,7 +25,7 @@ config = "${mod_id}.mixins.04_core.json"
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type="required"
-versionRange = "[${neoforge_version},)"
+versionRange = "[${neoforge_minimal_version},)"
 ordering = "NONE"
 side = "CLIENT"
 
