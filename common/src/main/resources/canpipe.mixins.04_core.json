@@ -6,6 +6,8 @@
     "defaultRequire": 1
   },
   "client": [
+    "BlockModelWrapperMixin",
+    "BlockRenderDispatcherMixin",
     "BufferBuilderMixin",
     "CameraAccessor",
     "CompositeRenderTypeMixin",
@@ -16,7 +18,6 @@
     "ItemModelResolverMixin",
     "ItemRendererMixin",
     "ItemStackLayerRenderStateMixin",
-    "ItemStackRenderStateMixin",
     "LevelRendererMixin",
     "LightTextureMixin",
     "LiquidBlockRendererMixin",
