@@ -24,7 +24,6 @@
     "ModelBlockRendererMixin",
     "ModelPartCubeMixin",
     "ModelPartPolygonMixin",
-    "RenderStateShardMixin",
     "RenderSystemMixin",
     "RenderSystemAccessor",
     "RenderTypeMixin",

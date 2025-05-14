@@ -19,7 +19,7 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderCont
 @Mixin(value = AbstractRenderContext.class)
 public class AbstractRenderContextMixin {
 
-    /*@Inject(
+    @Inject(
         method = "bufferQuad("+
             "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
             "Lcom/mojang/blaze3d/vertex/VertexConsumer;"+
@@ -67,7 +67,8 @@ public class AbstractRenderContextMixin {
         ")V",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;setNormal(FFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;"
+            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V",
+            shift = At.Shift.AFTER
         ),
         locals = LocalCapture.CAPTURE_FAILHARD
     )
@@ -85,7 +86,6 @@ public class AbstractRenderContextMixin {
                 ((VertexConsumerExtended) bb).canpipe_setAO(q.canpipe_getAO(quadVertexIndex));
             }
         }
-
-    }*/
+    }
 
 }

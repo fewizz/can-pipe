@@ -17,9 +17,9 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 
 @Mixin(MutableQuadViewImpl.class)
-public abstract class MutableQuadViewImplMixin /*extends QuadViewImplMixin implements MutableQuadViewExtended*/ {
+public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin implements MutableQuadViewExtended {
 
-    /*@Inject(method = "clear", at = @At("TAIL"), remap = false)
+    @Inject(method = "clear", at = @At("TAIL"), remap = false)
     void onClear(CallbackInfo ci) {
         Arrays.fill(this.ao, 1.0F);
         this.sprite = null;
@@ -36,7 +36,7 @@ public abstract class MutableQuadViewImplMixin /*extends QuadViewImplMixin imple
     private void onFromVanilla(BakedQuad quad, RenderMaterial mat, Direction d, CallbackInfoReturnable<MutableQuadViewImpl> ci) {
         if (Pipelines.getCurrent() != null) {
             Arrays.fill(this.ao, 1.0F);
-            this.sprite = quad.getSprite();
+            this.sprite = quad.sprite();
         }
     }
 
@@ -48,6 +48,6 @@ public abstract class MutableQuadViewImplMixin /*extends QuadViewImplMixin imple
     @Override
     public void canpipe_setAO(int index, float value) {
         this.ao[index] = value;
-    }*/
+    }
 
 }
