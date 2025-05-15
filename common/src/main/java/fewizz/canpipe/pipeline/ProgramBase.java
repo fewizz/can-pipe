@@ -150,6 +150,7 @@ public abstract class ProgramBase extends GlProgram {
         FRX_VIEW_DISTANCE,
         FRX_VIEW_BRIGHTNESS,
         CANPIPE_VIEW_FLAGS,
+        CANPIPE_SCREEN_SIZE,
 
         // player.glsl
         FRX_EFFECT_MODIFIER,
@@ -236,6 +237,7 @@ public abstract class ProgramBase extends GlProgram {
         this.FRX_VIEW_DISTANCE = getManuallyAppliedUniform("frx_viewDistance");
         this.FRX_VIEW_BRIGHTNESS = getManuallyAppliedUniform("frx_viewBrightness");
         this.CANPIPE_VIEW_FLAGS = getManuallyAppliedUniform("canpipe_viewFlags");
+        this.CANPIPE_SCREEN_SIZE = getManuallyAppliedUniform("canpipe_screenSize");
 
         // player.glsl
         this.FRX_EFFECT_MODIFIER = getManuallyAppliedUniform("frx_effectModifier");
@@ -287,7 +289,6 @@ public abstract class ProgramBase extends GlProgram {
         if (name.equals("ProjMat")) { name = "frx_projectionMatrix"; }
         if (name.equals("FogStart")) { name = "frx_fogStart"; }
         if (name.equals("FogEnd")) { name = "frx_fogEnd"; }
-        if (name.equals("ScreenSize")) { name = "canpipe_screenSize"; }
         if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
         return super.getUniform(name);
     }
@@ -450,6 +451,13 @@ public abstract class ProgramBase extends GlProgram {
 
             this.CANPIPE_VIEW_FLAGS.set(result);
             this.CANPIPE_VIEW_FLAGS.upload();
+        }
+        if (this.CANPIPE_SCREEN_SIZE != null) {
+            this.CANPIPE_SCREEN_SIZE.set(
+                (float) mc.getWindow().getWidth(),
+                (float) mc.getWindow().getHeight()
+            );
+            this.CANPIPE_SCREEN_SIZE.upload();
         }
 
         // player.glsl

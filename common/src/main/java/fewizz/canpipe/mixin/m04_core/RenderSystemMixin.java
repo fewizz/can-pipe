@@ -2,8 +2,6 @@ package fewizz.canpipe.mixin.m04_core;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -30,16 +28,16 @@ public class RenderSystemMixin {
     @Inject(method = "initRenderer", at = @At("RETURN"))
     private static void onInitRenderer(CallbackInfo ci) {
         try (ByteBufferBuilder byteBufferBuilder = new ByteBufferBuilder(DefaultVertexFormat.POSITION_COLOR.getVertexSize() * 4)) {
-			BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-			bufferBuilder.addVertex(0.0F, 0.0F, 0.0F).setUv(0.0F, 0.0F);
-			bufferBuilder.addVertex(1.0F, 0.0F, 0.0F).setUv(1.0F, 0.0F);
-			bufferBuilder.addVertex(1.0F, 1.0F, 0.0F).setUv(1.0F, 1.0F);
-			bufferBuilder.addVertex(0.0F, 1.0F, 0.0F).setUv(0.0F, 1.0F);
+            BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            bufferBuilder.addVertex(0.0F, 0.0F, 0.0F).setUv(0.0F, 0.0F);
+            bufferBuilder.addVertex(1.0F, 0.0F, 0.0F).setUv(1.0F, 0.0F);
+            bufferBuilder.addVertex(1.0F, 1.0F, 0.0F).setUv(1.0F, 1.0F);
+            bufferBuilder.addVertex(0.0F, 1.0F, 0.0F).setUv(0.0F, 1.0F);
 
-			try (MeshData meshData = bufferBuilder.buildOrThrow()) {
-				CANPIPE_QUAD_VERTEX_UV_BUFFER = getDevice().createBuffer(() -> "Quad POSITION_TEX", BufferType.VERTICES, BufferUsage.STATIC_WRITE, meshData.vertexBuffer());
-			}
-		}
+            try (MeshData meshData = bufferBuilder.buildOrThrow()) {
+                CANPIPE_QUAD_VERTEX_UV_BUFFER = getDevice().createBuffer(() -> "Quad POSITION_TEX", BufferType.VERTICES, BufferUsage.STATIC_WRITE, meshData.vertexBuffer());
+            }
+        }
     }
 
 }

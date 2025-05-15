@@ -55,7 +55,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
         try {
             spritesData = RenderSystem
                 .getDevice()
-			    .createTexture(
+                .createTexture(
                     location.toString()+"-sprites-extents",
                     TextureFormat.valueOf("RGBA32F"),
                     width, height, 1
