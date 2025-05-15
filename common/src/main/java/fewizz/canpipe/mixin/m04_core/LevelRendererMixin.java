@@ -25,6 +25,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.RenderPass.UniformUploader;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.CanPipe;
@@ -281,29 +282,24 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         method = "renderSectionLayer",
         at = @At("HEAD")
     )
-    void onTerrainProgramApply(CallbackInfo ci
-    ) {
+    void onTerrainProgramApply(CallbackInfo ci) {
         CanPipe.GlobalState.originType = 1; // region
     }
 
-    /*@Inject(
-        method = "renderSectionLayer",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vertex/VertexBuffer;bind()V"
-        )
+    @Inject(
+        method = {
+            "method_68480",  // fabric
+            "lambda$renderSectionLayer$11"  // neoforge
+        },
+        at = @At("TAIL")
     )
-    void beforeSectionRendering(
-        CallbackInfo ci,
-        @Local CompiledShaderProgram program,
-        @Local SectionRenderDispatcher.RenderSection section
+    private static void onRenderSectionLayerUniformUpload(
+        BlockPos pos, double x, double y, double z,
+        UniformUploader uniformUploader,
+        CallbackInfo ci
     ) {
-        if (program instanceof ProgramBase pb && pb.FRX_MODEL_TO_WORLD != null) {
-            BlockPos pos = section.getOrigin();
-            pb.FRX_MODEL_TO_WORLD.set(pos.getX(), pos.getY(),pos.getZ(), 1.0F);
-            pb.FRX_MODEL_TO_WORLD.upload();
-        }
-    }*/
+        uniformUploader.upload("frx_modelToWorld", pos.getX(), pos.getY(),pos.getZ(), 1.0F);
+    }
 
     @Inject(
         method = "renderSectionLayer",
