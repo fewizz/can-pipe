@@ -50,8 +50,6 @@ import net.minecraft.world.phys.Vec3;
 
 public abstract class ProgramBase extends GlProgram {
 
-    // WHY THE HELL Uniform.set(Vector4f vector4f) is not overloaded???
-
     private static final List<RenderPipeline.UniformDescription> DEFAULT_UNIFORMS = List.of(
         // accessibility.glsl
         new RenderPipeline.UniformDescription("frx_fovEffects", UniformType.FLOAT),
@@ -439,23 +437,19 @@ public abstract class ProgramBase extends GlProgram {
             this.FRX_INVERSE_SHADOW_VIEW_MATRIX.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_0 != null) {
-            var c = gre.canpipe_getShadowCenters()[0];
-            this.CANPIPE_SHADOW_CENTER_0.set(c.x, c.y, c.z, c.w);
+            this.CANPIPE_SHADOW_CENTER_0.set(gre.canpipe_getShadowCenters()[0]);
             this.CANPIPE_SHADOW_CENTER_0.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_1 != null) {
-            var c = gre.canpipe_getShadowCenters()[1];
-            this.CANPIPE_SHADOW_CENTER_1.set(c.x, c.y, c.z, c.w);
+            this.CANPIPE_SHADOW_CENTER_1.set(gre.canpipe_getShadowCenters()[1]);
             this.CANPIPE_SHADOW_CENTER_1.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_2 != null) {
-            var c = gre.canpipe_getShadowCenters()[2];
-            this.CANPIPE_SHADOW_CENTER_2.set(c.x, c.y, c.z, c.w);
+            this.CANPIPE_SHADOW_CENTER_2.set(gre.canpipe_getShadowCenters()[2]);
             this.CANPIPE_SHADOW_CENTER_2.upload();
         }
         if (this.CANPIPE_SHADOW_CENTER_3 != null) {
-            var c = gre.canpipe_getShadowCenters()[3];
-            this.CANPIPE_SHADOW_CENTER_3.set(c.x, c.y, c.z, c.w);
+            this.CANPIPE_SHADOW_CENTER_3.set(gre.canpipe_getShadowCenters()[3]);
             this.CANPIPE_SHADOW_CENTER_3.upload();
         }
         if (this.FRX_VIEW_DISTANCE != null) {
@@ -690,7 +684,7 @@ public abstract class ProgramBase extends GlProgram {
             Vector4f emissiveColor = (
                 (LightTextureExtended) mc.gameRenderer.lightTexture()
             ).canpipe_getEmissiveColor();
-            this.FRX_EMISSIVE_COLOR.set(emissiveColor.x, emissiveColor.y, emissiveColor.z, emissiveColor.w);
+            this.FRX_EMISSIVE_COLOR.set(emissiveColor);
             this.FRX_EMISSIVE_COLOR.upload();
         }
         if (this.CANPIPE_WORLD_FLAGS != null) {
@@ -727,13 +721,12 @@ public abstract class ProgramBase extends GlProgram {
 
         // fog.glsl
         if (this.FRX_FOG_COLOR != null) {
-            var fogColor = FogRenderer.computeFogColor(
+            this.FRX_FOG_COLOR.set(FogRenderer.computeFogColor(
                 mc.gameRenderer.getMainCamera(),
                 pt,
                 mc.level, mc.options.getEffectiveRenderDistance(),
                 mc.gameRenderer.getDarkenWorldAmount(pt)
-            );
-            this.FRX_FOG_COLOR.set(fogColor.x, fogColor.y, fogColor.z, fogColor.w);
+            ));
             this.FRX_FOG_COLOR.upload();
         }
 

@@ -339,7 +339,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         {
             MethodNode toGlExternalIdMethod = classNode.methods.stream()
                 .filter(m -> m.name.equals("toGlExternalId")).findFirst().get();
-            
+
             TableSwitchInsnNode switchNode = (TableSwitchInsnNode) StreamSupport.stream(
                 toGlExternalIdMethod.instructions.spliterator(), false
             ).filter(insn -> insn.getOpcode() == TABLESWITCH).findFirst().get();
@@ -397,9 +397,14 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             .filter(m -> m.name.equals("<clinit>")).findFirst().get();
         InsnList insns = new InsnList();
 
-        // fill offset array of TextureFormats
+        String textureFormatsOffsetFieldName =
+            ((FieldInsnNode) StreamSupport.stream(clinit.instructions.spliterator(), false)
+                .filter(insn -> insn instanceof FieldInsnNode fin && fin.name.equals("RGBA8"))
+                .findFirst().get().getPrevious()
+            ).name;
+
         for (int i = 0; i < ADDITIONAL_TEXTURE_FORMATS.size(); ++i) {
-            insns.add(new FieldInsnNode(GETSTATIC, classNode.name, "$SwitchMap$com$mojang$blaze3d$textures$TextureFormat", "[I"));
+            insns.add(new FieldInsnNode(GETSTATIC, classNode.name, textureFormatsOffsetFieldName, "[I"));
             insns.add(new IntInsnNode(BIPUSH, i));
             insns.add(new IntInsnNode(BIPUSH, i+1));
             insns.add(new InsnNode(IASTORE));

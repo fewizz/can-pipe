@@ -57,8 +57,6 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             .filter(insn->insn.getOpcode() == ANEWARRAY).findFirst().get();
 
         IntInsnNode sizeArgInsn = (IntInsnNode) aNewArrayInsn.getPrevious();
-        // if (sizeArgInsn.getOpcode() != BIPUSH) { throw new RuntimeException(); }
-        //int i = 3;  // TODO actually compute size
         sizeArgInsn.operand += 1;
 
         classNode.fields.add(new FieldNode(ACC_PUBLIC | ACC_FINAL | ACC_STATIC | ACC_ENUM, "IVEC2", desc, null, null));

@@ -9,7 +9,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 @Mixin(value = RenderSystem.class, priority = 1001, remap = false)
 public interface RenderSystemAccessor {
 
-    @Accessor(value = "CANPIPE_QUAD_VERTEX_UV_BUFFER")
+    @Accessor(value = "CANPIPE_QUAD_VERTEX_UV_BUFFER", remap = false)
     public static GpuBuffer canpipe_getQuadBuffer() { return null; }
 
 }

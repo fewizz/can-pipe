@@ -114,6 +114,7 @@ final public class Pipelines implements PreparableReloadListener {
         }
 
         try {
+            Files.createDirectories(CanPipe.getConfigurationFilePath().getParent());
             Files.writeString(CanPipe.getConfigurationFilePath(), config.toJson(true, true));
         } catch (IOException e) {
             e.printStackTrace();

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.MemoryUtil;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -28,7 +29,7 @@ import net.minecraft.resources.ResourceLocation;
 @Mixin(TextureAtlas.class)
 public class TextureAtlasMixin implements TextureAtlasExtended {
 
-    @Shadow private ResourceLocation location;
+    @Shadow @Final private ResourceLocation location;
     @Shadow private Map<ResourceLocation, TextureAtlasSprite> texturesByName;
 
     @Unique GpuTexture spritesData;

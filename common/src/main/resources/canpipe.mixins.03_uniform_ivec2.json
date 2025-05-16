@@ -8,6 +8,7 @@
   },
   "client": [
     "UniformMixin",
-    "UniformTypeMixin"
+    "UniformTypeMixin",
+    "GlProgramMixin"
   ]
 }
