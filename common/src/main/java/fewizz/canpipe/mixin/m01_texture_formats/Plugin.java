@@ -11,6 +11,7 @@ import java.util.stream.StreamSupport;
 
 import static org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT;
 import static org.lwjgl.opengl.GL11C.GL_FLOAT;
+import static org.lwjgl.opengl.GL11C.GL_R3_G3_B2;
 import static org.lwjgl.opengl.GL11C.GL_RED;
 import static org.lwjgl.opengl.GL11C.GL_RGB16;
 import static org.lwjgl.opengl.GL11C.GL_RGB8;
@@ -31,6 +32,8 @@ import static org.lwjgl.opengl.GL30C.GL_RGB32UI;
 import static org.lwjgl.opengl.GL30C.GL_RGBA16F;
 import static org.lwjgl.opengl.GL30C.GL_RGBA32F;
 import static org.lwjgl.opengl.GL31C.GL_R8_SNORM;
+import static org.lwjgl.opengl.GL31C.GL_RG16_SNORM;
+import static org.lwjgl.opengl.GL31C.GL_RG8_SNORM;
 import static org.lwjgl.opengl.GL33C.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
@@ -106,22 +109,47 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         put("DEPTH_COMPONENT32F", new TexFormat(GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
         put("DEPTH_COMPONENT", new TexFormat(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
         put("DEPTH_COMPONENT32", new TexFormat(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
+
         put("RED", new TexFormat(GL_RED, GL_RED, GL_FLOAT, 1*4, true, false));
         put("R8", new TexFormat(GL_R8, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
         put("R8_SNORM", new TexFormat(GL_R8_SNORM, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
+        put("R16", new TexFormat(GL_R16, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
+        put("R16_SNORM", new TexFormat(GL_R16_SNORM, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
         put("R16F", new TexFormat(GL_R16F, GL_RED, GL_FLOAT, 1*4, true, false));
         put("R32F", new TexFormat(GL_R32F, GL_RED, GL_FLOAT, 1*4, true, false));
+
         put("RG8", new TexFormat(GL_RG8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RG8_SNORM", new TexFormat(GL_RG8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RG16", new TexFormat(GL_RG16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RG16_SNORM", new TexFormat(GL_RG16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RG16F", new TexFormat(GL_RG16F, GL_RED, GL_FLOAT, 1*4, true, false));
+        put("RG32F", new TexFormat(GL_RG32F, GL_RED, GL_FLOAT, 1*4, true, false));
+
+        put("R3_G3_B2", new TexFormat(GL_R3_G3_B2, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB4", new TexFormat(GL_RGB4, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB5", new TexFormat(GL_RGB5, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGB8", new TexFormat(GL_RGB8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB8_SNORM", new TexFormat(GL_RGB8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB10", new TexFormat(GL_RGB10, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB12", new TexFormat(GL_RGB12, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGB16", new TexFormat(GL_RGB16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB16F", new TexFormat(GL_RGB16F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB16_SNORM", new TexFormat(GL_RGB16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGB32UI", new TexFormat(GL_RGB32UI, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB16F", new TexFormat(GL_RGB16F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB32F", new TexFormat(GL_RGB32F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("R11F_G11F_B10F", new TexFormat(GL_R11F_G11F_B10F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+
+        put("RGBA2", new TexFormat(GL_RGBA2, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGBA4", new TexFormat(GL_RGBA4, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB5_A1", new TexFormat(GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        // put("RGBA8", new TexFormat(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false)); already defined
+        put("RGBA8_SNORM", new TexFormat(GL_RGBA8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB10_A2", new TexFormat(GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB10_A2UI", new TexFormat(GL_RGB10_A2UI, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGBA12", new TexFormat(GL_RGBA12, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGBA16", new TexFormat(GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGBA16F", new TexFormat(GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGBA32F", new TexFormat(GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("R11F_G11F_B10F", new TexFormat(GL_R11F_G11F_B10F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
     }};
 
     @Override
