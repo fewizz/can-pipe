@@ -13,30 +13,47 @@ import static org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT;
 import static org.lwjgl.opengl.GL11C.GL_FLOAT;
 import static org.lwjgl.opengl.GL11C.GL_R3_G3_B2;
 import static org.lwjgl.opengl.GL11C.GL_RED;
+import static org.lwjgl.opengl.GL11C.GL_RGB10;
+import static org.lwjgl.opengl.GL11C.GL_RGB10_A2;
+import static org.lwjgl.opengl.GL11C.GL_RGB12;
 import static org.lwjgl.opengl.GL11C.GL_RGB16;
+import static org.lwjgl.opengl.GL11C.GL_RGB4;
+import static org.lwjgl.opengl.GL11C.GL_RGB5;
+import static org.lwjgl.opengl.GL11C.GL_RGB5_A1;
 import static org.lwjgl.opengl.GL11C.GL_RGB8;
 import static org.lwjgl.opengl.GL11C.GL_RGBA;
 import static org.lwjgl.opengl.GL11C.GL_RGBA12;
 import static org.lwjgl.opengl.GL11C.GL_RGBA16;
+import static org.lwjgl.opengl.GL11C.GL_RGBA2;
+import static org.lwjgl.opengl.GL11C.GL_RGBA4;
 import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
 import static org.lwjgl.opengl.GL14C.GL_DEPTH_COMPONENT32;
 import static org.lwjgl.opengl.GL30C.GL_DEPTH_COMPONENT32F;
 import static org.lwjgl.opengl.GL30C.GL_R11F_G11F_B10F;
+import static org.lwjgl.opengl.GL30C.GL_R16;
 import static org.lwjgl.opengl.GL30C.GL_R16F;
 import static org.lwjgl.opengl.GL30C.GL_R32F;
 import static org.lwjgl.opengl.GL30C.GL_R8;
 import static org.lwjgl.opengl.GL30C.GL_RG16;
+import static org.lwjgl.opengl.GL30C.GL_RG16F;
+import static org.lwjgl.opengl.GL30C.GL_RG32F;
 import static org.lwjgl.opengl.GL30C.GL_RG8;
 import static org.lwjgl.opengl.GL30C.GL_RGB16F;
+import static org.lwjgl.opengl.GL30C.GL_RGB32F;
 import static org.lwjgl.opengl.GL30C.GL_RGB32UI;
 import static org.lwjgl.opengl.GL30C.GL_RGBA16F;
 import static org.lwjgl.opengl.GL30C.GL_RGBA32F;
+import static org.lwjgl.opengl.GL31C.GL_R16_SNORM;
 import static org.lwjgl.opengl.GL31C.GL_R8_SNORM;
 import static org.lwjgl.opengl.GL31C.GL_RG16_SNORM;
 import static org.lwjgl.opengl.GL31C.GL_RG8_SNORM;
+import static org.lwjgl.opengl.GL31C.GL_RGB16_SNORM;
+import static org.lwjgl.opengl.GL31C.GL_RGB8_SNORM;
+import static org.lwjgl.opengl.GL31C.GL_RGBA8_SNORM;
 import static org.lwjgl.opengl.GL33C.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FieldNode;
@@ -111,6 +128,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         put("DEPTH_COMPONENT32", new TexFormat(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
 
         put("RED", new TexFormat(GL_RED, GL_RED, GL_FLOAT, 1*4, true, false));
+        // put("RED8", new TexFormat(GL_RED8, GL_RED, GL_FLOAT, 1*4, true, false));
         put("R8", new TexFormat(GL_R8, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
         put("R8_SNORM", new TexFormat(GL_R8_SNORM, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
         put("R16", new TexFormat(GL_R16, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
@@ -185,10 +203,10 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
 
     private static void patchTextureFormat(ClassNode classNode) {
         // hard way, adding new texture types into enum
-        // took main logic from my `crawl` mod
 
         String desc = "L"+classNode.name+";";
 
+        // $values
         MethodNode arrayInitMethod = classNode.methods.stream()
             .filter(m -> !m.name.equals("values") && m.desc.equals("()["+desc)).findFirst().get();
 
@@ -198,16 +216,18 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         TypeInsnNode aNewArrayInsn = (TypeInsnNode) StreamSupport.stream(arrayInitMethod.instructions.spliterator(), false)
             .filter(insn->insn.getOpcode() == ANEWARRAY).findFirst().get();
 
-        InsnNode sizeArgInsn = (InsnNode) aNewArrayInsn.getPrevious();
-        int i;  // TODO: compute
-        if (sizeArgInsn.getOpcode() == ICONST_3) {
-            i = 3;
-        }
-        // Neo add DEPTH24_STENCIL8 and DEPTH32F_STENCIL8
-        else if (sizeArgInsn.getOpcode() == ICONST_5) {
-            i = 5;
-        }
-        else {
+        AbstractInsnNode sizeArgInsn = (AbstractInsnNode) aNewArrayInsn.getPrevious();
+
+        int i = switch (sizeArgInsn.getOpcode()) {
+            case ICONST_3 -> 3;  // should be 3
+            case ICONST_4 -> 4;
+            case ICONST_5 -> 5;  // Neo adds DEPTH24_STENCIL8 and DEPTH32F_STENCIL8
+            case BIPUSH -> ((IntInsnNode) sizeArgInsn).operand;
+            case SIPUSH -> ((IntInsnNode) sizeArgInsn).operand;
+            default -> -1;
+        };
+
+        if (i == -1) {
             throw new RuntimeException("Unexpected texture formats count");
         }
 
@@ -221,14 +241,15 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             createNewEntry.add(new TypeInsnNode(NEW, classNode.name));
             createNewEntry.add(new InsnNode(DUP));
             createNewEntry.add(new LdcInsnNode(e.getKey()));
-            createNewEntry.add(new IntInsnNode(SIPUSH, i));
-            createNewEntry.add(new LdcInsnNode(Integer.valueOf(e.getValue().pixelSize)));
+            createNewEntry.add(new IntInsnNode(BIPUSH, i));
+            createNewEntry.add(new IntInsnNode(BIPUSH, Integer.valueOf(e.getValue().pixelSize)));
             createNewEntry.add(new MethodInsnNode(INVOKESPECIAL, classNode.name, "<init>", "(Ljava/lang/String;II)V"));
             createNewEntry.add(new FieldInsnNode(PUTSTATIC, classNode.name, e.getKey(), desc));
+
             classInitMethod.instructions.insertBefore(
                 StreamSupport.stream(classInitMethod.instructions.spliterator(), false)
-                    .filter(insn -> insn.getOpcode() == NEW)
-                    .findFirst().get(),
+                    .filter(insn -> insn.getOpcode() == INVOKESTATIC)
+                    .findFirst().get(),  // right before callogin arrayInitMethod ($values)
                 createNewEntry
             );
 
@@ -237,7 +258,12 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             addNewEntry.add(new IntInsnNode(BIPUSH, i));
             addNewEntry.add(new FieldInsnNode(GETSTATIC, classNode.name, e.getKey(), desc));
             addNewEntry.add(new InsnNode(AASTORE));
-            arrayInitMethod.instructions.insert(aNewArrayInsn, addNewEntry);
+            arrayInitMethod.instructions.insertBefore(
+                StreamSupport.stream(arrayInitMethod.instructions.spliterator(), false)
+                    .filter(insn -> insn.getOpcode() == ARETURN)
+                    .findFirst().get(),  // before return
+                addNewEntry
+            );
 
             ++i;
         }
@@ -246,22 +272,18 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             MethodNode hasColorAspect = classNode.methods.stream()
                 .filter(m -> m.name.equals("hasColorAspect")).findFirst().get();
 
-            LabelNode beforeReturn = (LabelNode) Streams.findLast(
+            LabelNode trueLabel = (LabelNode) Streams.findLast(
                 StreamSupport.stream(hasColorAspect.instructions.spliterator(), false)
-                .takeWhile(insn -> insn.getOpcode() != IRETURN)
-                .filter(insn -> insn instanceof LabelNode)
+                .takeWhile(insn -> insn.getOpcode() != ICONST_1)
+                .filter(insn -> insn.getType() == AbstractInsnNode.LABEL)
             ).get();
 
             InsnList insns = new InsnList();
             for (var e : ADDITIONAL_TEXTURE_FORMATS.entrySet()) {
                 if (!e.getValue().hasColorAspect) continue;
-                LabelNode nextCheck = new LabelNode();
                 insns.add(new VarInsnNode(ALOAD, 0));
                 insns.add(new FieldInsnNode(GETSTATIC, classNode.name, e.getKey(), desc));
-                insns.add(new JumpInsnNode(IF_ACMPNE, nextCheck));
-                insns.add(new InsnNode(ICONST_1));
-                insns.add(new JumpInsnNode(GOTO, beforeReturn));
-                insns.add(nextCheck);
+                insns.add(new JumpInsnNode(IF_ACMPEQ, trueLabel));
             }
             hasColorAspect.instructions.insert(hasColorAspect.instructions.getFirst(), insns);
         }
@@ -270,22 +292,17 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             MethodNode hasDepthAspect = classNode.methods.stream()
                 .filter(m -> m.name.equals("hasDepthAspect")).findFirst().get();
 
-            LabelNode beforeReturn = (LabelNode) Streams.findLast(
-                StreamSupport.stream(hasDepthAspect.instructions.spliterator(), false)
-                .takeWhile(insn -> insn.getOpcode() != IRETURN)
-                .filter(insn -> insn instanceof LabelNode)
-            ).get();
+            InsnNode const1 = (InsnNode) StreamSupport.stream(hasDepthAspect.instructions.spliterator(), false)
+                .filter(insn -> insn.getOpcode() == ICONST_1).findFirst().get();
+            LabelNode trueLabel = new LabelNode(new Label());
+            hasDepthAspect.instructions.insertBefore(const1, trueLabel);
 
             InsnList insns = new InsnList();
             for (var e : ADDITIONAL_TEXTURE_FORMATS.entrySet()) {
                 if (!e.getValue().hasDepthAspect) continue;
-                LabelNode nextCheck = new LabelNode();
                 insns.add(new VarInsnNode(ALOAD, 0));
                 insns.add(new FieldInsnNode(GETSTATIC, classNode.name, e.getKey(), desc));
-                insns.add(new JumpInsnNode(IF_ACMPNE, nextCheck));
-                insns.add(new InsnNode(ICONST_1));
-                insns.add(new JumpInsnNode(GOTO, beforeReturn));
-                insns.add(nextCheck);
+                insns.add(new JumpInsnNode(IF_ACMPEQ, trueLabel));
             }
             hasDepthAspect.instructions.insert(hasDepthAspect.instructions.getFirst(), insns);
         }
@@ -295,7 +312,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         {
             MethodNode toGlInternalIdMethod = classNode.methods.stream()
                 .filter(m -> m.name.equals("toGlInternalId")).findFirst().get();
-            
+
             TableSwitchInsnNode switchNode = (TableSwitchInsnNode) StreamSupport.stream(
                 toGlInternalIdMethod.instructions.spliterator(), false
             ).filter(insn -> insn.getOpcode() == TABLESWITCH).findFirst().get();
@@ -349,7 +366,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         {
             MethodNode toGlExternalIdMethod = classNode.methods.stream()
                 .filter(m -> m.name.equals("toGlType")).findFirst().get();
-            
+
             TableSwitchInsnNode switchNode = (TableSwitchInsnNode) StreamSupport.stream(
                 toGlExternalIdMethod.instructions.spliterator(), false
             ).filter(insn -> insn.getOpcode() == TABLESWITCH).findFirst().get();
@@ -380,13 +397,14 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             .filter(m -> m.name.equals("<clinit>")).findFirst().get();
         InsnList insns = new InsnList();
 
+        // fill offset array of TextureFormats
         for (int i = 0; i < ADDITIONAL_TEXTURE_FORMATS.size(); ++i) {
             insns.add(new FieldInsnNode(GETSTATIC, classNode.name, "$SwitchMap$com$mojang$blaze3d$textures$TextureFormat", "[I"));
-            insns.add(new LdcInsnNode(i));
-            insns.add(new LdcInsnNode(i+1));
+            insns.add(new IntInsnNode(BIPUSH, i));
+            insns.add(new IntInsnNode(BIPUSH, i+1));
             insns.add(new InsnNode(IASTORE));
         }
         clinit.instructions.insertBefore(clinit.instructions.getLast(), insns);
     }
-    
+
 }
