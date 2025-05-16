@@ -1,11 +1,17 @@
 package fewizz.canpipe.pipeline;
 
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL33C;
+import org.lwjgl.system.MemoryStack;
 
 import com.google.common.collect.Streams;
 import com.mojang.blaze3d.opengl.GlProgram;
@@ -119,6 +125,7 @@ public abstract class ProgramBase extends GlProgram {
 
     public final Shader vertexShader;
     public final Shader fragmentShader;
+    protected final List<String> samplersUniformNames;
 
     public final Uniform
         // accessibility.glsl
@@ -199,14 +206,45 @@ public abstract class ProgramBase extends GlProgram {
         Shader vertexShader, Shader fragmentShader
     ) {
         super(ProgramBase._link(name, vertexShader, fragmentShader, vertexFormat, name), name);
-
         this.vertexShader = vertexShader;
         this.fragmentShader = fragmentShader;
+        samplers = new ArrayList<>(samplers);
+        uniforms = Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList();
 
-        setupUniforms(
-            Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList(),
-            samplers
-        );
+        /*
+         * for cases when unform name in `programs` is misspelled, like in:
+         * - Aerie v1.0.0 "copy" program (https://github.com/ambrosia13/Aerie-Shaders/pull/2),
+         * - Forget-me-not v0.8.0 "depth_downsample" program (https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5)
+         */
+        {
+            List<String> activeUniforms = new ArrayList<>();
+            List<String> unknownUniforms = new ArrayList<>();
+            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                IntBuffer size = memoryStack.mallocInt(1);
+                IntBuffer type = memoryStack.mallocInt(1);
+
+                int activeUniformsCount = GlStateManager.glGetProgrami(this.getProgramId(), GL33C.GL_ACTIVE_UNIFORMS);
+                for (int uniformID = 0; uniformID < activeUniformsCount; uniformID++) {
+                    String uniformName = GL20.glGetActiveUniform(this.getProgramId(), uniformID, size, type);
+                    activeUniforms.add(uniformName);
+                    if (!uniforms.stream().anyMatch(u -> u.name().equals(uniformName)) && !samplers.contains(uniformName)) {
+                        unknownUniforms.add(uniformName);
+                    }
+                }
+            }
+
+            for (int i = 0; i < samplers.size(); ++i) {
+                var sampler = samplers.get(i);
+                if (!activeUniforms.contains(sampler) && unknownUniforms.size() > 0) {
+                    String unknownUniform = unknownUniforms.removeFirst();
+                    CanPipe.LOGGER.warn("Couldn't find sampler \""+sampler+"\", trying to replace with unknown uniform \""+unknownUniform+"\"");
+                    samplers.set(i, unknownUniform);
+                }
+            }
+            this.samplersUniformNames = Collections.unmodifiableList(samplers);
+        }
+
+        setupUniforms(uniforms, samplers);
 
         // accessibility.glsl
         this.FRX_FOV_EFFECTS = getManuallyAppliedUniform("frx_fovEffects");

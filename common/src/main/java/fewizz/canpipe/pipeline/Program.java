@@ -46,7 +46,8 @@ public class Program extends ProgramBase {
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
             .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS);
 
-        for (var s : samplers) { renderPipelineBuilder.withSampler(s); }
+        // not samplers arg, because they can be renamed in super ctor
+        for (var s : this.samplersUniformNames) { renderPipelineBuilder.withSampler(s); }
 
         this.renderPipeline = renderPipelineBuilder.build();
     }
