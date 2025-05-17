@@ -47,6 +47,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
@@ -355,43 +356,21 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return this.canpipe_isRenderingShadows ? true : original;
     }
 
-    // TODO: probably related to `runVanillaClear` pipeline optoin
-    // Not cleanest way: setClearColor, copyDepthFrom and bindWrite are still called
-    /*@SuppressWarnings("UnresolvedMixinReference")
-    @WrapOperation(
-        method = {"method_62214", "lambda$addMainPass$2"}, // lambda in the `addMainPass`
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;clear()V"
-        )
-    )
-    private void dontClearRenderTargets(RenderTarget instance, Operation<Void> original) {
-        if (instance instanceof Framebuffer) { return; }
-        original.call(instance);
-    }
-
+    // Code lower moves bufferSource.endBatch(Sheets.translucentItemSheet());
+    // after main.get().copyDepthFrom(translucent.get());
+    // if pipeline is active,
+    // because we render items into translucent framebuffer
     @ModifyExpressionValue(
-        method = {"method_62214", "lambda$addMainPass$2"},
+        method = {  // lambda in the `addMainPass`
+            "method_62214",  // fabric
+            "lambda$addMainPass$2"  // neoforge
+        },
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/Sheets;translucentItemSheet()Lnet/minecraft/client/renderer/RenderType;"
         )
     )
     private RenderType dontDrawTranslucentIteims(RenderType original) {
-        if (Pipelines.getCurrent() != null) {
-            return RenderType.solid();  // solid should already be rendered, so nothing *should* happen
-        }
-        return original;
-    }
-
-    @ModifyExpressionValue(
-        method = {"method_62214", "lambda$addMainPass$2"},  // lambda in the `addMainPass`
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/Sheets;translucentItemSheet()Lnet/minecraft/client/renderer/RenderType;"
-        )
-    )
-    private RenderType dontDrawTranslucentItems(RenderType original) {
         if (Pipelines.getCurrent() != null) {
             // solid should already be rendered, so nothing should happen (:clueless:),
             // items will be rendered later, right before translucent terrain
@@ -407,7 +386,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;endBatch()V",
             ordinal = 1
-        )
+        ),
+        cancellable = true
     )
     private void drawTranslucentItemsRightBeforeTranslucentTerrain(CallbackInfo ci) {
         if (Pipelines.getCurrent() == null) {
@@ -431,6 +411,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
         original.call(instance, other);
-    }*/
+    }
 
 }
