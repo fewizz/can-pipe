@@ -29,7 +29,7 @@ public class GlRenderPassMixin {
     @Shadow public void bindSampler(String string, GpuTexture gpuTexture) {}
 
     @SuppressWarnings("deprecation")
-    @WrapMethod(method="bindSampler")
+    @WrapMethod(method = "bindSampler")
     void onBindSampler(String name, GpuTexture texture, Operation<Void> original) {
         if (pipeline != null && pipeline.program() instanceof MaterialProgram) {
             if (name.equals("Sampler0")) {

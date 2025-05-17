@@ -12,6 +12,8 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.AABB;
 
+
+// Inspired by https://iquilezles.org/articles/frustumcorrect/
 public class ShadowFrustum extends Frustum {
 
     private final Camera camera;
