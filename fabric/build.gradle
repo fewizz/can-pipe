@@ -2,6 +2,10 @@ plugins {
     id 'fabric-loom' version '1.10-SNAPSHOT'
 }
 
+base {
+    archivesName = "can-pipe-fabric-"+minecraft_version
+}
+
 repositories {
     maven {
         name = 'ParchmentMC'
@@ -55,10 +59,6 @@ loom {
             appendProjectPathToConfigName = false
         }
     }
-}
-
-base {
-    archivesName = mod_id+"-fabric"
 }
 
 processResources {

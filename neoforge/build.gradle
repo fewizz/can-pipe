@@ -2,6 +2,10 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.88'
 }
 
+base {
+    archivesName = "can-pipe-neoforge-"+minecraft_version
+}
+
 compileJava.source project(":common").sourceSets.main.allSource
 
 neoForge {
@@ -31,10 +35,6 @@ neoForge {
 dependencies {
     jarJar implementation("blue.endless:jankson:1.2.3")
     additionalRuntimeClasspath "blue.endless:jankson:1.2.3"
-}
-
-base {
-    archivesName = mod_id+"-neoforge"
 }
 
 processResources {
