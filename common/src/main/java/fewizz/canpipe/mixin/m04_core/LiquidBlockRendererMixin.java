@@ -44,6 +44,7 @@ public class LiquidBlockRendererMixin {
             TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
             var sprites = ((TextureAtlasExtended) atlas).canpipe_getSprites();
 
+            // TODO. Disgusting. Can't think of other universal way for finding sprite
             vce.canpipe_setSpriteSupplier(() -> {
                 MutableObject<TextureAtlasSprite> result = new MutableObject<>();
 

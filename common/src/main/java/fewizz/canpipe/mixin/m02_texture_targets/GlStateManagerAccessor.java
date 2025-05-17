@@ -8,7 +8,7 @@ import com.mojang.blaze3d.opengl.GlStateManager;
 @Mixin(value = GlStateManager.class, remap = false, priority = 1001)
 public interface GlStateManagerAccessor {
 
-    @Invoker(value = "canpipe_setTextureTarget", remap = true)
+    @Invoker(value = "canpipe_setTextureTarget", remap = false)
     public static void canpipe_setTextureTarget(int id, int target) {}
 
 }

@@ -35,7 +35,7 @@ public class UniformMixin extends AbstractUniform {
         }
     }
 
-    @Override  // Not overriden for some reason
+    @Override  // They forgor to override it in 1.21.5
     public final void set(Vector4f values) {
         this.floatValues.position(0);
         values.get(this.floatValues);

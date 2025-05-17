@@ -62,6 +62,9 @@ public class RenderTypeMixin {
             renderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
             renderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
             renderPipeline == RenderPipelines.ENTITY_NO_OUTLINE ||
+            renderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
+            renderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
+            renderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||
             renderPipeline == RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL ||
             renderPipeline == RenderPipelines.EYES ||
             renderPipeline == RenderPipelines.OPAQUE_PARTICLE ||
@@ -100,7 +103,10 @@ public class RenderTypeMixin {
                 renderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
                 renderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
                 renderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
-                renderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE
+                renderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
+                renderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
+                renderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
+                renderPipeline == RenderPipelines.ARMOR_TRANSLUCENT
             ) {
                 alphaCutout = 0.1F;
             }

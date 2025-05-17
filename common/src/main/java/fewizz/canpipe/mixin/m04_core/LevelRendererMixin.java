@@ -403,7 +403,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;copyDepthFrom(Lcom/mojang/blaze3d/pipeline/RenderTarget;)V",
             ordinal = 1  // 0 - is for items entities, 1 - translucent
-        )
+        ),
+        remap = false
     )
     private void dontOverwriteTranslucentDepth(RenderTarget instance, RenderTarget other, Operation<Void> original) {
         // if translucent == itemEntity, then no need to overwrite depth (right?)
