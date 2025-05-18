@@ -74,6 +74,9 @@ final public class Materials implements PreparableReloadListener {
                             location,
                             materialJson
                         );
+                        if (id == Short.MAX_VALUE) {
+                            throw new RuntimeException("Material index exceeded "+Short.MAX_VALUE);
+                        }
                         this.materials.put(location, material);
                         this.id.put(material, id);
                         ++id;

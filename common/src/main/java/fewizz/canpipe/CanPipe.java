@@ -32,17 +32,17 @@ public class CanPipe {
             MATERIAL_FLAGS = VertexFormatElement.register(
                 6, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.UV, 1
             ),  // UV, because it uses vertexAttrib *I* Pointer in this case
-            AO = VertexFormatElement.register(
-                7, 0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1
-            ),
             SPRITE_INDEX = VertexFormatElement.register(
                 8, 0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.UV, 1
             ),  // UV, because it uses vertexAttrib *I* Pointer in this case
             MATERIAL_INDEX = VertexFormatElement.register(
-                9, 0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.UV, 1
+                9, 0, VertexFormatElement.Type.SHORT, VertexFormatElement.Usage.UV, 1
             ),
             TANGENT = VertexFormatElement.register(
                 10, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.NORMAL, 4
+            ),
+            AO = VertexFormatElement.register(
+                7, 0, VertexFormatElement.Type.UBYTE, VertexFormatElement.Usage.COLOR, 1
             );
 
     }
@@ -56,10 +56,10 @@ public class CanPipe {
             .add("UV2", VertexFormatElement.UV2)
             .add("Normal", VertexFormatElement.NORMAL)
             .add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
-            .add("AO", CanPipe.VertexFormatElements.AO)
             .add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             .add("Tangent", CanPipe.VertexFormatElements.TANGENT)
+            .add("AO", CanPipe.VertexFormatElements.AO)
             .build();
 
         public static final VertexFormat NEW_ENTITY = VertexFormat.builder()

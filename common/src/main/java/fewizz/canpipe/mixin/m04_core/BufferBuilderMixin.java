@@ -33,6 +33,7 @@ import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.util.Mth;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
@@ -219,7 +220,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
             int index = material != null ? Materials.id(material) : -1;
             for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
-                MemoryUtil.memPutInt(materialIndexPtr+i*this.vertexSize, index);
+                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) index);
             }
         }
     }
@@ -239,7 +240,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     public void canpipe_setAO(float ao) {
         long l = this.beginElement(CanPipe.VertexFormatElements.AO);
         if (l != -1) {
-            MemoryUtil.memPutFloat(l, ao);
+            MemoryUtil.memPutByte(l, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
         }
     }
 

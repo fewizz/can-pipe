@@ -8,16 +8,13 @@ import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.KHRDebug;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-
 public class GFX {
 
-    public static void glBindTexture(int target, int name) {
-        GL11C.glBindTexture(target, 0);
+    public static void glBindTexture(int target, int texture) {
+        GL11C.glBindTexture(target, texture);
     }
 
     public static void glUniform2iv(int i, IntBuffer intBuffer) {
-        RenderSystem.assertOnRenderThread();
         GL20C.glUniform2iv(i, intBuffer);
     }
 
