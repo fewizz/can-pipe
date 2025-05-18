@@ -15,7 +15,6 @@
     "RenderTypeMixin",
     "GameRendererMixin",
     "GlRenderPassMixin",
-    "ItemModelResolverMixin",
     "ItemRendererMixin",
     "ItemStackLayerRenderStateMixin",
     "LevelRendererMixin",

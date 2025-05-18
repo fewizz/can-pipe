@@ -1,6 +1,5 @@
 package fewizz.canpipe.mixin.m02_texture_targets;
 
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.opengl.GlStateManager;
 
+import fewizz.canpipe.GFX;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
@@ -36,8 +36,8 @@ public class GlStateManagerMixin {
 
     @SuppressWarnings("unused")
     private static void canpipe_setTextureTarget(int id, int target) {
-		idToTargetMap.put(id, target);
-	}
+        idToTargetMap.put(id, target);
+    }
 
     @Inject(
         method = "_bindTexture",
@@ -54,7 +54,7 @@ public class GlStateManagerMixin {
         // otherwise we may have a situation where multiple texture targets are bound to same texture unit
         // https://community.khronos.org/t/binding-different-targets-to-same-unit/76935
         if (prevTarget != newTarget) {
-            GL11.glBindTexture(prevTarget, 0);
+            GFX.glBindTexture(prevTarget, 0);
         }
     }
 

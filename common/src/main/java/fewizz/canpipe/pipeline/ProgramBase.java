@@ -9,7 +9,6 @@ import java.util.function.Supplier;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.MemoryStack;
 
@@ -24,6 +23,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.GFX;
 import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
@@ -211,8 +211,10 @@ public abstract class ProgramBase extends GlProgram {
 
         /*
          * for cases when unform name in `programs` is misspelled, like in:
-         * - Aerie v1.0.0 "copy" program (https://github.com/ambrosia13/Aerie-Shaders/pull/2),
-         * - Forget-me-not v0.8.0 "depth_downsample" program (https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5)
+         * - Aerie v1.0.0 "copy" program
+         *   (https://github.com/ambrosia13/Aerie-Shaders/pull/2),
+         * - Forget-me-not v0.8.0 "depth_downsample" program
+         *   (https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5)
          */
         {
             List<String> activeUniforms = new ArrayList<>();
@@ -223,7 +225,7 @@ public abstract class ProgramBase extends GlProgram {
 
                 int activeUniformsCount = GlStateManager.glGetProgrami(this.getProgramId(), GL33C.GL_ACTIVE_UNIFORMS);
                 for (int uniformID = 0; uniformID < activeUniformsCount; uniformID++) {
-                    String uniformName = GL20.glGetActiveUniform(this.getProgramId(), uniformID, size, type);
+                    String uniformName = GFX.glGetActiveUniform(this.getProgramId(), uniformID, size, type);
                     activeUniforms.add(uniformName);
                     if (!uniforms.stream().anyMatch(u -> u.name().equals(uniformName)) && !samplers.contains(uniformName)) {
                         unknownUniforms.add(uniformName);

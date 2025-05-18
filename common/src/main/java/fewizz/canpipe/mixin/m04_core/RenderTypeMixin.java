@@ -20,7 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 
 @Mixin(RenderType.class)
 public class RenderTypeMixin {
-    
+
     @WrapOperation(
         method = "create("+
             "Ljava/lang/String;"+

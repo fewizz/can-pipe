@@ -98,16 +98,6 @@ public class Pass extends PassBase {
             renderPass.setUniform("frxu_lod", this.lod);
             renderPass.setUniform("frxu_layer", this.layer);
             renderPass.setUniform("frxu_frameProjectionMatrix", new Matrix4f().ortho2D(0, w, 0, h));
-
-            // assuming that active texture unit is GL_TEXTURE0,
-            // if we couldn't find first sampler location,
-            // then attach first texture to the texture unit GL_TEXTURE0.
-            // compat with canvas, for cases like this:
-            // https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5
-            /*if (samplers.size() > 0 && !this.program.samplerExists(samplers.get(0))) {
-                this.textures.get(0).ifPresent(texture -> texture.bind());
-            }*/
-
             renderPass.setVertexBuffer(0, vertexBuffer);
             renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
             renderPass.drawIndexed(0, 6);

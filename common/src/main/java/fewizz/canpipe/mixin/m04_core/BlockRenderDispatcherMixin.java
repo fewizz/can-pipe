@@ -5,12 +5,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.PoseStack.Pose;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.MaterialMap;
@@ -20,7 +17,6 @@ import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.world.level.block.state.BlockState;
 
 @Mixin(BlockRenderDispatcher.class)

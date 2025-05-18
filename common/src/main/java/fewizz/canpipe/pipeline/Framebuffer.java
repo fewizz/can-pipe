@@ -10,7 +10,6 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
 
@@ -94,7 +93,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
             var firstColor = this.colorAttachments.get(0);
             this.colorTexture = firstColor.texture;
             this.colorTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
-			this.colorTexture.setTextureFilter(FilterMode.NEAREST, true);
+            this.colorTexture.setTextureFilter(FilterMode.NEAREST, true);
             extent.max(firstColor.texture.extent);
             lod = Math.max(lod, firstColor.lod);
         }
@@ -166,20 +165,6 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         };
     }
 
-    /*@Override
-    public void clear() {
-        RenderSystem.assertOnRenderThreadOrInit();
-        this.bindWrite(false);
-
-        GFX.glDrawBuffers(new int[] {GL33C.GL_COLOR_ATTACHMENT0 });
-
-        super.clear();
-
-        this.bindWrite(false);
-        GFX.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
-        this.unbindWrite();
-    }*/
-
     /**
      * Called by <code>frex_clear</code>-type passes<p>
      * Note that {@link RenderTarget#clear} clears only first color and depth attachemnts
@@ -189,7 +174,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, this.id);
 
         if (this.depthAttachment != null) {
-            GL11.glClearDepth(this.depthAttachment.clearDepth);
+            GFX.glClearDepth(this.depthAttachment.clearDepth);
             Texture depthTexture = this.depthAttachment.texture;
 
             if (depthTexture.target == GL33C.GL_TEXTURE_2D_ARRAY || depthTexture.target == GL33C.GL_TEXTURE_3D) {
@@ -210,7 +195,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         for (int i = 0; i < this.colorAttachments.size(); ++i) {
             var a = this.colorAttachments.get(i);
             GFX.glDrawBuffers(new int[] {GL33C.GL_COLOR_ATTACHMENT0 + i});
-            GL11.glClearColor(a.clearColor.x, a.clearColor.y, a.clearColor.z, a.clearColor.w);
+            GFX.glClearColor(a.clearColor.x, a.clearColor.y, a.clearColor.z, a.clearColor.w);
             GlStateManager._clear(GL33C.GL_COLOR_BUFFER_BIT);
         }
 
