@@ -1,13 +1,17 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 
+import blue.endless.jankson.JsonArray;
+import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
@@ -20,27 +24,42 @@ public class PipelineRaw {
     @NotNull public final ResourceLocation location;
     @NotNull public final String nameKey;
     @NotNull public final Map<ResourceLocation, Option> options;
-    @NotNull public final JsonObject json;
+    @NotNull private final JsonObject json;
 
     PipelineRaw(ResourceLocation location, String nameKey, Map<ResourceLocation, Option> options, JsonObject json) {
         this.location = location;
         this.nameKey = nameKey;
-        this.options = options;
+        this.options = Collections.unmodifiableMap(options);
         this.json = json;
     }
 
     static PipelineRaw load(
-        JsonObject o,
+        JsonObject pipelineJson,
         ResourceLocation pipelineLocation,
         ResourceManager resourceManager
     ) throws IOException, SyntaxError {
         Map<String, JsonObject> includes = new HashMap<>();
 
-        processIncludes(o, includes, resourceManager);
+        class ProcessIncludes { private static void doProcess(
+            JsonObject object,
+            Map<String, JsonObject> includes,
+            ResourceManager manager
+        ) throws IOException, SyntaxError {
+            for (var path : JanksonUtils.listOfStrings(object, "include")) {
+                JsonObject toInclude = includes.getOrDefault(path, null);
+                if (toInclude == null) {
+                    toInclude = CanPipe.JANKSON.load(manager.open(ResourceLocation.parse(path)));
+                    doProcess(toInclude, includes, manager);
+                    includes.put(path, toInclude);
+                }
+                JanksonUtils.mergeJsonObjectB2A(object, toInclude);
+            }
+        }};
+        ProcessIncludes.doProcess(pipelineJson, includes, resourceManager);
 
         Map<ResourceLocation, Option> options = new LinkedHashMap<>();
 
-        for (var optionsA : JanksonUtils.listOfObjects(o, "options")) {
+        for (var optionsA : JanksonUtils.listOfObjects(pipelineJson, "options")) {
             ResourceLocation includeToken = ResourceLocation.parse(optionsA.get(String.class, "includeToken"));
             var elementsO = optionsA.getObject("elements");
             if (elementsO == null) {  // compat
@@ -103,27 +122,75 @@ public class PipelineRaw {
             options.put(includeToken, new Option(includeToken, categoryKey, elements));
         }
 
-        o.remove("options");
+        pipelineJson.remove("options");
 
-        String nameKey = o.get(String.class, "nameKey");
+        String nameKey = pipelineJson.get(String.class, "nameKey");
 
-        return new PipelineRaw(pipelineLocation, nameKey, options, o);
+        return new PipelineRaw(pipelineLocation, nameKey, options, pipelineJson);
     }
 
-    private static void processIncludes(
-        JsonObject object,
-        Map<String, JsonObject> includes,
-        ResourceManager manager
-    ) throws IOException, SyntaxError {
-        for (var path : JanksonUtils.listOfStrings(object, "include")) {
-            JsonObject toInclude = includes.getOrDefault(path, null);
-            if (toInclude == null) {
-                toInclude = CanPipe.JANKSON.load(manager.open(ResourceLocation.parse(path)));
-                processIncludes(toInclude, includes, manager);
-                includes.put(path, toInclude);
+    public Option.Element<?> optionElementByName(String name) {
+        for (var o : options.values()) {
+            if (o.elements.containsKey(name)) {
+                return o.elements.get(name);
             }
-            JanksonUtils.mergeJsonObjectB2A(object, toInclude);
         }
+        return null;
+    }
+
+    public JsonObject getPipelineJson(Map<Option.Element<?>, Object> appliedOptions) {
+        JsonObject pipelineJson = this.json.clone();
+
+        Function<String, Object> optionValueByName = (String name) -> {
+            var element = optionElementByName(name);
+            if (element == null) {
+                return null;
+            }
+            return appliedOptions.getOrDefault(element, element.defaultValue);
+        };
+
+        class ApplyOptions { static JsonElement doApply(JsonElement e, Function<String, Object> optionValueByName) {
+            if (e instanceof JsonObject vo) {
+                if (vo.size() == 1 && vo.containsKey("option")) {
+                    String optionName = vo.get(String.class, "option");
+                    return new JsonPrimitive(optionValueByName.apply(optionName));
+                }
+                if (vo.size() == 2 && vo.containsKey("default")) {
+                    if (vo.containsKey("option")) {
+                        String optionElementName = (String) ((JsonPrimitive) vo.get("option")).getValue();
+                        var value = optionValueByName.apply(optionElementName);
+                        if (value != null) {
+                            return new JsonPrimitive(value);
+                        }
+                    }
+                    if (vo.containsKey("optionMap")) {
+                        JsonObject optionO = (JsonObject) vo.get("optionMap");
+                        String optionElementName = optionO.keySet().iterator().next();
+                        var value = optionValueByName.apply(optionElementName);
+                        if (value != null) {
+                            for (JsonObject variant : JanksonUtils.listOfObjects(optionO, optionElementName)) {
+                                if (variant.get(String.class, "from").equals(value)) {
+                                    return (JsonPrimitive) variant.get("to");
+                                }
+                            }
+                        }
+                    }
+                    return (JsonPrimitive) vo.get("default");
+                }
+                for (var kv : vo.entrySet()) {
+                    kv.setValue(doApply(kv.getValue(), optionValueByName));
+                }
+            }
+            if (e instanceof JsonArray va) {
+                for (int i = 0; i < va.size(); ++i) {
+                    va.set(i, doApply(va.get(i), optionValueByName));
+                }
+            }
+            return e;
+        }}
+        ApplyOptions.doApply(pipelineJson, optionValueByName);
+
+        return pipelineJson;
     }
 
 }

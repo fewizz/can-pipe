@@ -8,6 +8,7 @@ import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -50,6 +51,8 @@ public class CanPipeClientInitializer implements ClientModInitializer {
                 return ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "pipelines");
             }
         });
+
+        KeyBindingHelper.registerKeyBinding(CanPipe.PIPELINES_RELOAD_KEY);
     }
 
 }

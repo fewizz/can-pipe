@@ -25,10 +25,7 @@ import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-import blue.endless.jankson.JsonArray;
-import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
-import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
@@ -92,66 +89,16 @@ public class Pipeline implements AutoCloseable {
         this.location = rawPipeline.location;
         this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
 
-        JsonObject pipelineJson = rawPipeline.json.clone();
+        JsonObject pipelineJson = rawPipeline.getPipelineJson(appliedOptions);
         var options = rawPipeline.options;
 
-        Function<String, Option.Element<?>> optionElementByName = (String name) -> {
-            for (var o : options.values()) {
-                if (o.elements.containsKey(name)) {
-                    return o.elements.get(name);
-                }
-            }
-            return null;
-        };
-
         Function<String, Object> optionValueByName = (String name) -> {
-            var element = optionElementByName.apply(name);
+            var element = rawPipeline.optionElementByName(name);
             if (element == null) {
                 return null;
             }
             return appliedOptions.getOrDefault(element, element.defaultValue);
         };
-
-        class ApplyOptions { static JsonElement doApply(JsonElement e, Function<String, Object> optionValueByName) {
-            if (e instanceof JsonObject vo) {
-                if (vo.size() == 1 && vo.containsKey("option")) {
-                    String optionName = vo.get(String.class, "option");
-                    return new JsonPrimitive(optionValueByName.apply(optionName));
-                }
-                if (vo.size() == 2 && vo.containsKey("default")) {
-                    if (vo.containsKey("option")) {
-                        String optionElementName = (String) ((JsonPrimitive) vo.get("option")).getValue();
-                        var value = optionValueByName.apply(optionElementName);
-                        if (value != null) {
-                            return new JsonPrimitive(value);
-                        }
-                    }
-                    if (vo.containsKey("optionMap")) {
-                        JsonObject optionO = (JsonObject) vo.get("optionMap");
-                        String optionElementName = optionO.keySet().iterator().next();
-                        var value = optionValueByName.apply(optionElementName);
-                        if (value != null) {
-                            for (JsonObject variant : JanksonUtils.listOfObjects(optionO, optionElementName)) {
-                                if (variant.get(String.class, "from").equals(value)) {
-                                    return (JsonPrimitive) variant.get("to");
-                                }
-                            }
-                        }
-                    }
-                    return (JsonPrimitive) vo.get("default");
-                }
-                for (var kv : vo.entrySet()) {
-                    kv.setValue(doApply(kv.getValue(), optionValueByName));
-                }
-            }
-            if (e instanceof JsonArray va) {
-                for (int i = 0; i < va.size(); ++i) {
-                    va.set(i, doApply(va.get(i), optionValueByName));
-                }
-            }
-            return e;
-        }}
-        ApplyOptions.doApply(pipelineJson, optionValueByName);
 
         this.defaultZenithAngle = (float) Math.toRadians(JanksonUtils.objectOrEmpty(pipelineJson, "sky").getFloat("defaultZenithAngle", 0.0F));
         this.smoothBrightnessBidirectionaly = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);

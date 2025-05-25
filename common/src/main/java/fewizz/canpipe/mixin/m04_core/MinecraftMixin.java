@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
@@ -25,6 +26,13 @@ public class MinecraftMixin {
     )
     private static boolean useShaderTransparency(boolean original) {
         return original || Pipelines.getCurrent() != null;
+    }
+
+    @Inject(method = "handleKeybinds", at = @At("RETURN"))
+    private void handleKeybinds(CallbackInfo ci) {
+        while (CanPipe.PIPELINES_RELOAD_KEY.consumeClick()) {
+            Pipelines.loadRawPipelines(Pipelines.readRawPipelines());
+        }
     }
 
 }

@@ -34,6 +34,18 @@ final public class Pipelines implements PreparableReloadListener {
     public static final Pipelines INSTANCE = new Pipelines();
     private Pipelines() {}
 
+    @Override
+    public CompletableFuture<Void> reload(
+        PreparationBarrier preparationBarrier, ResourceManager resourceManager,
+        Executor loadExecutor, Executor applyExecutor
+    ) {
+        return CompletableFuture.supplyAsync(
+            Pipelines::readRawPipelines, loadExecutor
+        ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
+            Pipelines::loadRawPipelines, applyExecutor
+        );
+    }
+
     public static final Map<ResourceLocation, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
 
     private static volatile @Nullable PipelineRaw currentRaw = null;
@@ -158,59 +170,44 @@ final public class Pipelines implements PreparableReloadListener {
         }
     }
 
-    @Override
-    public CompletableFuture<Void> reload(
-        PreparationBarrier preparationBarrier,
-        ResourceManager resourceManager,
-        Executor loadExecutor,
-        Executor applyExecutor
-    ) {
-        return CompletableFuture.supplyAsync(
-            () -> {
-                Map<ResourceLocation, PipelineRaw> rawPipelines = new LinkedHashMap<>();
+    public static Map<ResourceLocation, PipelineRaw> readRawPipelines() {
+        Map<ResourceLocation, PipelineRaw> rawPipelines = new LinkedHashMap<>();
+        Minecraft mc = Minecraft.getInstance();
+        mc.getResourceManager().listResources(
+            "pipelines",
+            (ResourceLocation pipelineLocation) -> {
+                String pathStr = pipelineLocation.getPath();
+                return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
+            }
+        ).forEach((location, pipelineJson) -> {
+            try {
+                JsonObject o = CanPipe.JANKSON.load(pipelineJson.open());
+                rawPipelines.put(location, PipelineRaw.load(o, location, mc.getResourceManager()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        return rawPipelines;
+    }
 
-                resourceManager.listResources(
-                    "pipelines",
-                    (ResourceLocation pipelineLocation) -> {
-                        String pathStr = pipelineLocation.getPath();
-                        return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
-                    }
-                ).forEach((location, pipelineJson) -> {
-                    try {
-                        JsonObject o = CanPipe.JANKSON.load(pipelineJson.open());
-                        rawPipelines.put(location, PipelineRaw.load(o, location, resourceManager));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-
-                return rawPipelines;
-            },
-            loadExecutor
-        ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
-            (Map<ResourceLocation, PipelineRaw> rawPipelines) -> {
-                RAW_PIPELINES.clear();
-                RAW_PIPELINES.putAll(rawPipelines);
-
-                PipelineRaw selected = null;
-                if (Files.exists(CanPipe.getConfigurationFilePath())) {
-                    try {
-                        JsonObject readOptions = CanPipe.JANKSON.load(
-                            Files.newInputStream(CanPipe.getConfigurationFilePath())
-                        );
-                        String currentLocationStr = readOptions.get(String.class, "current");
-                        if (currentLocationStr != null) {
-                            selected = RAW_PIPELINES.get(ResourceLocation.parse(currentLocationStr));
-                        }
-                    } catch (IOException | SyntaxError e) {
-                        e.printStackTrace();
-                    }
+    public static void loadRawPipelines(Map<ResourceLocation, PipelineRaw> rawPipelines) {
+        RAW_PIPELINES.clear();
+        RAW_PIPELINES.putAll(rawPipelines);
+        PipelineRaw selected = null;
+        if (Files.exists(CanPipe.getConfigurationFilePath())) {
+            try {
+                JsonObject readOptions = CanPipe.JANKSON.load(
+                    Files.newInputStream(CanPipe.getConfigurationFilePath())
+                );
+                String currentLocationStr = readOptions.get(String.class, "current");
+                if (currentLocationStr != null) {
+                    selected = RAW_PIPELINES.get(ResourceLocation.parse(currentLocationStr));
                 }
-
-                loadAndSetPipeline(selected, Map.of());
-            },
-            applyExecutor
-        );
+            } catch (IOException | SyntaxError e) {
+                e.printStackTrace();
+            }
+        }
+        loadAndSetPipeline(selected, Map.of());
     }
 
     public static @Nullable Pipeline getCurrent() {
