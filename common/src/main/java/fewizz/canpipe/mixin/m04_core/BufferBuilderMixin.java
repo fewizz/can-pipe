@@ -33,7 +33,6 @@ import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.util.Mth;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {

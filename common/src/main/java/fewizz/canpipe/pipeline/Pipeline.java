@@ -44,7 +44,10 @@ public class Pipeline implements AutoCloseable {
         Framebuffer framebuffer,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
-        float offsetBiasUnits
+        float offsetBiasUnits,
+        boolean supportForwardRender,  // isn't used in canvas
+        boolean allowEntities,
+        boolean allowParticles  // isn't used in canvas
     ) {}
 
     public final ResourceLocation location;
@@ -282,7 +285,10 @@ public class Pipeline implements AutoCloseable {
                 framebuffer,
                 JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius"),
                 shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
-                shadowsJson.getFloat("offsetBiasUnits", 4.0F)
+                shadowsJson.getFloat("offsetBiasUnits", 4.0F),
+                shadowsJson.getBoolean("supportForwardRender", true),
+                shadowsJson.getBoolean("allowEntities", true),
+                shadowsJson.getBoolean("allowParticles", true)
             );
         }
         else {

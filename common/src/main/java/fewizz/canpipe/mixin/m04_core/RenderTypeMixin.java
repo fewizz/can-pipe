@@ -97,7 +97,7 @@ public class RenderTypeMixin {
             float alphaCutout;
             if (
                 originalOutputState == RenderStateShard.ITEM_ENTITY_TARGET ||
-                originalOutputState == RenderStateShard.PARTICLES_TARGET ||
+                renderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
                 renderPipeline == RenderPipelines.CUTOUT ||
                 renderPipeline == RenderPipelines.ENTITY_CUTOUT ||
                 renderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
