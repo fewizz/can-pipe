@@ -57,7 +57,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
 
-@Mixin(LevelRenderer.class)
+@Mixin(value = LevelRenderer.class, priority = 1001)
 public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Shadow @Final private List<Entity> visibleEntities;
@@ -329,7 +329,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 "Lit/unimi/dsi/fastutil/longs/LongOpenHashSet;"+
             ")V"
         ),
-        index = 0
+        index = 0,
+        require = 0  // sodium @Overwrite s this method
     )
     private boolean disableSmartCullIfShadow(boolean original) {
         return canpipe_isRenderingShadows ? false : original;

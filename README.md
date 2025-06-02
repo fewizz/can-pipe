@@ -3,7 +3,7 @@ Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader 
 
 ## 
 
-## What doesn't work/implemented?
+## What doesn't work / not implemented?
 * Material properties, like `disableAo`, `disableDiffuse`, etc
 * Material map's `variants` properties
 * `fabulousTargets` - array of render targets

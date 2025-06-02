@@ -15,6 +15,17 @@ repositories {
         name = "Terraformers"
         url = "https://maven.terraformersmc.com/"
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = uri("https://api.modrinth.com/maven")
+            }
+        }
+        filter {
+            includeGroup("maven.modrinth")
+        }
+    }
 }
 
 dependencies {
@@ -39,6 +50,10 @@ dependencies {
     include "blue.endless:jankson:1.2.3"
 
     // modImplementation "com.terraformersmc:modmenu:13.0.2"
+    // modImplementation "maven.modrinth:sodium:mc1.21.5-0.6.13-fabric"
+    // modImplementation fabricApi.module("fabric-block-view-api-v2", fabric_version)
+    // modImplementation fabricApi.module("fabric-rendering-data-attachment-v1", fabric_version)
+    // modImplementation fabricApi.module("fabric-rendering-fluids-v1", fabric_version)
 }
 
 compileJava.source project(":common").sourceSets.main.allSource

@@ -12,7 +12,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.CompositeRenderTypeExtended;
 import fewizz.canpipe.mixininterface.CompositeStateExtended;
-import fewizz.canpipe.pipeline.MaterialProgram;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;

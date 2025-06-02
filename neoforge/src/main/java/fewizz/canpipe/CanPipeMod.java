@@ -29,6 +29,7 @@ public class CanPipeMod {
 
     public static void registerBindings(RegisterKeyMappingsEvent event) {
         event.register(CanPipe.PIPELINES_RELOAD_KEY);
+        event.register(CanPipe.PIPELINE_IO_DEBUG);
     }
 
 }

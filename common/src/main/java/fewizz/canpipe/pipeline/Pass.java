@@ -23,7 +23,6 @@ import net.minecraft.client.Minecraft;
 
 public class Pass extends PassBase {
 
-    final String name;
     final Framebuffer framebuffer;
     final Program program;
     // Textures (spcified in "samplers": ["X", "Y"]) may not exist,
@@ -38,6 +37,7 @@ public class Pass extends PassBase {
         List<Optional<? extends GlTexture>> textures,
         Vector2i extent, int lod, int layer
     ) {
+        super(name);
         var samplers = program.renderPipeline.getSamplers();
         if (samplers.size() > textures.size()) {
             CanPipe.LOGGER.warn("Program \""+program.getDebugLabel()+"\" has more samplers than textures provided by pass \""+name+"\"");
@@ -53,7 +53,6 @@ public class Pass extends PassBase {
             }
         }
 
-        this.name = name;
         this.framebuffer = framebuffer;
         this.program = program;
         this.textures = textures;
@@ -153,12 +152,10 @@ public class Pass extends PassBase {
     }
 
     static class FREXClear extends PassBase {
-
-        final String name;
         final Framebuffer framebuffer;
 
         FREXClear(String name, Framebuffer framebuffer) {
-            this.name = name;
+            super(name);
             this.framebuffer = framebuffer;
         }
 

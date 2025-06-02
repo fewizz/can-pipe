@@ -173,7 +173,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
             @Override
             public List<? extends NarratableEntry> narratables() {
-                return List.of();
+                return Collections.emptyList();
             }
         }
 

@@ -76,7 +76,7 @@ public class Pipeline implements AutoCloseable {
 
     private final Map<RenderPipeline, GlRenderPipeline> glRenderPipelineCache = new HashMap<>();
 
-    private final PassBase[]
+    public final PassBase[]
         onInitPasses,
         beforeWorldRenderPasses,
         fabulousPasses,

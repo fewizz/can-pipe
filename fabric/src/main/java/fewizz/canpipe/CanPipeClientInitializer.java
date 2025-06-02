@@ -53,6 +53,7 @@ public class CanPipeClientInitializer implements ClientModInitializer {
         });
 
         KeyBindingHelper.registerKeyBinding(CanPipe.PIPELINES_RELOAD_KEY);
+        KeyBindingHelper.registerKeyBinding(CanPipe.PIPELINE_IO_DEBUG);
     }
 
 }
