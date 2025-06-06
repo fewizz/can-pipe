@@ -97,8 +97,4 @@ public class CanPipe {
 
     }
 
-    public static class GlobalState {
-        public static int originType = 2;  // screen
-    }
-
 }

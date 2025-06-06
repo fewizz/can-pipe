@@ -14,9 +14,12 @@ import org.lwjgl.opengl.GL40C;
 import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.opengl.GlTextureView;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
 
 import blue.endless.jankson.JsonObject;
@@ -35,6 +38,7 @@ public class Texture extends GlTexture {
     final int pixelDataType;
     final boolean isWidthWindowSizeDependent;
     final boolean isHeightWindowSizeDependent;
+    public final GlTextureView view;
 
     private record IntParam(int name, int value) {};
 
@@ -44,7 +48,10 @@ public class Texture extends GlTexture {
         List<IntParam> params,
         TextureFormat format
     ) {
-        super(name, format, -1, -1, maxLod+1, GlStateManager._genTexture());
+        super(
+            GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST,
+            name, format, -1, -1, 1, maxLod+1, GlStateManager._genTexture()
+        );
         GlStateManagerAccessor.canpipe_setTextureTarget(this.id, target);
         GlStateManager._bindTexture(this.id);
         GFX.glObjectLabel(GL33C.GL_TEXTURE, glId(), pipelineLocation.toString()+"-"+name);
@@ -77,6 +84,8 @@ public class Texture extends GlTexture {
         }
 
         allocate();
+
+        this.view = (GlTextureView) RenderSystem.getDevice().createTextureView(this);
     }
 
     private void allocate() {
@@ -123,7 +132,7 @@ public class Texture extends GlTexture {
     }
 
     @Override
-    public void flushModeChanges() {}
+    public void flushModeChanges(int target) {}
 
     @Override
     public void setAddressMode(AddressMode addressMode) {}

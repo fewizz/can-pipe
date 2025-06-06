@@ -10,5 +10,6 @@ public interface CompositeRenderTypeExtended {
 
     void canpipe_setMaterialRenderPipelineCreationFunction(Function<Pipeline, RenderPipeline> pipeline);
     void canpipe_setMaterialShadowRenderPipelineCreationFunction(Function<Pipeline, RenderPipeline> pipeline);
+    RenderPipeline canpipe_getRenderPipeline();
 
 }

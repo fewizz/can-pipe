@@ -9,8 +9,10 @@ import java.util.function.Function;
 
 import org.joml.Matrix4f;
 import org.joml.Vector2i;
+import org.lwjgl.system.MemoryStack;
 
-import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.buffers.Std140Builder;
+import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
@@ -18,7 +20,7 @@ import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.mixin.m04_core.RenderSystemAccessor;
+import fewizz.canpipe.mixin.m03_core.RenderSystemAccessor;
 import net.minecraft.client.Minecraft;
 
 public class Pass extends PassBase {
@@ -27,35 +29,35 @@ public class Pass extends PassBase {
     final Program program;
     // Textures (spcified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually uses them
-    final List<Optional<? extends GlTexture>> textures;
+    final List<Optional<? extends GlTextureView>> textureViews;
     final Vector2i extent;
     final int lod;
     final int layer;
 
     private Pass(
         String name, Framebuffer framebuffer, Program program,
-        List<Optional<? extends GlTexture>> textures,
+        List<Optional<? extends GlTextureView>> textureViews,
         Vector2i extent, int lod, int layer
     ) {
         super(name);
         var samplers = program.renderPipeline.getSamplers();
-        if (samplers.size() > textures.size()) {
+        if (samplers.size() > textureViews.size()) {
             CanPipe.LOGGER.warn("Program \""+program.getDebugLabel()+"\" has more samplers than textures provided by pass \""+name+"\"");
         }
-        if (samplers.size() < textures.size()) {
+        if (samplers.size() < textureViews.size()) {
             CanPipe.LOGGER.warn("Program \""+program.getDebugLabel()+"\" has less samplers than textures provided by pass \""+name+"\"");
         }
-        for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
+        /*for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
             String sampler = samplers.get(i);
             Optional<? extends GlTexture> texture = textures.get(i);
             if (texture.isEmpty() && program.samplerExists(sampler)) {
                 throw new NullPointerException("Couldn't find texture for sampler \""+sampler +"\"");
             }
-        }
+        }*/
 
         this.framebuffer = framebuffer;
         this.program = program;
-        this.textures = textures;
+        this.textureViews = textureViews;
         this.extent = extent;
         this.lod = lod;
         this.layer = layer;
@@ -78,28 +80,40 @@ public class Pass extends PassBase {
         var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
         var vertexBuffer = RenderSystemAccessor.canpipe_getQuadBuffer();
 
+        Program.FRX_SIZE.value.set((int) w, (int) h);
+        Program.FRX_LOD.value = lod;
+        Program.FRX_LAYER.value = layer;
+        Program.FRX_FRAME_PROJECTION_MATRIX.value.setOrtho2D(0, w, 0, h);
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, Program.PASS.size());
+            Program.PASS.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Program.PASS_UBO.slice(), builder.get());
+        }
+
         try (
             RenderPass renderPass = RenderSystem.getDevice()
                 .createCommandEncoder()
-                .createRenderPass(this.framebuffer.getColorTexture(), OptionalInt.empty())
+                .createRenderPass(
+                    () -> "can-pipe pass \""+this.name+"\"",
+                    this.framebuffer.getColorTextureView(), OptionalInt.empty()
+                )
         ) {
             renderPass.setPipeline(this.program.renderPipeline);
 
             var samplers = this.program.renderPipeline.getSamplers();
-            for (int i = 0; i < Math.min(samplers.size(), this.textures.size()); ++i) {
+            for (int i = 0; i < Math.min(samplers.size(), this.textureViews.size()); ++i) {
                 String sampler = samplers.get(i);
-                this.textures.get(i).ifPresent(texture -> {
+                this.textureViews.get(i).ifPresent(texture -> {
                     renderPass.bindSampler(sampler, texture);
                 });
             }
 
-            renderPass.setUniform("frxu_size", (int) w, (int) h);
-            renderPass.setUniform("frxu_lod", this.lod);
-            renderPass.setUniform("frxu_layer", this.layer);
-            renderPass.setUniform("frxu_frameProjectionMatrix", new Matrix4f().ortho2D(0, w, 0, h));
+            RenderSystem.bindDefaultUniforms(renderPass);
+            renderPass.setUniform("canpipe_ub_pass", Program.PASS_UBO);
             renderPass.setVertexBuffer(0, vertexBuffer);
             renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
-            renderPass.drawIndexed(0, 6);
+            renderPass.drawIndexed(0, 0, 6, 0);
         }
     }
 
@@ -108,7 +122,7 @@ public class Pass extends PassBase {
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
         Function<String, Program> getOrLoadProgram,
-        Function<String, Optional<GlTexture>> getOrLoadPipelineOrResourcepackTexture
+        Function<String, Optional<GlTextureView>> getOrLoadPipelineOrResourcepackTextureView
     ) {
         String toggleConfig = json.get(String.class, "toggleConfig");
 
@@ -135,9 +149,9 @@ public class Pass extends PassBase {
         Program program = getOrLoadProgram.apply(programName);
         Objects.nonNull(program);
 
-        List<Optional<? extends GlTexture>> textures = new ArrayList<>();
+        List<Optional<? extends GlTextureView>> textureViews = new ArrayList<>();
         for (String s : JanksonUtils.listOfStrings(json, "samplerImages")) {
-            textures.add(getOrLoadPipelineOrResourcepackTexture.apply(s));
+            textureViews.add(getOrLoadPipelineOrResourcepackTextureView.apply(s));
         }
 
         int size = json.getInt("size", 0);
@@ -148,7 +162,7 @@ public class Pass extends PassBase {
         int lod = json.getInt("lod", 0);
         int layer = json.getInt("layer", 0);
 
-        return Optional.of(new Pass(passName, framebuffer.get(), program, textures, extent, lod, layer));
+        return Optional.of(new Pass(passName, framebuffer.get(), program, textureViews, extent, lod, layer));
     }
 
     static class FREXClear extends PassBase {

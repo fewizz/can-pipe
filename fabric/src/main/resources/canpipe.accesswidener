@@ -39,7 +39,7 @@ accessible  field   net/minecraft/client/renderer/RenderStateShard$TextureStateS
 accessible  field   net/minecraft/client/renderer/RenderType  SOLID  Lnet/minecraft/client/renderer/RenderType;
 accessible  field   net/minecraft/client/renderer/RenderType  CUTOUT_MIPPED  Lnet/minecraft/client/renderer/RenderType;
 accessible  field   net/minecraft/client/renderer/RenderType  CUTOUT  Lnet/minecraft/client/renderer/RenderType;
-accessible  field   net/minecraft/client/renderer/RenderType  TRANSLUCENT  Lnet/minecraft/client/renderer/RenderType;
+# accessible  field   net/minecraft/client/renderer/RenderType  TRANSLUCENT  Lnet/minecraft/client/renderer/RenderType;
 accessible  field   net/minecraft/client/renderer/RenderType  ENTITY_SOLID  Ljava/util/function/Function;
 accessible  field   net/minecraft/client/renderer/RenderType  ENTITY_SOLID_Z_OFFSET_FORWARD  Ljava/util/function/Function;
 accessible  field   net/minecraft/client/renderer/RenderType  ENTITY_CUTOUT  Ljava/util/function/Function;

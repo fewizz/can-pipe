@@ -1,29 +1,32 @@
 package fewizz.canpipe.pipeline;
 
-import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.MemoryStack;
 
 import com.google.common.collect.Streams;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlProgram;
 import com.mojang.blaze3d.opengl.GlShaderModule;
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.Uniform;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
-import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.GFX;
+import fewizz.canpipe.UniformBuffer;
+import fewizz.canpipe.UniformBuffer.FloatUniform;
+import fewizz.canpipe.UniformBuffer.IVec2Uniform;
+import fewizz.canpipe.UniformBuffer.IntUniform;
+import fewizz.canpipe.UniformBuffer.Mat4Uniform;
+import fewizz.canpipe.UniformBuffer.Vec2Uniform;
+import fewizz.canpipe.UniformBuffer.Vec3Uniform;
+import fewizz.canpipe.UniformBuffer.Vec4Uniform;
 import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
@@ -31,7 +34,6 @@ import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.LightTextureExtended;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
 import net.minecraft.core.BlockPos;
@@ -50,145 +52,115 @@ import net.minecraft.world.phys.Vec3;
 
 public abstract class ProgramBase extends GlProgram {
 
-    private static final List<RenderPipeline.UniformDescription> DEFAULT_UNIFORMS = List.of(
-        // accessibility.glsl
-        new RenderPipeline.UniformDescription("frx_fovEffects", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_distortionEffects", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_hideLightningFlashes", UniformType.INT),
-        new RenderPipeline.UniformDescription("frx_darknessPulsing", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_highContrast", UniformType.INT),
-        new RenderPipeline.UniformDescription("frx_damageTilt", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_glintStrength", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_glintSpeed", UniformType.FLOAT),
+    // accessibility
+    private static final UniformBuffer ACCESSIBILITY = new UniformBuffer();
+    private static final FloatUniform FRX_FOV_EFFECTS = ACCESSIBILITY.add(new FloatUniform());
+    private static final FloatUniform FRX_DISTORTION_EFFECTS = ACCESSIBILITY.add(new FloatUniform());
+    private static final FloatUniform FRX_DARKNESS_PULSING = ACCESSIBILITY.add(new FloatUniform());
+    private static final FloatUniform FRX_DAMAGE_TILT = ACCESSIBILITY.add(new FloatUniform());
+    private static final FloatUniform FRX_GLINT_STRENGTH = ACCESSIBILITY.add(new FloatUniform());
+    private static final FloatUniform FRX_GLINT_SPEED = ACCESSIBILITY.add(new FloatUniform());
+    private static final IntUniform FRX_HIDE_LIGHTNING_FLASHES = ACCESSIBILITY.add(new IntUniform());
+    private static final IntUniform FRX_HIGH_CONTRAST = ACCESSIBILITY.add(new IntUniform());
+    public static final GpuBuffer ACCESSIBILITY_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe accessibility UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, ACCESSIBILITY.size()
+    );
 
-        // view.glsl
-        new RenderPipeline.UniformDescription("frx_cameraPos", UniformType.VEC3),
-        new RenderPipeline.UniformDescription("frx_cameraView", UniformType.VEC3),
-        new RenderPipeline.UniformDescription("frx_lastCameraPos", UniformType.VEC3),
-        new RenderPipeline.UniformDescription("frx_modelToWorld", UniformType.VEC4),
-        new RenderPipeline.UniformDescription("canpipe_originType", UniformType.INT),
-        new RenderPipeline.UniformDescription("canpipe_modelToCamera", UniformType.VEC3),
-        new RenderPipeline.UniformDescription("frx_viewMatrix", UniformType.MATRIX4X4),
-        new RenderPipeline.UniformDescription("frx_inverseViewMatrix", UniformType.MATRIX4X4),
-        new RenderPipeline.UniformDescription("frx_lastViewMatrix", UniformType.MATRIX4X4),
-        new RenderPipeline.UniformDescription("frx_projectionMatrix", UniformType.MATRIX4X4),
-        new RenderPipeline.UniformDescription("frx_inverseProjectionMatrix", UniformType.MATRIX4X4),
-        new RenderPipeline.UniformDescription("frx_lastProjectionMatrix", UniformType.MATRIX4X4),
-        new RenderPipeline.UniformDescription("frx_inverseShadowViewMatrix", UniformType.MATRIX4X4),
-        new RenderPipeline.UniformDescription("frx_shadowViewMatrix", UniformType.MATRIX4X4),
-        new RenderPipeline.UniformDescription("canpipe_shadowCenter_0", UniformType.VEC4),
-        new RenderPipeline.UniformDescription("canpipe_shadowCenter_1", UniformType.VEC4),
-        new RenderPipeline.UniformDescription("canpipe_shadowCenter_2", UniformType.VEC4),
-        new RenderPipeline.UniformDescription("canpipe_shadowCenter_3", UniformType.VEC4),
-        new RenderPipeline.UniformDescription("frx_fogStart", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_fogEnd", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("canpipe_screenSize", UniformType.VEC2),
-        new RenderPipeline.UniformDescription("frx_viewDistance", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_viewBrightness", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("canpipe_viewFlags", UniformType.INT),
+    // view
+    private static final UniformBuffer VIEW = new UniformBuffer();
+    private static final Vec3Uniform FRX_CAMERA_VIEW = VIEW.add(new Vec3Uniform());
+    private static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
+    private static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
+    private static final Vec4Uniform FRX_MODEL_TO_WORLD = VIEW.add(new Vec4Uniform());;
+    public static final IntUniform CANPIPE_ORIGIN_TYPE = VIEW.add(new IntUniform());
+    private static final Mat4Uniform FRX_INVERSE_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_LAST_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_INVERSE_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_LAST_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_INVERSE_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Vec4Uniform CANPIPE_SHADOW_CENTER_0 = VIEW.add(new Vec4Uniform());
+    private static final Vec4Uniform CANPIPE_SHADOW_CENTER_1 = VIEW.add(new Vec4Uniform());
+    private static final Vec4Uniform CANPIPE_SHADOW_CENTER_2 = VIEW.add(new Vec4Uniform());
+    private static final Vec4Uniform CANPIPE_SHADOW_CENTER_3 = VIEW.add(new Vec4Uniform());
+    private static final Vec2Uniform CANPIPE_SCREEN_SIZE = VIEW.add(new Vec2Uniform());
+    private static final FloatUniform FRX_VIEW_BRIGHTNESS = VIEW.add(new FloatUniform());
+    private static final FloatUniform FRX_VIEW_DISTANCE = VIEW.add(new FloatUniform());
+    private static final IntUniform CANPIPE_VIEW_FLAGS = VIEW.add(new IntUniform());
+    public static final GpuBuffer VIEW_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe view UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, VIEW.size()
+    );
 
-        // player.glsl
-        new RenderPipeline.UniformDescription("frx_effectModifier", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("canpipe_darknessFactor", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_eyePos", UniformType.VEC3),
-        new RenderPipeline.UniformDescription("frx_eyeBrightness", UniformType.VEC2),
-        new RenderPipeline.UniformDescription("frx_smoothedEyeBrightness", UniformType.VEC2),
-        new RenderPipeline.UniformDescription("frx_heldLight", UniformType.VEC4),
-        new RenderPipeline.UniformDescription("frx_heldLightInnerRadius", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_heldLightOuterRadius", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_playerMood", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("canpipe_playerFlags", UniformType.INT),
-        new RenderPipeline.UniformDescription("canpipe_effectsFlags", UniformType.valueOf("IVEC2")),
+    // player
+    private static final UniformBuffer PLAYER = new UniformBuffer();
+    private static final FloatUniform FRX_EFFECT_MODIFIER = PLAYER.add(new FloatUniform());
+    private static final FloatUniform CANPIPE_DARKNESS_FACTOR = PLAYER.add(new FloatUniform());
+    private static final Vec3Uniform FRX_EYE_POS = PLAYER.add(new Vec3Uniform());
+    private static final Vec2Uniform FRX_EYE_BRIGHTNESS = PLAYER.add(new Vec2Uniform());
+    private static final Vec2Uniform FRX_SMOOTHED_EYE_BRIGHTNESS = PLAYER.add(new Vec2Uniform());
+    private static final Vec4Uniform FRX_HELD_LIGHT = PLAYER.add(new Vec4Uniform());
+    private static final FloatUniform FRX_HELD_LIGHT_INNER_RADIUS = PLAYER.add(new FloatUniform());
+    private static final FloatUniform FRX_HELD_LIGHT_OUTER_RADIUS = PLAYER.add(new FloatUniform());
+    private static final FloatUniform FRX_PLAYER_MOOD = PLAYER.add(new FloatUniform());
+    private static final IntUniform CANPIPE_PLAYER_FLAGS = PLAYER.add(new IntUniform());
+    private static final IVec2Uniform CANPIPE_EFFECTS_FLAGS = PLAYER.add(new IVec2Uniform());
+    public static final GpuBuffer PLAYER_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe player UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, PLAYER.size()
+    );
 
-        // world.glsl
-        new RenderPipeline.UniformDescription("canpipe_renderFrames", UniformType.INT),
-        new RenderPipeline.UniformDescription("canpipe_fixedOrDayTime", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_renderSeconds", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_worldDay", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_worldTime", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_skyLightVector", UniformType.VEC3),
-        new RenderPipeline.UniformDescription("frx_moonSize", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_skyAngleRadians", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("canpipe_sunriseOrSunsetColor", UniformType.VEC3),
-        new RenderPipeline.UniformDescription("frx_skyFlashStrength", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_ambientIntensity", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("frx_emissiveColor", UniformType.VEC4),
-        new RenderPipeline.UniformDescription("canpipe_worldFlags", UniformType.INT),
-        new RenderPipeline.UniformDescription("canpipe_weatherGradients", UniformType.VEC4),
+    // world
+    private static final UniformBuffer WORLD = new UniformBuffer();
+    private static final IntUniform CANPIPE_RENDER_FRAMES = WORLD.add(new IntUniform());
+    private static final IntUniform CANPIPE_WORLD_FLAGS = WORLD.add(new IntUniform());
+    private static final FloatUniform CANPIPE_FIXED_OR_DAY_TIME = WORLD.add(new FloatUniform());
+    private static final FloatUniform FRX_RENDER_SECONDS = WORLD.add(new FloatUniform());
+    private static final FloatUniform FRX_WORLD_DAY = WORLD.add(new FloatUniform());
+    private static final FloatUniform FRX_WORLD_TIME = WORLD.add(new FloatUniform());
+    private static final FloatUniform FRX_MOON_SIZE = WORLD.add(new FloatUniform());
+    private static final FloatUniform FRX_SKY_ANGLE_RADIANS = WORLD.add(new FloatUniform());
+    private static final FloatUniform FRX_SKY_FLASH_STRENGTH = WORLD.add(new FloatUniform());
+    private static final FloatUniform FRX_AMBIENT_INTENSITY = WORLD.add(new FloatUniform());
+    private static final Vec4Uniform FRX_EMISSIVE_COLOR = WORLD.add(new Vec4Uniform());
+    private static final Vec4Uniform CANPIPE_WEATHER_GRADIENTS = WORLD.add(new Vec4Uniform());
+    private static final Vec3Uniform FRX_SKY_LIGHT_VECTOR = WORLD.add(new Vec3Uniform());
+    private static final Vec3Uniform CANPIPE_SUNRISE_OR_SUNSET_COLOR = WORLD.add(new Vec3Uniform());
+    public static final GpuBuffer WORLD_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe world UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, WORLD.size()
+    );
 
-        // fog.glsl
-        new RenderPipeline.UniformDescription("frx_fogColor", UniformType.VEC4),
-        new RenderPipeline.UniformDescription("frx_fogEnabled", UniformType.INT)
+    // fog
+    private static final UniformBuffer FOG = new UniformBuffer();
+    private static final Vec4Uniform FRX_FOG_COLOR = FOG.add(new Vec4Uniform());
+    private static final FloatUniform FRX_FOG_START = FOG.add(new FloatUniform());
+    private static final FloatUniform FRX_FOG_END = FOG.add(new FloatUniform());
+    private static final IntUniform FRX_FOG_ENABLED = FOG.add(new IntUniform());
+    public static final GpuBuffer FOG_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe fog UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, FOG.size()
     );
 
     public final Shader vertexShader;
     public final Shader fragmentShader;
-    protected final List<String> samplersUniformNames;
 
-    public final Uniform
+    private static final List<RenderPipeline.UniformDescription> DEFAULT_UNIFORMS = List.of(
         // accessibility.glsl
-        FRX_FOV_EFFECTS,
-        FRX_DISTORTION_EFFECTS,
-        FRX_HIDE_LIGHTNING_FLASHES,
-        FRX_DARKNESS_PULSING,
-        FRX_HIGH_CONTRAST,
-        FRX_DAMAGE_TILT,
-        FRX_GLINT_STRENGTH,
-        FRX_GLINT_SPEED,
+        new RenderPipeline.UniformDescription("frx_ub_accessibility", UniformType.UNIFORM_BUFFER),
 
         // view.glsl
-        FRX_MODEL_TO_WORLD,
-        CANPIPE_ORIGIN_TYPE,
-        FRX_CAMERA_POS,
-        FRX_CAMERA_VIEW,
-        FRX_LAST_CAMERA_POS,
-        FRX_INVERSE_VIEW_MATRIX,
-        FRX_LAST_VIEW_MATRIX,
-        FRX_INVERSE_PROJECTION_MATRIX,
-        FRX_LAST_PROJECTION_MATRIX,
-        FRX_INVERSE_SHADOW_VIEW_MATRIX,
-        FRX_SHADOW_VIEW_MATRIX,
-        CANPIPE_SHADOW_CENTER_0,
-        CANPIPE_SHADOW_CENTER_1,
-        CANPIPE_SHADOW_CENTER_2,
-        CANPIPE_SHADOW_CENTER_3,
-        FRX_VIEW_DISTANCE,
-        FRX_VIEW_BRIGHTNESS,
-        CANPIPE_VIEW_FLAGS,
-        CANPIPE_SCREEN_SIZE,
+        new RenderPipeline.UniformDescription("frx_ub_view", UniformType.UNIFORM_BUFFER),
 
         // player.glsl
-        FRX_EFFECT_MODIFIER,
-        CANPIPE_DARKNESS_FACTOR,
-        FRX_EYE_POS,
-        FRX_EYE_BRIGHTNESS,
-        FRX_SMOOTHED_EYE_BRIGHTNESS,
-        FRX_HELD_LIGHT,
-        FRX_HELD_LIGHT_OUTER_RADIUS,
-        FRX_HELD_LIGHT_INNER_RADIUS,
-        FRX_PLAYER_MOOD,
-        CANPIPE_PLAYER_FLAGS,
-        CANPIPE_EFFECTS_FLAGS,
+        new RenderPipeline.UniformDescription("frx_ub_player", UniformType.UNIFORM_BUFFER),
 
         // world.glsl
-        CANPIPE_RENDER_FRAMES,
-        CANPIPE_FIXED_OR_DAY_TIME,
-        FRX_RENDER_SECONDS,
-        FRX_WORLD_DAY,
-        FRX_WORLD_TIME,
-        FRX_MOON_SIZE,
-        FRX_SKY_LIGHT_VECTOR,
-        FRX_SKY_ANGLE_RADIANS,
-        CANPIPE_SUNRISE_OR_SUNSET_COLOR,
-        FRX_SKY_FLASH_STRENGTH,
-        FRX_AMBIENT_INTENSITY,
-        FRX_EMISSIVE_COLOR,
-        CANPIPE_WORLD_FLAGS,
-        CANPIPE_WEATHER_GRADIENTS,
+        new RenderPipeline.UniformDescription("frx_ub_world", UniformType.UNIFORM_BUFFER),
 
         // fog.glsl
-        FRX_FOG_COLOR,
-        FRX_FOG_ENABLED;
+        new RenderPipeline.UniformDescription("frx_ub_fog", UniformType.UNIFORM_BUFFER),
+
+        // mc
+        new RenderPipeline.UniformDescription("mc_ub_dynamic_transforms", UniformType.UNIFORM_BUFFER),
+        new RenderPipeline.UniformDescription("mc_ub_projection", UniformType.UNIFORM_BUFFER)
+    );
 
     private static int _link(String name, GlShaderModule vertexShader, GlShaderModule fragmentShader, VertexFormat vertexFormat, String debugLabel) {
         try {
@@ -216,7 +188,7 @@ public abstract class ProgramBase extends GlProgram {
          * - Forget-me-not v0.8.0 "depth_downsample" program
          *   (https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5)
          */
-        {
+        /*{
             List<String> activeUniforms = new ArrayList<>();
             List<String> unknownUniforms = new ArrayList<>();
             try (MemoryStack memoryStack = MemoryStack.stackPush()) {
@@ -242,109 +214,29 @@ public abstract class ProgramBase extends GlProgram {
                 }
             }
             this.samplersUniformNames = Collections.unmodifiableList(samplers);
+        }*/
+
+        this.setupUniforms(uniforms, samplers);
+
+        // Some dirty aliasing hacks
+        var dynamicTransformsUB = getUniforms().remove("mc_ub_dynamic_transforms");
+        if (dynamicTransformsUB != null) {
+            getUniforms().put("DynamicTransforms", dynamicTransformsUB);
         }
 
-        setupUniforms(uniforms, samplers);
-
-        // accessibility.glsl
-        this.FRX_FOV_EFFECTS = getManuallyAppliedUniform("frx_fovEffects");
-        this.FRX_DISTORTION_EFFECTS = getManuallyAppliedUniform("frx_distortionEffects");
-        this.FRX_HIDE_LIGHTNING_FLASHES = getManuallyAppliedUniform("frx_hideLightningFlashes");
-        this.FRX_DARKNESS_PULSING = getManuallyAppliedUniform("frx_darknessPulsing");
-        this.FRX_HIGH_CONTRAST = getManuallyAppliedUniform("frx_highContrast");
-        this.FRX_DAMAGE_TILT = getManuallyAppliedUniform("frx_damageTilt");
-        this.FRX_GLINT_STRENGTH = getManuallyAppliedUniform("frx_glintStrength");
-        this.FRX_GLINT_SPEED = getManuallyAppliedUniform("frx_glintSpeed");
-
-        // view.glsl
-        this.FRX_MODEL_TO_WORLD = getManuallyAppliedUniform("frx_modelToWorld");
-        this.CANPIPE_ORIGIN_TYPE = getUniform("canpipe_originType");  // non-manual
-        this.FRX_CAMERA_POS = getManuallyAppliedUniform("frx_cameraPos");
-        this.FRX_CAMERA_VIEW = getManuallyAppliedUniform("frx_cameraView");
-        this.FRX_LAST_CAMERA_POS = getManuallyAppliedUniform("frx_lastCameraPos");
-        this.FRX_INVERSE_VIEW_MATRIX = getManuallyAppliedUniform("frx_inverseViewMatrix");
-        this.FRX_LAST_VIEW_MATRIX = getManuallyAppliedUniform("frx_lastViewMatrix");
-        this.FRX_INVERSE_PROJECTION_MATRIX = getManuallyAppliedUniform("frx_inverseProjectionMatrix");
-        this.FRX_LAST_PROJECTION_MATRIX = getManuallyAppliedUniform("frx_lastProjectionMatrix");
-        this.FRX_SHADOW_VIEW_MATRIX = getManuallyAppliedUniform("frx_shadowViewMatrix");
-        this.FRX_INVERSE_SHADOW_VIEW_MATRIX = getManuallyAppliedUniform("frx_inverseShadowViewMatrix");
-        this.CANPIPE_SHADOW_CENTER_0 = getManuallyAppliedUniform("canpipe_shadowCenter_0");
-        this.CANPIPE_SHADOW_CENTER_1 = getManuallyAppliedUniform("canpipe_shadowCenter_1");
-        this.CANPIPE_SHADOW_CENTER_2 = getManuallyAppliedUniform("canpipe_shadowCenter_2");
-        this.CANPIPE_SHADOW_CENTER_3 = getManuallyAppliedUniform("canpipe_shadowCenter_3");
-        this.FRX_VIEW_DISTANCE = getManuallyAppliedUniform("frx_viewDistance");
-        this.FRX_VIEW_BRIGHTNESS = getManuallyAppliedUniform("frx_viewBrightness");
-        this.CANPIPE_VIEW_FLAGS = getManuallyAppliedUniform("canpipe_viewFlags");
-        this.CANPIPE_SCREEN_SIZE = getManuallyAppliedUniform("canpipe_screenSize");
-
-        // player.glsl
-        this.FRX_EFFECT_MODIFIER = getManuallyAppliedUniform("frx_effectModifier");
-        this.CANPIPE_DARKNESS_FACTOR = getManuallyAppliedUniform("canpipe_darknessFactor");
-        this.FRX_EYE_POS = getManuallyAppliedUniform("frx_eyePos");
-        this.FRX_EYE_BRIGHTNESS = getManuallyAppliedUniform("frx_eyeBrightness");
-        this.FRX_SMOOTHED_EYE_BRIGHTNESS = getManuallyAppliedUniform("frx_smoothedEyeBrightness");
-        this.FRX_HELD_LIGHT = getManuallyAppliedUniform("frx_heldLight");
-        this.FRX_HELD_LIGHT_INNER_RADIUS = getManuallyAppliedUniform("frx_heldLightInnerRadius");
-        this.FRX_HELD_LIGHT_OUTER_RADIUS = getManuallyAppliedUniform("frx_heldLightOuterRadius");
-        this.FRX_PLAYER_MOOD = getManuallyAppliedUniform("frx_playerMood");
-        this.CANPIPE_PLAYER_FLAGS = getManuallyAppliedUniform("canpipe_playerFlags");
-        this.CANPIPE_EFFECTS_FLAGS = getManuallyAppliedUniform("canpipe_effectsFlags");
-
-        // world.glsl
-        this.CANPIPE_RENDER_FRAMES = getManuallyAppliedUniform("canpipe_renderFrames");
-        this.CANPIPE_FIXED_OR_DAY_TIME = getManuallyAppliedUniform("canpipe_fixedOrDayTime");
-        this.FRX_RENDER_SECONDS = getManuallyAppliedUniform("frx_renderSeconds");
-        this.FRX_WORLD_DAY = getManuallyAppliedUniform("frx_worldDay");
-        this.FRX_WORLD_TIME = getManuallyAppliedUniform("frx_worldTime");
-        this.FRX_MOON_SIZE = getManuallyAppliedUniform("frx_moonSize");
-        this.FRX_SKY_LIGHT_VECTOR = getManuallyAppliedUniform("frx_skyLightVector");
-        this.FRX_SKY_ANGLE_RADIANS = getManuallyAppliedUniform("frx_skyAngleRadians");
-        this.CANPIPE_SUNRISE_OR_SUNSET_COLOR = getManuallyAppliedUniform("canpipe_sunriseOrSunsetColor");
-        this.FRX_SKY_FLASH_STRENGTH = getManuallyAppliedUniform("frx_skyFlashStrength");
-        this.FRX_AMBIENT_INTENSITY = getManuallyAppliedUniform("frx_ambientIntensity");
-        this.FRX_EMISSIVE_COLOR = getManuallyAppliedUniform("frx_emissiveColor");
-        this.CANPIPE_WORLD_FLAGS = getManuallyAppliedUniform("canpipe_worldFlags");
-        this.CANPIPE_WEATHER_GRADIENTS = getManuallyAppliedUniform("canpipe_weatherGradients");
-
-        // fog.glsl
-        this.FRX_FOG_COLOR = getManuallyAppliedUniform("frx_fogColor");
-        this.FRX_FOG_ENABLED = getManuallyAppliedUniform("frx_fogEnabled");
-    }
-
-    private Uniform getManuallyAppliedUniform(String name) {
-        Uniform u = this.getUniform(name);
-        if (u != null) {
-            // it won't be uploaded in GlCommandEncoder.trySetup()
-            this.getUniforms().remove(u);
-        }
-        return u;
-    }
-
-    @Override
-    public Uniform getUniform(String name) {
-        // :evil:, renaming some vanilla uniforms
-        if (name.equals("ModelViewMat")) { name = "frx_viewMatrix"; }
-        if (name.equals("ProjMat")) { name = "frx_projectionMatrix"; }
-        if (name.equals("FogStart")) { name = "frx_fogStart"; }
-        if (name.equals("FogEnd")) { name = "frx_fogEnd"; }
-        if (name.equals("ModelOffset")) { name = "canpipe_modelToCamera"; }
-        return super.getUniform(name);
-    }
-
-    @Override
-    public void setDefaultUniforms(Mode mode, Matrix4f viewMatrix, Matrix4f projectionMatrix, float w, float h) {
-        super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, w, h);
-        if (this.CANPIPE_ORIGIN_TYPE != null) {
-            this.CANPIPE_ORIGIN_TYPE.set(CanPipe.GlobalState.originType);
+        var projectionUB = getUniforms().remove("mc_ub_projection");
+        if (projectionUB != null) {
+            getUniforms().put("Projection", projectionUB);
         }
     }
 
-    public void setFREXUniforms() {
+    public static void updateFREXUniforms() {
         Minecraft mc = Minecraft.getInstance();
         Pipeline p = Pipelines.getCurrent();
         GameRendererExtended gre = (GameRendererExtended) mc.gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
         Camera camera = mc.gameRenderer.getMainCamera();
+        var cameraPos = camera.getPosition();
         float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         Vec3 eyePosition = new Vec3(
             Mth.lerp(pt, mc.player.xo, mc.player.getX()),
@@ -352,117 +244,43 @@ public abstract class ProgramBase extends GlProgram {
             Mth.lerp(pt, mc.player.zo, mc.player.getZ())
         );
 
-        GlStateManager._glUseProgram(this.getProgramId());
-
-        if (this.FRX_INVERSE_VIEW_MATRIX != null) {
-            this.FRX_INVERSE_VIEW_MATRIX.set(gre.canpipe_getViewMatrix().invert(new Matrix4f()));
-            this.FRX_INVERSE_VIEW_MATRIX.upload();
-        }
-        if (this.FRX_INVERSE_PROJECTION_MATRIX != null) {
-            this.FRX_INVERSE_PROJECTION_MATRIX.set(gre.canpipe_getProjectionMatrix().invert(new Matrix4f()));
-            this.FRX_INVERSE_PROJECTION_MATRIX.upload();
-        }
+        FRX_INVERSE_VIEW_MATRIX.value.set(gre.canpipe_getViewMatrix().invert(new Matrix4f()));
+        FRX_INVERSE_PROJECTION_MATRIX.value.set(gre.canpipe_getProjectionMatrix().invert(new Matrix4f()));
 
         // accessibility.glsl
-        if (this.FRX_FOV_EFFECTS != null) {
-            this.FRX_FOV_EFFECTS.set((float)(double) mc.options.fovEffectScale().get());
-            this.FRX_FOV_EFFECTS.upload();
-        }
-        if (this.FRX_DISTORTION_EFFECTS != null) {
-            this.FRX_DISTORTION_EFFECTS.set((float)(double) mc.options.screenEffectScale().get());
-            this.FRX_DISTORTION_EFFECTS.upload();
-        }
-        if (this.FRX_HIDE_LIGHTNING_FLASHES != null) {
-            this.FRX_HIDE_LIGHTNING_FLASHES.set(mc.options.hideLightningFlash().get() ? 1 : 0);
-            this.FRX_HIDE_LIGHTNING_FLASHES.upload();
-        }
-        if (this.FRX_DARKNESS_PULSING != null) {
-            this.FRX_DARKNESS_PULSING.set((float)(double) mc.options.screenEffectScale().get());
-            this.FRX_DARKNESS_PULSING.upload();
-        }
-        if (this.FRX_HIGH_CONTRAST != null) {
-            this.FRX_HIGH_CONTRAST.set(mc.options.highContrast().get() ? 1 : 0);
-            this.FRX_HIGH_CONTRAST.upload();
-        }
-        if (this.FRX_DAMAGE_TILT != null) {
-            this.FRX_DAMAGE_TILT.set((float)(double) mc.options.damageTiltStrength().get());
-            this.FRX_DAMAGE_TILT.upload();
-        }
-        if (this.FRX_GLINT_STRENGTH != null) {
-            this.FRX_GLINT_STRENGTH.set((float)(double) mc.options.glintStrength().get());
-            this.FRX_GLINT_STRENGTH.upload();
-        }
-        if (this.FRX_GLINT_SPEED != null) {
-            this.FRX_GLINT_SPEED.set((float)(double) mc.options.glintSpeed().get());
-            this.FRX_GLINT_SPEED.upload();
+        FRX_FOV_EFFECTS.value = (float)(double) mc.options.fovEffectScale().get();
+        FRX_DISTORTION_EFFECTS.value = (float)(double) mc.options.screenEffectScale().get();
+        FRX_HIDE_LIGHTNING_FLASHES.value = mc.options.hideLightningFlash().get() ? 1 : 0;
+        FRX_DARKNESS_PULSING.value = (float)(double) mc.options.screenEffectScale().get();
+        FRX_HIGH_CONTRAST.value = mc.options.highContrast().get() ? 1 : 0;
+        FRX_DAMAGE_TILT.value = (float)(double) mc.options.damageTiltStrength().get();
+        FRX_GLINT_STRENGTH.value = (float)(double) mc.options.glintStrength().get();
+        FRX_GLINT_SPEED.value = (float)(double) mc.options.glintSpeed().get();
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, ACCESSIBILITY.size());
+            ACCESSIBILITY.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(ACCESSIBILITY_UBO.slice(), builder.get());
         }
 
         // view.glsl
-        if (this.FRX_MODEL_TO_WORLD != null) {
-            var cameraPos = camera.getPosition();
-            this.FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
-            this.FRX_MODEL_TO_WORLD.upload();
-        }
-        if (this.CANPIPE_ORIGIN_TYPE != null) {
-            this.CANPIPE_ORIGIN_TYPE.set(0);  // screen
-            this.CANPIPE_ORIGIN_TYPE.upload();
-        }
-
-        if (this.FRX_CAMERA_POS != null) {
-            this.FRX_CAMERA_POS.set(camera.getPosition().toVector3f());
-            this.FRX_CAMERA_POS.upload();
-        }
-        if (this.FRX_CAMERA_VIEW != null) {
-            this.FRX_CAMERA_VIEW.set(
-                Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).toVector3f()
-            );
-            this.FRX_CAMERA_VIEW.upload();
-        }
-        if (this.FRX_LAST_CAMERA_POS != null) {
-            this.FRX_LAST_CAMERA_POS.set(gre.canpipe_getLastCameraPos());
-            this.FRX_LAST_CAMERA_POS.upload();
-        }
-        if (this.FRX_LAST_VIEW_MATRIX != null) {
-            this.FRX_LAST_VIEW_MATRIX.set(gre.canpipe_getLastViewMatrix());
-            this.FRX_LAST_VIEW_MATRIX.upload();
-        }
-        if (this.FRX_LAST_PROJECTION_MATRIX != null) {
-            this.FRX_LAST_PROJECTION_MATRIX.set(gre.canpipe_getLastProjectionMatrix());
-            this.FRX_LAST_PROJECTION_MATRIX.upload();
-        }
-        if (this.FRX_SHADOW_VIEW_MATRIX != null) {
-            this.FRX_SHADOW_VIEW_MATRIX.set(gre.canpipe_getShadowViewMatrix());
-            this.FRX_SHADOW_VIEW_MATRIX.upload();
-        }
-        if (this.FRX_INVERSE_SHADOW_VIEW_MATRIX != null) {
-            this.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(gre.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
-            this.FRX_INVERSE_SHADOW_VIEW_MATRIX.upload();
-        }
-        if (this.CANPIPE_SHADOW_CENTER_0 != null) {
-            this.CANPIPE_SHADOW_CENTER_0.set(gre.canpipe_getShadowCenters()[0]);
-            this.CANPIPE_SHADOW_CENTER_0.upload();
-        }
-        if (this.CANPIPE_SHADOW_CENTER_1 != null) {
-            this.CANPIPE_SHADOW_CENTER_1.set(gre.canpipe_getShadowCenters()[1]);
-            this.CANPIPE_SHADOW_CENTER_1.upload();
-        }
-        if (this.CANPIPE_SHADOW_CENTER_2 != null) {
-            this.CANPIPE_SHADOW_CENTER_2.set(gre.canpipe_getShadowCenters()[2]);
-            this.CANPIPE_SHADOW_CENTER_2.upload();
-        }
-        if (this.CANPIPE_SHADOW_CENTER_3 != null) {
-            this.CANPIPE_SHADOW_CENTER_3.set(gre.canpipe_getShadowCenters()[3]);
-            this.CANPIPE_SHADOW_CENTER_3.upload();
-        }
-        if (this.FRX_VIEW_DISTANCE != null) {
-            this.FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
-            this.FRX_VIEW_DISTANCE.upload();
-        }
-        if (this.FRX_VIEW_BRIGHTNESS != null) {
-            this.FRX_VIEW_BRIGHTNESS.set(mc.options.gamma().get().floatValue());
-            this.FRX_VIEW_BRIGHTNESS.upload();
-        }
-        if (this.CANPIPE_VIEW_FLAGS != null) {
+        FRX_MODEL_TO_WORLD.value.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
+        CANPIPE_ORIGIN_TYPE.value = 0;  // screen
+        FRX_CAMERA_POS.value.set(cameraPos.toVector3f());
+        FRX_CAMERA_VIEW.value.set(
+            Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).toVector3f()
+        );
+        FRX_LAST_CAMERA_POS.value.set(gre.canpipe_getLastCameraPos());
+        FRX_LAST_VIEW_MATRIX.value.set(gre.canpipe_getLastViewMatrix());
+        FRX_LAST_PROJECTION_MATRIX.value.set(gre.canpipe_getLastProjectionMatrix());
+        FRX_SHADOW_VIEW_MATRIX.value.set(gre.canpipe_getShadowViewMatrix()); 
+        FRX_INVERSE_SHADOW_VIEW_MATRIX.value.set(gre.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
+        CANPIPE_SHADOW_CENTER_0.value.set(gre.canpipe_getShadowCenters()[0]);
+        CANPIPE_SHADOW_CENTER_1.value.set(gre.canpipe_getShadowCenters()[1]);
+        CANPIPE_SHADOW_CENTER_2.value.set(gre.canpipe_getShadowCenters()[2]);
+        CANPIPE_SHADOW_CENTER_3.value.set(gre.canpipe_getShadowCenters()[3]);
+        FRX_VIEW_DISTANCE.value = mc.options.renderDistance().get() * 16.0F;
+        FRX_VIEW_BRIGHTNESS.value = mc.options.gamma().get().floatValue();
+        {
             int result = 0;
 
             BlockPos cameraBlockPos = BlockPos.containing(camera.getPosition());
@@ -483,19 +301,21 @@ public abstract class ProgramBase extends GlProgram {
                 result |= 1 << 3;
             }
 
-            this.CANPIPE_VIEW_FLAGS.set(result);
-            this.CANPIPE_VIEW_FLAGS.upload();
+            CANPIPE_VIEW_FLAGS.value = result;
         }
-        if (this.CANPIPE_SCREEN_SIZE != null) {
-            this.CANPIPE_SCREEN_SIZE.set(
-                (float) mc.getWindow().getWidth(),
-                (float) mc.getWindow().getHeight()
-            );
-            this.CANPIPE_SCREEN_SIZE.upload();
+        CANPIPE_SCREEN_SIZE.value.set(
+            (float) mc.getWindow().getWidth(),
+            (float) mc.getWindow().getHeight()
+        );
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, VIEW.size());
+            VIEW.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(VIEW_UBO.slice(), builder.get());
         }
 
         // player.glsl
-        if (this.FRX_EFFECT_MODIFIER != null) {
+        {
             float effectModifier = 0.0F;
             if (mc.player.hasEffect(MobEffects.NIGHT_VISION)) {
                 effectModifier = GameRenderer.getNightVisionScale(mc.player, 0.0F);
@@ -503,26 +323,15 @@ public abstract class ProgramBase extends GlProgram {
             else if (mc.player.hasEffect(MobEffects.CONDUIT_POWER)) {
                 effectModifier = mc.player.getWaterVision();
             }
-            this.FRX_EFFECT_MODIFIER.set(effectModifier);
-            this.FRX_EFFECT_MODIFIER.upload();
+            FRX_EFFECT_MODIFIER.value = effectModifier;
         }
-        if (this.CANPIPE_DARKNESS_FACTOR != null) {
+        {
             float darknessScale = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getDarknessScale();
-            this.CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));
-            this.CANPIPE_DARKNESS_FACTOR.upload();
+            CANPIPE_DARKNESS_FACTOR.value = Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f);
         }
-        if (this.FRX_EYE_POS != null) {
-            this.FRX_EYE_POS.set(eyePosition.toVector3f());
-            this.FRX_EYE_POS.upload();
-        }
-        if (this.FRX_EYE_BRIGHTNESS != null) {
-            this.FRX_EYE_BRIGHTNESS.set(lre.canpipe_getEyeBlockLight(), lre.canpipe_getEyeSkyLight());
-            this.FRX_EYE_BRIGHTNESS.upload();
-        }
-        if (this.FRX_SMOOTHED_EYE_BRIGHTNESS != null) {
-            this.FRX_SMOOTHED_EYE_BRIGHTNESS.set(lre.canpipe_getSmoothedEyeBlockLight(), lre.canpipe_getSmoothedEyeSkyLight());
-            this.FRX_SMOOTHED_EYE_BRIGHTNESS.upload();
-        }
+        FRX_EYE_POS.value.set(eyePosition.toVector3f());
+        FRX_EYE_BRIGHTNESS.value.set(lre.canpipe_getEyeBlockLight(), lre.canpipe_getEyeSkyLight());
+        FRX_SMOOTHED_EYE_BRIGHTNESS.value.set(lre.canpipe_getSmoothedEyeBlockLight(), lre.canpipe_getSmoothedEyeSkyLight());
 
         Light light = ((Supplier<Light>)() -> {
             Item item = mc.player.getMainHandItem().getItem();
@@ -533,28 +342,18 @@ public abstract class ProgramBase extends GlProgram {
             return Lights.get(itemLocation);
         }).get();
 
-        if (this.FRX_HELD_LIGHT != null) {
+        {
             if (light != null) {
-                this.FRX_HELD_LIGHT.set(light.red, light.green, light.blue, light.intensity);
+                FRX_HELD_LIGHT.value.set(light.red, light.green, light.blue, light.intensity);
+                FRX_HELD_LIGHT_INNER_RADIUS.value = light.innerConeAngle;
+                FRX_HELD_LIGHT_OUTER_RADIUS.value = light.outerConeAngle;
             }
             else {
-                this.FRX_HELD_LIGHT.set(0.0F, 0.0F, 0.0F, 0.0F);
+                FRX_HELD_LIGHT.value.set(0.0F);
             }
-            this.FRX_HELD_LIGHT.upload();
         }
-        if (this.FRX_HELD_LIGHT_INNER_RADIUS != null && light != null) {
-            this.FRX_HELD_LIGHT_INNER_RADIUS.set(light.innerConeAngle);
-            this.FRX_HELD_LIGHT_INNER_RADIUS.upload();
-        }
-        if (this.FRX_HELD_LIGHT_OUTER_RADIUS != null && light != null) {
-            this.FRX_HELD_LIGHT_OUTER_RADIUS.set(light.outerConeAngle);
-            this.FRX_HELD_LIGHT_OUTER_RADIUS.upload();
-        }
-        if (this.FRX_PLAYER_MOOD != null) {
-            this.FRX_PLAYER_MOOD.set(mc.player.getCurrentMood());
-            this.FRX_PLAYER_MOOD.upload();
-        }
-        if (this.CANPIPE_PLAYER_FLAGS != null) {
+        FRX_PLAYER_MOOD.value = mc.player.getCurrentMood();
+        {
             int result = 0;
             BlockPos bp = BlockPos.containing(eyePosition);
             Iterable<TagKey<Fluid>> fluidTags = ()
@@ -582,10 +381,9 @@ public abstract class ProgramBase extends GlProgram {
             result |= (mc.player.isInWaterOrRain() ? 1 : 0)                 << 13;
             result |= (mc.level.getBlockState(bp).is(Blocks.POWDER_SNOW) ? 1 : 0) << 14;
             result |= (mc.player.isFreezing() ? 1 : 0)                            << 15;
-            this.CANPIPE_PLAYER_FLAGS.set(result);
-            this.CANPIPE_PLAYER_FLAGS.upload();
+            CANPIPE_PLAYER_FLAGS.value = result;
         }
-        if (this.CANPIPE_EFFECTS_FLAGS != null) {
+        {
             long result = 0;
             result |= (mc.player.hasEffect(MobEffects.SPEED) ? 1L : 0L)      << 0;
             result |= (mc.player.hasEffect(MobEffects.SLOWNESS) ? 1L : 0L)   << 1;
@@ -620,45 +418,28 @@ public abstract class ProgramBase extends GlProgram {
             result |= (mc.player.hasEffect(MobEffects.BAD_OMEN) ? 1L : 0L)            << 30;
             result |= (mc.player.hasEffect(MobEffects.HERO_OF_THE_VILLAGE) ? 1L : 0L) << 31;
             result |= (mc.player.hasEffect(MobEffects.DARKNESS) ? 1L : 0L)            << 32;
-            this.CANPIPE_EFFECTS_FLAGS.set((int)(result & 0xFFFFFFFFL), (int)(result >>> 32));
-            this.CANPIPE_EFFECTS_FLAGS.upload();
+            CANPIPE_EFFECTS_FLAGS.value.set((int)(result & 0xFFFFFFFFL), (int)(result >>> 32));
+        }
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, PLAYER.size());
+            PLAYER.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(PLAYER_UBO.slice(), builder.get());
         }
 
         // world
-        if (this.CANPIPE_RENDER_FRAMES != null) {
-            this.CANPIPE_RENDER_FRAMES.set(gre.canpipe_getFrame());
-            this.CANPIPE_RENDER_FRAMES.upload();
-        }
-        if (this.FRX_RENDER_SECONDS != null) {
-            this.FRX_RENDER_SECONDS.set(gre.canpipe_getRenderSeconds());
-            this.FRX_RENDER_SECONDS.upload();
-        }
-        if (this.CANPIPE_FIXED_OR_DAY_TIME != null) {
+        CANPIPE_RENDER_FRAMES.value = gre.canpipe_getFrame();
+        FRX_RENDER_SECONDS.value = gre.canpipe_getRenderSeconds();
+        {
             long ticks = mc.level.dimensionType().fixedTime().orElse(mc.level.getDayTime());
-            this.CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
-            this.CANPIPE_FIXED_OR_DAY_TIME.upload();
+            CANPIPE_FIXED_OR_DAY_TIME.value = (ticks % 24000L) / 24000.0F;
         }
-        if (this.FRX_WORLD_DAY != null) {
-            this.FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F);
-            this.FRX_WORLD_DAY.upload();
-        }
-        if (this.FRX_WORLD_TIME != null) {
-            this.FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
-            this.FRX_WORLD_TIME.upload();
-        }
-        if (this.FRX_MOON_SIZE != null) {
-            this.FRX_MOON_SIZE.set(mc.level.getMoonBrightness());
-            this.FRX_MOON_SIZE.upload();
-        }
-        if (this.FRX_SKY_LIGHT_VECTOR != null) {
-            this.FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f(), pt));
-            this.FRX_SKY_LIGHT_VECTOR.upload();
-        }
-        if (this.FRX_SKY_ANGLE_RADIANS != null) {
-            this.FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(pt));
-            this.FRX_SKY_ANGLE_RADIANS.upload();
-        }
-        if (this.CANPIPE_SUNRISE_OR_SUNSET_COLOR != null) {
+        FRX_WORLD_DAY.value = mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F;
+        FRX_WORLD_TIME.value = mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F;
+        FRX_MOON_SIZE.value = mc.level.getMoonBrightness();
+        FRX_SKY_LIGHT_VECTOR.value.set(p.getSunOrMoonDir(mc.level, new Vector3f(), pt));
+        FRX_SKY_ANGLE_RADIANS.value = mc.level.getSunAngle(pt);
+        {
             var timeOfDay = mc.level.getTimeOfDay(pt);
             var result = new Vector3f(1.0F);
             if (
@@ -669,27 +450,21 @@ public abstract class ProgramBase extends GlProgram {
                 result.set((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
                 result.div(255.0F);
             }
-            this.CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
-            this.CANPIPE_SUNRISE_OR_SUNSET_COLOR.upload();
+            CANPIPE_SUNRISE_OR_SUNSET_COLOR.value.set(result);
         }
-        if (this.FRX_SKY_FLASH_STRENGTH != null) {
+        {
             float skyFlashStrength = Math.max(0.0F, mc.level.getSkyFlashTime()-pt);
-            this.FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);
-            this.FRX_SKY_FLASH_STRENGTH.upload();
+            FRX_SKY_FLASH_STRENGTH.value = skyFlashStrength;
         }
-        if (this.FRX_AMBIENT_INTENSITY != null) {
-            // Not sure why partial tick is 1.0 (LightTexture.updateLigthTexture)
-            this.FRX_AMBIENT_INTENSITY.set(mc.level.getSkyDarken(1.0F));
-            this.FRX_AMBIENT_INTENSITY.upload();
-        }
-        if (this.FRX_EMISSIVE_COLOR != null) {
+        // Not sure why partial tick is 1.0 (LightTexture.updateLigthTexture)
+        FRX_AMBIENT_INTENSITY.value = mc.level.getSkyDarken(1.0F);
+        {
             Vector4f emissiveColor = (
                 (LightTextureExtended) mc.gameRenderer.lightTexture()
             ).canpipe_getEmissiveColor();
-            this.FRX_EMISSIVE_COLOR.set(emissiveColor);
-            this.FRX_EMISSIVE_COLOR.upload();
+            FRX_EMISSIVE_COLOR.value.set(emissiveColor);
         }
-        if (this.CANPIPE_WORLD_FLAGS != null) {
+        {
             int value = mc.level.dimensionType().hasSkyLight() ? 1 : 0;
 
             int dimension = 3;
@@ -708,40 +483,40 @@ public abstract class ProgramBase extends GlProgram {
             value |= (mc.level.isThundering() ? 1 : 0) << 4;
             value |= (mc.level.effects().constantAmbientLight() ? 1 : 0) << 5;
 
-            this.CANPIPE_WORLD_FLAGS.set(value);
-            this.CANPIPE_WORLD_FLAGS.upload();
+            CANPIPE_WORLD_FLAGS.value = value;
         }
-        if (this.CANPIPE_WEATHER_GRADIENTS != null) {
-            this.CANPIPE_WEATHER_GRADIENTS.set(
-                mc.level.getRainLevel(pt),
-                mc.level.getThunderLevel(pt),
-                lre.canpipe_getSmoothedRainGradient(),
-                lre.canpipe_getSmoothedThunderGradient()
-            );
-            this.CANPIPE_WEATHER_GRADIENTS.upload();
+        CANPIPE_WEATHER_GRADIENTS.value.set(
+            mc.level.getRainLevel(pt),
+            mc.level.getThunderLevel(pt),
+            lre.canpipe_getSmoothedRainGradient(),
+            lre.canpipe_getSmoothedThunderGradient()
+        );
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, WORLD.size());
+            WORLD.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(WORLD_UBO.slice(), builder.get());
         }
 
         // fog.glsl
-        if (this.FRX_FOG_COLOR != null) {
-            this.FRX_FOG_COLOR.set(FogRenderer.computeFogColor(
-                mc.gameRenderer.getMainCamera(),
-                pt,
-                mc.level, mc.options.getEffectiveRenderDistance(),
-                mc.gameRenderer.getDarkenWorldAmount(pt)
-            ));
-            this.FRX_FOG_COLOR.upload();
-        }
+        /*FRX_FOG_COLOR.value.set(FogRenderer.computeFogColor(
+            mc.gameRenderer.getMainCamera(),
+            pt,
+            mc.level,
+            mc.options.getEffectiveRenderDistance(),
+            mc.gameRenderer.getDarkenWorldAmount(pt),
+            false
+        ));*/
+        FRX_FOG_COLOR.value.set(1.0F);
+        FRX_FOG_START.value = 100.0F;
+        FRX_FOG_END.value = 200.0F;
+        FRX_FOG_ENABLED.value = 1;
 
-        GlStateManager._glUseProgram(0);
-    }
-
-    protected boolean samplerExists(String sampler) {
-        for (int i = 0; i < this.getSamplers().size(); ++i) {
-            if (this.getSamplers().get(i).equals(sampler)) {
-                return true;
-            }
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, FOG.size());
+            FOG.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(FOG_UBO.slice(), builder.get());
         }
-        return false;
     }
 
 }

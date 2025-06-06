@@ -21,14 +21,13 @@
 	"mixins": [
 		"${mod_id}.mixins.01_texture_formats.json",
 		"${mod_id}.mixins.02_texture_targets.json",
-		"${mod_id}.mixins.03_uniform_ivec2.json",
-		"${mod_id}.mixins.04_core.json",
+		"${mod_id}.mixins.03_core.json",
 		"${mod_id}.mixins.compat.indigo.json"
 	],
 	"accessWidener" : "${mod_id}.accesswidener",
 	"depends": {
 		"fabricloader": ">=0.16.2",
-		"minecraft": "${minecraft_version}",
+		"minecraft": "1.21.6-beta.3",
 		"java": ">=21"
 	}
 }

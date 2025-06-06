@@ -1,0 +1,38 @@
+{
+  "required": true,
+  "compatibilityLevel": "JAVA_21",
+  "package": "fewizz.canpipe.mixin.m03_core",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "BlockModelWrapperMixin",
+    "BlockRenderDispatcherMixin",
+    "BufferBuilderMixin",
+    "CameraAccessor",
+    "ChunkSectionLayerMixin",
+    "CompositeRenderTypeMixin",
+    "CompositeStateMixin",
+    "RenderTypeMixin",
+    "GameRendererMixin",
+    "GlCommandEncoderMixin",
+    "GlRenderPassMixin",
+    "ItemRendererMixin",
+    "ItemStackLayerRenderStateMixin",
+    "LevelRendererMixin",
+    "LightTextureMixin",
+    "LiquidBlockRendererMixin",
+    "MinecraftMixin",
+    "ModelBlockRendererMixin",
+    "ModelPartCubeMixin",
+    "ModelPartPolygonMixin",
+    "RenderSystemMixin",
+    "RenderSystemAccessor",
+    "RenderTypeMixin",
+    "SectionCompilerMixin",
+    "TextureAtlasMixin",
+    "TextureAtlasSpriteMixin",
+    "VertexConsumerMixin",
+    "VideoSettingsScreenMixin"
+  ]
+}

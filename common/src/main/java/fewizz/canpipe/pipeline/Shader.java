@@ -63,8 +63,16 @@ public class Shader extends GlShaderModule {
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         Function<ResourceLocation, Optional<String>> getShaderSource,
-        @Nullable Framebuffer shadowFramebuffer
+        @Nullable Framebuffer shadowFramebuffer,
+        Function<String, String> srcPostPreprocess
     ) {
+
+        String preprocessedSource = processIncludesAndDefinitions(
+            source, location, options, appliedOptions, getShaderSource
+        );
+
+        preprocessedSource = srcPostPreprocess.apply(preprocessedSource);
+
         String header =
             "#version " + version + "\n\n" +
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
@@ -84,9 +92,7 @@ public class Shader extends GlShaderModule {
             header += "in vec2 in_uv;\n\n";
         }
 
-        String preprocessedSource = processIncludesAndDefinitions(
-            header + source, location, options, appliedOptions, getShaderSource
-        );
+        preprocessedSource = header + preprocessedSource;
 
         /* Can't use CompiledShader.compile, because it trims and truncates the log */
         int id = GlStateManager.glCreateShader(GlConst.toGl(type));

@@ -1,20 +1,19 @@
-uniform float frx_effectModifier;
+layout(std140) uniform frx_ub_player {
+    uniform float frx_effectModifier;
+    uniform float canpipe_darknessFactor;
+    uniform vec3 frx_eyePos;
+    uniform vec2 frx_eyeBrightness;
+    uniform vec2 frx_smoothedEyeBrightness;
+    uniform vec4 frx_heldLight;
+    uniform float frx_heldLightInnerRadius;
+    uniform float frx_heldLightOuterRadius;
+    uniform float frx_playerMood;
+    uniform int canpipe_playerFlags;
+    uniform ivec2 canpipe_effectsFlags;
+};
 
-uniform float canpipe_darknessFactor;
 #define frx_darknessEffectFactor canpipe_darknessFactor  // because Lumi checks for macro definition
 
-uniform vec3 frx_eyePos;
-
-uniform vec2 frx_eyeBrightness;
-uniform vec2 frx_smoothedEyeBrightness;
-
-uniform vec4 frx_heldLight;
-uniform float frx_heldLightInnerRadius;
-uniform float frx_heldLightOuterRadius;
-
-uniform float frx_playerMood;
-
-uniform int canpipe_playerFlags;
 #define frx_playerEyeInFluid   ((canpipe_playerFlags >>  0) & 1)
 #define frx_playerEyeInWater   ((canpipe_playerFlags >>  1) & 1)
 #define frx_playerEyeInLava    ((canpipe_playerFlags >>  2) & 1)
@@ -32,7 +31,6 @@ uniform int canpipe_playerFlags;
 #define frx_playerEyeInSnow    ((canpipe_playerFlags >> 14) & 1)
 #define frx_playerIsFreezing   ((canpipe_playerFlags >> 15) & 1)
 
-uniform ivec2 canpipe_effectsFlags;
 #define frx_effectSpeed            ((canpipe_effectsFlags[0] >>  0) & 1)
 #define frx_effectSlowness         ((canpipe_effectsFlags[0] >>  1) & 1)
 #define frx_effectHast             ((canpipe_effectsFlags[0] >>  2) & 1)

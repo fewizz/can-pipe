@@ -17,6 +17,7 @@ import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
@@ -86,6 +87,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
 
     @Override
     public void createBuffers(int width, int height) {
+        GpuDevice gpuDevice = RenderSystem.getDevice();
         Vector3i extent = new Vector3i();
         int lod = 0;
 
@@ -110,6 +112,34 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         this.viewHeight = extent.y >> lod;
         this.width = extent.x >> lod;
         this.height = extent.y >> lod;
+
+        {
+            var texture = this.colorTexture != null ? this.colorTexture : this.depthTexture;
+            this.colorTexture = new GlTexture(
+                GpuTexture.USAGE_RENDER_ATTACHMENT,
+                this.name, texture.getFormat(),
+                this.width, this.height,
+                texture.getDepthOrLayers(),
+                texture.getMipLevels(), ((GlTexture)texture).glId()
+            ) {
+
+                @Override public void close() {}
+                @Override public boolean isClosed() { return false; }
+                @Override public void flushModeChanges(int target) {}
+
+                @Override
+                public int getFbo(DirectStateAccess directStateAccess, @Nullable GpuTexture gpuTexture) {
+                    return glID();
+                }
+            };
+        }
+
+        if (this.colorTexture != null) {
+            this.colorTextureView = gpuDevice.createTextureView(this.colorTexture);
+        }
+        if (this.depthTexture != null) {
+            this.depthTextureView = gpuDevice.createTextureView(this.depthTexture);
+        }
 
         this.id = GlStateManager.glGenFramebuffers();
         GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, this.id);
@@ -145,25 +175,10 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, 0);
     }
 
-    @Override
+    /*@Override
     public GpuTexture getColorTexture() {
-        var texture = this.colorTexture != null ? this.colorTexture : this.depthTexture;
-        return new GlTexture(
-            this.name, texture.getFormat(),
-            this.width, this.height,
-            texture.getMipLevels(), ((GlTexture)texture).glId()
-        ) {
-
-            @Override public void close() {}
-            @Override public boolean isClosed() { return false; }
-            @Override public void flushModeChanges() {}
-
-            @Override
-            public int getFbo(DirectStateAccess directStateAccess, @Nullable GpuTexture gpuTexture) {
-                return glID();
-            }
-        };
-    }
+        
+    }*/
 
     /**
      * Called by <code>frex_clear</code>-type passes<p>

@@ -10,21 +10,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL33C;
 
 import com.google.common.collect.Streams;
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.opengl.Uniform;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.UniformBuffer.FloatUniform;
+import fewizz.canpipe.UniformBuffer.IntUniform;
+import fewizz.canpipe.UniformBuffer.Vec3Uniform;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -34,29 +33,31 @@ import net.minecraft.resources.ResourceLocation;
 public class MaterialProgram extends ProgramBase {
 
     static final List<RenderPipeline.UniformDescription> DEFAULT_UNIFORMS = List.of(
-        new RenderPipeline.UniformDescription("frxu_cascade", UniformType.INT),
-        new RenderPipeline.UniformDescription("canpipe_renderTarget", UniformType.INT),
-        new RenderPipeline.UniformDescription("canpipe_alphaCutout", UniformType.FLOAT),
-        new RenderPipeline.UniformDescription("canpipe_light0Direction", UniformType.VEC3),
-        new RenderPipeline.UniformDescription("canpipe_light1Direction", UniformType.VEC3)
+        new RenderPipeline.UniformDescription("canpipe_ub_material_program", UniformType.UNIFORM_BUFFER)
     );
 
     static final List<String> INTERNAL_SAMPLER_NAMES = List.of(
         "frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"
     );
 
-    public final Uniform FRXU_CASCADE;
-    public final Uniform CANPIPE_RENDER_TARGET;
-    public final Uniform CANPIPE_ALPHA_CUTOUT;
+    public final Uniform FRX_UB_MATERIAL;
+
+    public static final IntUniform FRXU_CASCADE = new IntUniform();
+    public static final IntUniform CANPIPE_RENDER_TARGET = new IntUniform();
+    public static final FloatUniform CANPIPE_ALPHA_CUTOUT = new FloatUniform();
+    public static final Vec3Uniform CANPIPE_LIGHT_0_DIRECTION = new Vec3Uniform();
+    public static final Vec3Uniform CANPIPE_LIGHT_1_DIRECTION = new Vec3Uniform();
 
     public final VertexFormat vertexFormat;
     public final boolean shadow;
-    public final Map<String, GlTexture> samplerToTexture;
+    public final Map<String, GlTextureView> samplerToTexture;
 
     private MaterialProgram(
         ResourceLocation pipelineLocation, VertexFormat vertexFormat,
         Shader vertexShader, Shader fragmentShader,
-        List<String> samplers, List<Optional<? extends GlTexture>> textures, boolean shadow
+        List<String> samplers,
+        List<Optional<? extends GlTextureView>> textureViews,
+        boolean shadow
     ) {
         super(
             "material-program", vertexFormat,
@@ -65,35 +66,34 @@ public class MaterialProgram extends ProgramBase {
             vertexShader, fragmentShader
         );
 
-        if (samplers.size() > textures.size()) {
+        if (samplers.size() > textureViews.size()) {
             CanPipe.LOGGER.warn("Material program has more samplers than textures");
         }
-        if (samplers.size() < textures.size()) {
+        if (samplers.size() < textureViews.size()) {
             CanPipe.LOGGER.warn("Material program has less samplers than textures");
         }
 
-        Map<String, GlTexture> samplerToTexture = new HashMap<>();
-        for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
+        Map<String, GlTextureView> samplerToTexture = new HashMap<>();
+        for (int i = 0; i < Math.min(samplers.size(), textureViews.size()); ++i) {
             String sampler = samplers.get(i);
-            Optional<? extends GlTexture> texture = textures.get(i);
-            if (texture.isEmpty()) {
-                if (this.samplerExists(sampler)) {
+            Optional<? extends GlTextureView> texture = textureViews.get(i);
+            /*if (texture.isEmpty()) {
+                if (this.getUniform(sampler) != null) {
                     throw new NullPointerException("Couldn't find texture for sampler \""+sampler+"\"");
                 }
                 this.getSamplers().remove(sampler);
             }
             else {
                 samplerToTexture.put(sampler, texture.get());
-            }
+            }*/
+            samplerToTexture.put(sampler, texture.get());
         }
 
         this.samplerToTexture = Collections.unmodifiableMap(samplerToTexture);
         this.vertexFormat = vertexFormat;
         this.shadow = shadow;
 
-        this.FRXU_CASCADE = getUniform("frxu_cascade");
-        this.CANPIPE_RENDER_TARGET = getUniform("canpipe_renderTarget");
-        this.CANPIPE_ALPHA_CUTOUT = getUniform("canpipe_alphaCutout");
+        this.FRX_UB_MATERIAL = this.getUniform("frx_ub_material");
     }
 
     @Override
@@ -103,7 +103,7 @@ public class MaterialProgram extends ProgramBase {
         return super.getUniform(name);
     }
 
-    @Override
+    /*@Override
     public void setDefaultUniforms(Mode mode, Matrix4f viewMatrix, Matrix4f projectionMatrix, float w, float h) {
         super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, w, h);
         if (this.CANPIPE_RENDER_TARGET != null) {
@@ -124,7 +124,7 @@ public class MaterialProgram extends ProgramBase {
             }
             this.CANPIPE_RENDER_TARGET.set(renderTarget);
         }
-    }
+    }*/
 
     public static MaterialProgram load(
         ResourceLocation pipelineLocation,
@@ -138,14 +138,19 @@ public class MaterialProgram extends ProgramBase {
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         List<String> samplers,
-        List<Optional<? extends GlTexture>> textures,
+        List<Optional<? extends GlTextureView>> textureViews,
         Function<ResourceLocation, Optional<String>> getShaderSource
     ) {
-        String vertexSrc;
-        String fragmentSrc;
+        String vertexSrc = getShaderSource.apply(vertexShaderLocation).get();
+        String fragmentSrc = getShaderSource.apply(fragmentShaderLocation).get();
 
-        vertexSrc = getShaderSource.apply(vertexShaderLocation).get();
-        fragmentSrc = getShaderSource.apply(fragmentShaderLocation).get();
+        Function<String, String> commentFrxUniforms = (String src) -> {
+            src = src.replace("uniform int frxu_cascade;", "// uniform int frxu_cascade;");
+            return src;
+        };
+
+        vertexSrc = commentFrxUniforms.apply(vertexSrc);
+        fragmentSrc = commentFrxUniforms.apply(fragmentSrc);
 
         if (shadowFramebuffer != null && shadowFramebuffer.depthAttachment != null) {
             var depthArray = shadowFramebuffer.depthAttachment.texture();
@@ -153,9 +158,9 @@ public class MaterialProgram extends ProgramBase {
                 samplers.stream(),
                 List.of("frxs_shadowMap", "frxs_shadowMapTexture").stream()
             ).toList();
-            textures = Streams.concat(
-                textures.stream(),
-                List.of(Optional.of(depthArray), Optional.of(depthArray)).stream()
+            textureViews = Streams.concat(
+                textureViews.stream(),
+                List.of(Optional.of(depthArray.view), Optional.of(depthArray.view)).stream()
             ).toList();
         }
 
@@ -172,10 +177,20 @@ public class MaterialProgram extends ProgramBase {
             usedMaterialIDs.add(id);
         }
 
+        String uniformBlock =
+            "layout(std140) uniform canpipe_ub_material_program {\n"+
+            "   uniform int frxu_cascade;\n"+
+            "   uniform int canpipe_renderTarget;\n"+
+            "   uniform float canpipe_alphaCutout;\n"+
+            "   uniform vec3 canpipe_light0Direction;\n"+
+            "   uniform vec3 canpipe_light1Direction;\n"+
+            "};\n\n";
+
         vertexSrc =
             "#define CANPIPE_MATERIAL_SHADER\n"+
             (depthPass ? "#define DEPTH_PASS\n" : "")+
             "\n"+
+            uniformBlock+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
             "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
@@ -272,7 +287,8 @@ public class MaterialProgram extends ProgramBase {
             "#extension GL_ARB_conservative_depth: enable\n\n"+
             "#define CANPIPE_MATERIAL_SHADER\n"+
             (depthPass ? "#define DEPTH_PASS\n" : "")+
-            (enablePBR ? "#define PBR_ENABLED\n" : "") +
+            (enablePBR ? "#define PBR_ENABLED\n" : "")+
+            uniformBlock+
             """
 
             layout (depth_unchanged) out float gl_FragDepth;
@@ -281,9 +297,6 @@ public class MaterialProgram extends ProgramBase {
             #include frex:shaders/api/sampler.glsl
             #include frex:shaders/api/material.glsl
             #include frex:shaders/api/view.glsl
-
-            uniform int canpipe_renderTarget;
-            uniform float canpipe_alphaCutout;
 
             """ +
             materialsFragmentSrc +
@@ -322,17 +335,17 @@ public class MaterialProgram extends ProgramBase {
 
         var vertexShader = Shader.load(
             vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion,
-            options, appliedOptions, getShaderSource, shadowFramebuffer
+            options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> s
         );
         var fragmentShader = Shader.load(
             fragmentShaderLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion,
-            options, appliedOptions, getShaderSource, shadowFramebuffer
+            options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> s
         );
 
         return new MaterialProgram(
             pipelineLocation, format,
             vertexShader, fragmentShader,
-            samplers, textures, depthPass
+            samplers, textureViews, depthPass
         );
     }
 

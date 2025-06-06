@@ -8,12 +8,12 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
 import fewizz.canpipe.compat.indigo.mixininterface.QuadViewExtended;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.QuadViewImpl;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+// import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.QuadViewImpl;
+// import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
-@Mixin(value = QuadViewImpl.class, remap = false)
+// @Mixin(value = QuadViewImpl.class, remap = false)
 public abstract class QuadViewImplMixin implements QuadViewExtended {
-
+/*
     @Unique protected final float[] ao = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
     @Unique protected TextureAtlasSprite sprite;
 
@@ -35,5 +35,5 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
         }
         return original;
     }
-
+*/
 }

@@ -31,7 +31,7 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -123,7 +123,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         protected void renderScrollbar(GuiGraphics guiGraphics) {
             if (this.scrollbarVisible()) {
                 guiGraphics.blitSprite(
-                    RenderType::guiTextured,
+                    RenderPipelines.GUI_TEXTURED,
                     ResourceLocation.withDefaultNamespace("widget/scroller"),
                     this.scrollBarX(),
                     this.scrollBarY(),
