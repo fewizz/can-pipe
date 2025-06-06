@@ -21,13 +21,11 @@ import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
-import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
 import blue.endless.jankson.JsonObject;
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -36,7 +34,7 @@ import net.minecraft.world.level.Level;
 public class Pipeline implements AutoCloseable {
 
     public static record Shadows(
-        Map<VertexFormat, MaterialProgram> materialPrograms,
+        Map<RenderPipeline, GlRenderPipeline> materialPrograms,
         Framebuffer framebuffer,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
@@ -63,17 +61,14 @@ public class Pipeline implements AutoCloseable {
     public final Framebuffer weatherFramebuffer;
     public final Framebuffer cloudsFramebuffer;
 
-    public final Map<VertexFormat, MaterialProgram> materialPrograms;
-
     public final @Nullable Shadows shadows;
 
-    // private
+    public final Map<RenderPipeline, GlRenderPipeline> materialPrograms;
+
     private final Map<String, Program> programs = new HashMap<>();
     private final Map<Pair<ResourceLocation, ShaderType>, Shader> shaders = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
-
-    private final Map<RenderPipeline, GlRenderPipeline> glRenderPipelineCache = new HashMap<>();
 
     public final PassBase[]
         onInitPasses,
@@ -209,10 +204,26 @@ public class Pipeline implements AutoCloseable {
             }
         }};
 
-        var vertexFormats = new VertexFormat[] {
-            CanPipe.VertexFormats.BLOCK,
-            CanPipe.VertexFormats.NEW_ENTITY,
-            CanPipe.VertexFormats.PARTICLE
+        var renderPipelines = new RenderPipeline[] {
+            RenderPipelines.SOLID,
+            RenderPipelines.CUTOUT,
+            RenderPipelines.CUTOUT_MIPPED,
+            RenderPipelines.TRANSLUCENT,
+            RenderPipelines.TRANSLUCENT_MOVING_BLOCK,
+            RenderPipelines.ENTITY_SOLID,
+            RenderPipelines.ENTITY_CUTOUT,
+            RenderPipelines.ENTITY_CUTOUT_NO_CULL,
+            RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET,
+            RenderPipelines.ENTITY_TRANSLUCENT,
+            RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE,
+            RenderPipelines.ENTITY_NO_OUTLINE,
+            RenderPipelines.ARMOR_CUTOUT_NO_CULL,
+            RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
+            RenderPipelines.ARMOR_TRANSLUCENT,
+            RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL,
+            RenderPipelines.EYES,
+            RenderPipelines.OPAQUE_PARTICLE,
+            RenderPipelines.TRANSLUCENT_PARTICLE
         };
 
         JsonObject shadowsJson = pipelineJson.getObject("skyShadows");
@@ -220,15 +231,19 @@ public class Pipeline implements AutoCloseable {
             Framebuffer framebuffer = getOrLoadFramebuffer.apply(shadowsJson.get(String.class, "framebuffer"));
             var vertexShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "vertexSource"));
             var fragmentShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "fragmentSource"));
+            var materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
+                renderPipeline -> renderPipeline,
+                renderPipeline -> MaterialProgram.load(
+                    location, renderPipeline, glslVersion, enablePBR, true, framebuffer,
+                    vertexShaderLocation, fragmentShaderLocation, options, appliedOptions,
+                    List.of(), List.of(),
+                    getShaderSource,
+                    shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
+                    shadowsJson.getFloat("offsetBiasUnits", 4.0F)
+                )
+            ));
             this.shadows = new Shadows(
-                Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
-                    vertexFormat -> vertexFormat,
-                    vertexFormat -> MaterialProgram.load(
-                        location, vertexFormat, glslVersion, enablePBR, true, framebuffer,
-                        vertexShaderLocation, fragmentShaderLocation,
-                        options, appliedOptions, List.of(), List.of(), getShaderSource
-                    )
-                )),
+                materialPrograms,
                 framebuffer,
                 JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius"),
                 shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
@@ -242,12 +257,13 @@ public class Pipeline implements AutoCloseable {
             this.shadows = null;
         }
 
-        this.materialPrograms = Stream.of(vertexFormats).collect(Collectors.toUnmodifiableMap(
-            vertexFormat -> vertexFormat,
-            vertexFormat -> MaterialProgram.load(
-                location, vertexFormat, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffer : null,
+        this.materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
+            renderPipeline -> renderPipeline,
+            renderPipeline -> MaterialProgram.load(
+                location, renderPipeline, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffer : null,
                 materialVertexShaderLocation, materialFragmentShaderLocation,
-                options, appliedOptions, samplers, samplerImages, getShaderSource
+                options, appliedOptions, samplers, samplerImages, getShaderSource,
+                0.0F, 0.0F
             )
         ));
 
@@ -363,34 +379,35 @@ public class Pipeline implements AutoCloseable {
         this.programs.values().forEach(ProgramBase::close);
     }
 
-    public GlRenderPipeline onRenderPassSetRenderPipeline(
-        RenderPass renderPass, RenderPipeline renderPipeline
-    ) {
-        var glPipeline = this.glRenderPipelineCache.computeIfAbsent(renderPipeline, rp -> {
-            var location = renderPipeline.getLocation();
-            ProgramBase program = null;
-            if (location.getNamespace().equals("canpipe") && location.getPath().equals("material")) {
-                program = this.materialPrograms.get(renderPipeline.getVertexFormat());
-            }
-            else if (location.getNamespace().equals("canpipe") && location.getPath().equals("material-shadow")) {
-                program = this.shadows.materialPrograms.get(renderPipeline.getVertexFormat());
-            }
-            else {
-                for (var p : this.programs.values()) {
-                    if (p.renderPipeline == renderPipeline) {
-                        program = p;
-                    }
+    public GlRenderPipeline onRenderPassSetRenderPipeline(RenderPipeline renderPipeline) {
+        GlRenderPipeline glRenderPipeline = null;
+        var location = renderPipeline.getLocation();
+
+        if (location.getNamespace().equals("canpipe") && location.getPath().equals("material")) {
+            for (var p : this.materialPrograms.values()) {
+                if (p.info() == renderPipeline) {
+                    glRenderPipeline = p;
+                    break;
                 }
             }
-            return program != null ? new GlRenderPipeline(renderPipeline, program) : null;
-        });
-
-        if (glPipeline != null && glPipeline.program() instanceof MaterialProgram) {
-            MaterialProgram.CANPIPE_ALPHA_CUTOUT.value = Float.parseFloat(
-                renderPipeline.getShaderDefines().values().get("CANPIPE_ALPHA_CUTOUT")
-            );
+        }
+        else if (location.getNamespace().equals("canpipe") && location.getPath().equals("material-shadow")) {
+            for (var p : this.shadows.materialPrograms.values()) {
+                if (p.info() == renderPipeline) {
+                    glRenderPipeline = p;
+                    break;
+                }
+            }
+        }
+        else {
+            for (var p : this.programs.values()) {
+                if (p.glRenderPipeline.info() == renderPipeline) {
+                    glRenderPipeline = p.glRenderPipeline;
+                    break;
+                }
+            }
         }
 
-        return glPipeline;
+        return glRenderPipeline;
     }
 }

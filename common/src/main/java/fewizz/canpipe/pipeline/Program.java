@@ -10,6 +10,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.Uniform.Ubo;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
@@ -43,7 +44,7 @@ public class Program extends ProgramBase {
         () -> "can-pipe view UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, PASS.size()
     );
 
-    public final RenderPipeline renderPipeline;
+    public final GlRenderPipeline glRenderPipeline;
 
     private Program(ResourceLocation pipelineLocation, String name, List<String> samplers, Shader vertexShader, Shader fragmentShader) {
         super(
@@ -70,7 +71,7 @@ public class Program extends ProgramBase {
             }
         }
 
-        this.renderPipeline = renderPipelineBuilder.build();
+        this.glRenderPipeline = new GlRenderPipeline(renderPipelineBuilder.build(), this);
     }
 
     static Program load(

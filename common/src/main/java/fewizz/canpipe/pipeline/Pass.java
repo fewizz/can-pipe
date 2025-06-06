@@ -40,7 +40,7 @@ public class Pass extends PassBase {
         Vector2i extent, int lod, int layer
     ) {
         super(name);
-        var samplers = program.renderPipeline.getSamplers();
+        var samplers = program.glRenderPipeline.info().getSamplers();
         if (samplers.size() > textureViews.size()) {
             CanPipe.LOGGER.warn("Program \""+program.getDebugLabel()+"\" has more samplers than textures provided by pass \""+name+"\"");
         }
@@ -99,9 +99,9 @@ public class Pass extends PassBase {
                     this.framebuffer.getColorTextureView(), OptionalInt.empty()
                 )
         ) {
-            renderPass.setPipeline(this.program.renderPipeline);
+            renderPass.setPipeline(this.program.glRenderPipeline.info());
 
-            var samplers = this.program.renderPipeline.getSamplers();
+            var samplers = this.program.glRenderPipeline.info().getSamplers();
             for (int i = 0; i < Math.min(samplers.size(), this.textureViews.size()); ++i) {
                 String sampler = samplers.get(i);
                 this.textureViews.get(i).ifPresent(texture -> {

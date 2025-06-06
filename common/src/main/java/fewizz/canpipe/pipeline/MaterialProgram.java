@@ -12,22 +12,25 @@ import java.util.stream.Stream;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Streams;
+import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.opengl.Uniform;
+import com.mojang.blaze3d.opengl.Uniform.Ubo;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.UniformBuffer.FloatUniform;
 import fewizz.canpipe.UniformBuffer.IntUniform;
 import fewizz.canpipe.UniformBuffer.Vec3Uniform;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
 
 public class MaterialProgram extends ProgramBase {
@@ -44,11 +47,9 @@ public class MaterialProgram extends ProgramBase {
 
     public static final IntUniform FRXU_CASCADE = new IntUniform();
     public static final IntUniform CANPIPE_RENDER_TARGET = new IntUniform();
-    public static final FloatUniform CANPIPE_ALPHA_CUTOUT = new FloatUniform();
     public static final Vec3Uniform CANPIPE_LIGHT_0_DIRECTION = new Vec3Uniform();
     public static final Vec3Uniform CANPIPE_LIGHT_1_DIRECTION = new Vec3Uniform();
 
-    public final VertexFormat vertexFormat;
     public final boolean shadow;
     public final Map<String, GlTextureView> samplerToTexture;
 
@@ -90,7 +91,6 @@ public class MaterialProgram extends ProgramBase {
         }
 
         this.samplerToTexture = Collections.unmodifiableMap(samplerToTexture);
-        this.vertexFormat = vertexFormat;
         this.shadow = shadow;
 
         this.FRX_UB_MATERIAL = this.getUniform("frx_ub_material");
@@ -103,32 +103,9 @@ public class MaterialProgram extends ProgramBase {
         return super.getUniform(name);
     }
 
-    /*@Override
-    public void setDefaultUniforms(Mode mode, Matrix4f viewMatrix, Matrix4f projectionMatrix, float w, float h) {
-        super.setDefaultUniforms(mode, viewMatrix, projectionMatrix, w, h);
-        if (this.CANPIPE_RENDER_TARGET != null) {
-            Pipeline p = Pipelines.getCurrent();
-            int fbID = GlStateManager.getFrameBuffer(GL33C.GL_DRAW_FRAMEBUFFER);
-            int renderTarget = -1;
-            if (fbID == p.solidFramebuffer.glID() || fbID == p.defaultFramebuffer.glID()) {
-                renderTarget = 0;
-            }
-            else if (fbID == p.translucentTerrainFramebuffer.glID()) {
-                renderTarget = 1;
-            }
-            else if (fbID == p.translucentItemEntityFramebuffer.glID()) {
-                renderTarget = 2;
-            }
-            else if (fbID == p.particlesFramebuffer.glID()) {
-                renderTarget = 3;
-            }
-            this.CANPIPE_RENDER_TARGET.set(renderTarget);
-        }
-    }*/
-
-    public static MaterialProgram load(
+    public static GlRenderPipeline load(
         ResourceLocation pipelineLocation,
-        VertexFormat format,
+        RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
         boolean depthPass,
@@ -139,29 +116,75 @@ public class MaterialProgram extends ProgramBase {
         Map<Option.Element<?>, Object> appliedOptions,
         List<String> samplers,
         List<Optional<? extends GlTextureView>> textureViews,
-        Function<ResourceLocation, Optional<String>> getShaderSource
+        Function<ResourceLocation, Optional<String>> getShaderSource,
+        float shadowsOffsetSlopeFactor,
+        float shadowsOffsetBiasUnits
     ) {
-        String vertexSrc = getShaderSource.apply(vertexShaderLocation).get();
-        String fragmentSrc = getShaderSource.apply(fragmentShaderLocation).get();
-
-        Function<String, String> commentFrxUniforms = (String src) -> {
-            src = src.replace("uniform int frxu_cascade;", "// uniform int frxu_cascade;");
-            return src;
-        };
-
-        vertexSrc = commentFrxUniforms.apply(vertexSrc);
-        fragmentSrc = commentFrxUniforms.apply(fragmentSrc);
-
         if (shadowFramebuffer != null && shadowFramebuffer.depthAttachment != null) {
-            var depthArray = shadowFramebuffer.depthAttachment.texture();
+            var depthArray = shadowFramebuffer.depthAttachment.texture().view;
             samplers = Streams.concat(
                 samplers.stream(),
                 List.of("frxs_shadowMap", "frxs_shadowMapTexture").stream()
             ).toList();
             textureViews = Streams.concat(
                 textureViews.stream(),
-                List.of(Optional.of(depthArray.view), Optional.of(depthArray.view)).stream()
+                List.of(Optional.of(depthArray), Optional.of(depthArray)).stream()
             ).toList();
+        }
+
+        String vertexSrc = getShaderSource.apply(vertexShaderLocation).get();
+        String fragmentSrc = getShaderSource.apply(fragmentShaderLocation).get();
+
+        Function<String, String> commentFREXUniforms = (String src) -> {
+            src = src.replace("uniform int frxu_cascade;", "// uniform int frxu_cascade;");
+            return src;
+        };
+
+        vertexSrc = commentFREXUniforms.apply(vertexSrc);
+        fragmentSrc = commentFREXUniforms.apply(fragmentSrc);
+
+        VertexFormat vertexFormat;
+        if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.BLOCK) {
+            vertexFormat = CanPipe.VertexFormats.BLOCK;
+        }
+        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.NEW_ENTITY) {
+            vertexFormat = CanPipe.VertexFormats.NEW_ENTITY;
+        }
+        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE) {
+            vertexFormat = CanPipe.VertexFormats.PARTICLE;
+        }
+        else {
+            throw new RuntimeException(originalRenderPipeline.getVertexFormat().toString());
+        }
+
+        float alphaCutout;
+        if (
+            originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
+
+            // use ITEM_ENTITY_TARGET output state shard
+            originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
+            originalRenderPipeline == RenderPipelines.LINE_STRIP ||
+            originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
+            originalRenderPipeline == RenderPipelines.GLINT ||
+            originalRenderPipeline == RenderPipelines.LINES ||
+
+            originalRenderPipeline == RenderPipelines.CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
+            originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
+            originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
+            originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
+            originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
+            originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT
+        ) {
+            alphaCutout = 0.1F;
+        }
+        else if (originalRenderPipeline == RenderPipelines.CUTOUT_MIPPED) {
+            alphaCutout = 0.5F;
+        }
+        else {
+            alphaCutout = 0.0F;
         }
 
         String materialsVertexSrc = "";
@@ -181,7 +204,6 @@ public class MaterialProgram extends ProgramBase {
             "layout(std140) uniform canpipe_ub_material_program {\n"+
             "   uniform int frxu_cascade;\n"+
             "   uniform int canpipe_renderTarget;\n"+
-            "   uniform float canpipe_alphaCutout;\n"+
             "   uniform vec3 canpipe_light0Direction;\n"+
             "   uniform vec3 canpipe_light1Direction;\n"+
             "};\n\n";
@@ -191,39 +213,39 @@ public class MaterialProgram extends ProgramBase {
             (depthPass ? "#define DEPTH_PASS\n" : "")+
             "\n"+
             uniformBlock+
-            "layout(location = "+format.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
-            "layout(location = "+format.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
-            "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
+            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
+            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
+            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
             (
-                format.contains(VertexFormatElement.UV1) ?
-                "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_uv1" :
+                vertexFormat.contains(VertexFormatElement.UV1) ?
+                "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_uv1" :
                 "const ivec2 in_v1 = ivec2(0)"
             ) + ";\n"+
-            "layout(location = "+format.getElements().indexOf(VertexFormatElement.UV2)+") in ivec2 in_lightmap;  // UV2\n"+
+            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV2)+") in ivec2 in_lightmap;  // UV2\n"+
             (
-                format.contains(VertexFormatElement.NORMAL) ?
-                "layout(location = "+format.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" :
+                vertexFormat.contains(VertexFormatElement.NORMAL) ?
+                "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" :
                 "const vec3 in_normal = vec3(0.0, 1.0, 0.0)"
             ) + ";  // Normal\n"+
-            "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_FLAGS)+") in int in_materialFlags;\n"+
+            "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_FLAGS)+") in int in_materialFlags;\n"+
             (
-                format.contains(CanPipe.VertexFormatElements.AO) ?
-                "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao" :
+                vertexFormat.contains(CanPipe.VertexFormatElements.AO) ?
+                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao" :
                 "const float in_ao = 1.0"
             ) + ";\n"+
             (
-                format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ?
-                "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex" :
+                vertexFormat.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ?
+                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex" :
                 "const int in_spriteIndex = -1"
             ) + ";\n"+
             (
-                format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX) ?
-                "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex" :
+                vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX) ?
+                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex" :
                 "const int in_materialIndex = -1"
             ) + ";\n"+
             (
-                format.contains(CanPipe.VertexFormatElements.TANGENT) ?
-                "layout(location = "+format.getElements().indexOf(CanPipe.VertexFormatElements.TANGENT)+") in vec4 in_tangent"
+                vertexFormat.contains(CanPipe.VertexFormatElements.TANGENT) ?
+                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.TANGENT)+") in vec4 in_tangent"
                 : "const vec4 in_tangent = vec4(1.0)"
             ) + ";\n"+
             """
@@ -288,6 +310,7 @@ public class MaterialProgram extends ProgramBase {
             "#define CANPIPE_MATERIAL_SHADER\n"+
             (depthPass ? "#define DEPTH_PASS\n" : "")+
             (enablePBR ? "#define PBR_ENABLED\n" : "")+
+            "#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n"+
             uniformBlock+
             """
 
@@ -316,7 +339,7 @@ public class MaterialProgram extends ProgramBase {
 
                 frx_fragColor = frx_sampleColor * frx_vertexColor;
 
-                if (frx_fragColor.a < canpipe_alphaCutout) {
+                if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) {
                     discard;
                 }
 
@@ -342,11 +365,52 @@ public class MaterialProgram extends ProgramBase {
             options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> s
         );
 
-        return new MaterialProgram(
-            pipelineLocation, format,
+        var materialProgram = new MaterialProgram(
+            pipelineLocation, vertexFormat,
             vertexShader, fragmentShader,
             samplers, textureViews, depthPass
         );
+
+        var renderPipelineBuilder = RenderPipeline.builder();
+        if (!depthPass) {
+            renderPipelineBuilder
+                .withLocation(ResourceLocation.fromNamespaceAndPath("canpipe", "material"))
+                .withVertexShader(ResourceLocation.fromNamespaceAndPath("canpipe", "material"))
+                .withFragmentShader(ResourceLocation.fromNamespaceAndPath("canpipe", "material"))
+                .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
+                .withDepthBias(originalRenderPipeline.getDepthBiasScaleFactor(), originalRenderPipeline.getDepthBiasConstant())
+                .withPolygonMode(originalRenderPipeline.getPolygonMode())
+                .withCull(originalRenderPipeline.isCull())
+                .withColorWrite(originalRenderPipeline.isWriteColor(), originalRenderPipeline.isWriteAlpha())
+                .withDepthWrite(originalRenderPipeline.isWriteDepth())
+                .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
+        }
+        else {
+            renderPipelineBuilder
+                .withLocation(ResourceLocation.fromNamespaceAndPath("canpipe", "material-shadow"))
+                .withVertexShader(ResourceLocation.fromNamespaceAndPath("canpipe", "material-shadow"))
+                .withFragmentShader(ResourceLocation.fromNamespaceAndPath("canpipe", "material-shadow"))
+                .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
+                .withDepthBias(shadowsOffsetSlopeFactor, shadowsOffsetBiasUnits)
+                .withPolygonMode(originalRenderPipeline.getPolygonMode())
+                .withCull(false)  // Light can pass through chunk edge. Not ideal solution
+                .withColorWrite(originalRenderPipeline.isWriteColor(), originalRenderPipeline.isWriteAlpha())
+                .withDepthWrite(originalRenderPipeline.isWriteDepth())
+                .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
+        }
+
+        if (originalRenderPipeline.getBlendFunction().isPresent()) {
+            renderPipelineBuilder.withBlend(originalRenderPipeline.getBlendFunction().get());
+        }
+        for (var u : materialProgram.getUniforms().entrySet()) {
+            if (u.getValue() instanceof Ubo) {
+                renderPipelineBuilder.withUniform(u.getKey(), UniformType.UNIFORM_BUFFER);
+            }
+        }
+
+        var renderPipeline = renderPipelineBuilder.build();
+
+        return new GlRenderPipeline(renderPipeline, materialProgram);
     }
 
 }

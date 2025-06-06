@@ -20,7 +20,7 @@ public class GlCommandEncoderMixin {
             "Ljava/util/OptionalInt;"+
             "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
             "Ljava/util/OptionalDouble;"+
-        ")",
+        ")Lcom/mojang/blaze3d/systems/RenderPass;",
         at = @At(
             value="INVOKE",
             target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_glBindFramebuffer(II)V"

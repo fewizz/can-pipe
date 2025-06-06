@@ -80,7 +80,7 @@ public class GlRenderPassMixin {
         GlRenderPipeline result = null;
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            result = p.onRenderPassSetRenderPipeline((RenderPass)(Object)this, renderPipeline);
+            result = p.onRenderPassSetRenderPipeline(renderPipeline);
         }
         return result != null ? result : operation.call(instance, renderPipeline);
     }
