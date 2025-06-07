@@ -10,12 +10,20 @@ layout(std140) uniform mc_ub_projection {
     mat4 mc_projectionMatrix;
 };
 
+layout(std140) uniform mc_ub_fog {
+    vec4 mc_fogColor;
+    float mc_fogEnvironmentalStart;
+    float mc_fogEnvironmentalEnd;
+    float mc_fogRenderDistanceStart;
+    float mc_fogRenderDistanceEnd;
+    float mc_fogSkyEnd;
+    float mc_fogCloudsEnd;
+};
+
 #ifdef CANPIPE_MATERIAL_SHADER
     layout(std140) uniform canpipe_ub_material_program {
         uniform int frxu_cascade;
         uniform int canpipe_renderTarget;
         uniform int canpipe_originType;
-        uniform vec3 canpipe_light0Direction;
-        uniform vec3 canpipe_light1Direction;
     };
 #endif

@@ -4,6 +4,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import net.minecraft.client.renderer.fog.FogRenderer;
+
 public interface GameRendererExtended {
 
     public int canpipe_getFrame();
@@ -21,5 +23,7 @@ public interface GameRendererExtended {
     public Vector4f[] canpipe_getShadowCenters();
 
     public void canpipe_onPipelineActivated();
+
+    public FogRenderer canpipe_getFogRenderer();
 
 }

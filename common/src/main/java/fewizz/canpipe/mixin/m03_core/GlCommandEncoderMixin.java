@@ -36,11 +36,15 @@ public class GlCommandEncoderMixin {
     private int onCreateRenderPass(int framebufferID) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            int renderTarget = -1;
+            /*int renderTarget = -1;
             if (framebufferID == p.solidFramebuffer.glID() || framebufferID == p.defaultFramebuffer.glID()) {
                 renderTarget = 0;
             }
-            else if (framebufferID == p.translucentTerrainFramebuffer.glID()) {
+            else */
+
+            int renderTarget = 0;  // some lies
+
+            if (framebufferID == p.translucentTerrainFramebuffer.glID()) {
                 renderTarget = 1;
             }
             else if (framebufferID == p.translucentItemEntityFramebuffer.glID()) {

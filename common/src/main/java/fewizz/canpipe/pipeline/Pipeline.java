@@ -363,6 +363,7 @@ public class Pipeline implements AutoCloseable {
     public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
         Minecraft.getInstance().mainRenderTarget = this.defaultFramebuffer;
         MaterialProgram.CANPIPE_ORIGIN_TYPE.value = 2;  // screen
+        MaterialProgram.CANPIPE_RENDER_TARGET.value = 0;  // solid
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());

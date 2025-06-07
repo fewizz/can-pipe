@@ -28,7 +28,6 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.UniformBuffer;
 import fewizz.canpipe.UniformBuffer.IntUniform;
-import fewizz.canpipe.UniformBuffer.Vec3Uniform;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -50,8 +49,6 @@ public class MaterialProgram extends ProgramBase {
     public static final IntUniform FRXU_CASCADE = MATERIAL_PROGRAM.add(new IntUniform());
     public static final IntUniform CANPIPE_RENDER_TARGET = MATERIAL_PROGRAM.add(new IntUniform());
     public static final IntUniform CANPIPE_ORIGIN_TYPE = MATERIAL_PROGRAM.add(new IntUniform());
-    public static final Vec3Uniform CANPIPE_LIGHT_0_DIRECTION = MATERIAL_PROGRAM.add(new Vec3Uniform());
-    public static final Vec3Uniform CANPIPE_LIGHT_1_DIRECTION = MATERIAL_PROGRAM.add(new Vec3Uniform());
     public static final GpuBuffer MATERIAL_PROGRAM_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe material-program UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, MATERIAL_PROGRAM.size()
     );

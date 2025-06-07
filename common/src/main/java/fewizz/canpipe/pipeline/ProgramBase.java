@@ -36,6 +36,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderManager.CompilationException;
+import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -129,9 +130,7 @@ public abstract class ProgramBase extends GlProgram {
 
     // fog
     private static final UniformBuffer FOG = new UniformBuffer();
-    private static final Vec4Uniform FRX_FOG_COLOR = FOG.add(new Vec4Uniform());
-    private static final FloatUniform FRX_FOG_START = FOG.add(new FloatUniform());
-    private static final FloatUniform FRX_FOG_END = FOG.add(new FloatUniform());
+    private static final Vec4Uniform FRX_FOG_COLOR = FOG.add(new Vec4Uniform() {{ value.set(1.0F); }});
     private static final IntUniform FRX_FOG_ENABLED = FOG.add(new IntUniform());
     public static final GpuBuffer FOG_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe fog UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, FOG.size()
@@ -158,7 +157,8 @@ public abstract class ProgramBase extends GlProgram {
 
         // mc
         new RenderPipeline.UniformDescription("mc_ub_dynamic_transforms", UniformType.UNIFORM_BUFFER),
-        new RenderPipeline.UniformDescription("mc_ub_projection", UniformType.UNIFORM_BUFFER)
+        new RenderPipeline.UniformDescription("mc_ub_projection", UniformType.UNIFORM_BUFFER),
+        new RenderPipeline.UniformDescription("mc_ub_fog", UniformType.UNIFORM_BUFFER)
     );
 
     private static int _link(String name, GlShaderModule vertexShader, GlShaderModule fragmentShader, VertexFormat vertexFormat, String debugLabel) {
@@ -226,6 +226,11 @@ public abstract class ProgramBase extends GlProgram {
         var projectionUB = getUniforms().remove("mc_ub_projection");
         if (projectionUB != null) {
             getUniforms().put("Projection", projectionUB);
+        }
+
+        var fogUB = getUniforms().remove("mc_ub_fog");
+        if (fogUB != null) {
+            getUniforms().put("Fog", fogUB);
         }
     }
 
@@ -497,18 +502,17 @@ public abstract class ProgramBase extends GlProgram {
         }
 
         // fog.glsl
-        /*FRX_FOG_COLOR.value.set(FogRenderer.computeFogColor(
-            mc.gameRenderer.getMainCamera(),
-            pt,
-            mc.level,
-            mc.options.getEffectiveRenderDistance(),
-            mc.gameRenderer.getDarkenWorldAmount(pt),
-            false
-        ));*/
-        FRX_FOG_COLOR.value.set(1.0F);
-        FRX_FOG_START.value = 100.0F;
-        FRX_FOG_END.value = 200.0F;
-        FRX_FOG_ENABLED.value = 1;
+        FRX_FOG_COLOR.value.set(
+            gre.canpipe_getFogRenderer().setupFog(
+                mc.gameRenderer.getMainCamera(),
+                mc.options.getEffectiveRenderDistance(),
+                false,
+                mc.getDeltaTracker(),
+                mc.gameRenderer.getDarkenWorldAmount(pt),
+                mc.level
+            )
+        );
+        FRX_FOG_ENABLED.value = 1;  // TODO?
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, FOG.size());

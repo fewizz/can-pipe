@@ -25,12 +25,14 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.fog.FogRenderer;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererExtended {
 
     @Shadow @Final Minecraft minecraft;
     @Shadow @Final private Camera mainCamera;
+    @Shadow @Final private FogRenderer fogRenderer;
     @Shadow private float renderDistance;
     @Shadow private float fovModifier;
 
@@ -350,6 +352,11 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override
     public Vector4f[] canpipe_getShadowCenters() {
         return this.canpipe_shadowCenters;
+    }
+
+    @Override
+    public FogRenderer canpipe_getFogRenderer() {
+        return this.fogRenderer;
     }
 
 }
