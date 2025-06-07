@@ -33,7 +33,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
                 if (!((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
                     glRenderPipeline = p.materialPrograms.get(renderPipeline);
                 }
-                else if (p.shadows != null) {
+                else {
                     glRenderPipeline = p.shadows.materialPrograms().get(renderPipeline);
                 }
             }
@@ -46,7 +46,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
     }
 
     @ModifyExpressionValue(
-        method = {"format", "mode", "getRenderPipeline"},
+        method = {"format", "mode", "draw"},
         at = @At(
             value = "FIELD",
             target = "Lnet/minecraft/client/renderer/RenderType$CompositeRenderType;"+
@@ -60,7 +60,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
 
     @Override
     public RenderPipeline canpipe_getRenderPipeline() {
-        return getReplacedRenderPipeline(this.renderPipeline);
+        return this.getReplacedRenderPipeline(this.renderPipeline);
     }
 
 }

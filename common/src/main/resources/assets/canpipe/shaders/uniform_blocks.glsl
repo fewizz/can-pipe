@@ -9,3 +9,13 @@ layout(std140) uniform mc_ub_dynamic_transforms {
 layout(std140) uniform mc_ub_projection {
     mat4 mc_projectionMatrix;
 };
+
+#ifdef CANPIPE_MATERIAL_SHADER
+    layout(std140) uniform canpipe_ub_material_program {
+        uniform int frxu_cascade;
+        uniform int canpipe_renderTarget;
+        uniform int canpipe_originType;
+        uniform vec3 canpipe_light0Direction;
+        uniform vec3 canpipe_light1Direction;
+    };
+#endif

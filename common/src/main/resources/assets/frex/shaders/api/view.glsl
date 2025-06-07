@@ -1,16 +1,6 @@
-#include canpipe:shaders/mc_uniform_blocks.glsl
+#include canpipe:shaders/uniform_blocks.glsl
 
 layout(std140) uniform frx_ub_view {
-    uniform vec3 frx_cameraView;
-    uniform vec3 frx_cameraPos;
-    uniform vec3 frx_lastCameraPos;
-
-    // chunk block pos when frx_modelOriginRegion is true, camera pos when frx_modelOriginCamera is true, vec3(0.0) otherwise
-    uniform vec4 frx_modelToWorld;
-    // uniform vec4 frx_modelToCamera; provided by mc_modelToCamera
-
-    uniform int canpipe_originType;
-
     // uniform mat4 frx_viewMatrix;  provided by mc_modelViewMatrix
     uniform mat4 frx_inverseViewMatrix;
     uniform mat4 frx_lastViewMatrix;
@@ -22,6 +12,10 @@ layout(std140) uniform frx_ub_view {
     uniform mat4 frx_shadowViewMatrix;
     uniform mat4 frx_inverseShadowViewMatrix;
 
+    // chunk block pos when frx_modelOriginRegion is true, camera pos when frx_modelOriginCamera is true, vec3(0.0) otherwise
+    uniform vec4 frx_modelToWorld;
+    // uniform vec4 frx_modelToCamera; provided by mc_modelToCamera
+
     uniform vec4 canpipe_shadowCenter_0;
     uniform vec4 canpipe_shadowCenter_1;
     uniform vec4 canpipe_shadowCenter_2;
@@ -31,7 +25,17 @@ layout(std140) uniform frx_ub_view {
     uniform float frx_viewBrightness;
     uniform float frx_viewDistance;
     uniform int canpipe_viewFlags;
+
+    uniform vec3 frx_cameraView;
+    uniform vec3 frx_cameraPos;
+    uniform vec3 frx_lastCameraPos;
 };
+
+#ifdef CANPIPE_MATERIAL_SHADER
+    // uniform int canpipe_originType;  // defined in canpipe_ub_material_program instead
+#else
+    const int canpipe_originType = 2;  // always 2 (screen) for passes
+#endif
 
 const vec3 frx_entityView = vec3(0.0);  // TODO define
 const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO define

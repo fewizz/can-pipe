@@ -11,6 +11,7 @@
     "BufferBuilderMixin",
     "CameraAccessor",
     "ChunkSectionLayerMixin",
+    "ChunkSectionsToRenderMixin",
     "CompositeRenderTypeMixin",
     "CompositeStateMixin",
     "GameRendererMixin",

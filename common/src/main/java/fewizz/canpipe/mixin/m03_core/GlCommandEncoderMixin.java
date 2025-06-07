@@ -1,10 +1,14 @@
 package fewizz.canpipe.mixin.m03_core;
 
+import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
+import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlCommandEncoder;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.pipeline.MaterialProgram;
 import fewizz.canpipe.pipeline.Pipeline;
@@ -12,6 +16,8 @@ import fewizz.canpipe.pipeline.Pipelines;
 
 @Mixin(GlCommandEncoder.class)
 public class GlCommandEncoderMixin {
+
+    @Shadow private boolean inRenderPass;
 
     @ModifyArg(
         method = "createRenderPass("+
@@ -43,7 +49,16 @@ public class GlCommandEncoderMixin {
             else if (framebufferID == p.particlesFramebuffer.glID()) {
                 renderTarget = 3;
             }
-            MaterialProgram.CANPIPE_RENDER_TARGET.value = renderTarget;
+            if (renderTarget != MaterialProgram.CANPIPE_RENDER_TARGET.value) {
+                MaterialProgram.CANPIPE_RENDER_TARGET.value = renderTarget;
+                try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                    var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());
+                    MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
+                    this.inRenderPass = false;
+                    RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+                    this.inRenderPass = true;
+                }
+            }
         }
 
         return framebufferID;

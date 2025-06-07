@@ -4,8 +4,11 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
+import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,16 +22,16 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.RenderPass.UniformUploader;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
@@ -41,14 +44,13 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
+import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
@@ -66,8 +68,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
     @Shadow @Final private RenderBuffers renderBuffers;
 
+    @Shadow abstract ChunkSectionsToRender prepareChunkRenders(Matrix4fc matrix4fc, double d, double e, double f);
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
-    // @Shadow private void renderSectionLayer(RenderType renderType, double x, double y, double z, Matrix4f viewMatrix, Matrix4f projectionMatrix) {}
     @Shadow private void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode) {}
     @Shadow private boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list) { return false; }
     @Shadow private void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list) {}
@@ -90,7 +92,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Override public float canpipe_getSmoothedRainGradient() { return this.canpipe_smoothedRainGradient; }
     @Override public float canpipe_getSmoothedThunderGradient() { return this.canpipe_smoothedThunderGradient; }
 
-    /*@Inject(
+    @Inject(
         method = "renderLevel",
         at = @At(
             value = "INVOKE",
@@ -99,12 +101,14 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     void renderShadowsAfterLightUpdates(
         GraphicsResourceAllocator graphicsResourceAllocator,
-        DeltaTracker deltaTracker,
-        boolean shouldRenderBlockOutline,
-        Camera camera,
-        GameRenderer gameRenderer,
-        Matrix4f viewMatrix,
+		DeltaTracker deltaTracker,
+		boolean renderBlockOutline,
+		Camera camera,
+		Matrix4f viewMatrix,
         Matrix4f projectionMatrix,
+		GpuBufferSlice gpuBufferSlice,
+		Vector4f clearColor,
+		boolean renderSky,
         CallbackInfo ci
     ) {
         Pipeline p = Pipelines.getCurrent();
@@ -192,6 +196,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             MaterialProgram.FRXU_CASCADE.value = cascade;
 
+            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM.size());
+                MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
+                RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+            }
+
             Frustum shadowFrustum = new ShadowFrustum(
                 gre.canpipe_getShadowViewMatrix(), gre.canpipe_getShadowProjectionMatrices()[cascade],
                 gre.canpipe_getShortenedViewProjectionMatrices()[cascade], camera, toSunDir
@@ -214,9 +224,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, shadowFramebuffer.glID());
             GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().glId(), 0, cascade);
 
-            // this.renderSectionLayer(RenderType.solid(), camPos.x, camPos.y, camPos.z, viewMatrix, projectionMatrix);
-            // this.renderSectionLayer(RenderType.cutoutMipped(), camPos.x, camPos.y, camPos.z, viewMatrix, projectionMatrix);
-            // this.renderSectionLayer(RenderType.cutout(), camPos.x, camPos.y, camPos.z, viewMatrix, projectionMatrix);
+            ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
+			chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE);
+            chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT);
 
             Profiler.get().popPush("collect entities");
 
@@ -242,6 +252,14 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             Profiler.get().pop();
         }
 
+        MaterialProgram.FRXU_CASCADE.value = 0;
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM.size());
+            MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+        }
+
         modelViewMatrixStack.popMatrix();
 
         } finally {
@@ -252,7 +270,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Profiler.get().pop();
 
         this.canpipe_isRenderingShadows = false;
-    }*/
+    }
 
     @WrapOperation(
         method = "renderLevel",
@@ -282,14 +300,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         return null;
     }
-
-    /*@Inject(
-        method = "renderSectionLayer",
-        at = @At("HEAD")
-    )
-    void onTerrainProgramApply(CallbackInfo ci) {
-        CanPipe.GlobalState.originType = 1; // region
-    }*/
 
     /*@Inject(
         method = {

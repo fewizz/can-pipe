@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Streams;
+import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.opengl.Uniform;
@@ -19,11 +20,13 @@ import com.mojang.blaze3d.opengl.Uniform.Ubo;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.UniformBuffer;
 import fewizz.canpipe.UniformBuffer.IntUniform;
 import fewizz.canpipe.UniformBuffer.Vec3Uniform;
 import fewizz.canpipe.material.Material;
@@ -43,12 +46,15 @@ public class MaterialProgram extends ProgramBase {
         "frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"
     );
 
-    public final Uniform FRX_UB_MATERIAL;
-
-    public static final IntUniform FRXU_CASCADE = new IntUniform();
-    public static final IntUniform CANPIPE_RENDER_TARGET = new IntUniform();
-    public static final Vec3Uniform CANPIPE_LIGHT_0_DIRECTION = new Vec3Uniform();
-    public static final Vec3Uniform CANPIPE_LIGHT_1_DIRECTION = new Vec3Uniform();
+    public static final UniformBuffer MATERIAL_PROGRAM = new UniformBuffer();
+    public static final IntUniform FRXU_CASCADE = MATERIAL_PROGRAM.add(new IntUniform());
+    public static final IntUniform CANPIPE_RENDER_TARGET = MATERIAL_PROGRAM.add(new IntUniform());
+    public static final IntUniform CANPIPE_ORIGIN_TYPE = MATERIAL_PROGRAM.add(new IntUniform());
+    public static final Vec3Uniform CANPIPE_LIGHT_0_DIRECTION = MATERIAL_PROGRAM.add(new Vec3Uniform());
+    public static final Vec3Uniform CANPIPE_LIGHT_1_DIRECTION = MATERIAL_PROGRAM.add(new Vec3Uniform());
+    public static final GpuBuffer MATERIAL_PROGRAM_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe material-program UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, MATERIAL_PROGRAM.size()
+    );
 
     public final boolean shadow;
     public final Map<String, GlTextureView> samplerToTexture;
@@ -92,8 +98,6 @@ public class MaterialProgram extends ProgramBase {
 
         this.samplerToTexture = Collections.unmodifiableMap(samplerToTexture);
         this.shadow = shadow;
-
-        this.FRX_UB_MATERIAL = this.getUniform("frx_ub_material");
     }
 
     @Override
@@ -200,19 +204,12 @@ public class MaterialProgram extends ProgramBase {
             usedMaterialIDs.add(id);
         }
 
-        String uniformBlock =
-            "layout(std140) uniform canpipe_ub_material_program {\n"+
-            "   uniform int frxu_cascade;\n"+
-            "   uniform int canpipe_renderTarget;\n"+
-            "   uniform vec3 canpipe_light0Direction;\n"+
-            "   uniform vec3 canpipe_light1Direction;\n"+
-            "};\n\n";
-
         vertexSrc =
             "#define CANPIPE_MATERIAL_SHADER\n"+
             (depthPass ? "#define DEPTH_PASS\n" : "")+
             "\n"+
-            uniformBlock+
+            "#include canpipe:shaders/uniform_blocks.glsl\n"+
+            "\n"+
             "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
             "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
             "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
@@ -311,7 +308,6 @@ public class MaterialProgram extends ProgramBase {
             (depthPass ? "#define DEPTH_PASS\n" : "")+
             (enablePBR ? "#define PBR_ENABLED\n" : "")+
             "#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n"+
-            uniformBlock+
             """
 
             layout (depth_unchanged) out float gl_FragDepth;

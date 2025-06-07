@@ -68,17 +68,13 @@ public abstract class ProgramBase extends GlProgram {
 
     // view
     private static final UniformBuffer VIEW = new UniformBuffer();
-    private static final Vec3Uniform FRX_CAMERA_VIEW = VIEW.add(new Vec3Uniform());
-    private static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
-    private static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
-    private static final Vec4Uniform FRX_MODEL_TO_WORLD = VIEW.add(new Vec4Uniform());;
-    public static final IntUniform CANPIPE_ORIGIN_TYPE = VIEW.add(new IntUniform());
     private static final Mat4Uniform FRX_INVERSE_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Mat4Uniform FRX_LAST_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Mat4Uniform FRX_INVERSE_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Mat4Uniform FRX_LAST_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Mat4Uniform FRX_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Mat4Uniform FRX_INVERSE_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Vec4Uniform FRX_MODEL_TO_WORLD = VIEW.add(new Vec4Uniform());
     private static final Vec4Uniform CANPIPE_SHADOW_CENTER_0 = VIEW.add(new Vec4Uniform());
     private static final Vec4Uniform CANPIPE_SHADOW_CENTER_1 = VIEW.add(new Vec4Uniform());
     private static final Vec4Uniform CANPIPE_SHADOW_CENTER_2 = VIEW.add(new Vec4Uniform());
@@ -87,6 +83,9 @@ public abstract class ProgramBase extends GlProgram {
     private static final FloatUniform FRX_VIEW_BRIGHTNESS = VIEW.add(new FloatUniform());
     private static final FloatUniform FRX_VIEW_DISTANCE = VIEW.add(new FloatUniform());
     private static final IntUniform CANPIPE_VIEW_FLAGS = VIEW.add(new IntUniform());
+    private static final Vec3Uniform FRX_CAMERA_VIEW = VIEW.add(new Vec3Uniform());
+    private static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
+    private static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
     public static final GpuBuffer VIEW_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe view UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, VIEW.size()
     );
@@ -264,7 +263,6 @@ public abstract class ProgramBase extends GlProgram {
 
         // view.glsl
         FRX_MODEL_TO_WORLD.value.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
-        CANPIPE_ORIGIN_TYPE.value = 0;  // screen
         FRX_CAMERA_POS.value.set(cameraPos.toVector3f());
         FRX_CAMERA_VIEW.value.set(
             Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).toVector3f()

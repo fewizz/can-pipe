@@ -16,11 +16,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.lwjgl.system.MemoryStack;
 
+import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
@@ -314,6 +317,13 @@ public class Pipeline implements AutoCloseable {
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
         ProgramBase.updateFREXUniforms();
+        MaterialProgram.CANPIPE_ORIGIN_TYPE.value = 0;  // camera
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());
+            MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+        }
 
         if (this.runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
@@ -341,12 +351,24 @@ public class Pipeline implements AutoCloseable {
             pass.apply(view, projection);
         }
 
-        ProgramBase.CANPIPE_ORIGIN_TYPE.value = 3;  // hand
+        MaterialProgram.CANPIPE_ORIGIN_TYPE.value = 3;  // hand
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());
+            MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+        }
     }
 
     public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
         Minecraft.getInstance().mainRenderTarget = this.defaultFramebuffer;
-        ProgramBase.CANPIPE_ORIGIN_TYPE.value = 2;  // screen
+        MaterialProgram.CANPIPE_ORIGIN_TYPE.value = 2;  // screen
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());
+            MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+        }
 
         for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply(view, projection);

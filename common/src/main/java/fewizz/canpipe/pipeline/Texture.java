@@ -11,6 +11,7 @@ import org.joml.Vector3i;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;

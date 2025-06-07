@@ -3,15 +3,17 @@ package fewizz.canpipe.mixin.m03_core;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlRenderPass;
 import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
@@ -23,7 +25,9 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.ModelManager;
 
 @Mixin(GlRenderPass.class)
-public class GlRenderPassMixin {
+public abstract class GlRenderPassMixin {
+
+    @Shadow public abstract void setUniform(String string, GpuBuffer gpuBuffer);
 
     @Shadow protected GlRenderPipeline pipeline;
 
@@ -82,7 +86,20 @@ public class GlRenderPassMixin {
         if (p != null) {
             result = p.onRenderPassSetRenderPipeline(renderPipeline);
         }
+        if (result != null && result.program() instanceof MaterialProgram) {
+            this.setUniform("canpipe_ub_material_program", MaterialProgram.MATERIAL_PROGRAM_UBO);
+        }
         return result != null ? result : operation.call(instance, renderPipeline);
     }
+
+    /*@Inject(
+        method = "setPipeline",
+        at = @At("RETURN")
+    )
+    private void onSetPipeline(CallbackInfo ci) {
+        if (glRenderPipeline.program() instanceof MaterialProgram) {
+            this.setUniform("canpipe_ub_material_program", MaterialProgram.MATERIAL_PROGRAM_UBO);
+        }
+    }*/
 
 }
