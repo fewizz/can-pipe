@@ -19,6 +19,8 @@ public class Material {
     @Nullable public final String fragmentShaderSource;
     @Nullable public final String depthVertexShaderSource;
     @Nullable public final String depthFragmentShaderSource;
+    public final boolean disableAO;
+    public final boolean disableDiffuse;
 
     Material(
         ResourceManager manager,
@@ -59,6 +61,9 @@ public class Material {
             var resource = manager.getResource(loc);
             depthFragmentShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
+
+        this.disableAO = materialJson.getBoolean("disableAo", false);
+        this.disableDiffuse = materialJson.getBoolean("disableDiffuse", false);
 
         this.vertexShaderSource = vertexShaderSource;
         this.fragmentShaderSource = fragmentShaderSource;

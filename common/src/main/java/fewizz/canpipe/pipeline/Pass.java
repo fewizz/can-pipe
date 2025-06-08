@@ -47,13 +47,13 @@ public class Pass extends PassBase {
         if (samplers.size() < textureViews.size()) {
             CanPipe.LOGGER.warn("Program \""+program.getDebugLabel()+"\" has less samplers than textures provided by pass \""+name+"\"");
         }
-        /*for (int i = 0; i < Math.min(samplers.size(), textures.size()); ++i) {
+        for (int i = 0; i < Math.min(samplers.size(), textureViews.size()); ++i) {
             String sampler = samplers.get(i);
-            Optional<? extends GlTexture> texture = textures.get(i);
-            if (texture.isEmpty() && program.samplerExists(sampler)) {
+            Optional<? extends GlTextureView> texture = textureViews.get(i);
+            if (texture.isEmpty() && program.getUniform(sampler) != null) {
                 throw new NullPointerException("Couldn't find texture for sampler \""+sampler +"\"");
             }
-        }*/
+        }
 
         this.framebuffer = framebuffer;
         this.program = program;

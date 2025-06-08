@@ -22,7 +22,7 @@ layout(std140) uniform mc_ub_fog {
 
 #ifdef CANPIPE_MATERIAL_SHADER
     layout(std140) uniform canpipe_ub_material_program {
-        uniform int frxu_cascade;
+        uniform int/**/frxu_cascade;
         uniform int canpipe_renderTarget;
         uniform int canpipe_originType;
     };

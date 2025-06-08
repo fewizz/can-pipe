@@ -62,9 +62,8 @@ public class Program extends ProgramBase {
             .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS);
 
         // not samplers arg, because they can be renamed in super ctor
-        // for (var s : this.samplersUniformNames) { renderPipelineBuilder.withSampler(s); }
+        for (var s : this.samplersUniformNames) { renderPipelineBuilder.withSampler(s); }
 
-        for (var s : samplers) { renderPipelineBuilder.withSampler(s); }
         for (var u : this.getUniforms().entrySet()) {
             if (u.getValue() instanceof Ubo) {
                 renderPipelineBuilder.withUniform(u.getKey(), UniformType.UNIFORM_BUFFER);
@@ -89,10 +88,10 @@ public class Program extends ProgramBase {
                 String src = getShaderSource.apply(location).get();
 
                 return Shader.load(location, src, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> {
-                    s = s.replace("uniform ivec2 frxu_size;", "// uniform ivec2 frxu_size;");
-                    s = s.replace("uniform int frxu_lod;", "// uniform int frxu_lod;");
-                    s = s.replace("uniform int frxu_layer;", "// uniform int frxu_layer;");
-                    s = s.replace("uniform mat4 frxu_frameProjectionMatrix;", "// uniform mat4 frxu_frameProjectionMatrix;");
+                    s = s.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "// uniform ivec2 frxu_size;");
+                    s = s.replaceAll("uniform\\s+int\\s+frxu_lod;", "// uniform int frxu_lod;");
+                    s = s.replaceAll("uniform\\s+int\\s+frxu_layer;", "// uniform int frxu_layer;");
+                    s = s.replaceAll("uniform\\s+mat4\\s+frxu_frameProjectionMatrix;", "// uniform mat4 frxu_frameProjectionMatrix;");
                     s =
                         "layout(std140) uniform canpipe_ub_pass {\n"+
                         "   uniform ivec2 frxu_size;\n"+

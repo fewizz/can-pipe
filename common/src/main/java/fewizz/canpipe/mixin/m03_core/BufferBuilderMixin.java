@@ -62,18 +62,18 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             ordinal = 0
         )
     )
-    private int  endLastVertex(int elementsToFill) {
+    private int endLastVertex(int elementsToFill) {
         if (elementsToFill == 0) {
             return 0;
         }
 
         long normalPtr = this.beginElement(VertexFormatElement.NORMAL);
         long tangentPtr = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
-        long materialFlagsPtr = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
+        /*long materialFlagsPtr = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
 
         if (materialFlagsPtr != -1) {
             MemoryUtil.memPutByte(materialFlagsPtr, this.materialFlags);
-        }
+        }*/
 
         this.canpipe_setAO(1.0F);
 
@@ -81,8 +81,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         if (!lastVertex || !(normalPtr != -1 || tangentPtr != -1)) {
             return this.elementsToFill;
         }
-
-        // CanPipe.trap();
 
         long posPtr = this.vertexPointer + this.offsetsByElement[VertexFormatElement.POSITION.id()];
 
@@ -183,10 +181,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     void afterUVSet(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
         long spriteIndexPtr = this.beginElement(CanPipe.VertexFormatElements.SPRITE_INDEX);
         long materialIndexPtr = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_INDEX);
+        long materialFlagsPtr = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
 
         boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
 
-        if (!lastVertex || !(spriteIndexPtr != -1 || materialIndexPtr != -1)) {
+        if (!lastVertex || (spriteIndexPtr == -1 && materialIndexPtr == -1 && materialFlagsPtr == -1)) {
             return;
         }
 
@@ -199,27 +198,48 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             }
         }
 
-        if (materialIndexPtr != -1) {
+        if (materialIndexPtr != -1 || materialFlagsPtr != -1) {
             Material material = null;
-            if (this.materialMap != null) {
-                if (this.materialMap.spriteMap != null && sprite != null) {
-                    Minecraft mc = Minecraft.getInstance();
-                    TextureAtlas atlas = mc.getModelManager().getAtlas(sprite.atlasLocation());
 
-                    for (var kv : this.materialMap.spriteMap.entrySet()) {
-                        if (atlas.getSprite(kv.getKey()) == sprite) {
-                            material = kv.getValue();
+            if (materialIndexPtr != -1) {
+                if (this.materialMap != null) {
+                    if (this.materialMap.spriteMap != null && sprite != null) {
+                        Minecraft mc = Minecraft.getInstance();
+                        TextureAtlas atlas = mc.getModelManager().getAtlas(sprite.atlasLocation());
+
+                        for (var kv : this.materialMap.spriteMap.entrySet()) {
+                            if (atlas.getSprite(kv.getKey()) == sprite) {
+                                material = kv.getValue();
+                            }
                         }
                     }
+                    if (material == null) {
+                        material = materialMap.defaultMaterial;
+                    }
                 }
-                if (material == null) {
-                    material = materialMap.defaultMaterial;
+
+                int index = material != null ? Materials.id(material) : -1;
+                for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
+                    MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) index);
                 }
             }
 
-            int index = material != null ? Materials.id(material) : -1;
-            for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
-                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) index);
+            if (materialFlagsPtr != -1) {
+                if (material != null) {
+                    if (material.disableAO) {
+                        this.materialFlags |= 1 << 1;
+                    }
+                    if (material.disableDiffuse) {
+                        this.materialFlags |= 1 << 2;
+                    }
+                }
+                else {
+                    this.materialFlags &= ~(1 << 1);
+                    this.materialFlags &= ~(1 << 2);
+                }
+                for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
+                    MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, this.materialFlags);
+                }
             }
         }
     }

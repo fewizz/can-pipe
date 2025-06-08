@@ -116,14 +116,6 @@ public class MaterialProgram extends ProgramBase {
         String vertexSrc = getShaderSource.apply(vertexShaderLocation).get();
         String fragmentSrc = getShaderSource.apply(fragmentShaderLocation).get();
 
-        Function<String, String> commentFREXUniforms = (String src) -> {
-            src = src.replace("uniform int frxu_cascade;", "// uniform int frxu_cascade;");
-            return src;
-        };
-
-        vertexSrc = commentFREXUniforms.apply(vertexSrc);
-        fragmentSrc = commentFREXUniforms.apply(fragmentSrc);
-
         VertexFormat vertexFormat;
         if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.BLOCK) {
             vertexFormat = CanPipe.VertexFormats.BLOCK;
@@ -329,13 +321,17 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
+        Function<String, String> postProcess = (String s) -> {
+            return s.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
+        };
+
         var vertexShader = Shader.load(
             vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion,
-            options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> s
+            options, appliedOptions, getShaderSource, shadowFramebuffer, postProcess
         );
         var fragmentShader = Shader.load(
             fragmentShaderLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion,
-            options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> s
+            options, appliedOptions, getShaderSource, shadowFramebuffer, postProcess
         );
 
         var materialProgram = new MaterialProgram(
