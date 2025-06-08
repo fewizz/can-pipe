@@ -12,22 +12,17 @@ import java.util.stream.Stream;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Streams;
-import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlTextureView;
-import com.mojang.blaze3d.opengl.Uniform;
 import com.mojang.blaze3d.opengl.Uniform.Ubo;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.UniformBuffer;
-import fewizz.canpipe.UniformBuffer.IntUniform;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -43,14 +38,6 @@ public class MaterialProgram extends ProgramBase {
 
     static final List<String> INTERNAL_SAMPLER_NAMES = List.of(
         "frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"
-    );
-
-    public static final UniformBuffer MATERIAL_PROGRAM = new UniformBuffer();
-    public static final IntUniform FRXU_CASCADE = MATERIAL_PROGRAM.add(new IntUniform());
-    public static final IntUniform CANPIPE_RENDER_TARGET = MATERIAL_PROGRAM.add(new IntUniform());
-    public static final IntUniform CANPIPE_ORIGIN_TYPE = MATERIAL_PROGRAM.add(new IntUniform());
-    public static final GpuBuffer MATERIAL_PROGRAM_UBO = RenderSystem.getDevice().createBuffer(
-        () -> "can-pipe material-program UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, MATERIAL_PROGRAM.size()
     );
 
     public final boolean shadow;
@@ -81,27 +68,20 @@ public class MaterialProgram extends ProgramBase {
         for (int i = 0; i < Math.min(samplers.size(), textureViews.size()); ++i) {
             String sampler = samplers.get(i);
             Optional<? extends GlTextureView> texture = textureViews.get(i);
-            /*if (texture.isEmpty()) {
+            if (texture.isEmpty()) {
                 if (this.getUniform(sampler) != null) {
                     throw new NullPointerException("Couldn't find texture for sampler \""+sampler+"\"");
                 }
-                this.getSamplers().remove(sampler);
+                this.getUniforms().remove(sampler);
             }
             else {
                 samplerToTexture.put(sampler, texture.get());
-            }*/
+            }
             samplerToTexture.put(sampler, texture.get());
         }
 
         this.samplerToTexture = Collections.unmodifiableMap(samplerToTexture);
         this.shadow = shadow;
-    }
-
-    @Override
-    public Uniform getUniform(String name) {
-        if (name.equals("Light0_Direction")) { name = "canpipe_light0Direction"; }
-        if (name.equals("Light1_Direction")) { name = "canpipe_light1Direction"; }
-        return super.getUniform(name);
     }
 
     public static GlRenderPipeline load(

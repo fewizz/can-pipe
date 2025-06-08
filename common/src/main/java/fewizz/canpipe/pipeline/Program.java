@@ -22,10 +22,10 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.UniformBuffer;
-import fewizz.canpipe.UniformBuffer.IVec2Uniform;
-import fewizz.canpipe.UniformBuffer.IntUniform;
-import fewizz.canpipe.UniformBuffer.Mat4Uniform;
+import fewizz.canpipe.UniformBufferStruct;
+import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
+import fewizz.canpipe.UniformBufferStruct.IntUniform;
+import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
 import net.minecraft.resources.ResourceLocation;
 
 
@@ -35,7 +35,7 @@ public class Program extends ProgramBase {
         new RenderPipeline.UniformDescription("canpipe_ub_pass", UniformType.UNIFORM_BUFFER)
     );
 
-    static final UniformBuffer PASS = new UniformBuffer();
+    static final UniformBufferStruct PASS = new UniformBufferStruct();
     static final IVec2Uniform FRX_SIZE = PASS.add(new IVec2Uniform());
     static final IntUniform FRX_LOD = PASS.add(new IntUniform());
     static final IntUniform FRX_LAYER = PASS.add(new IntUniform());

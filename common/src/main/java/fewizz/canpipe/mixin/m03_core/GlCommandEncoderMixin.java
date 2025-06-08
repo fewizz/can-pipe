@@ -10,7 +10,7 @@ import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import fewizz.canpipe.pipeline.MaterialProgram;
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 
@@ -42,7 +42,7 @@ public class GlCommandEncoderMixin {
             }
             else */
 
-            int renderTarget = 0;  // some lies
+            int renderTarget = 0;
 
             if (framebufferID == p.translucentTerrainFramebuffer.glID()) {
                 renderTarget = 1;
@@ -53,13 +53,13 @@ public class GlCommandEncoderMixin {
             else if (framebufferID == p.particlesFramebuffer.glID()) {
                 renderTarget = 3;
             }
-            if (renderTarget != MaterialProgram.CANPIPE_RENDER_TARGET.value) {
-                MaterialProgram.CANPIPE_RENDER_TARGET.value = renderTarget;
+            if (renderTarget != Uniforms.CANPIPE_RENDER_TARGET.value) {
+                Uniforms.CANPIPE_RENDER_TARGET.value = renderTarget;
                 try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-                    var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());
-                    MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
+                    var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
+                    Uniforms.MATERIAL_PROGRAM.writeTo(builder);
                     this.inRenderPass = false;
-                    RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+                    RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
                     this.inRenderPass = true;
                 }
             }

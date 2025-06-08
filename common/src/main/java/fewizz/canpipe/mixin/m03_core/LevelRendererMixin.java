@@ -33,11 +33,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.GFX;
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
-import fewizz.canpipe.pipeline.MaterialProgram;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -194,12 +194,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         for (int cascade = 0; cascade < 4; ++cascade) {
             Profiler.get().popPush("cascade " +cascade);
 
-            MaterialProgram.FRXU_CASCADE.value = cascade;
+            Uniforms.FRXU_CASCADE.value = cascade;
 
             try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-                var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM.size());
-                MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
-                RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+                var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM.size());
+                Uniforms.MATERIAL_PROGRAM.writeTo(builder);
+                RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
             }
 
             Frustum shadowFrustum = new ShadowFrustum(
@@ -252,12 +252,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             Profiler.get().pop();
         }
 
-        MaterialProgram.FRXU_CASCADE.value = 0;
+        Uniforms.FRXU_CASCADE.value = 0;
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM.size());
-            MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM.size());
+            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
         }
 
         modelViewMatrixStack.popMatrix();

@@ -27,6 +27,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.Uniforms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -316,13 +317,13 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
-        ProgramBase.updateFREXUniforms();
-        MaterialProgram.CANPIPE_ORIGIN_TYPE.value = 0;  // camera
+        Uniforms.updateFREXUniforms();
+        Uniforms.CANPIPE_ORIGIN_TYPE.value = 0;  // camera
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());
-            MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
+            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
         }
 
         if (this.runInitPasses) {
@@ -351,24 +352,23 @@ public class Pipeline implements AutoCloseable {
             pass.apply(view, projection);
         }
 
-        MaterialProgram.CANPIPE_ORIGIN_TYPE.value = 3;  // hand
+        Uniforms.CANPIPE_ORIGIN_TYPE.value = 3;  // hand
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());
-            MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
+            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
         }
     }
 
     public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
         Minecraft.getInstance().mainRenderTarget = this.defaultFramebuffer;
-        MaterialProgram.CANPIPE_ORIGIN_TYPE.value = 2;  // screen
-        MaterialProgram.CANPIPE_RENDER_TARGET.value = 0;  // solid
+        Uniforms.CANPIPE_ORIGIN_TYPE.value = 2;  // screen
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, MaterialProgram.MATERIAL_PROGRAM_UBO.size());
-            MaterialProgram.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(MaterialProgram.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
+            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
         }
 
         for (PassBase pass : this.afterRenderHandPasses) {

@@ -16,10 +16,13 @@ import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.pipeline.MaterialProgram;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import fewizz.canpipe.pipeline.Program;
+import fewizz.canpipe.pipeline.ProgramBase;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.ModelManager;
@@ -86,20 +89,17 @@ public abstract class GlRenderPassMixin {
         if (p != null) {
             result = p.onRenderPassSetRenderPipeline(renderPipeline);
         }
+        if (result != null && result.program() instanceof ProgramBase) {
+            this.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
+            this.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
+            this.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
+            this.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
+            this.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
+        }
         if (result != null && result.program() instanceof MaterialProgram) {
-            this.setUniform("canpipe_ub_material_program", MaterialProgram.MATERIAL_PROGRAM_UBO);
+            this.setUniform("canpipe_ub_material_program", Uniforms.MATERIAL_PROGRAM_UBO);
         }
         return result != null ? result : operation.call(instance, renderPipeline);
     }
-
-    /*@Inject(
-        method = "setPipeline",
-        at = @At("RETURN")
-    )
-    private void onSetPipeline(CallbackInfo ci) {
-        if (glRenderPipeline.program() instanceof MaterialProgram) {
-            this.setUniform("canpipe_ub_material_program", MaterialProgram.MATERIAL_PROGRAM_UBO);
-        }
-    }*/
 
 }

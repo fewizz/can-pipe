@@ -13,7 +13,9 @@ import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-public class UniformBuffer {
+import net.minecraft.util.Mth;
+
+public class UniformBufferStruct {
     final List<UniformValue> uniformValues = new ArrayList<>();
     final private Std140SizeCalculator sizeCalculator = new Std140SizeCalculator();
 
@@ -31,8 +33,7 @@ public class UniformBuffer {
     }
 
     public int size() {
-        this.sizeCalculator.align(RenderSystem.getDevice().getUniformOffsetAlignment());
-        return this.sizeCalculator.get();
+        return Mth.roundToward(this.sizeCalculator.get(), RenderSystem.getDevice().getUniformOffsetAlignment());
     }
 
     // Same as net.minecraft.client.renderer.UniformValue, but not a record
