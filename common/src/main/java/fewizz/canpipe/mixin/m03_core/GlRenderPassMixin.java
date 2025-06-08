@@ -57,6 +57,9 @@ public abstract class GlRenderPassMixin {
                     ((TextureAtlasExtended) atlas).canpipe_getSpriteData()
                 );
             }
+            else if (name.equals("Sampler1")) {
+                name = "canpipe_overlay";
+            }
             else if (name.equals("Sampler2")) {
                 name = "frxs_lightmap";
             }

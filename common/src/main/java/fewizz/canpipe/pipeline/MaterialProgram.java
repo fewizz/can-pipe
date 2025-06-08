@@ -37,7 +37,7 @@ public class MaterialProgram extends ProgramBase {
     );
 
     static final List<String> INTERNAL_SAMPLER_NAMES = List.of(
-        "frxs_baseColor", "frxs_lightmap", "canpipe_spritesExtents"
+        "frxs_baseColor", "canpipe_overlay", "frxs_lightmap", "canpipe_spritesExtents"
     );
 
     public final boolean shadow;
@@ -173,6 +173,8 @@ public class MaterialProgram extends ProgramBase {
             usedMaterialIDs.add(id);
         }
 
+        boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
+
         vertexSrc =
             "#define CANPIPE_MATERIAL_SHADER\n"+
             (depthPass ? "#define DEPTH_PASS\n" : "")+
@@ -183,10 +185,11 @@ public class MaterialProgram extends ProgramBase {
             "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
             "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
             (
-                vertexFormat.contains(VertexFormatElement.UV1) ?
-                "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_uv1" :
-                "const ivec2 in_v1 = ivec2(0)"
-            ) + ";\n"+
+                hasOverlayPos ?
+                "#define CANPIPE_HAS_OVERLAY_POS\n"+
+                "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_overlayPos;  // UV1\n" :
+                ""
+            ) +
             "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV2)+") in ivec2 in_lightmap;  // UV2\n"+
             (
                 vertexFormat.contains(VertexFormatElement.NORMAL) ?
@@ -241,6 +244,9 @@ public class MaterialProgram extends ProgramBase {
                 canpipe_spriteIndex = in_spriteIndex;
                 canpipe_materialIndex = in_materialIndex;
                 canpipe_materialFlags = in_materialFlags;
+                #if defined CANPIPE_HAS_OVERLAY_POS
+                    canpipe_overlayPos = in_overlayPos;
+                #endif
 
                 if (frx_isGui && !frx_isHand) {
                     frx_vertexNormal.y *= -1.0;  // compat
@@ -277,6 +283,7 @@ public class MaterialProgram extends ProgramBase {
             (depthPass ? "#define DEPTH_PASS\n" : "")+
             (enablePBR ? "#define PBR_ENABLED\n" : "")+
             "#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n"+
+            "#define CANPIPE_HAS_OVERLAY_POS\n"+
             """
 
             layout (depth_unchanged) out float gl_FragDepth;

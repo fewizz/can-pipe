@@ -11,6 +11,9 @@
     flat in int canpipe_spriteIndex;
     flat in int canpipe_materialIndex;
     flat in int canpipe_materialFlags;
+    #if defined CANPIPE_HAS_OVERLAY_POS
+        flat in ivec2 canpipe_overlayPos;
+    #endif
 
     in vec4 frx_var0;
     in vec4 frx_var1;
@@ -30,6 +33,6 @@
         float frx_fragHeight = 0.0;
         float frx_fragRoughness = 1.0;
         float frx_fragAo = 1.0;
-    #endif // PBR
+    #endif
 
 #endif

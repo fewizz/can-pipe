@@ -1,6 +1,7 @@
 #if defined CANPIPE_MATERIAL_SHADER
 
     uniform sampler2D frxs_baseColor;  // aka Sampler0
+    uniform sampler2D canpipe_overlay;  // aka Sampler1
     uniform sampler2D frxs_lightmap;   // aka Sampler2
 
     #if defined FRAGMENT_SHADER && defined SHADOW_MAP_PRESENT
