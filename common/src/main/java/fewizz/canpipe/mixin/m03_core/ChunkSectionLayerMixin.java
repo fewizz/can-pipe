@@ -4,6 +4,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -14,21 +15,26 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 
 @Mixin(ChunkSectionLayer.class)
 public class ChunkSectionLayerMixin {
-    
+
     @ModifyReturnValue(method="pipeline", at=@At("RETURN"))
     public RenderPipeline pipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
+
         if (p != null) {
             Minecraft mc = Minecraft.getInstance();
-            if (!((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
-                renderPipeline = p.materialPrograms.get(renderPipeline).info();
+            GlRenderPipeline glRenderPipeline =
+                !((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()
+                ? p.materialPrograms.get(renderPipeline)
+                : p.shadows.materialPrograms().get(renderPipeline);
+
+            if (glRenderPipeline != null) {
+                renderPipeline = glRenderPipeline.info();
             }
-            else {
-                renderPipeline = p.shadows.materialPrograms().get(renderPipeline).info();
-            }
+
             // NOTE: we don't check for shadows here
         }
+
         return renderPipeline;
-	}
+    }
 
 }

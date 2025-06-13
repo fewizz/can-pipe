@@ -135,6 +135,7 @@ public class MaterialProgram extends ProgramBase {
             originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
 
             // use ITEM_ENTITY_TARGET output state shard
+            originalRenderPipeline == RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL ||
             originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
             originalRenderPipeline == RenderPipelines.LINE_STRIP ||
             originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
@@ -145,11 +146,16 @@ public class MaterialProgram extends ProgramBase {
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
+            originalRenderPipeline == RenderPipelines.ENTITY_SMOOTH_CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ENTITY_SMOOTH_CUTOUT ||
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
             originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
-            originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT
+            originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||
+            originalRenderPipeline == RenderPipelines.TRIPWIRE ||
+            originalRenderPipeline == RenderPipelines.BREEZE_WIND ||
+            originalRenderPipeline == RenderPipelines.ENERGY_SWIRL
         ) {
             alphaCutout = 0.1F;
         }

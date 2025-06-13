@@ -34,6 +34,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.helpers.BBPerRenderTypeMultiBufferSource;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -101,16 +102,16 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     void renderShadowsAfterLightUpdates(
         GraphicsResourceAllocator graphicsResourceAllocator,
-		DeltaTracker deltaTracker,
-		boolean renderBlockOutline,
-		Camera camera,
-		Matrix4f viewMatrix,
+        DeltaTracker deltaTracker,
+        boolean renderBlockOutline,
+        Camera camera,
+        Matrix4f viewMatrix,
         Matrix4f projectionMatrix,
-		GpuBufferSlice gpuBufferSlice,
-		Vector4f clearColor,
-		boolean renderSky,
+        GpuBufferSlice gpuBufferSlice,
+        Vector4f clearColor,
+        boolean renderSky,
         CallbackInfo ci
-    ) {
+    ) throws Exception {
         Pipeline p = Pipelines.getCurrent();
 
         if (p == null) {
@@ -225,29 +226,29 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().glId(), 0, cascade);
 
             ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
-			chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE);
+            chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE);
             chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT);
-
-            Profiler.get().popPush("collect entities");
-
-            this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
 
             MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 
             if (p.shadows.allowEntities()) {
+                Profiler.get().popPush("collect entities");
+                this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
+
                 Profiler.get().popPush("render entities");
 
                 this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
                 this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
                 this.checkPoseStack(poseStack);
                 this.visibleEntities.clear();
-                bufferSource.endBatch();
             }
 
             if (p.shadows.allowParticles()) {
                 Profiler.get().popPush("render particles");
-                mc.particleEngine.render(camera, pt, this.renderBuffers.bufferSource());
+                mc.particleEngine.render(camera, pt, bufferSource);
             }
+
+            bufferSource.endBatch();
 
             Profiler.get().pop();
         }
