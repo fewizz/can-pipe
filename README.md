@@ -20,7 +20,6 @@ so we extend it and [provide](https://github.com/fewizz/can-pipe/blob/1e5dabe537
 * Doesn't provide `FRAPI` renderer, parasitizes on `Indigo` instead
 
 ## Shader pipelines that are known to work
-All known to me:
 [Forget-Me-Not](https://modrinth.com/shader/forgetmenot) and
 [Aerie](https://modrinth.com/shader/aerie-shaders) by [ambrosia13](https://github.com/ambrosia13),
 [LumiLights](https://github.com/spiralhalo/LumiLights/releases) and
@@ -33,5 +32,5 @@ All known to me:
 3. In video settings, click on `Pipeline: ...` to switch between available pipelines
 
 ## Note on FREX
-Can-pipe doesn't use [FREX](https://github.com/vram-guild/frex.git), but might in the future.
+Can-pipe doesn't use [FREX](https://github.com/vram-guild/frex.git).
 Currently, can-pipe includes some FREX shader files, with slight modifications.

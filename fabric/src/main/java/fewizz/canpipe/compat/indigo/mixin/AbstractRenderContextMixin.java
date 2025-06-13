@@ -14,12 +14,12 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.compat.indigo.mixininterface.MutableQuadViewExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
-// import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
-// import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext;
+import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
+import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext;
 
-// @Mixin(value = AbstractRenderContext.class)
+@Mixin(value = AbstractRenderContext.class)
 public class AbstractRenderContextMixin {
-/*
+
     @Inject(
         method = "bufferQuad("+
             "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
@@ -88,5 +88,5 @@ public class AbstractRenderContextMixin {
             }
         }
     }
-*/
+
 }
