@@ -3,6 +3,7 @@ package fewizz.canpipe.mixin.m03_core;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -18,25 +19,45 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 @Mixin(ItemRenderer.class)
 public class ItemRendererMixin {
 
-    @Inject(
+    @ModifyVariable(
         method = "getFoilBuffer",
         at = @At("HEAD"),
-        cancellable = true
+        argsOnly = true,
+        ordinal = 0
     )
-    private static void onGetFoilBuffer(
-        MultiBufferSource bufferSource,
-        RenderType renderType,
-        boolean isItem,
+    private static boolean onGetFoilBuffer(
         boolean glint,
-        CallbackInfoReturnable<VertexConsumer> cir
+        @Local(argsOnly = true) MultiBufferSource bufferSource,
+        @Local(argsOnly = true) RenderType renderType,
+        @Local(argsOnly = true, ordinal = 0) boolean isItem
     ) {
         // prevent creation of VertexMultiConsumer.Double,
         // pipeline will handle enchanted item glint in material shader
         if (Pipelines.getCurrent() != null && glint) {
             VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
             vce.canpipe_setSharedGlint(true);
-            cir.setReturnValue(vce);
+            glint = false;
         }
+        return glint;
+    }
+
+    @ModifyVariable(
+        method = "getArmorFoilBuffer",
+        at = @At("HEAD"),
+        argsOnly = true,
+        ordinal = 0
+    )
+    private static boolean onGetArmorFoilBuffer(
+        boolean hasFoil,
+        @Local(argsOnly = true) MultiBufferSource bufferSource,
+        @Local(argsOnly = true) RenderType renderType
+    ) {
+        if (Pipelines.getCurrent() != null && hasFoil) {
+            VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
+            vce.canpipe_setSharedGlint(true);
+            hasFoil = false;
+        }
+        return hasFoil;
     }
 
     @Inject(

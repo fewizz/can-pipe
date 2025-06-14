@@ -146,10 +146,9 @@ public class MaterialProgram extends ProgramBase {
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
-            originalRenderPipeline == RenderPipelines.ENTITY_SMOOTH_CUTOUT ||
-            originalRenderPipeline == RenderPipelines.ENTITY_SMOOTH_CUTOUT ||
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
+            originalRenderPipeline == RenderPipelines.ENTITY_SMOOTH_CUTOUT ||
             originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||

@@ -34,7 +34,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.Uniforms;
-import fewizz.canpipe.helpers.BBPerRenderTypeMultiBufferSource;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -50,6 +49,8 @@ import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
@@ -317,14 +318,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         // uniformUploader.upload("frx_modelToWorld", pos.getX(), pos.getY(),pos.getZ(), 1.0F);
     }*/
 
-    /*@Inject(
-        method = "renderSectionLayer",
-        at = @At("RETURN")
-    )
-    void afterAllSectionsRendered(CallbackInfo ci) {
-        CanPipe.GlobalState.originType = 0; // camera
-    }*/
-
     @ModifyArg(
         method = "setupRender",
         at = @At(
@@ -376,7 +369,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     // after main.get().copyDepthFrom(translucent.get());
     // if pipeline is active,
     // because we render items into translucent framebuffer
-    /*@ModifyExpressionValue(
+    @ModifyExpressionValue(
         method = {  // lambda in the `addMainPass`
             "method_62214",  // fabric
             "lambda$addMainPass$2"  // neoforge
@@ -428,6 +421,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
         original.call(instance, other);
-    }*/
+    }
 
 }

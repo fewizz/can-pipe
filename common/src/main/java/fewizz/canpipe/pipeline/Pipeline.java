@@ -210,22 +210,30 @@ public class Pipeline implements AutoCloseable {
 
         var renderPipelines = new RenderPipeline[] {
             RenderPipelines.SOLID,
-            RenderPipelines.CUTOUT,
             RenderPipelines.CUTOUT_MIPPED,
+            RenderPipelines.CUTOUT,
             RenderPipelines.TRANSLUCENT,
+            RenderPipelines.TRIPWIRE,
             RenderPipelines.TRANSLUCENT_MOVING_BLOCK,
+
+            RenderPipelines.ARMOR_CUTOUT_NO_CULL,
+            RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
+            RenderPipelines.ARMOR_TRANSLUCENT,
             RenderPipelines.ENTITY_SOLID,
+            RenderPipelines.ENTITY_SOLID_Z_OFFSET_FORWARD,
             RenderPipelines.ENTITY_CUTOUT,
             RenderPipelines.ENTITY_CUTOUT_NO_CULL,
             RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET,
             RenderPipelines.ENTITY_TRANSLUCENT,
             RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE,
+            RenderPipelines.ENTITY_SMOOTH_CUTOUT,
             RenderPipelines.ENTITY_NO_OUTLINE,
-            RenderPipelines.ARMOR_CUTOUT_NO_CULL,
-            RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
-            RenderPipelines.ARMOR_TRANSLUCENT,
-            RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL,
+            // RenderPipelines.BREEZE_WIND,
+            // RenderPipelines.ENERGY_SWIRL,
             RenderPipelines.EYES,
+            RenderPipelines.ENTITY_DECAL,
+            RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL,
+
             RenderPipelines.OPAQUE_PARTICLE,
             RenderPipelines.TRANSLUCENT_PARTICLE
         };

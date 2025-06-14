@@ -40,7 +40,7 @@ dependencies {
     modImplementation fabricApi.module("fabric-resource-loader-v0", fabric_version)
     modImplementation fabricApi.module("fabric-api-base", fabric_version)
     modImplementation fabricApi.module("fabric-key-binding-api-v1", fabric_version)
-    modImplementation fabricApi.module("fabric-renderer-indigo", fabric_version)
+    modCompileOnly fabricApi.module("fabric-renderer-indigo", fabric_version)
 
     include fabricApi.module("fabric-resource-loader-v0", fabric_version)
     include fabricApi.module("fabric-api-base", fabric_version)
@@ -54,6 +54,9 @@ dependencies {
     // modImplementation fabricApi.module("fabric-block-view-api-v2", fabric_version)
     // modImplementation fabricApi.module("fabric-rendering-data-attachment-v1", fabric_version)
     // modImplementation fabricApi.module("fabric-rendering-fluids-v1", fabric_version)
+
+    // modImplementation "maven.modrinth:debug-keybind:15.0.0-fabric"
+    // modImplementation "maven.modrinth:boxlib:7lzlZrX9"
 }
 
 compileJava.source project(":common").sourceSets.main.allSource
