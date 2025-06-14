@@ -21,7 +21,7 @@ public class ChunkSectionsToRenderMixin {
     )
     void preRenderGroup(CallbackInfo ci) {
         if (Uniforms.CANPIPE_ORIGIN_TYPE.value == 1) { return; }
-        Uniforms.CANPIPE_ORIGIN_TYPE.value = 1; // region
+        Uniforms.CANPIPE_ORIGIN_TYPE.value = 1;  // region
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
@@ -36,7 +36,7 @@ public class ChunkSectionsToRenderMixin {
     )
     void postRenderGroup(CallbackInfo ci) {
         if (Uniforms.CANPIPE_ORIGIN_TYPE.value == 0) { return; }
-        Uniforms.CANPIPE_ORIGIN_TYPE.value = 0; // camera
+        Uniforms.CANPIPE_ORIGIN_TYPE.value = 0;  // camera
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());

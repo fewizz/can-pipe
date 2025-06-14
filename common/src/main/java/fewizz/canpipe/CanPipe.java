@@ -57,42 +57,47 @@ public class CanPipe {
 
     public class VertexFormats {
 
+        /* size % 4 should be == 0, for quads sorting */
         public static final VertexFormat BLOCK = VertexFormat.builder()
-            .add("Position", VertexFormatElement.POSITION)
-            .add("Color", VertexFormatElement.COLOR)
-            .add("UV0", VertexFormatElement.UV0)
-            .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL)
-            .add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
-            .add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
-            .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
-            .add("Tangent", CanPipe.VertexFormatElements.TANGENT)
-            .add("AO", CanPipe.VertexFormatElements.AO)
+            /* 0  + 3*4 */.add("Position", VertexFormatElement.POSITION)
+            /* 12 + 1*4 */.add("Color", VertexFormatElement.COLOR)
+            /* 16 + 2*4 */.add("UV0", VertexFormatElement.UV0)
+            /* 24 + 2*2 */.add("UV2", VertexFormatElement.UV2)
+            /* 28 + 3*1 */.add("Normal", VertexFormatElement.NORMAL)
+            /* 31 + 1*1 */.padding(1)
+
+            /* 32 + 1*4 */.add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
+            /* 36 + 4*1 */.add("Tangent", CanPipe.VertexFormatElements.TANGENT)
+            /* 40 + 1*2 */.add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            /* 42 + 1*1 */.add("AO", CanPipe.VertexFormatElements.AO)
+            /* 43 + 1*1 */.add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
             .build();
 
         public static final VertexFormat NEW_ENTITY = VertexFormat.builder()
-            .add("Position", VertexFormatElement.POSITION)
-            .add("Color", VertexFormatElement.COLOR)
-            .add("UV0", VertexFormatElement.UV0)
-            .add("UV1", VertexFormatElement.UV1)
-            .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL)
-            .add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
-            .add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
-            .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
-            .add("Tangent", CanPipe.VertexFormatElements.TANGENT)
+            /* 0  + 3*4 */.add("Position", VertexFormatElement.POSITION)
+            /* 12 + 1*4 */.add("Color", VertexFormatElement.COLOR)
+            /* 16 + 2*4 */.add("UV0", VertexFormatElement.UV0)
+            /* 24 + 2*2 */.add("UV1", VertexFormatElement.UV1)
+            /* 28 + 2*2 */.add("UV2", VertexFormatElement.UV2)
+            /* 32 + 3*1 */.add("Normal", VertexFormatElement.NORMAL)
+
+            /* 35 + 1*1 */.add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+            /* 36 + 1*4 */.add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
+            // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            /* 40 + 1*4 */.add("Tangent", CanPipe.VertexFormatElements.TANGENT)
             .build();
 
         public static final VertexFormat PARTICLE = VertexFormat.builder()
-            .add("Position", VertexFormatElement.POSITION)
-            .add("Color", VertexFormatElement.COLOR)
-            .add("UV0", VertexFormatElement.UV0)
-            .add("UV2", VertexFormatElement.UV2)
-            .add("Normal", VertexFormatElement.NORMAL)
-            .add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
-            .add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
-            .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
-            .add("Tangent", CanPipe.VertexFormatElements.TANGENT)
+            /* 0  + 3*4 */.add("Position", VertexFormatElement.POSITION)
+            /* 12 + 2*4 */.add("UV0", VertexFormatElement.UV0)
+            /* 20 + 4*1 */.add("Color", VertexFormatElement.COLOR)
+            /* 24 + 2*2 */.add("UV2", VertexFormatElement.UV2)
+
+            /* 28 + 3*1 */.add("Normal", VertexFormatElement.NORMAL)
+            /* 31 + 1*1 */.add("MaterialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+            /* 32 + 1*4 */.add("SpriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
+            // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            /* 36 + 4*1 */.add("Tangent", CanPipe.VertexFormatElements.TANGENT)
             .build();
 
     }

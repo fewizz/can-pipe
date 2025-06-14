@@ -5,7 +5,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -23,7 +22,7 @@ public class ItemRendererMixin {
         method = "getFoilBuffer",
         at = @At("HEAD"),
         argsOnly = true,
-        ordinal = 0
+        ordinal = 1 // 0 is `isItem`
     )
     private static boolean onGetFoilBuffer(
         boolean glint,
@@ -64,7 +63,10 @@ public class ItemRendererMixin {
         method = "renderItem",
         at = @At("TAIL")
     )
-    private static void onRenderItemEnd(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
+    private static void onRenderItemEnd(
+        CallbackInfo ci,
+        @Local VertexConsumer vertexConsumer
+    ) {
         if (vertexConsumer instanceof VertexConsumerExtended vce) {
             vce.canpipe_setSharedGlint(false);
         }
