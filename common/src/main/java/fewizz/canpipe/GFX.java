@@ -14,13 +14,7 @@ public class GFX {
         GL11C.glBindTexture(target, texture);
     }
 
-    public static void glUniform2iv(int i, IntBuffer intBuffer) {
-        GL20C.glUniform2iv(i, intBuffer);
-    }
-
-    public static void glFramebufferTextureLayer(
-        int target, int attachment, int texture, int level, int layer
-    ) {
+    public static void glFramebufferTextureLayer(int target, int attachment, int texture, int level, int layer) {
         GL33C.glFramebufferTextureLayer(target, attachment, texture, level, layer);
     }
 

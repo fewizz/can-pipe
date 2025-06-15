@@ -176,11 +176,6 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, 0);
     }
 
-    /*@Override
-    public GpuTexture getColorTexture() {
-        
-    }*/
-
     /**
      * Called by <code>frex_clear</code>-type passes<p>
      * Note that {@link RenderTarget#clear} clears only first color and depth attachemnts
