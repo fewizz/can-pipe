@@ -138,7 +138,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.canpipe_eyeBlockLight > this.canpipe_smoothedEyeBlockLight && !p.smoothBrightnessBidirectionaly
             ? this.canpipe_eyeBlockLight
             : Mth.lerp(brightnessDelta, this.canpipe_smoothedEyeBlockLight, this.canpipe_eyeBlockLight);
-        
+
         this.canpipe_smoothedEyeSkyLight =
             this.canpipe_eyeSkyLight > this.canpipe_smoothedEyeSkyLight && !p.smoothBrightnessBidirectionaly
             ? this.canpipe_eyeSkyLight
@@ -318,7 +318,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         // uniformUploader.upload("frx_modelToWorld", pos.getX(), pos.getY(),pos.getZ(), 1.0F);
     }*/
 
-    @ModifyArg(
+    /*@ModifyArg(
         method = "setupRender",
         at = @At(
             value = "INVOKE",
@@ -335,7 +335,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     private boolean disableSmartCullIfShadow(boolean original) {
         return canpipe_isRenderingShadows ? false : original;
-    }
+    }*/
 
     @WrapOperation(
         method = "offsetFrustum",

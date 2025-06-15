@@ -117,7 +117,7 @@ public class Uniforms {
 
     // world
     private static final UniformBufferStruct WORLD = new UniformBufferStruct();
-    private static final IntUniform CANPIPE_RENDER_FRAMES = WORLD.add(new IntUniform());
+    public static final IntUniform CANPIPE_RENDER_FRAMES = WORLD.add(new IntUniform());
     private static final IntUniform CANPIPE_WORLD_FLAGS = WORLD.add(new IntUniform());
     private static final FloatUniform CANPIPE_FIXED_OR_DAY_TIME = WORLD.add(new FloatUniform());
     private static final FloatUniform FRX_RENDER_SECONDS = WORLD.add(new FloatUniform());
@@ -294,24 +294,24 @@ public class Uniforms {
             result |= (mc.player.isOnFire() ? 1 : 0)                              << 10;
             result |= (mc.player.isSleeping() ? 1 : 0)                            << 11;
             result |= (mc.player.isSprinting() ? 1 : 0)                           << 12;
-            result |= (mc.player.isInWaterOrRain() ? 1 : 0)                 << 13;
+            result |= (mc.player.isInWaterOrRain() ? 1 : 0)                       << 13;
             result |= (mc.level.getBlockState(bp).is(Blocks.POWDER_SNOW) ? 1 : 0) << 14;
             result |= (mc.player.isFreezing() ? 1 : 0)                            << 15;
             CANPIPE_PLAYER_FLAGS.value = result;
         }
         {
             long result = 0;
-            result |= (mc.player.hasEffect(MobEffects.SPEED) ? 1L : 0L)      << 0;
-            result |= (mc.player.hasEffect(MobEffects.SLOWNESS) ? 1L : 0L)   << 1;
-            result |= (mc.player.hasEffect(MobEffects.HASTE) ? 1L : 0L)           << 2;
-            result |= (mc.player.hasEffect(MobEffects.MINING_FATIGUE) ? 1L : 0L)        << 3;
-            result |= (mc.player.hasEffect(MobEffects.STRENGTH) ? 1L : 0L)        << 4;
-            result |= (mc.player.hasEffect(MobEffects.INSTANT_HEALTH) ? 1L : 0L)                << 5;
-            result |= (mc.player.hasEffect(MobEffects.INSTANT_DAMAGE) ? 1L : 0L)                << 6;
-            result |= (mc.player.hasEffect(MobEffects.JUMP_BOOST) ? 1L : 0L)                << 7;
-            result |= (mc.player.hasEffect(MobEffects.NAUSEA) ? 1L : 0L)           << 8;
+            result |= (mc.player.hasEffect(MobEffects.SPEED) ? 1L : 0L)               << 0;
+            result |= (mc.player.hasEffect(MobEffects.SLOWNESS) ? 1L : 0L)            << 1;
+            result |= (mc.player.hasEffect(MobEffects.HASTE) ? 1L : 0L)               << 2;
+            result |= (mc.player.hasEffect(MobEffects.MINING_FATIGUE) ? 1L : 0L)      << 3;
+            result |= (mc.player.hasEffect(MobEffects.STRENGTH) ? 1L : 0L)            << 4;
+            result |= (mc.player.hasEffect(MobEffects.INSTANT_HEALTH) ? 1L : 0L)      << 5;
+            result |= (mc.player.hasEffect(MobEffects.INSTANT_DAMAGE) ? 1L : 0L)      << 6;
+            result |= (mc.player.hasEffect(MobEffects.JUMP_BOOST) ? 1L : 0L)          << 7;
+            result |= (mc.player.hasEffect(MobEffects.NAUSEA) ? 1L : 0L)              << 8;
             result |= (mc.player.hasEffect(MobEffects.REGENERATION) ? 1L : 0L)        << 9;
-            result |= (mc.player.hasEffect(MobEffects.RESISTANCE) ? 1L : 0L)   << 10;
+            result |= (mc.player.hasEffect(MobEffects.RESISTANCE) ? 1L : 0L)          << 10;
             result |= (mc.player.hasEffect(MobEffects.FIRE_RESISTANCE) ? 1L : 0L)     << 11;
             result |= (mc.player.hasEffect(MobEffects.WATER_BREATHING) ? 1L : 0L)     << 12;
             result |= (mc.player.hasEffect(MobEffects.INVISIBILITY) ? 1L : 0L)        << 13;
@@ -381,7 +381,11 @@ public class Uniforms {
             FRX_EMISSIVE_COLOR.value.set(emissiveColor);
         }
         {
-            int value = mc.level.dimensionType().hasSkyLight() ? 1 : 0;
+            int value = 0;
+            value |= (mc.level.dimensionType().hasSkyLight() ? 1 : 0)    << 0;
+            value |= (mc.level.isRaining() ? 1 : 0)                      << 1;
+            value |= (mc.level.isThundering() ? 1 : 0)                   << 2;
+            value |= (mc.level.effects().constantAmbientLight() ? 1 : 0) << 3;
 
             int dimension = 3;
             if (mc.level.dimension() == Level.OVERWORLD) {
@@ -393,11 +397,7 @@ public class Uniforms {
             if (mc.level.dimension() == Level.END) {
                 dimension = 2;
             }
-            value |= dimension << 1;
-
-            value |= (mc.level.isRaining() ? 1 : 0) << 3;
-            value |= (mc.level.isThundering() ? 1 : 0) << 4;
-            value |= (mc.level.effects().constantAmbientLight() ? 1 : 0) << 5;
+            value |= dimension << 4;
 
             CANPIPE_WORLD_FLAGS.value = value;
         }

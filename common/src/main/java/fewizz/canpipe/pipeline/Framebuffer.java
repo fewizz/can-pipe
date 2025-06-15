@@ -62,7 +62,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         this.name = name;
         this.colorAttachments = colorAttachments;
         this.depthAttachment = depthAttachment;
-        createBuffers(-1, -1);
+        this.createBuffers(-1, -1);
         GFX.glObjectLabel(GL33C.GL_FRAMEBUFFER, this.id, pipelineLocation.toString()+"-"+name);
     }
 
@@ -116,7 +116,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         {
             var texture = this.colorTexture != null ? this.colorTexture : this.depthTexture;
             this.colorTexture = new GlTexture(
-                GpuTexture.USAGE_RENDER_ATTACHMENT,
+                GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC,
                 this.name, texture.getFormat(),
                 this.width, this.height,
                 texture.getDepthOrLayers(),

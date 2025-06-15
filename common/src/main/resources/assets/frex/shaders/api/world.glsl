@@ -39,11 +39,11 @@ const vec3 frx_vanillaClearColor = vec3(0.0);  // TODO
 #define frx_smoothedThunderGradient (canpipe_weatherGradients.w)
 
 #define frx_worldHasSkylight     ((canpipe_worldFlags >> 0) & 1)
-#define frx_worldIsOverworld int(((canpipe_worldFlags >> 1) & 3) == 0)
-#define frx_worldIsNether    int(((canpipe_worldFlags >> 1) & 3) == 1)
-#define frx_worldIsEnd       int(((canpipe_worldFlags >> 1) & 3) == 2)
-#define frx_worldIsRaining       ((canpipe_worldFlags >> 3) & 1)
-#define frx_worldIsThundering    ((canpipe_worldFlags >> 4) & 1)
-#define frx_worldIsSkyDarkened   ((canpipe_worldFlags >> 5) & 1)
+#define frx_worldIsRaining       ((canpipe_worldFlags >> 1) & 1)
+#define frx_worldIsThundering    ((canpipe_worldFlags >> 2) & 1)
+#define frx_worldIsSkyDarkened   ((canpipe_worldFlags >> 3) & 1)
+#define frx_worldIsOverworld int(((canpipe_worldFlags >> 4) & 3) == 0)
+#define frx_worldIsNether    int(((canpipe_worldFlags >> 4) & 3) == 1)
+#define frx_worldIsEnd       int(((canpipe_worldFlags >> 4) & 3) == 2)
 
 #define frx_worldIsMoonlit float(frx_worldHasSkylight == 1 && canpipe_fixedOrDayTime > 13.0/24.0 && canpipe_fixedOrDayTime < 23.0/24.0)
