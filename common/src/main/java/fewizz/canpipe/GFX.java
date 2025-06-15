@@ -18,10 +18,6 @@ public class GFX {
         GL20C.glUniform2iv(i, intBuffer);
     }
 
-    public static void glEnableCubemapSeamless() {
-        GL33C.glEnable(GL33C.GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    }
-
     public static void glFramebufferTextureLayer(
         int target, int attachment, int texture, int level, int layer
     ) {

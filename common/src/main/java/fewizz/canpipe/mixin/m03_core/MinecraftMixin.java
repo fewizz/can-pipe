@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.GFX;
 import fewizz.canpipe.PipelineIODebugScreen;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -21,11 +20,6 @@ import net.minecraft.client.gui.screens.Screen;
 public abstract class MinecraftMixin {
 
     @Shadow abstract public void setScreen(@Nullable Screen guiScreen);
-
-    @Inject(method = "<init>", at = @At("TAIL"))
-    void onInitEnd(CallbackInfo ci) {
-        GFX.glEnableCubemapSeamless();
-    }
 
     @ModifyReturnValue(
         method = "useShaderTransparency",
