@@ -75,6 +75,7 @@ loom {
             ideConfigGenerated true
             runDir '../run'
             appendProjectPathToConfigName = false
+            programArg "--renderDebugLabels"
         }
     }
 }

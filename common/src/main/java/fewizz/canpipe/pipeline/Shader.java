@@ -18,16 +18,16 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.GL43C;
 
 import com.google.common.collect.Iterators;
 import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.shaders.ShaderType;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.GFX;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
 import net.minecraft.resources.ResourceLocation;
 
@@ -56,6 +56,9 @@ public class Shader extends GlShaderModule {
     private Shader(int id, ResourceLocation location, String source, ShaderType type) {
         super(id, location, type);
         this.source = source;
+        if (RenderSystem.getDevice() instanceof GlDevice glDevice) {
+            glDevice.debugLabels().applyLabel(this);
+        }
     }
 
     static Shader load(
@@ -96,7 +99,8 @@ public class Shader extends GlShaderModule {
 
         /* Can't use CompiledShader.compile, because it trims and truncates the log */
         int id = GlStateManager.glCreateShader(GlConst.toGl(type));
-        GFX.glObjectLabel(GL43C.GL_SHADER, id, location.toString());
+
+        // GFX.glObjectLabel(GL43C.GL_SHADER, id, location.toString());
         GlStateManager.glShaderSource(id, preprocessedSource);
         GlStateManager.glCompileShader(id);
 

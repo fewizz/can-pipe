@@ -11,8 +11,8 @@ import org.joml.Vector3i;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.opengl.DirectStateAccess;
+import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.opengl.GlTextureView;
@@ -20,7 +20,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
 
 import blue.endless.jankson.JsonObject;
@@ -55,7 +54,10 @@ public class Texture extends GlTexture {
         );
         GlStateManagerAccessor.canpipe_setTextureTarget(this.id, target);
         GlStateManager._bindTexture(this.id);
-        GFX.glObjectLabel(GL33C.GL_TEXTURE, glId(), pipelineLocation.toString()+"-"+name);
+
+        if (RenderSystem.getDevice() instanceof GlDevice glDevice) {
+            glDevice.debugLabels().applyLabel(this);
+        }
 
         this.extent = extent;
         this.target = target;

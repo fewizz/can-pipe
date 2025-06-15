@@ -9,11 +9,13 @@ import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.MemoryStack;
 
 import com.google.common.collect.Streams;
+import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlProgram;
 import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
@@ -52,10 +54,15 @@ public abstract class ProgramBase extends GlProgram {
         Shader vertexShader, Shader fragmentShader
     ) {
         super(ProgramBase._link(name, vertexShader, fragmentShader, vertexFormat, name), name);
+
         this.vertexShader = vertexShader;
         this.fragmentShader = fragmentShader;
         samplers = new ArrayList<>(samplers);
         uniforms = Streams.concat(DEFAULT_UNIFORMS.stream(), uniforms.stream()).toList();
+
+        if (RenderSystem.getDevice() instanceof GlDevice glDevice) {
+            glDevice.debugLabels().applyLabel(this);
+        }
 
         /*
          * for cases when unform name in `programs` is misspelled, like in:

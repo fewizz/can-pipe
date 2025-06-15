@@ -15,6 +15,7 @@ import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengl.GL40C;
 
 import com.mojang.blaze3d.opengl.DirectStateAccess;
+import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -29,6 +30,7 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.mixininterface.GlDebugLabelExtended;
 import net.minecraft.resources.ResourceLocation;
 
 public class Framebuffer extends RenderTarget implements AutoCloseable {
@@ -64,7 +66,13 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         this.colorAttachments = Collections.unmodifiableList(colorAttachments);
         this.depthAttachment = depthAttachment;
         this.createBuffers(-1, -1);
-        GFX.glObjectLabel(GL33C.GL_FRAMEBUFFER, this.id, pipelineLocation.toString()+"-"+name);
+
+        if (
+            RenderSystem.getDevice() instanceof GlDevice glDevice &&
+            glDevice.debugLabels() instanceof GlDebugLabelExtended labels
+        ) {
+            labels.canpipe_applyLabelFramebuffer(this.id, this.name);
+        }
     }
 
     public int glID() {

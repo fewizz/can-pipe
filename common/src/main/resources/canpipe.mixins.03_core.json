@@ -17,6 +17,8 @@
     "EquipmentLayerRendererMixin",
     "GameRendererMixin",
     "GlCommandEncoderMixin",
+    "GlDebugLabelCoreMixin",
+    "GlDebugLabelExtMixin",
     "GlRenderPassMixin",
     "ItemRendererMixin",
     "ItemStackLayerRenderStateMixin",

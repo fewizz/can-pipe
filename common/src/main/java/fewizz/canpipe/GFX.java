@@ -6,7 +6,6 @@ import java.nio.IntBuffer;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.KHRDebug;
 
 public class GFX {
 
@@ -20,10 +19,6 @@ public class GFX {
 
     public static void glDrawBuffers(int[] bufs) {
         GL33C.glDrawBuffers(bufs);
-    }
-
-    public static void glObjectLabel(int identifier, int name, CharSequence label) {
-        KHRDebug.glObjectLabel(identifier, name, label);
     }
 
     public static void glTexImage3D(int target, int level, int internalformat, int width, int height, int depth, int border, int format, int type, ByteBuffer pixels) {
