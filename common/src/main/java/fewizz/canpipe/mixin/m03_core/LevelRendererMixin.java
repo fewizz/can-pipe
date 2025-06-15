@@ -151,9 +151,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
 
-        Profiler.get().popPush("canpipe_shadows");
         this.canpipe_isRenderingShadows = true;
 
+        Profiler.get().popPush("canpipe_shadows");
         Profiler.get().push("preparations");
 
         GameRendererExtended gre = ((GameRendererExtended) mc.gameRenderer);
@@ -179,21 +179,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         modelViewMatrixStack.pushMatrix();
         modelViewMatrixStack.mul(viewMatrix);
 
-        PoseStack poseStack = new PoseStack();
-
-        RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
-
-        Framebuffer shadowFramebuffer = p.shadows.framebuffer();
-        mc.mainRenderTarget = shadowFramebuffer;
-
         boolean prevEntityShadows = mc.options.entityShadows().get();
         mc.options.entityShadows().set(false);
 
-        try {
+        PoseStack poseStack = new PoseStack();
 
-        shadowFramebuffer.bindAndClearFully();
-
-        for (int cascade = 0; cascade < 4; ++cascade) {
+        for (int cascade = 0; cascade < p.shadows.cascadeRadii().size()+1; ++cascade) {
             Profiler.get().popPush("cascade " +cascade);
 
             Uniforms.FRXU_CASCADE.value = cascade;
@@ -221,35 +212,41 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 this.applyFrustum(shadowFrustum);
             }
 
-            Profiler.get().popPush("render sections");
+            RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
 
-            GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, shadowFramebuffer.glID());
-            GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, shadowFramebuffer.depthAttachment.texture().glId(), 0, cascade);
+            try {
+                Framebuffer shadowFramebuffer = p.shadows.framebuffers().get(cascade);
+                mc.mainRenderTarget = shadowFramebuffer;
+                shadowFramebuffer.bindAndClearFully();
 
-            ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
-            chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE);
-            chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT);
+                Profiler.get().popPush("render sections");
+                ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
+                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE);
+                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT);
 
-            MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
+                MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 
-            if (p.shadows.allowEntities()) {
-                Profiler.get().popPush("collect entities");
-                this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
+                if (p.shadows.allowEntities()) {
+                    Profiler.get().popPush("collect entities");
+                    this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
 
-                Profiler.get().popPush("render entities");
+                    Profiler.get().popPush("render entities");
 
-                this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
-                this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
-                this.checkPoseStack(poseStack);
-                this.visibleEntities.clear();
+                    this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
+                    this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
+                    this.checkPoseStack(poseStack);
+                    this.visibleEntities.clear();
+                }
+
+                if (p.shadows.allowParticles()) {
+                    Profiler.get().popPush("render particles");
+                    mc.particleEngine.render(camera, pt, bufferSource);
+                }
+
+                bufferSource.endBatch();
+            } finally {
+                mc.mainRenderTarget = originalMainRenderTarget;
             }
-
-            if (p.shadows.allowParticles()) {
-                Profiler.get().popPush("render particles");
-                mc.particleEngine.render(camera, pt, bufferSource);
-            }
-
-            bufferSource.endBatch();
 
             Profiler.get().pop();
         }
@@ -264,14 +261,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         modelViewMatrixStack.popMatrix();
 
-        } finally {
-            mc.mainRenderTarget = originalMainRenderTarget;
-            mc.options.entityShadows().set(prevEntityShadows);
-        }
+        mc.options.entityShadows().set(prevEntityShadows);
+        this.canpipe_isRenderingShadows = false;
 
         Profiler.get().pop();
-
-        this.canpipe_isRenderingShadows = false;
     }
 
     @WrapOperation(

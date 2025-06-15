@@ -1,6 +1,7 @@
 package fewizz.canpipe.pipeline;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -52,7 +53,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
     public final String name;
     private int id;
 
-    private Framebuffer(
+    Framebuffer(
         ResourceLocation pipelineLocation,
         String name,
         List<ColorAttachment> colorAttachments,
@@ -60,7 +61,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
     ) {
         super(name, depthAttachment != null);
         this.name = name;
-        this.colorAttachments = colorAttachments;
+        this.colorAttachments = Collections.unmodifiableList(colorAttachments);
         this.depthAttachment = depthAttachment;
         this.createBuffers(-1, -1);
         GFX.glObjectLabel(GL33C.GL_FRAMEBUFFER, this.id, pipelineLocation.toString()+"-"+name);
@@ -261,7 +262,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
             var layer = Optional.ofNullable(depthAttachementO.get(Integer.class, "layer"));
 
             double clearDepth = depthAttachementO.getDouble("clearDepth", 1.0);
-            depthAttachement = new Framebuffer.DepthAttachment(texture,clearDepth, lod, layer);
+            depthAttachement = new Framebuffer.DepthAttachment(texture, clearDepth, lod, layer);
         }
 
         return new Framebuffer(pipelineLocation, name, colorAttachements, depthAttachement);

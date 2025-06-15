@@ -164,7 +164,7 @@ public class GameRendererMixin implements GameRendererExtended {
             var shadowRotationMatrix = new Matrix3f(this.canpipe_shadowViewMatrix);
             var inverseShadowViewMatrix = new Matrix4f(this.canpipe_shadowViewMatrix).invert();
 
-            for (int cascade = 0; cascade < 4; ++cascade) {
+            for (int cascade = 0; cascade < p.shadows.cascadeRadii().size()+1; ++cascade) {
                 float cascadeRadius;
                 Vector3f center;
 
@@ -180,7 +180,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
                 center.mulProject(canpipe_shadowViewMatrix);
 
-                float depthTextureSize = (float) p.shadows.framebuffer().depthAttachment.texture().extent.x;
+                float depthTextureSize = (float) p.shadows.framebuffers().get(0).depthAttachment.texture().extent.x;
                 float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
 
                 Vector3f dPos = this.canpipe_cameraPos.sub(this.canpipe_lastCameraPos, new Vector3f());

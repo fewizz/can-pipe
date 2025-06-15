@@ -39,7 +39,7 @@ public class Pipeline implements AutoCloseable {
 
     public static record Shadows(
         Map<RenderPipeline, GlRenderPipeline> materialPrograms,
-        Framebuffer framebuffer,
+        List<Framebuffer> framebuffers,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
         float offsetBiasUnits,
@@ -240,7 +240,26 @@ public class Pipeline implements AutoCloseable {
 
         JsonObject shadowsJson = pipelineJson.getObject("skyShadows");
         if (shadowsJson != null) {
+            var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
+
             Framebuffer framebuffer = getOrLoadFramebuffer.apply(shadowsJson.get(String.class, "framebuffer"));
+
+            // Instead of one shadow framebuffer, we create N (= number of cascades) framebuffers for different layers
+            List<Framebuffer> framebuffers = new ArrayList<>();
+            for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
+                framebuffers.add(new Framebuffer(
+                    location,
+                    framebuffer.name+"_"+(i+1),
+                    framebuffer.colorAttachments,
+                    new Framebuffer.DepthAttachment(
+                        framebuffer.depthAttachment.texture(),
+                        framebuffer.depthAttachment.clearDepth(),
+                        framebuffer.depthAttachment.lod(),
+                        Optional.of(i)  // layer
+                    )
+                ));
+            }
+
             var vertexShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "vertexSource"));
             var fragmentShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "fragmentSource"));
             var materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
@@ -256,8 +275,8 @@ public class Pipeline implements AutoCloseable {
             ));
             this.shadows = new Shadows(
                 materialPrograms,
-                framebuffer,
-                JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius"),
+                framebuffers,
+                cascadeRadii,
                 shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
                 shadowsJson.getFloat("offsetBiasUnits", 4.0F),
                 shadowsJson.getBoolean("supportForwardRender", true),
@@ -272,7 +291,7 @@ public class Pipeline implements AutoCloseable {
         this.materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
             renderPipeline -> renderPipeline,
             renderPipeline -> MaterialProgram.load(
-                location, renderPipeline, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffer : null,
+                location, renderPipeline, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffers.get(0) : null,
                 materialVertexShaderLocation, materialFragmentShaderLocation,
                 options, appliedOptions, samplers, samplerImages, getShaderSource,
                 0.0F, 0.0F
@@ -286,7 +305,7 @@ public class Pipeline implements AutoCloseable {
                 JsonObject programJson = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
                 return Program.load(
                     programJson, location, this.shaders, getShaderSource, glslVersion,
-                    options, appliedOptions, this.shadows != null ? this.shadows.framebuffer : null
+                    options, appliedOptions, this.shadows != null ? this.shadows.framebuffers.get(0) : null
                 );
             });
         };
