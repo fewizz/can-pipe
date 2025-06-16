@@ -139,7 +139,7 @@ public class Uniforms {
 
     // fog
     private static final UniformBufferStruct FOG = new UniformBufferStruct();
-    private static final Vec4Uniform FRX_FOG_COLOR = FOG.add(new Vec4Uniform() {{ value.set(1.0F); }});
+    private static final Vec4Uniform FRX_FOG_COLOR = FOG.add(new Vec4Uniform() {{ set(1.0F); }});
     private static final IntUniform FRX_FOG_ENABLED = FOG.add(new IntUniform());
     public static final GpuBuffer FOG_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe fog UBO",
@@ -161,18 +161,18 @@ public class Uniforms {
             Mth.lerp(pt, mc.player.zo, mc.player.getZ())
         );
 
-        FRX_INVERSE_VIEW_MATRIX.value.set(gre.canpipe_getViewMatrix().invert(new Matrix4f()));
-        FRX_INVERSE_PROJECTION_MATRIX.value.set(gre.canpipe_getProjectionMatrix().invert(new Matrix4f()));
+        FRX_INVERSE_VIEW_MATRIX.set(gre.canpipe_getViewMatrix().invert(new Matrix4f()));
+        FRX_INVERSE_PROJECTION_MATRIX.set(gre.canpipe_getProjectionMatrix().invert(new Matrix4f()));
 
         // accessibility.glsl
-        FRX_FOV_EFFECTS.value = (float)(double) mc.options.fovEffectScale().get();
-        FRX_DISTORTION_EFFECTS.value = (float)(double) mc.options.screenEffectScale().get();
-        FRX_HIDE_LIGHTNING_FLASHES.value = mc.options.hideLightningFlash().get() ? 1 : 0;
-        FRX_DARKNESS_PULSING.value = (float)(double) mc.options.screenEffectScale().get();
-        FRX_HIGH_CONTRAST.value = mc.options.highContrast().get() ? 1 : 0;
-        FRX_DAMAGE_TILT.value = (float)(double) mc.options.damageTiltStrength().get();
-        FRX_GLINT_STRENGTH.value = (float)(double) mc.options.glintStrength().get();
-        FRX_GLINT_SPEED.value = (float)(double) mc.options.glintSpeed().get();
+        FRX_FOV_EFFECTS.set((float)(double) mc.options.fovEffectScale().get());
+        FRX_DISTORTION_EFFECTS.set((float)(double) mc.options.screenEffectScale().get());
+        FRX_HIDE_LIGHTNING_FLASHES.set(mc.options.hideLightningFlash().get() ? 1 : 0);
+        FRX_DARKNESS_PULSING.set((float)(double) mc.options.screenEffectScale().get());
+        FRX_HIGH_CONTRAST.set(mc.options.highContrast().get() ? 1 : 0);
+        FRX_DAMAGE_TILT.set((float)(double) mc.options.damageTiltStrength().get());
+        FRX_GLINT_STRENGTH.set((float)(double) mc.options.glintStrength().get());
+        FRX_GLINT_SPEED.set((float)(double) mc.options.glintSpeed().get());
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, ACCESSIBILITY.size());
             ACCESSIBILITY.writeTo(builder);
@@ -180,22 +180,22 @@ public class Uniforms {
         }
 
         // view.glsl
-        FRX_MODEL_TO_WORLD.value.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
-        FRX_CAMERA_POS.value.set(cameraPos.toVector3f());
-        FRX_CAMERA_VIEW.value.set(
+        FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
+        FRX_CAMERA_POS.set(cameraPos.toVector3f());
+        FRX_CAMERA_VIEW.set(
             Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).toVector3f()
         );
-        FRX_LAST_CAMERA_POS.value.set(gre.canpipe_getLastCameraPos());
-        FRX_LAST_VIEW_MATRIX.value.set(gre.canpipe_getLastViewMatrix());
-        FRX_LAST_PROJECTION_MATRIX.value.set(gre.canpipe_getLastProjectionMatrix());
-        FRX_SHADOW_VIEW_MATRIX.value.set(gre.canpipe_getShadowViewMatrix()); 
-        FRX_INVERSE_SHADOW_VIEW_MATRIX.value.set(gre.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
-        CANPIPE_SHADOW_CENTER_0.value.set(gre.canpipe_getShadowCenters()[0]);
-        CANPIPE_SHADOW_CENTER_1.value.set(gre.canpipe_getShadowCenters()[1]);
-        CANPIPE_SHADOW_CENTER_2.value.set(gre.canpipe_getShadowCenters()[2]);
-        CANPIPE_SHADOW_CENTER_3.value.set(gre.canpipe_getShadowCenters()[3]);
-        FRX_VIEW_DISTANCE.value = mc.options.renderDistance().get() * 16.0F;
-        FRX_VIEW_BRIGHTNESS.value = mc.options.gamma().get().floatValue();
+        FRX_LAST_CAMERA_POS.set(gre.canpipe_getLastCameraPos());
+        FRX_LAST_VIEW_MATRIX.set(gre.canpipe_getLastViewMatrix());
+        FRX_LAST_PROJECTION_MATRIX.set(gre.canpipe_getLastProjectionMatrix());
+        FRX_SHADOW_VIEW_MATRIX.set(gre.canpipe_getShadowViewMatrix()); 
+        FRX_INVERSE_SHADOW_VIEW_MATRIX.set(gre.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
+        CANPIPE_SHADOW_CENTER_0.set(gre.canpipe_getShadowCenters()[0]);
+        CANPIPE_SHADOW_CENTER_1.set(gre.canpipe_getShadowCenters()[1]);
+        CANPIPE_SHADOW_CENTER_2.set(gre.canpipe_getShadowCenters()[2]);
+        CANPIPE_SHADOW_CENTER_3.set(gre.canpipe_getShadowCenters()[3]);
+        FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
+        FRX_VIEW_BRIGHTNESS.set(mc.options.gamma().get().floatValue());
         {
             int result = 0;
 
@@ -217,9 +217,9 @@ public class Uniforms {
                 result |= 1 << 3;
             }
 
-            CANPIPE_VIEW_FLAGS.value = result;
+            CANPIPE_VIEW_FLAGS.set(result);
         }
-        CANPIPE_SCREEN_SIZE.value.set(
+        CANPIPE_SCREEN_SIZE.set(
             (float) mc.getWindow().getWidth(),
             (float) mc.getWindow().getHeight()
         );
@@ -239,15 +239,15 @@ public class Uniforms {
             else if (mc.player.hasEffect(MobEffects.CONDUIT_POWER)) {
                 effectModifier = mc.player.getWaterVision();
             }
-            FRX_EFFECT_MODIFIER.value = effectModifier;
+            FRX_EFFECT_MODIFIER.set(effectModifier);
         }
         {
             float darknessScale = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getDarknessScale();
-            CANPIPE_DARKNESS_FACTOR.value = Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f);
+            CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));
         }
-        FRX_EYE_POS.value.set(eyePosition.toVector3f());
-        FRX_EYE_BRIGHTNESS.value.set(lre.canpipe_getEyeBlockLight(), lre.canpipe_getEyeSkyLight());
-        FRX_SMOOTHED_EYE_BRIGHTNESS.value.set(lre.canpipe_getSmoothedEyeBlockLight(), lre.canpipe_getSmoothedEyeSkyLight());
+        FRX_EYE_POS.set(eyePosition.toVector3f());
+        FRX_EYE_BRIGHTNESS.set(lre.canpipe_getEyeBlockLight(), lre.canpipe_getEyeSkyLight());
+        FRX_SMOOTHED_EYE_BRIGHTNESS.set(lre.canpipe_getSmoothedEyeBlockLight(), lre.canpipe_getSmoothedEyeSkyLight());
 
         Light light = ((Supplier<Light>)() -> {
             Item item = mc.player.getMainHandItem().getItem();
@@ -260,15 +260,15 @@ public class Uniforms {
 
         {
             if (light != null) {
-                FRX_HELD_LIGHT.value.set(light.red, light.green, light.blue, light.intensity);
-                FRX_HELD_LIGHT_INNER_RADIUS.value = light.innerConeAngle;
-                FRX_HELD_LIGHT_OUTER_RADIUS.value = light.outerConeAngle;
+                FRX_HELD_LIGHT.set(light.red, light.green, light.blue, light.intensity);
+                FRX_HELD_LIGHT_INNER_RADIUS.set(light.innerConeAngle);
+                FRX_HELD_LIGHT_OUTER_RADIUS.set(light.outerConeAngle);
             }
             else {
-                FRX_HELD_LIGHT.value.set(0.0F);
+                FRX_HELD_LIGHT.set(0.0F);
             }
         }
-        FRX_PLAYER_MOOD.value = mc.player.getCurrentMood();
+        FRX_PLAYER_MOOD.set(mc.player.getCurrentMood());
         {
             int result = 0;
             BlockPos bp = BlockPos.containing(eyePosition);
@@ -297,7 +297,7 @@ public class Uniforms {
             result |= (mc.player.isInWaterOrRain() ? 1 : 0)                       << 13;
             result |= (mc.level.getBlockState(bp).is(Blocks.POWDER_SNOW) ? 1 : 0) << 14;
             result |= (mc.player.isFreezing() ? 1 : 0)                            << 15;
-            CANPIPE_PLAYER_FLAGS.value = result;
+            CANPIPE_PLAYER_FLAGS.set(result);
         }
         {
             long result = 0;
@@ -334,7 +334,7 @@ public class Uniforms {
             result |= (mc.player.hasEffect(MobEffects.BAD_OMEN) ? 1L : 0L)            << 30;
             result |= (mc.player.hasEffect(MobEffects.HERO_OF_THE_VILLAGE) ? 1L : 0L) << 31;
             result |= (mc.player.hasEffect(MobEffects.DARKNESS) ? 1L : 0L)            << 32;
-            CANPIPE_EFFECTS_FLAGS.value.set((int)(result & 0xFFFFFFFFL), (int)(result >>> 32));
+            CANPIPE_EFFECTS_FLAGS.set((int)(result & 0xFFFFFFFFL), (int)(result >>> 32));
         }
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
@@ -344,17 +344,17 @@ public class Uniforms {
         }
 
         // world
-        CANPIPE_RENDER_FRAMES.value = gre.canpipe_getFrame();
-        FRX_RENDER_SECONDS.value = gre.canpipe_getRenderSeconds();
+        CANPIPE_RENDER_FRAMES.set(gre.canpipe_getFrame());
+        FRX_RENDER_SECONDS.set(gre.canpipe_getRenderSeconds());
         {
             long ticks = mc.level.dimensionType().fixedTime().orElse(mc.level.getDayTime());
-            CANPIPE_FIXED_OR_DAY_TIME.value = (ticks % 24000L) / 24000.0F;
+            CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         }
-        FRX_WORLD_DAY.value = mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F;
-        FRX_WORLD_TIME.value = mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F;
-        FRX_MOON_SIZE.value = mc.level.getMoonBrightness();
-        FRX_SKY_LIGHT_VECTOR.value.set(p.getSunOrMoonDir(mc.level, new Vector3f(), pt));
-        FRX_SKY_ANGLE_RADIANS.value = mc.level.getSunAngle(pt);
+        FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F);
+        FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
+        FRX_MOON_SIZE.set(mc.level.getMoonBrightness());
+        FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f(), pt));
+        FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(pt));
         {
             var timeOfDay = mc.level.getTimeOfDay(pt);
             var result = new Vector3f(1.0F);
@@ -366,19 +366,19 @@ public class Uniforms {
                 result.set((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
                 result.div(255.0F);
             }
-            CANPIPE_SUNRISE_OR_SUNSET_COLOR.value.set(result);
+            CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
         }
         {
             float skyFlashStrength = Math.max(0.0F, mc.level.getSkyFlashTime()-pt);
-            FRX_SKY_FLASH_STRENGTH.value = skyFlashStrength;
+            FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);
         }
         // Not sure why partial tick is 1.0 (LightTexture.updateLigthTexture)
-        FRX_AMBIENT_INTENSITY.value = mc.level.getSkyDarken(1.0F);
+        FRX_AMBIENT_INTENSITY.set(mc.level.getSkyDarken(1.0F));
         {
             Vector4f emissiveColor = (
                 (LightTextureExtended) mc.gameRenderer.lightTexture()
             ).canpipe_getEmissiveColor();
-            FRX_EMISSIVE_COLOR.value.set(emissiveColor);
+            FRX_EMISSIVE_COLOR.set(emissiveColor);
         }
         {
             int value = 0;
@@ -399,9 +399,9 @@ public class Uniforms {
             }
             value |= dimension << 4;
 
-            CANPIPE_WORLD_FLAGS.value = value;
+            CANPIPE_WORLD_FLAGS.set(value);
         }
-        CANPIPE_WEATHER_GRADIENTS.value.set(
+        CANPIPE_WEATHER_GRADIENTS.set(
             mc.level.getRainLevel(pt),
             mc.level.getThunderLevel(pt),
             lre.canpipe_getSmoothedRainGradient(),
@@ -415,7 +415,7 @@ public class Uniforms {
         }
 
         // fog.glsl
-        FRX_FOG_COLOR.value.set(
+        FRX_FOG_COLOR.set(
             gre.canpipe_getFogRenderer().setupFog(
                 mc.gameRenderer.getMainCamera(),
                 mc.options.getEffectiveRenderDistance(),
@@ -425,7 +425,7 @@ public class Uniforms {
                 mc.level
             )
         );
-        FRX_FOG_ENABLED.value = 1;  // TODO?
+        FRX_FOG_ENABLED.set(1);  // TODO?
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, FOG.size());

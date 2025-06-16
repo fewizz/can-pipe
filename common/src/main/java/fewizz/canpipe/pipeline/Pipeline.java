@@ -347,7 +347,7 @@ public class Pipeline implements AutoCloseable {
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
         Uniforms.updateFREXUniforms();
-        Uniforms.CANPIPE_ORIGIN_TYPE.value = 0;  // camera
+        Uniforms.CANPIPE_ORIGIN_TYPE.set(0);  // camera
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
@@ -381,7 +381,7 @@ public class Pipeline implements AutoCloseable {
             pass.apply(view, projection);
         }
 
-        Uniforms.CANPIPE_ORIGIN_TYPE.value = 3;  // hand
+        Uniforms.CANPIPE_ORIGIN_TYPE.set(3);  // hands
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
@@ -392,7 +392,7 @@ public class Pipeline implements AutoCloseable {
 
     public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
         Minecraft.getInstance().mainRenderTarget = this.defaultFramebuffer;
-        Uniforms.CANPIPE_ORIGIN_TYPE.value = 2;  // screen
+        Uniforms.CANPIPE_ORIGIN_TYPE.set(2);  // screen
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());

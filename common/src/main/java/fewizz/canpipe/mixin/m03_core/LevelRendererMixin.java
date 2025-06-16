@@ -181,7 +181,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         for (int cascade = 0; cascade < p.shadows.cascadeRadii().size()+1; ++cascade) {
             Profiler.get().popPush("cascade " +cascade);
 
-            Uniforms.FRXU_CASCADE.value = cascade;
+            Uniforms.FRXU_CASCADE.set(cascade);
 
             try (MemoryStack memoryStack = MemoryStack.stackPush()) {
                 var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM.size());
@@ -245,7 +245,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             Profiler.get().pop();
         }
 
-        Uniforms.FRXU_CASCADE.value = 0;
+        Uniforms.FRXU_CASCADE.set(0);
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM.size());

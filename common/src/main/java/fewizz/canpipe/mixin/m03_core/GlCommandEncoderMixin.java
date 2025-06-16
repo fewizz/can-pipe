@@ -53,8 +53,8 @@ public class GlCommandEncoderMixin {
             else if (framebufferID == p.particlesFramebuffer.glID()) {
                 renderTarget = 3;
             }
-            if (renderTarget != Uniforms.CANPIPE_RENDER_TARGET.value) {
-                Uniforms.CANPIPE_RENDER_TARGET.value = renderTarget;
+            if (renderTarget != Uniforms.CANPIPE_RENDER_TARGET.get()) {
+                Uniforms.CANPIPE_RENDER_TARGET.set(renderTarget);
                 try (MemoryStack memoryStack = MemoryStack.stackPush()) {
                     var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
                     Uniforms.MATERIAL_PROGRAM.writeTo(builder);

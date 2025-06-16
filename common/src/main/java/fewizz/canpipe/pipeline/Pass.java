@@ -80,10 +80,10 @@ public class Pass extends PassBase {
         var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
         var vertexBuffer = RenderSystemAccessor.canpipe_getQuadBuffer();
 
-        Program.FRX_SIZE.value.set((int) w, (int) h);
-        Program.FRX_LOD.value = lod;
-        Program.FRX_LAYER.value = layer;
-        Program.FRX_FRAME_PROJECTION_MATRIX.value.setOrtho2D(0, w, 0, h);
+        Program.FRX_SIZE.set((int) w, (int) h);
+        Program.FRX_LOD.set(lod);
+        Program.FRX_LAYER.set(layer);
+        Program.FRX_FRAME_PROJECTION_MATRIX.setOrtho2D(0, w, 0, h);
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Program.PASS.size());

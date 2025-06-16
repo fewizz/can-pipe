@@ -37,50 +37,52 @@ public class UniformBufferStruct {
     }
 
     // Same as net.minecraft.client.renderer.UniformValue, but not a record
-    public static abstract class UniformValue {
-		abstract public void writeTo(Std140Builder std140Builder);
-		abstract public void addSize(Std140SizeCalculator std140SizeCalculator);
+    public static interface UniformValue {
+        abstract public void writeTo(Std140Builder std140Builder);
+        abstract public void addSize(Std140SizeCalculator std140SizeCalculator);
     };
 
-    public static class FloatUniform extends UniformValue {
-        public float value = 0.0F;
+    public static class FloatUniform implements UniformValue {
+        private float value = 0.0F;
+
+        public void set(float value) {this.value = value;}
+
         @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putFloat(this.value); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putFloat(); }
     }
 
-    public static class IntUniform extends UniformValue {
-        public int value = 0;
+    public static class IntUniform implements UniformValue {
+        private int value = 0;
+
+        public void set(int value) {this.value = value;}
+        public int get() {return this.value;}
+
         @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putInt(this.value); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putInt(); }
     }
 
-    public static class Vec2Uniform extends UniformValue {
-        public final Vector2f value = new Vector2f();
-        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putVec2(this.value); }
+    public static class Vec2Uniform extends Vector2f implements UniformValue {
+        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putVec2(this); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putVec2(); }
     }
 
-    public static class Vec3Uniform extends UniformValue {
-        public final Vector3f value = new Vector3f();
-        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putVec3(this.value); }
+    public static class Vec3Uniform extends Vector3f implements UniformValue {
+        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putVec3(this); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putVec3(); }
     }
 
-    public static class Vec4Uniform extends UniformValue {
-        public final Vector4f value = new Vector4f();
-        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putVec4(this.value); }
+    public static class Vec4Uniform extends Vector4f implements UniformValue {
+        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putVec4(this); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putVec4(); }
     }
 
-    public static class IVec2Uniform extends UniformValue {
-        public final Vector2i value = new Vector2i();
-        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putIVec2(this.value); }
+    public static class IVec2Uniform extends Vector2i implements UniformValue {
+        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putIVec2(this); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putIVec2(); }
     }
 
-    public static class Mat4Uniform extends UniformValue {
-        public final Matrix4f value = new Matrix4f();
-        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putMat4f(this.value); }
+    public static class Mat4Uniform extends Matrix4f implements UniformValue {
+        @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putMat4f(this); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putMat4f(); }
     }
 
