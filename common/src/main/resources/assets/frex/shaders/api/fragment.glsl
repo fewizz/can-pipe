@@ -1,8 +1,17 @@
 #if defined CANPIPE_MATERIAL_SHADER && defined FRAGMENT_SHADER
 
     in vec4 frx_vertex;
-    in vec2 frx_texcoord;
+    #if defined CANPIPE_HAS_TEXTURE_POS
+        in vec2 frx_texcoord;
+    #else
+        const vec2 frx_texcoord = vec2(-1);
+    #endif
+
+    #if defined CANPIPE_FLAT_VERTEX_COLOR
+        flat
+    #endif
     in vec4 frx_vertexColor;
+
     in vec3 frx_vertexNormal;
     in vec4 frx_vertexTangent;
 
@@ -10,7 +19,11 @@
     in float frx_distance;
     flat in int canpipe_spriteIndex;
     flat in int canpipe_materialIndex;
-    flat in int canpipe_materialFlags;
+    #if defined CANPIPE_HAS_MATERIAL_FLAGS
+        flat in int canpipe_materialFlags;
+    #else
+        const int canpipe_materialFlags = 0;
+    #endif
     #if defined CANPIPE_HAS_OVERLAY_POS
         flat in ivec2 canpipe_overlayPos;
     #endif

@@ -20,6 +20,7 @@
     "GlDebugLabelCoreMixin",
     "GlDebugLabelExtMixin",
     "GlRenderPassMixin",
+    "ItemBlockRenderTypesMixin",
     "ItemRendererMixin",
     "ItemStackLayerRenderStateMixin",
     "LevelRendererMixin",

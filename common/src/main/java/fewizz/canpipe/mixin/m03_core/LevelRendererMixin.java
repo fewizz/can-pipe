@@ -7,7 +7,6 @@ import org.joml.Matrix4fStack;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,7 +14,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -25,14 +23,12 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
-import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import fewizz.canpipe.GFX;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
@@ -49,8 +45,6 @@ import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
@@ -296,40 +290,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return null;
     }
 
-    /*@Inject(
-        method = {
-            "method_68480",  // fabric
-            "lambda$renderSectionLayer$11"  // neoforge
-        },
-        at = @At("TAIL")
-    )
-    private static void onRenderSectionLayerUniformUpload(
-        BlockPos pos, double x, double y, double z,
-        UniformUploader uniformUploader,
-        CallbackInfo ci
-    ) {
-        // uniformUploader.upload("frx_modelToWorld", pos.getX(), pos.getY(),pos.getZ(), 1.0F);
-    }*/
-
-    /*@ModifyArg(
-        method = "setupRender",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/SectionOcclusionGraph;update("+
-                "Z"+
-                "Lnet/minecraft/client/Camera;"+
-                "Lnet/minecraft/client/renderer/culling/Frustum;"+
-                "Ljava/util/List;"+
-                "Lit/unimi/dsi/fastutil/longs/LongOpenHashSet;"+
-            ")V"
-        ),
-        index = 0,
-        require = 0  // sodium @Overwrite s this method
-    )
-    private boolean disableSmartCullIfShadow(boolean original) {
-        return canpipe_isRenderingShadows ? false : original;
-    }*/
-
     @WrapOperation(
         method = "offsetFrustum",
         at = @At(
@@ -356,64 +316,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     private boolean addPlayerWhenCollectingVisibleEntities(boolean original) {
         return this.canpipe_isRenderingShadows ? true : original;
-    }
-
-    // Code lower moves bufferSource.endBatch(Sheets.translucentItemSheet());
-    // after main.get().copyDepthFrom(translucent.get());
-    // if pipeline is active,
-    // because we render items into translucent framebuffer
-    @ModifyExpressionValue(
-        method = {  // lambda in the `addMainPass`
-            "method_62214",  // fabric
-            "lambda$addMainPass$2"  // neoforge
-        },
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/Sheets;translucentItemSheet()Lnet/minecraft/client/renderer/RenderType;"
-        )
-    )
-    private RenderType dontDrawTranslucentIteims(RenderType original) {
-        if (Pipelines.getCurrent() != null) {
-            // solid should already be rendered, so nothing should happen (:clueless:),
-            // items will be rendered later, right before translucent terrain
-            // (see next @Inject)
-            return RenderType.solid();
-        }
-        return original;
-    }
-
-    @Inject(
-        method = {"method_62214", "lambda$addMainPass$2"},  // lambda in the `addMainPass`
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;endBatch()V",
-            ordinal = 1
-        ),
-        cancellable = true
-    )
-    private void drawTranslucentItemsRightBeforeTranslucentTerrain(CallbackInfo ci) {
-        if (Pipelines.getCurrent() == null) {
-            return;
-        }
-        this.targets.itemEntity.get().copyDepthFrom(this.targets.main.get());
-        this.renderBuffers.bufferSource().endBatch(Sheets.translucentItemSheet());
-    }
-
-    @WrapOperation(
-        method = {"method_62214", "lambda$addMainPass$2"},  // lambda in the `addMainPass`
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;copyDepthFrom(Lcom/mojang/blaze3d/pipeline/RenderTarget;)V",
-            ordinal = 1  // 0 - is for items entities, 1 - translucent
-        ),
-        remap = false
-    )
-    private void dontOverwriteTranslucentDepth(RenderTarget instance, RenderTarget other, Operation<Void> original) {
-        // if translucent == itemEntity, then no need to overwrite depth (right?)
-        if (instance == targets.translucent.get() && targets.translucent.get() == targets.itemEntity.get()) {
-            return;
-        }
-        original.call(instance, other);
     }
 
 }

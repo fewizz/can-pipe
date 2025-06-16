@@ -126,8 +126,11 @@ public class MaterialProgram extends ProgramBase {
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE) {
             vertexFormat = CanPipe.VertexFormats.PARTICLE;
         }
+        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
+            vertexFormat = originalRenderPipeline.getVertexFormat();  // leave as is
+        }
         else {
-            throw new RuntimeException(originalRenderPipeline.getVertexFormat().toString());
+            throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormat().toString());
         }
 
         float alphaCutout;
@@ -137,10 +140,10 @@ public class MaterialProgram extends ProgramBase {
             // use ITEM_ENTITY_TARGET output state shard
             originalRenderPipeline == RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL ||
             originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
-            originalRenderPipeline == RenderPipelines.LINE_STRIP ||
-            originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
+            originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
+            originalRenderPipeline == RenderPipelines.LINE_STRIP ||
 
             originalRenderPipeline == RenderPipelines.CUTOUT ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
@@ -178,17 +181,27 @@ public class MaterialProgram extends ProgramBase {
             usedMaterialIDs.add(id);
         }
 
+        boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
+
+        boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
         boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
+        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
 
         vertexSrc =
             "#define CANPIPE_MATERIAL_SHADER\n"+
             (depthPass ? "#define DEPTH_PASS\n" : "")+
+            (flatVertexColor ? "#define CANPIPE_FLAT_VERTEX_COLOR\n" : "")+
             "\n"+
             "#include canpipe:shaders/uniform_blocks.glsl\n"+
             "\n"+
             "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
             "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
-            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n"+
+            (
+                hasTexturePos ?
+                "#define CANPIPE_HAS_TEXTURE_POS\n"+
+                "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n" :
+                ""
+            ) +
             (
                 hasOverlayPos ?
                 "#define CANPIPE_HAS_OVERLAY_POS\n"+
@@ -201,7 +214,12 @@ public class MaterialProgram extends ProgramBase {
                 "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" :
                 "const vec3 in_normal = vec3(0.0, 1.0, 0.0)"
             ) + ";  // Normal\n"+
-            "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_FLAGS)+") in int in_materialFlags;\n"+
+            (
+                hasMaterialFlags ?
+                "#define CANPIPE_MATERIAL_FLAGS\n"+
+                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_FLAGS)+") in int in_materialFlags;\n" :
+                ""
+            ) +
             (
                 vertexFormat.contains(CanPipe.VertexFormatElements.AO) ?
                 "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao" :
@@ -234,7 +252,6 @@ public class MaterialProgram extends ProgramBase {
 
             void main() {
                 frx_vertex = vec4(in_vertex, 1.0);
-                frx_texcoord = in_uv;
                 frx_vertexColor = in_color;
                 frx_vertexNormal = in_normal;
                 frx_vertexLight = vec3(
@@ -248,7 +265,15 @@ public class MaterialProgram extends ProgramBase {
                 frx_vertexTangent = in_tangent;
                 canpipe_spriteIndex = in_spriteIndex;
                 canpipe_materialIndex = in_materialIndex;
-                canpipe_materialFlags = in_materialFlags;
+
+                #if defined CANPIPE_HAS_TEXTURE_POS
+                    frx_texcoord = in_uv;
+                #endif
+
+                #if defined CANPIPE_HAS_MATERIAL_FLAGS
+                    canpipe_materialFlags = in_materialFlags;
+                #endif
+
                 #if defined CANPIPE_HAS_OVERLAY_POS
                     canpipe_overlayPos = in_overlayPos;
                 #endif
@@ -288,7 +313,10 @@ public class MaterialProgram extends ProgramBase {
             (depthPass ? "#define DEPTH_PASS\n" : "")+
             (enablePBR ? "#define PBR_ENABLED\n" : "")+
             "#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n"+
-            "#define CANPIPE_HAS_OVERLAY_POS\n"+
+            (flatVertexColor ? "#define CANPIPE_FLAT_VERTEX_COLOR\n" : "")+
+            (hasTexturePos ? "#define CANPIPE_HAS_TEXTURE_POS\n" : "")+
+            (hasOverlayPos ? "#define CANPIPE_HAS_OVERLAY_POS\n" : "")+
+            (hasMaterialFlags ? "#define CANPIPE_HAS_MATERIAL_FLAGS\n" : "")+
             """
 
             layout (depth_unchanged) out float gl_FragDepth;
@@ -304,7 +332,12 @@ public class MaterialProgram extends ProgramBase {
             """
 
             void main() {
-                frx_sampleColor = texture(frxs_baseColor, frx_texcoord, frx_matUnmipped * -4.0);
+                #if defined CANPIPE_HAS_TEXTURE_POS
+                    frx_sampleColor = texture(frxs_baseColor, frx_texcoord, frx_matUnmipped * -4.0);
+                #else
+                    frx_sampleColor = vec4(1.0);
+                #endif
+
                 frx_fragEmissive = frx_matEmissive;
                 frx_fragLight = frx_vertexLight;
                 frx_fragEnableAo = frx_matDisableAo == 0;

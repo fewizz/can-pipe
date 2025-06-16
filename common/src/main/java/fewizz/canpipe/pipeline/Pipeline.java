@@ -234,6 +234,8 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.ENTITY_DECAL,
             RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL,
 
+            RenderPipelines.LEASH,
+
             RenderPipelines.OPAQUE_PARTICLE,
             RenderPipelines.TRANSLUCENT_PARTICLE
         };

@@ -1,8 +1,17 @@
 #if defined CANPIPE_MATERIAL_SHADER && defined VERTEX_SHADER
 
     out vec4 frx_vertex;
-    out vec2 frx_texcoord;
+    #if defined CANPIPE_HAS_TEXTURE_POS
+        out vec2 frx_texcoord;
+    #else
+        const vec2 frx_texcoord = vec2(-1);
+    #endif
+
+    #if defined CANPIPE_FLAT_VERTEX_COLOR
+        flat
+    #endif
     out vec4 frx_vertexColor;
+
     out vec3 frx_vertexNormal;
     out vec3 frx_vertexLight;
     out float frx_distance;
