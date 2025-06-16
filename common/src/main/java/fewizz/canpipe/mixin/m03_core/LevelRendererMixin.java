@@ -190,7 +190,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             }
 
             Frustum shadowFrustum = new ShadowFrustum(
-                gre.canpipe_getShadowViewMatrix(), gre.canpipe_getShadowProjectionMatrices()[cascade],
+                Uniforms.FRX_SHADOW_VIEW_MATRIX, gre.canpipe_getShadowProjectionMatrices()[cascade],
                 gre.canpipe_getShortenedViewProjectionMatrices()[cascade], camera, toSunDir
             );
 

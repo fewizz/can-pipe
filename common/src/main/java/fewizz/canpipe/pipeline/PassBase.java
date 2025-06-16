@@ -1,7 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import org.joml.Matrix4f;
-
 public abstract class PassBase {
 
     public final String name;
@@ -10,6 +8,6 @@ public abstract class PassBase {
         this.name = name;
     }
 
-    public abstract void apply(Matrix4f view, Matrix4f projection);
+    public abstract void apply();
 
 }

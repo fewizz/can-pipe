@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
 
-import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.lwjgl.system.MemoryStack;
 
@@ -64,7 +63,7 @@ public class Pass extends PassBase {
     }
 
     @Override
-    public void apply(Matrix4f view, Matrix4f projection) {
+    public void apply() {
         Minecraft mc = Minecraft.getInstance();
 
         int w = this.extent.x;
@@ -174,7 +173,7 @@ public class Pass extends PassBase {
         }
 
         @Override
-        public void apply(Matrix4f view, Matrix4f projection) {
+        public void apply() {
             framebuffer.bindAndClearFully();
         }
 

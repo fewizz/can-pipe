@@ -3,7 +3,6 @@ package fewizz.canpipe.mixin.m03_core;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,6 +17,7 @@ import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -38,44 +38,26 @@ public class GameRendererMixin implements GameRendererExtended {
 
     @Shadow public Matrix4f getProjectionMatrix(float fov) { return null; }
 
-    @Unique private int canpipe_frame = -1;
     @Unique private long canpipe_renderStartNano = -1;
-    @Unique private long canpipe_renderNanos = -1;
-    @Unique private Vector3f canpipe_cameraPos = null;
-    @Unique private Vector3f canpipe_lastCameraPos = null;
-    @Unique private Matrix4f canpipe_projectionMatrix = null;
-    @Unique private Matrix4f canpipe_lastProjectionMatrix = null;
-    @Unique private Matrix4f canpipe_viewMatrix = null;
-    @Unique private Matrix4f canpipe_lastViewMatrix = null;
-    @Unique private Matrix4f canpipe_shadowViewMatrix = null;
     @Unique private Matrix4f[] canpipe_shadowProjectionMatrices = null;
     @Unique private Matrix4f[] canpipe_shortendedViewProjectionMatrices = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
-    @Unique private Vector4f[] canpipe_shadowCenters = null;
     @Unique private Float canpipe_depthFarOverride = null;
-
-    @Override
-    public int canpipe_getFrame() {
-        return canpipe_frame;
-    }
 
     @Override
     public void canpipe_onPipelineActivated() {
         this.canpipe_renderStartNano = System.nanoTime();
-        this.canpipe_renderNanos = -1;
-        this.canpipe_frame = -1;
 
-        // not sure why, but i can't initialize them above (mixin bug?)
-        this.canpipe_viewMatrix = new Matrix4f();
-        this.canpipe_lastViewMatrix = null;
+        Uniforms.CANPIPE_RENDER_FRAMES.set(-1);
+        Uniforms.FRX_RENDER_SECONDS.set(0);
 
-        this.canpipe_projectionMatrix = new Matrix4f();
-        this.canpipe_lastProjectionMatrix = null;
+        Uniforms.FRX_LAST_VIEW_MATRIX.m00(Float.NEGATIVE_INFINITY);
+        Uniforms.FRX_LAST_PROJECTION_MATRIX.m00(Float.NEGATIVE_INFINITY);
 
-        this.canpipe_cameraPos = new Vector3f();
-        this.canpipe_lastCameraPos = null;
+        Uniforms.FRX_CAMERA_POS.set(0.0F);
+        Uniforms.FRX_LAST_CAMERA_POS.set(Float.NEGATIVE_INFINITY);
 
-        this.canpipe_shadowViewMatrix = new Matrix4f();
+        Uniforms.FRX_SHADOW_VIEW_MATRIX.identity();
 
         this.canpipe_shadowProjectionMatrices = new Matrix4f[] {
             new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f()
@@ -86,14 +68,10 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_shadowInnerOffsets = new Vector3f[] {
             new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()
         };
-        this.canpipe_shadowCenters = new Vector4f[] {
-            new Vector4f(), new Vector4f(), new Vector4f(), new Vector4f()
-        };
-    }
-
-    @Override
-    public float canpipe_getRenderSeconds() {
-        return (float) (this.canpipe_renderNanos / 1_000_000_000.0);
+        Uniforms.CANPIPE_SHADOW_CENTER[0].set(0.0);
+        Uniforms.CANPIPE_SHADOW_CENTER[1].set(0.0);
+        Uniforms.CANPIPE_SHADOW_CENTER[2].set(0.0);
+        Uniforms.CANPIPE_SHADOW_CENTER[3].set(0.0);
     }
 
     @Inject(method = "resize", at = @At("HEAD"))
@@ -131,29 +109,22 @@ public class GameRendererMixin implements GameRendererExtended {
         }
 
         float pt = deltaTracker.getGameTimeDeltaPartialTick(false);
-        this.canpipe_frame += 1;
-        this.canpipe_renderNanos = System.nanoTime() - this.canpipe_renderStartNano;
+        Uniforms.CANPIPE_RENDER_FRAMES.add(1);
+        Uniforms.FRX_RENDER_SECONDS.set((float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0));
 
-        if (this.canpipe_lastViewMatrix == null) {
-            this.canpipe_lastViewMatrix = new Matrix4f(viewMatrix);
-            this.canpipe_lastProjectionMatrix = new Matrix4f(projectionMatrix);
-            this.canpipe_lastCameraPos = new Vector3f(this.mainCamera.getPosition().toVector3f());
-        }
-        else {
-            this.canpipe_lastViewMatrix.set(this.canpipe_viewMatrix);
-            this.canpipe_lastProjectionMatrix.set(this.canpipe_projectionMatrix);
-            this.canpipe_lastCameraPos.set(this.canpipe_cameraPos);
-        }
+        Uniforms.FRX_CAMERA_POS.set(this.mainCamera.getPosition().toVector3f());
 
-        this.canpipe_viewMatrix.set(viewMatrix);
-        this.canpipe_projectionMatrix.set(projectionMatrix);
-        this.canpipe_cameraPos.set(this.mainCamera.getPosition().toVector3f());
+        if (Uniforms.FRX_LAST_VIEW_MATRIX.get(0, 0) == Float.NEGATIVE_INFINITY) {
+            Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
+            Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
+            Uniforms.FRX_LAST_CAMERA_POS.set(Uniforms.FRX_CAMERA_POS);
+        }
 
         if (p.shadows != null) {
             Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f(), pt);
             Vector3f sunPosOffset = toSunDir.mul(this.renderDistance + 48, new Vector3f());
 
-            this.canpipe_shadowViewMatrix.setLookAt(
+            Uniforms.FRX_SHADOW_VIEW_MATRIX.setLookAt(
                 sunPosOffset,                                  // eye pos
                 new Vector3f(0.0F, 0.0F, 0.0F),                // center
                 !(sunPosOffset.x == 0 && sunPosOffset.z == 0)  // up
@@ -161,8 +132,10 @@ public class GameRendererMixin implements GameRendererExtended {
                     : new Vector3f(0.0F, 0.0F, 1.0F)
             );
 
-            var shadowRotationMatrix = new Matrix3f(this.canpipe_shadowViewMatrix);
-            var inverseShadowViewMatrix = new Matrix4f(this.canpipe_shadowViewMatrix).invert();
+            Uniforms.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
+
+            var shadowRotationMatrix = new Matrix3f(Uniforms.FRX_SHADOW_VIEW_MATRIX);
+            var inverseShadowViewMatrix = new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
 
             for (int cascade = 0; cascade < p.shadows.cascadeRadii().size()+1; ++cascade) {
                 float cascadeRadius;
@@ -178,12 +151,12 @@ public class GameRendererMixin implements GameRendererExtended {
                     center = new Vector3f(mainCamera.getLookVector()).mul(cascadeRadius);
                 }
 
-                center.mulProject(canpipe_shadowViewMatrix);
+                center.mulProject(Uniforms.FRX_SHADOW_VIEW_MATRIX);
 
                 float depthTextureSize = (float) p.shadows.framebuffers().get(0).depthAttachment.texture().extent.x;
                 float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
 
-                Vector3f dPos = this.canpipe_cameraPos.sub(this.canpipe_lastCameraPos, new Vector3f());
+                Vector3f dPos = Uniforms.FRX_CAMERA_POS.sub(Uniforms.FRX_LAST_CAMERA_POS, new Vector3f());
                 Vector3f dShadowPos = dPos.mul(shadowRotationMatrix).div(metersPerPixel);
 
                 this.canpipe_shadowInnerOffsets[cascade].add(dShadowPos);
@@ -194,7 +167,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 center.y -= (center.y % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].y * metersPerPixel;
                 center.z -= (center.z % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].z * metersPerPixel;
 
-                this.canpipe_shadowCenters[cascade].set(center.x, center.y, center.z, cascadeRadius);
+                Uniforms.CANPIPE_SHADOW_CENTER[cascade].set(center.x, center.y, center.z, cascadeRadius);
 
                 // sometimes cascade is out of frustum bounds
                 // we don't want to render chunks and entiteis more than needed, right?
@@ -226,7 +199,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 Vector3f min = new Vector3f();
                 Vector3f max = new Vector3f();
 
-                new Matrix4f(this.canpipe_shadowViewMatrix).mul(
+                new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).mul(
                     this.getProjectionMatrix(
                         this.minecraft.options.fov().get().floatValue()
                     ).mul(viewMatrix).invert()
@@ -247,7 +220,7 @@ public class GameRendererMixin implements GameRendererExtended {
             }
         }
 
-        p.onBeforeWorldRender(this.canpipe_viewMatrix, this.canpipe_projectionMatrix);
+        p.onBeforeWorldRender(viewMatrix, projectionMatrix);
     }
 
     @ModifyArg(
@@ -283,22 +256,27 @@ public class GameRendererMixin implements GameRendererExtended {
             shift = Shift.AFTER
         )
     )
-    void onAfterLevelRender(
-        DeltaTracker deltaTracker,
-        CallbackInfo ci
-    ) {
+    void onAfterLevelRender(DeltaTracker deltaTracker, CallbackInfo ci) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            p.onAfterWorldRender(canpipe_viewMatrix, canpipe_projectionMatrix);
+            p.onAfterWorldRender();
         }
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
-    void onRenderLevelEnd(CallbackInfo ci) {
+    void onRenderLevelEnd(
+        CallbackInfo ci,
+        @Local(ordinal = 0) Matrix4f projectionMatrix,
+        @Local(ordinal = 2) Matrix4f viewMatrix
+    ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            p.onAfterRenderHand(canpipe_viewMatrix, canpipe_projectionMatrix);
+            p.onAfterRenderHand();
         }
+
+        Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
+        Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
+        Uniforms.FRX_LAST_CAMERA_POS.set(this.mainCamera.getPosition().toVector3f());
     }
 
     @WrapMethod(method = "getDepthFar")
@@ -310,36 +288,6 @@ public class GameRendererMixin implements GameRendererExtended {
     }
 
     @Override
-    public Vector3f canpipe_getLastCameraPos() {
-        return this.canpipe_lastCameraPos;
-    }
-
-    @Override
-    public Matrix4f canpipe_getViewMatrix() {
-        return this.canpipe_viewMatrix;
-    }
-
-    @Override
-    public Matrix4f canpipe_getLastViewMatrix() {
-        return this.canpipe_lastViewMatrix;
-    }
-
-    @Override
-    public Matrix4f canpipe_getProjectionMatrix() {
-        return this.canpipe_projectionMatrix;
-    }
-
-    @Override
-    public Matrix4f canpipe_getLastProjectionMatrix() {
-        return this.canpipe_lastProjectionMatrix;
-    }
-
-    @Override
-    public Matrix4f canpipe_getShadowViewMatrix() {
-        return this.canpipe_shadowViewMatrix;
-    }
-
-    @Override
     public Matrix4f[] canpipe_getShadowProjectionMatrices() {
         return this.canpipe_shadowProjectionMatrices;
     }
@@ -347,11 +295,6 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override
     public Matrix4f[] canpipe_getShortenedViewProjectionMatrices() {
         return this.canpipe_shortendedViewProjectionMatrices;
-    }
-
-    @Override
-    public Vector4f[] canpipe_getShadowCenters() {
-        return this.canpipe_shadowCenters;
     }
 
     @Override

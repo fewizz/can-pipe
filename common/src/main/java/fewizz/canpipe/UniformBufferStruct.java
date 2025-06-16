@@ -46,6 +46,8 @@ public class UniformBufferStruct {
         private float value = 0.0F;
 
         public void set(float value) {this.value = value;}
+        public float get() {return this.value;}
+        public void add(float value) {this.value += value;}
 
         @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putFloat(this.value); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putFloat(); }
@@ -56,6 +58,7 @@ public class UniformBufferStruct {
 
         public void set(int value) {this.value = value;}
         public int get() {return this.value;}
+        public void add(int value) {this.value += value;}
 
         @Override public void writeTo(Std140Builder std140Builder) { std140Builder.putInt(this.value); }
         @Override public void addSize(Std140SizeCalculator std140SizeCalculator) { std140SizeCalculator.putInt(); }

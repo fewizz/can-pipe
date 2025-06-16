@@ -346,7 +346,7 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
-        Uniforms.updateFREXUniforms();
+        Uniforms.updateFREXUniforms(view, projection);
         Uniforms.CANPIPE_ORIGIN_TYPE.set(0);  // camera
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
@@ -357,28 +357,28 @@ public class Pipeline implements AutoCloseable {
 
         if (this.runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
-                pass.apply(view, projection);
+                pass.apply();
             }
             this.runInitPasses = false;
         }
 
         if (this.runResizePasses) {
             for (PassBase pass : this.onResizePasses) {
-                pass.apply(view, projection);
+                pass.apply();
             }
             this.runResizePasses = false;
         }
 
         for (PassBase pass : this.beforeWorldRenderPasses) {
-            pass.apply(view, projection);
+            pass.apply();
         }
 
         Minecraft.getInstance().mainRenderTarget = this.solidFramebuffer;
     }
 
-    public void onAfterWorldRender(Matrix4f view, Matrix4f projection) {
+    public void onAfterWorldRender() {
         for (PassBase pass : this.fabulousPasses) {
-            pass.apply(view, projection);
+            pass.apply();
         }
 
         Uniforms.CANPIPE_ORIGIN_TYPE.set(3);  // hands
@@ -390,7 +390,7 @@ public class Pipeline implements AutoCloseable {
         }
     }
 
-    public void onAfterRenderHand(Matrix4f view, Matrix4f projection) {
+    public void onAfterRenderHand() {
         Minecraft.getInstance().mainRenderTarget = this.defaultFramebuffer;
         Uniforms.CANPIPE_ORIGIN_TYPE.set(2);  // screen
 
@@ -401,7 +401,7 @@ public class Pipeline implements AutoCloseable {
         }
 
         for (PassBase pass : this.afterRenderHandPasses) {
-            pass.apply(view, projection);
+            pass.apply();
         }
     }
 

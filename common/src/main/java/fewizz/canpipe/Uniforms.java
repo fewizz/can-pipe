@@ -72,24 +72,26 @@ public class Uniforms {
 
     // view
     private static final UniformBufferStruct VIEW = new UniformBufferStruct();
-    private static final Mat4Uniform FRX_INVERSE_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
-    private static final Mat4Uniform FRX_LAST_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
-    private static final Mat4Uniform FRX_INVERSE_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
-    private static final Mat4Uniform FRX_LAST_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
-    private static final Mat4Uniform FRX_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
-    private static final Mat4Uniform FRX_INVERSE_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    public static final Mat4Uniform FRX_INVERSE_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    public static final Mat4Uniform FRX_LAST_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    public static final Mat4Uniform FRX_INVERSE_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
+    public static final Mat4Uniform FRX_LAST_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
+    public static final Mat4Uniform FRX_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    public static final Mat4Uniform FRX_INVERSE_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Vec4Uniform FRX_MODEL_TO_WORLD = VIEW.add(new Vec4Uniform());
-    private static final Vec4Uniform CANPIPE_SHADOW_CENTER_0 = VIEW.add(new Vec4Uniform());
-    private static final Vec4Uniform CANPIPE_SHADOW_CENTER_1 = VIEW.add(new Vec4Uniform());
-    private static final Vec4Uniform CANPIPE_SHADOW_CENTER_2 = VIEW.add(new Vec4Uniform());
-    private static final Vec4Uniform CANPIPE_SHADOW_CENTER_3 = VIEW.add(new Vec4Uniform());
+    public static final Vec4Uniform[] CANPIPE_SHADOW_CENTER = new Vec4Uniform[] {
+        VIEW.add(new Vec4Uniform()),
+        VIEW.add(new Vec4Uniform()),
+        VIEW.add(new Vec4Uniform()),
+        VIEW.add(new Vec4Uniform())
+    };
     private static final Vec2Uniform CANPIPE_SCREEN_SIZE = VIEW.add(new Vec2Uniform());
     private static final FloatUniform FRX_VIEW_BRIGHTNESS = VIEW.add(new FloatUniform());
     private static final FloatUniform FRX_VIEW_DISTANCE = VIEW.add(new FloatUniform());
     private static final IntUniform CANPIPE_VIEW_FLAGS = VIEW.add(new IntUniform());
     private static final Vec3Uniform FRX_CAMERA_VIEW = VIEW.add(new Vec3Uniform());
-    private static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
-    private static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
+    public static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
+    public static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
     public static final GpuBuffer VIEW_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe view UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -120,7 +122,7 @@ public class Uniforms {
     public static final IntUniform CANPIPE_RENDER_FRAMES = WORLD.add(new IntUniform());
     private static final IntUniform CANPIPE_WORLD_FLAGS = WORLD.add(new IntUniform());
     private static final FloatUniform CANPIPE_FIXED_OR_DAY_TIME = WORLD.add(new FloatUniform());
-    private static final FloatUniform FRX_RENDER_SECONDS = WORLD.add(new FloatUniform());
+    public static final FloatUniform FRX_RENDER_SECONDS = WORLD.add(new FloatUniform());
     private static final FloatUniform FRX_WORLD_DAY = WORLD.add(new FloatUniform());
     private static final FloatUniform FRX_WORLD_TIME = WORLD.add(new FloatUniform());
     private static final FloatUniform FRX_MOON_SIZE = WORLD.add(new FloatUniform());
@@ -147,7 +149,9 @@ public class Uniforms {
         FOG.size()
     );
 
-    public static void updateFREXUniforms() {
+    public static void updateFREXUniforms(
+        Matrix4f view, Matrix4f projection
+    ) {
         Minecraft mc = Minecraft.getInstance();
         Pipeline p = Pipelines.getCurrent();
         GameRendererExtended gre = (GameRendererExtended) mc.gameRenderer;
@@ -161,8 +165,8 @@ public class Uniforms {
             Mth.lerp(pt, mc.player.zo, mc.player.getZ())
         );
 
-        FRX_INVERSE_VIEW_MATRIX.set(gre.canpipe_getViewMatrix().invert(new Matrix4f()));
-        FRX_INVERSE_PROJECTION_MATRIX.set(gre.canpipe_getProjectionMatrix().invert(new Matrix4f()));
+        FRX_INVERSE_VIEW_MATRIX.set(view).invert();
+        FRX_INVERSE_PROJECTION_MATRIX.set(projection).invert();
 
         // accessibility.glsl
         FRX_FOV_EFFECTS.set((float)(double) mc.options.fovEffectScale().get());
@@ -181,19 +185,9 @@ public class Uniforms {
 
         // view.glsl
         FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
-        FRX_CAMERA_POS.set(cameraPos.toVector3f());
         FRX_CAMERA_VIEW.set(
             Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).toVector3f()
         );
-        FRX_LAST_CAMERA_POS.set(gre.canpipe_getLastCameraPos());
-        FRX_LAST_VIEW_MATRIX.set(gre.canpipe_getLastViewMatrix());
-        FRX_LAST_PROJECTION_MATRIX.set(gre.canpipe_getLastProjectionMatrix());
-        FRX_SHADOW_VIEW_MATRIX.set(gre.canpipe_getShadowViewMatrix()); 
-        FRX_INVERSE_SHADOW_VIEW_MATRIX.set(gre.canpipe_getShadowViewMatrix().invert(new Matrix4f()));
-        CANPIPE_SHADOW_CENTER_0.set(gre.canpipe_getShadowCenters()[0]);
-        CANPIPE_SHADOW_CENTER_1.set(gre.canpipe_getShadowCenters()[1]);
-        CANPIPE_SHADOW_CENTER_2.set(gre.canpipe_getShadowCenters()[2]);
-        CANPIPE_SHADOW_CENTER_3.set(gre.canpipe_getShadowCenters()[3]);
         FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
         FRX_VIEW_BRIGHTNESS.set(mc.options.gamma().get().floatValue());
         {
@@ -344,8 +338,6 @@ public class Uniforms {
         }
 
         // world
-        CANPIPE_RENDER_FRAMES.set(gre.canpipe_getFrame());
-        FRX_RENDER_SECONDS.set(gre.canpipe_getRenderSeconds());
         {
             long ticks = mc.level.dimensionType().fixedTime().orElse(mc.level.getDayTime());
             CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
