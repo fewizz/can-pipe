@@ -13,7 +13,6 @@
     "ChunkSectionLayerMixin",
     "ChunkSectionsToRenderMixin",
     "CompositeRenderTypeMixin",
-    "CompositeStateMixin",
     "EquipmentLayerRendererMixin",
     "GameRendererMixin",
     "GlCommandEncoderMixin",
