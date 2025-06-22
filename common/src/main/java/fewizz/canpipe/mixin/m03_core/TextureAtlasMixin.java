@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.Map;
 
-import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,13 +13,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 
+import fewizz.canpipe.mixininterface.CommandEncoderExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -33,8 +33,8 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
     @Shadow @Final private ResourceLocation location;
     @Shadow private Map<ResourceLocation, TextureAtlasSprite> texturesByName;
 
-    @Unique GpuTexture spritesData;
-    @Unique GpuTextureView spritesDataView;
+    @Unique GpuTexture canpipe_spritesData;
+    @Unique GpuTextureView canpipe_spritesDataView;
 
     @Inject(method = "upload", at = @At("TAIL"))
     void onUploadEnd(CallbackInfo ci) {
@@ -56,7 +56,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
         }
 
         try {
-            this.spritesData = RenderSystem
+            this.canpipe_spritesData = RenderSystem
                 .getDevice()
                 .createTexture(
                     location.toString()+"-sprites-extents",
@@ -64,20 +64,20 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
                     TextureFormat.valueOf("RGBA32F"),
                     width, height, 1, 1
                 );
-            // uses GL_UNSIGNED_BYTE internally, too lazy to patch
-            /*RenderSystem.getDevice().createCommandEncoder().writeToTexture(
-                spritesData, byteBuff.asIntBuffer(), Format.RGBA, 0, 0, 0, width, height
-            );*/ //, so:
-            GlStateManager._bindTexture(((GlTexture) this.spritesData).glId());
-            GlStateManager._pixelStore(GL33C.GL_UNPACK_ROW_LENGTH, width);
-            GlStateManager._pixelStore(GL33C.GL_UNPACK_SKIP_PIXELS, 0);
-            GlStateManager._pixelStore(GL33C.GL_UNPACK_SKIP_ROWS, 0);
-            GlStateManager._pixelStore(GL33C.GL_UNPACK_ALIGNMENT, 4);
-            GlStateManager._texSubImage2D(
-                GL33C.GL_TEXTURE_2D, 0, 0, 0, width, height,
-                GL33C.GL_RGBA, GL33C.GL_FLOAT, byteBuff.asIntBuffer()
+
+            var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+
+            // commandEncoder.writeToTexture(
+            //     this.canpipe_spritesData, byteBuff.asIntBuffer(), NativeImage.Format.RGBA, 0, 0, 0, 0, width, height
+            // );
+            // uses GL_UNSIGNED_BYTE internally, so instead:
+
+            ((CommandEncoderExtended) commandEncoder).canpipe_writeToTexture(
+                this.canpipe_spritesData, byteBuff.asIntBuffer(), NativeImage.Format.RGBA, 0, 0, 0, 0, width, height,
+                VertexFormatElement.Type.FLOAT
             );
-            this.spritesDataView = RenderSystem.getDevice().createTextureView(this.spritesData);
+
+            this.canpipe_spritesDataView = RenderSystem.getDevice().createTextureView(this.canpipe_spritesData);
         } finally {
             MemoryUtil.memFree(buff);
         }
@@ -85,14 +85,14 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
 
     @Inject(method = "clearTextureData", at = @At("TAIL"))
     public void onClearTextureData(CallbackInfo ci) {
-        if (this.spritesData != null) {
-            this.spritesData.close();
+        if (this.canpipe_spritesData != null) {
+            this.canpipe_spritesData.close();
         }
     }
 
     @Override
     public GpuTextureView canpipe_getSpriteData() {
-        return this.spritesDataView;
+        return this.canpipe_spritesDataView;
     }
 
     @Override
