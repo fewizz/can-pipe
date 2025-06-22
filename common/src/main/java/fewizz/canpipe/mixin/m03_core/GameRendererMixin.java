@@ -43,6 +43,8 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private Matrix4f[] canpipe_shortendedViewProjectionMatrices = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
     @Unique private Float canpipe_depthFarOverride = null;
+    @Unique private Matrix4f canpipe_worldViewMatrix = null;
+    @Unique private Matrix4f canpipe_worldProjectionMatrix = null;
 
     @Override
     public void canpipe_onPipelineActivated() {
@@ -72,6 +74,8 @@ public class GameRendererMixin implements GameRendererExtended {
         Uniforms.CANPIPE_SHADOW_CENTER[1].set(0.0);
         Uniforms.CANPIPE_SHADOW_CENTER[2].set(0.0);
         Uniforms.CANPIPE_SHADOW_CENTER[3].set(0.0);
+        this.canpipe_worldViewMatrix = null;
+        this.canpipe_worldProjectionMatrix = null;
     }
 
     @Inject(method = "resize", at = @At("HEAD"))
@@ -107,6 +111,9 @@ public class GameRendererMixin implements GameRendererExtended {
         if (p == null) {
             return;
         }
+
+        this.canpipe_worldViewMatrix = new Matrix4f(viewMatrix);
+        this.canpipe_worldProjectionMatrix = new Matrix4f(projectionMatrix);
 
         float pt = deltaTracker.getGameTimeDeltaPartialTick(false);
         Uniforms.CANPIPE_RENDER_FRAMES.add(1);
@@ -300,6 +307,16 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override
     public FogRenderer canpipe_getFogRenderer() {
         return this.fogRenderer;
+    }
+
+    @Override
+    public Matrix4f canpipe_worldViewMatrix() {
+        return this.canpipe_worldViewMatrix;
+    }
+
+    @Override
+    public Matrix4f canpipe_worldProjectionMatrix() {
+        return this.canpipe_worldProjectionMatrix;
     }
 
 }

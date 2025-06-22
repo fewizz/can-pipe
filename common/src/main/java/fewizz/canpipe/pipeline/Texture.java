@@ -49,7 +49,7 @@ public class Texture extends GlTexture {
         TextureFormat format
     ) {
         super(
-            GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST,
+            GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
             name, format, -1, -1, 1, maxLod+1, GlStateManager._genTexture()
         );
         GlStateManagerAccessor.canpipe_setTextureTarget(this.id, target);

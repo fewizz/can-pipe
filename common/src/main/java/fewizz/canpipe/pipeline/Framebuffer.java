@@ -125,7 +125,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         {
             var texture = this.colorTexture != null ? this.colorTexture : this.depthTexture;
             this.colorTexture = new GlTexture(
-                GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC,
+                GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_TEXTURE_BINDING,
                 this.name, texture.getFormat(),
                 this.width, this.height,
                 texture.getDepthOrLayers(),

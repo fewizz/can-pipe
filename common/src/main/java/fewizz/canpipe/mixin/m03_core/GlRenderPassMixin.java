@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin.m03_core;
 
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,6 +29,7 @@ import net.minecraft.client.resources.model.ModelManager;
 public abstract class GlRenderPassMixin {
 
     @Shadow public abstract void setUniform(String string, GpuBuffer gpuBuffer);
+    @Shadow public abstract void bindSampler(String string, @Nullable GpuTextureView gpuTextureView);
 
     @Shadow protected GlRenderPipeline pipeline;
 
@@ -98,6 +100,7 @@ public abstract class GlRenderPassMixin {
         }
         if (result != null && result.program() instanceof MaterialProgram) {
             this.setUniform("canpipe_ub_material_program", Uniforms.MATERIAL_PROGRAM_UBO);
+            this.bindSampler("frxs_lightmap", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView());
         }
         return result != null ? result : operation.call(instance, renderPipeline);
     }

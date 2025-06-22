@@ -7,9 +7,13 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
 
+import org.joml.Matrix4f;
 import org.joml.Vector2i;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.systems.RenderPass;
@@ -20,6 +24,7 @@ import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.mixin.m03_core.RenderSystemAccessor;
+import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
 
 public class Pass extends PassBase {
@@ -90,6 +95,11 @@ public class Pass extends PassBase {
             RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Program.PASS_UBO.slice(), builder.get());
         }
 
+        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
+            ((GameRendererExtended)mc.gameRenderer).canpipe_worldViewMatrix(),
+            new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f(), 0.0F
+        );
+
         try (
             RenderPass renderPass = RenderSystem.getDevice()
                 .createCommandEncoder()
@@ -109,6 +119,8 @@ public class Pass extends PassBase {
             }
 
             RenderSystem.bindDefaultUniforms(renderPass);
+            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
+
             renderPass.setUniform("canpipe_ub_pass", Program.PASS_UBO);
             renderPass.setVertexBuffer(0, vertexBuffer);
             renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());

@@ -6,6 +6,9 @@ import net.minecraft.client.renderer.fog.FogRenderer;
 
 public interface GameRendererExtended {
 
+    public Matrix4f canpipe_worldViewMatrix();
+    public Matrix4f canpipe_worldProjectionMatrix();
+
     public Matrix4f[] canpipe_getShadowProjectionMatrices();
     public Matrix4f[] canpipe_getShortenedViewProjectionMatrices();
 
