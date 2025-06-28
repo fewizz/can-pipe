@@ -21,6 +21,7 @@ import org.lwjgl.system.MemoryStack;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlTextureView;
+import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -69,7 +70,7 @@ public class Pipeline implements AutoCloseable {
 
     public final Map<RenderPipeline, GlRenderPipeline> materialPrograms;
 
-    private final Map<String, Program> programs = new HashMap<>();
+    public final Map<String, RenderPipeline> programs = new HashMap<>();
     private final Map<Pair<ResourceLocation, ShaderType>, Shader> shaders = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
@@ -301,11 +302,11 @@ public class Pipeline implements AutoCloseable {
         ));
 
         // "programs"
-        Function<String, Program> getOrLoadProgram = (String name) -> {
+        Function<String, RenderPipeline> getOrLoadProgram = (String name) -> {
             return this.programs.computeIfAbsent(name, _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 JsonObject programJson = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
-                return Program.load(
+                return Programs.load(
                     programJson, location, this.shaders, getShaderSource, glslVersion,
                     options, appliedOptions, this.shadows != null ? this.shadows.framebuffers.get(0) : null
                 );
@@ -428,7 +429,6 @@ public class Pipeline implements AutoCloseable {
         this.framebuffers.values().forEach(Framebuffer::close);
         this.textures.values().forEach(Texture::close);
         this.shaders.values().forEach(Shader::close);
-        this.programs.values().forEach(ProgramBase::close);
     }
 
     public GlRenderPipeline onRenderPassSetRenderPipeline(RenderPipeline renderPipeline) {
@@ -451,14 +451,14 @@ public class Pipeline implements AutoCloseable {
                 }
             }
         }
-        else {
+        /*else {
             for (var p : this.programs.values()) {
-                if (p.glRenderPipeline.info() == renderPipeline) {
-                    glRenderPipeline = p.glRenderPipeline;
+                if (p == renderPipeline) {
+                    glRenderPipeline = p;
                     break;
                 }
             }
-        }
+        }*/
 
         return glRenderPipeline;
     }

@@ -69,34 +69,10 @@ public class Shader extends GlShaderModule {
         @Nullable Framebuffer shadowFramebuffer,
         Function<String, String> srcPostPreprocess
     ) {
-
-        String preprocessedSource = processIncludesAndDefinitions(
-            source, location, options, appliedOptions, getShaderSource
+        String preprocessedSource = preprocess(
+            location, source, type, version, options, appliedOptions,
+            getShaderSource, shadowFramebuffer, srcPostPreprocess
         );
-
-        preprocessedSource = srcPostPreprocess.apply(preprocessedSource);
-
-        String header =
-            "#version " + version + "\n\n" +
-            "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
-            "#define " + type.name() + "_SHADER\n\n";
-
-        if (shadowFramebuffer != null) {
-            header +=
-                "#define SHADOW_MAP_PRESENT\n"+
-                "#define SHADOW_MAP_SIZE "+shadowFramebuffer.depthAttachment.texture().extent.x + "\n\n";
-        }
-
-        // some shaderpacks define them, some - not
-        if (type == ShaderType.VERTEX && !CONTAINS_VERTEX_IN.test(source)) {
-            header += "in vec3 in_vertex;\n\n";
-        }
-        if (type == ShaderType.VERTEX && !CONTAINS_UV_IN.test(source)) {
-            header += "in vec2 in_uv;\n\n";
-        }
-
-        preprocessedSource = header + preprocessedSource;
-
         /* Can't use CompiledShader.compile, because it trims and truncates the log */
         int id = GlStateManager.glCreateShader(GlConst.toGl(type));
 
@@ -122,6 +98,42 @@ public class Shader extends GlShaderModule {
         }
 
         return new Shader(id, location, preprocessedSource, type);
+    }
+
+    public static String preprocess(
+        ResourceLocation location, String source, ShaderType type, int version,
+        Map<ResourceLocation, Option> options,
+        Map<Option.Element<?>, Object> appliedOptions,
+        Function<ResourceLocation, Optional<String>> getShaderSource,
+        @Nullable Framebuffer shadowFramebuffer,
+        Function<String, String> srcPostPreprocess
+    ) {
+        String preprocessedSource = processIncludesAndDefinitions(
+            source, location, options, appliedOptions, getShaderSource
+        );
+
+        preprocessedSource = srcPostPreprocess.apply(preprocessedSource);
+
+        String header =
+            "#version " + version + "\n\n" +
+            "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
+            "#define " + type.name() + "_SHADER\n\n";
+
+        if (shadowFramebuffer != null) {
+            header +=
+                "#define SHADOW_MAP_PRESENT\n"+
+                "#define SHADOW_MAP_SIZE "+shadowFramebuffer.depthAttachment.texture().extent.x + "\n\n";
+        }
+
+        // some shaderpacks define them, some - not
+        if (type == ShaderType.VERTEX && !CONTAINS_VERTEX_IN.test(source)) {
+            header += "in vec3 in_vertex;\n\n";
+        }
+        if (type == ShaderType.VERTEX && !CONTAINS_UV_IN.test(source)) {
+            header += "in vec2 in_uv;\n\n";
+        }
+
+        return header + preprocessedSource;
     }
 
     private static String processIncludesAndDefinitions(

@@ -16,6 +16,7 @@ import org.lwjgl.system.MemoryStack;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlTextureView;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
@@ -30,8 +31,8 @@ import net.minecraft.client.Minecraft;
 public class Pass extends PassBase {
 
     final Framebuffer framebuffer;
-    final Program program;
-    // Textures (spcified in "samplers": ["X", "Y"]) may not exist,
+    final RenderPipeline renderPipeline;
+    // Textures (specified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually uses them
     final List<Optional<? extends GlTextureView>> textureViews;
     final Vector2i extent;
@@ -39,28 +40,28 @@ public class Pass extends PassBase {
     final int layer;
 
     private Pass(
-        String name, Framebuffer framebuffer, Program program,
+        String name, Framebuffer framebuffer, RenderPipeline renderPipeline,
         List<Optional<? extends GlTextureView>> textureViews,
         Vector2i extent, int lod, int layer
     ) {
         super(name);
-        var samplers = program.glRenderPipeline.info().getSamplers();
+        var samplers = renderPipeline.getSamplers();
         if (samplers.size() > textureViews.size()) {
-            CanPipe.LOGGER.warn("Program \""+program.getDebugLabel()+"\" has more samplers than textures provided by pass \""+name+"\"");
+            CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+name+"\"");
         }
         if (samplers.size() < textureViews.size()) {
-            CanPipe.LOGGER.warn("Program \""+program.getDebugLabel()+"\" has less samplers than textures provided by pass \""+name+"\"");
+            CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has less samplers than textures provided by pass \""+name+"\"");
         }
         for (int i = 0; i < Math.min(samplers.size(), textureViews.size()); ++i) {
             String sampler = samplers.get(i);
             Optional<? extends GlTextureView> texture = textureViews.get(i);
-            if (texture.isEmpty() && program.getUniform(sampler) != null) {
+            if (texture.isEmpty() && renderPipeline.getSamplers() != null) {
                 throw new NullPointerException("Couldn't find texture for sampler \""+sampler +"\"");
             }
         }
 
         this.framebuffer = framebuffer;
-        this.program = program;
+        this.renderPipeline = renderPipeline;
         this.textureViews = textureViews;
         this.extent = extent;
         this.lod = lod;
@@ -84,15 +85,15 @@ public class Pass extends PassBase {
         var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
         var vertexBuffer = RenderSystemAccessor.canpipe_getQuadBuffer();
 
-        Program.FRX_SIZE.set((int) w, (int) h);
-        Program.FRX_LOD.set(lod);
-        Program.FRX_LAYER.set(layer);
-        Program.FRX_FRAME_PROJECTION_MATRIX.setOrtho2D(0, w, 0, h);
+        Programs.FRX_SIZE.set((int) w, (int) h);
+        Programs.FRX_LOD.set(lod);
+        Programs.FRX_LAYER.set(layer);
+        Programs.FRX_FRAME_PROJECTION_MATRIX.setOrtho2D(0, w, 0, h);
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, Program.PASS.size());
-            Program.PASS.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Program.PASS_UBO.slice(), builder.get());
+            var builder = Std140Builder.onStack(memoryStack, Programs.PASS.size());
+            Programs.PASS.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Programs.PASS_UBO.slice(), builder.get());
         }
 
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
@@ -108,9 +109,9 @@ public class Pass extends PassBase {
                     this.framebuffer.getColorTextureView(), OptionalInt.empty()
                 )
         ) {
-            renderPass.setPipeline(this.program.glRenderPipeline.info());
+            renderPass.setPipeline(this.renderPipeline);
 
-            var samplers = this.program.glRenderPipeline.info().getSamplers();
+            var samplers = this.renderPipeline.getSamplers();
             for (int i = 0; i < Math.min(samplers.size(), this.textureViews.size()); ++i) {
                 String sampler = samplers.get(i);
                 this.textureViews.get(i).ifPresent(texture -> {
@@ -121,7 +122,7 @@ public class Pass extends PassBase {
             RenderSystem.bindDefaultUniforms(renderPass);
             renderPass.setUniform("DynamicTransforms", dynamicTransforms);
 
-            renderPass.setUniform("canpipe_ub_pass", Program.PASS_UBO);
+            renderPass.setUniform("canpipe_ub_pass", Programs.PASS_UBO);
             renderPass.setVertexBuffer(0, vertexBuffer);
             renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
             renderPass.drawIndexed(0, 0, 6, 0);
@@ -132,7 +133,7 @@ public class Pass extends PassBase {
         JsonObject json,
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
-        Function<String, Program> getOrLoadProgram,
+        Function<String, RenderPipeline> getOrLoadProgram,
         Function<String, Optional<GlTextureView>> getOrLoadPipelineOrResourcepackTextureView
     ) {
         String toggleConfig = json.get(String.class, "toggleConfig");
@@ -157,7 +158,7 @@ public class Pass extends PassBase {
             return Optional.of(new Pass.FREXClear(passName, framebuffer.get()));
         }
 
-        Program program = getOrLoadProgram.apply(programName);
+        RenderPipeline program = getOrLoadProgram.apply(programName);
         Objects.nonNull(program);
 
         List<Optional<? extends GlTextureView>> textureViews = new ArrayList<>();

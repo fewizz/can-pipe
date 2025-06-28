@@ -28,7 +28,7 @@ public abstract class ProgramBase extends GlProgram {
     public final Shader fragmentShader;
     protected final List<String> samplersUniformNames;
 
-    private static final List<RenderPipeline.UniformDescription> DEFAULT_UNIFORMS = List.of(
+    public static final List<RenderPipeline.UniformDescription> DEFAULT_UNIFORMS = List.of(
         new RenderPipeline.UniformDescription("frx_ub_accessibility", UniformType.UNIFORM_BUFFER),
         new RenderPipeline.UniformDescription("frx_ub_view", UniformType.UNIFORM_BUFFER),
         new RenderPipeline.UniformDescription("frx_ub_player", UniformType.UNIFORM_BUFFER),

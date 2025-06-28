@@ -91,7 +91,10 @@ public abstract class GlRenderPassMixin {
         if (p != null) {
             result = p.onRenderPassSetRenderPipeline(renderPipeline);
         }
-        if (result != null && result.program() instanceof ProgramBase) {
+        if (
+            (result != null && result.program() instanceof ProgramBase) ||
+            (p != null && p.programs.values().contains(renderPipeline))
+        ) {
             this.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
             this.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
             this.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
