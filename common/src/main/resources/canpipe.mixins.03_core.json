@@ -18,6 +18,7 @@
     "GlCommandEncoderMixin",
     "GlDebugLabelCoreMixin",
     "GlDebugLabelExtMixin",
+    "GlDeviceMixin",
     "GlRenderPassMixin",
     "ItemBlockRenderTypesMixin",
     "ItemRendererMixin",
