@@ -226,23 +226,65 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.TRANSLUCENT_PARTICLE
         };
 
+        Framebuffer shadowFramebuffer = null;
         JsonObject shadowsJson = pipelineJson.getObject("skyShadows");
+
         if (shadowsJson != null) {
-            var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
+            shadowFramebuffer = getOrLoadFramebuffer.apply(shadowsJson.get(String.class, "framebuffer"));
+        }
 
-            Framebuffer framebuffer = getOrLoadFramebuffer.apply(shadowsJson.get(String.class, "framebuffer"));
+        Optional<Integer> shadowMapSize = (
+            shadowFramebuffer != null ?
+            Optional.of(shadowFramebuffer.depthAttachment.texture().extent.x) :
+            Optional.empty()
+        );
 
+        JsonObject materailProgram = pipelineJson.getObject("materialProgram");
+
+        var materialVertexShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "vertexSource"));
+        var materialFragmentShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "fragmentSource"));
+
+        List<String> samplers = new ArrayList<>(JanksonUtils.listOfStrings(materailProgram, "samplers"));
+        if (shadowFramebuffer != null) {
+            samplers.add("frxs_shadowMap");
+            samplers.add("frxs_shadowMapTexture");
+        }
+        this.materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
+            renderPipeline -> renderPipeline,
+            renderPipeline -> MaterialPrograms.load(
+                renderPipeline, glslVersion, enablePBR, false, shadowMapSize,
+                materialVertexShaderLocation, materialFragmentShaderLocation,
+                options, appliedOptions, samplers, getShaderSource,
+                0.0F, 0.0F
+            )
+        ));
+
+        var samplerImagesNames = JanksonUtils.listOfStrings(materailProgram, "samplerImages");
+        Map<String, GlTextureView> samplerToImage = new HashMap<>();
+        for (int i = 0; i < Math.min(samplers.size(), samplerImagesNames.size()); ++i) {
+            String sampler = samplers.get(i);
+            var samplerImage = getOrLoadPipelineOrResourcepackTextureView.apply(samplerImagesNames.get(i)).get();
+            samplerToImage.put(sampler, samplerImage);
+        }
+        if (shadowFramebuffer != null) {
+            samplerToImage.put("frxs_shadowMap", shadowFramebuffer.depthAttachment.texture().view);
+            samplerToImage.put("frxs_shadowMapTexture", shadowFramebuffer.depthAttachment.texture().view);
+        }
+        this.materialProgramSamplerImages = samplerToImage;
+
+        if (shadowsJson != null) {
             // Instead of one shadow framebuffer, we create N (= number of cascades) framebuffers for different layers
             List<Framebuffer> framebuffers = new ArrayList<>();
+            var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
             for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
                 framebuffers.add(new Framebuffer(
                     location,
-                    framebuffer.name+"_"+(i+1),
-                    framebuffer.colorAttachments,
+                    shadowFramebuffer.name+"_"+(i+1),
+                    shadowFramebuffer.colorAttachments,
                     new Framebuffer.DepthAttachment(
-                        framebuffer.depthAttachment.texture(),
-                        framebuffer.depthAttachment.clearDepth(),
-                        framebuffer.depthAttachment.lod(),
+                        shadowFramebuffer.depthAttachment.texture(),
+                        shadowFramebuffer.depthAttachment.clearDepth(),
+                        shadowFramebuffer.depthAttachment.lod(),
                         Optional.of(i)  // layer
                     )
                 ));
@@ -253,7 +295,7 @@ public class Pipeline implements AutoCloseable {
             var materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
                 renderPipeline -> renderPipeline,
                 renderPipeline -> MaterialPrograms.load(
-                    renderPipeline, glslVersion, enablePBR, true, framebuffer,
+                    renderPipeline, glslVersion, enablePBR, true, shadowMapSize,
                     vertexShaderLocation, fragmentShaderLocation, options, appliedOptions,
                     List.of(),
                     getShaderSource,
@@ -276,35 +318,6 @@ public class Pipeline implements AutoCloseable {
             this.shadows = null;
         }
 
-        JsonObject materailProgram = pipelineJson.getObject("materialProgram");
-
-        var materialVertexShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "vertexSource"));
-        var materialFragmentShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "fragmentSource"));
-
-        List<String> samplers = JanksonUtils.listOfStrings(materailProgram, "samplers");
-        this.materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
-            renderPipeline -> renderPipeline,
-            renderPipeline -> MaterialPrograms.load(
-                renderPipeline, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffers.get(0) : null,
-                materialVertexShaderLocation, materialFragmentShaderLocation,
-                options, appliedOptions, samplers, getShaderSource,
-                0.0F, 0.0F
-            )
-        ));
-
-        var samplerImagesNames = JanksonUtils.listOfStrings(materailProgram, "samplerImages");
-        Map<String, GlTextureView> samplerToImage = new HashMap<>();
-        for (int i = 0; i < Math.min(samplers.size(), samplerImagesNames.size()); ++i) {
-            String sampler = samplers.get(i);
-            var samplerImage = getOrLoadPipelineOrResourcepackTextureView.apply(samplerImagesNames.get(i)).get();
-            samplerToImage.put(sampler, samplerImage);
-        }
-        if (this.shadows != null) {
-            samplerToImage.put("frxs_shadowMap", this.shadows.framebuffers().get(0).depthAttachment.texture().view);
-            samplerToImage.put("frxs_shadowMapTexture", this.shadows.framebuffers().get(0).depthAttachment.texture().view);
-        }
-        this.materialProgramSamplerImages = samplerToImage;
-
         // "programs"
         Function<String, RenderPipeline> getOrLoadProgram = (String name) -> {
             return this.programs.computeIfAbsent(name, _name -> {
@@ -312,7 +325,7 @@ public class Pipeline implements AutoCloseable {
                 JsonObject programJson = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
                 return Programs.load(
                     programJson, location, getShaderSource, glslVersion,
-                    options, appliedOptions, this.shadows != null ? this.shadows.framebuffers.get(0) : null
+                    options, appliedOptions, shadowMapSize
                 );
             });
         };
@@ -343,6 +356,16 @@ public class Pipeline implements AutoCloseable {
         this.close();
         throw e;
     }}
+
+    public boolean isPassProgramRenderPipeline(RenderPipeline renderPipeline) {
+        return this.programs.containsValue(renderPipeline);
+    }
+
+    public boolean isMaterialProgramRenderPipeline(RenderPipeline renderPipeline) {
+        return this.materialPrograms.containsValue(renderPipeline) || (
+            this.shadows != null && this.shadows.materialPrograms().containsValue(renderPipeline)
+        );
+    }
 
     public void onWindowSizeChanged(int w, int h) {
         this.textures.forEach((n, t) -> t.onWindowSizeChanged(w, h));

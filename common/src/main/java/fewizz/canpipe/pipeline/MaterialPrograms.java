@@ -6,8 +6,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.google.common.collect.Streams;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -33,7 +31,7 @@ public class MaterialPrograms {
         int glslVersion,
         boolean enablePBR,
         boolean depthPass,
-        @Nullable Framebuffer shadowFramebuffer,
+        Optional<Integer> shadowMapSize,
         ResourceLocation vertexShaderLocation,
         ResourceLocation fragmentShaderLocation,
         Map<ResourceLocation, Option> options,
@@ -43,13 +41,6 @@ public class MaterialPrograms {
         float shadowsOffsetSlopeFactor,
         float shadowsOffsetBiasUnits
     ) {
-        if (shadowFramebuffer != null && shadowFramebuffer.depthAttachment != null) {
-            samplers = Streams.concat(
-                samplers.stream(),
-                List.of("frxs_shadowMap", "frxs_shadowMapTexture").stream()
-            ).toList();
-        }
-
         String vertexSrc = getShaderSource.apply(vertexShaderLocation).get();
         String fragmentSrc = getShaderSource.apply(fragmentShaderLocation).get();
 
@@ -370,7 +361,7 @@ public class MaterialPrograms {
                 return type == ShaderType.VERTEX ? vertexSrcFinal : fragmentSrcFinal;
             },
             (ResourceLocation location, String source, ShaderType type) -> {
-                return Shaders.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer, (String s) -> {
+                return Shaders.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize, (String s) -> {
                     s = s.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
                     s =
                         "#define mc_ub_dynamic_transforms DynamicTransforms\n"+

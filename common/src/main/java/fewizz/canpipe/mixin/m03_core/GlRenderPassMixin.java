@@ -35,10 +35,7 @@ public abstract class GlRenderPassMixin {
     @WrapMethod(method = "bindSampler")
     void onBindSampler(String name, GpuTextureView textureView, Operation<Void> original) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null && pipeline != null && (
-            p.materialPrograms.values().contains(pipeline.info()) ||
-            (p.shadows != null && p.shadows.materialPrograms().values().contains(pipeline.info()))
-        )) {
+        if (p != null && pipeline != null && p.isMaterialProgramRenderPipeline(pipeline.info())) {
             if (name.equals("Sampler0")) {
                 name = "frxs_baseColor";
 
@@ -90,10 +87,8 @@ public abstract class GlRenderPassMixin {
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            boolean isProgram = p.materialPrograms.values().contains(renderPipeline);
-            boolean isMaterialProgram =
-                p.materialPrograms.values().contains(renderPipeline) ||
-                (p.shadows != null && p.shadows.materialPrograms().values().contains(renderPipeline));
+            boolean isProgram = p.isPassProgramRenderPipeline(renderPipeline);
+            boolean isMaterialProgram = p.isMaterialProgramRenderPipeline(renderPipeline);
 
             if (isProgram || isMaterialProgram) {
                 this.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);

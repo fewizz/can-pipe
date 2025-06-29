@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Iterators;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -46,7 +45,7 @@ public class Shaders {
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         Function<ResourceLocation, Optional<String>> getShaderSource,
-        @Nullable Framebuffer shadowFramebuffer,
+        Optional<Integer> shadowMapSize,
         Function<String, String> srcPostPreprocess
     ) {
         String preprocessedSource = processIncludesAndDefinitions(
@@ -60,10 +59,10 @@ public class Shaders {
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
             "#define " + type.name() + "_SHADER\n\n";
 
-        if (shadowFramebuffer != null) {
+        if (shadowMapSize.isPresent()) {
             header +=
                 "#define SHADOW_MAP_PRESENT\n"+
-                "#define SHADOW_MAP_SIZE "+shadowFramebuffer.depthAttachment.texture().extent.x + "\n\n";
+                "#define SHADOW_MAP_SIZE "+shadowMapSize.get()+"\n\n";
         }
 
         // some shaderpacks define them, some - not

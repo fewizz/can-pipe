@@ -5,9 +5,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.Nullable;
-
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
@@ -47,7 +44,7 @@ public class Programs {
         int glslVersion,
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
-        @Nullable Framebuffer shadowFramebuffer
+        Optional<Integer> shadowMapSize
     ) {
         List<String> samplers = JanksonUtils.listOfStrings(json, "samplers");
 
@@ -90,7 +87,7 @@ public class Programs {
                 return getShaderSource.apply(_location).get();
             },
             (ResourceLocation _location, String source, ShaderType type) -> {
-                return Shaders.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> {
+                return Shaders.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize, (s) -> {
                     s = s.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "// uniform ivec2 frxu_size;");
                     s = s.replaceAll("uniform\\s+int\\s+frxu_lod;", "// uniform int frxu_lod;");
                     s = s.replaceAll("uniform\\s+int\\s+frxu_layer;", "// uniform int frxu_layer;");
