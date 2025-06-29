@@ -67,7 +67,7 @@ public class Pipeline implements AutoCloseable {
     public final Map<RenderPipeline, RenderPipeline> materialPrograms;
     public final Map<String, GpuTextureView> materialProgramSamplerImages;
 
-    public final Map<String, RenderPipeline> programs = new HashMap<>();
+    private final Map<String, RenderPipeline> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 

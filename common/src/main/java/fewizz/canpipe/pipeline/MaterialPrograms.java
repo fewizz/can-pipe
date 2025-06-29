@@ -41,8 +41,8 @@ public class MaterialPrograms {
         float shadowsOffsetSlopeFactor,
         float shadowsOffsetBiasUnits
     ) {
-        String vertexSrc = getShaderSource.apply(vertexShaderLocation).get();
-        String fragmentSrc = getShaderSource.apply(fragmentShaderLocation).get();
+        String vertexSrcInitial = getShaderSource.apply(vertexShaderLocation).get();
+        String fragmentSrcInitial = getShaderSource.apply(fragmentShaderLocation).get();
 
         VertexFormat vertexFormat;
         if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.BLOCK) {
@@ -140,7 +140,7 @@ public class MaterialPrograms {
         """
         );
         vertexSrcBuilder.append(materialsVertexSrc);
-        vertexSrcBuilder.append(vertexSrc);
+        vertexSrcBuilder.append(vertexSrcInitial);
         vertexSrcBuilder.append(
         """
 
@@ -274,7 +274,7 @@ public class MaterialPrograms {
 
         """);
         fragmentSrcBuilder.append(materialsFragmentSrc);
-        fragmentSrcBuilder.append(fragmentSrc);
+        fragmentSrcBuilder.append(fragmentSrcInitial);
         fragmentSrcBuilder.append(
         """
 
@@ -372,26 +372,22 @@ public class MaterialPrograms {
 
         var renderPipeline = renderPipelineBuilder.build();
 
-        final String vertexSrcFinal = vertexSrcBuilder.toString();
-        final String fragmentSrcFinal = fragmentSrcBuilder.toString();
-
         ((DeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
             renderPipeline,
-            (ResourceLocation location, ShaderType type) -> {
-                String source = type == ShaderType.VERTEX ? vertexSrcFinal : fragmentSrcFinal;
-                return Shaders.preprocess(
-                    location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize,
-                (String s) -> {
-                    s = s.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
-                    s =
+            (ResourceLocation location, ShaderType type) -> Shaders.process(
+                location, (type == ShaderType.VERTEX ? vertexSrcBuilder : fragmentSrcBuilder).toString(),
+                type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize,
+                (String src) -> {
+                    src = src.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
+                    src =
                         "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
                         "#define mc_ub_projection Projection\n"+
                         "#define mc_ub_fog Fog\n"+
                         "\n"+
-                        s;
-                    return s;
-                });
-            },
+                        src;
+                    return src;
+                }
+            ),
             (String error) -> {
                 throw new RuntimeException(error);
             }

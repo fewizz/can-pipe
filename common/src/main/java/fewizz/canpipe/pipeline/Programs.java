@@ -84,7 +84,7 @@ public class Programs {
             pipeline,
             (ResourceLocation _location, ShaderType type) -> {
                 String source = getShaderSource.apply(_location).get();
-                return Shaders.preprocess(
+                return Shaders.process(
                     location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize,
                 (s) -> {
                     s = s.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "// uniform ivec2 frxu_size;");

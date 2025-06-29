@@ -40,19 +40,19 @@ public class Shaders {
         "^\\s*(#if)\\s+("+FLOAT_PATTERN.pattern()+"|[[A-Za-z][0-9]_]+)\\s+([<>]|!=|==)\\s+("+FLOAT_PATTERN.pattern()+"|[[A-Za-z][0-9]_]+)"
     );
 
-    public static String preprocess(
+    public static String process(
         ResourceLocation location, String source, ShaderType type, int version,
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         Function<ResourceLocation, Optional<String>> getShaderSource,
         Optional<Integer> shadowMapSize,
-        Function<String, String> srcPostPreprocess
+        Function<String, String> postProcess
     ) {
         String preprocessedSource = processIncludesAndDefinitions(
             source, location, options, appliedOptions, getShaderSource
         );
 
-        preprocessedSource = srcPostPreprocess.apply(preprocessedSource);
+        preprocessedSource = postProcess.apply(preprocessedSource);
 
         String header =
             "#version " + version + "\n\n" +
