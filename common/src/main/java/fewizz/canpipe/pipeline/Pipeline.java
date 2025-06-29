@@ -18,9 +18,9 @@ import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
-import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
@@ -65,13 +65,13 @@ public class Pipeline implements AutoCloseable {
     public final @Nullable Shadows shadows;
 
     public final Map<RenderPipeline, RenderPipeline> materialPrograms;
-    public final Map<String, GlTextureView> materialProgramSamplerImages;
+    public final Map<String, GpuTextureView> materialProgramSamplerImages;
 
     public final Map<String, RenderPipeline> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
-    public final PassBase[]
+    public final List<PassBase>
         onInitPasses,
         beforeWorldRenderPasses,
         fabulousPasses,
@@ -121,7 +121,7 @@ public class Pipeline implements AutoCloseable {
             return result.get();
         };
 
-        Function<String, Optional<GlTextureView>> getOrLoadPipelineOrResourcepackTextureView = (String name) -> {
+        Function<String, Optional<GpuTextureView>> getOrLoadPipelineOrResourcepackTextureView = (String name) -> {
             if (name.contains(":")) {
                 var mc = Minecraft.getInstance();
                 var rl = ResourceLocation.parse(name);
@@ -129,7 +129,7 @@ public class Pipeline implements AutoCloseable {
                 if (rl.equals(ResourceLocation.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
                     rl = ItemRenderer.ENCHANTED_GLINT_ITEM;
                 }
-                return Optional.of((GlTextureView) mc.getTextureManager().getTexture(rl).getTextureView());
+                return Optional.of(mc.getTextureManager().getTexture(rl).getTextureView());
             }
             else {
                 var texture = getOrLoadOptionalTexture.apply(name).orElse(null);
@@ -260,7 +260,7 @@ public class Pipeline implements AutoCloseable {
         ));
 
         var samplerImagesNames = JanksonUtils.listOfStrings(materailProgram, "samplerImages");
-        Map<String, GlTextureView> samplerToImage = new HashMap<>();
+        Map<String, GpuTextureView> samplerToImage = new HashMap<>();
         for (int i = 0; i < Math.min(samplers.size(), samplerImagesNames.size()); ++i) {
             String sampler = samplers.get(i);
             var samplerImage = getOrLoadPipelineOrResourcepackTextureView.apply(samplerImagesNames.get(i)).get();
@@ -331,7 +331,7 @@ public class Pipeline implements AutoCloseable {
         };
 
         // passes
-        Function<String, PassBase[]> loadPasses = (name) -> {
+        Function<String, List<PassBase>> loadPasses = (name) -> {
             JsonObject passesJson = pipelineJson.getObject(name);
             List<PassBase> result = new ArrayList<>();
             if (passesJson != null) {
@@ -344,7 +344,7 @@ public class Pipeline implements AutoCloseable {
                     ).ifPresent(pass -> result.add(pass));
                 }
             }
-            return result.toArray(new PassBase[]{});
+            return Collections.unmodifiableList(result);
         };
 
         this.onInitPasses = loadPasses.apply("onInit");

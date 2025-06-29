@@ -25,6 +25,8 @@ import net.minecraft.resources.ResourceLocation;
 
 public class MaterialPrograms {
 
+    private MaterialPrograms() {}
+
     public static RenderPipeline load(
         RenderPipeline originalRenderPipeline,
         int glslVersion,
@@ -114,59 +116,60 @@ public class MaterialPrograms {
         boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
         boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
 
-        vertexSrc =
-            "#define CANPIPE_MATERIAL_SHADER\n"+
-            (depthPass ? "#define DEPTH_PASS\n" : "")+
-            (flatVertexColor ? "#define CANPIPE_FLAT_VERTEX_COLOR\n" : "")+
-            "\n"+
-            "#include canpipe:shaders/uniform_blocks.glsl\n"+
-            "\n"+
-            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n"+
-            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n"+
-            (
-                hasTexturePos ?
-                "#define CANPIPE_HAS_TEXTURE_POS\n"+
-                "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n" :
-                ""
-            ) +
-            (
-                hasOverlayPos ?
-                "#define CANPIPE_HAS_OVERLAY_POS\n"+
-                "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_overlayPos;  // UV1\n" :
-                ""
-            ) +
-            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV2)+") in ivec2 in_lightmap;  // UV2\n"+
-            (
-                vertexFormat.contains(VertexFormatElement.NORMAL) ?
-                "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal" :
-                "const vec3 in_normal = vec3(0.0, 1.0, 0.0)"
-            ) + ";  // Normal\n"+
-            (
-                hasMaterialFlags ?
-                "#define CANPIPE_MATERIAL_FLAGS\n"+
-                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_FLAGS)+") in int in_materialFlags;\n" :
-                ""
-            ) +
-            (
-                vertexFormat.contains(CanPipe.VertexFormatElements.AO) ?
-                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao" :
-                "const float in_ao = 1.0"
-            ) + ";\n"+
-            (
-                vertexFormat.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ?
-                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex" :
-                "const int in_spriteIndex = -1"
-            ) + ";\n"+
-            (
-                vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX) ?
-                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex" :
-                "const int in_materialIndex = -1"
-            ) + ";\n"+
-            (
-                vertexFormat.contains(CanPipe.VertexFormatElements.TANGENT) ?
-                "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.TANGENT)+") in vec4 in_tangent"
-                : "const vec4 in_tangent = vec4(1.0)"
-            ) + ";\n"+
+        var vertexSrcBuilder = new StringBuilder();
+        vertexSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
+
+        if (depthPass) {
+            vertexSrcBuilder.append("#define DEPTH_PASS\n");
+        }
+        if (flatVertexColor) {
+            vertexSrcBuilder.append("#define CANPIPE_FLAT_VERTEX_COLOR\n");
+        }
+
+        vertexSrcBuilder.append("\n");
+        vertexSrcBuilder.append("#include canpipe:shaders/uniform_blocks.glsl\n");
+        vertexSrcBuilder.append("\n");
+        vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n");
+        vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n");
+        if (hasTexturePos) {
+            vertexSrcBuilder.append("#define CANPIPE_HAS_TEXTURE_POS\n");
+            vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV0)+") in vec2 in_uv;  // UV0\n");
+        }
+        if (hasOverlayPos) {
+            vertexSrcBuilder.append("#define CANPIPE_HAS_OVERLAY_POS\n");
+            vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV1)+") in ivec2 in_overlayPos;  // UV1\n");
+        }
+        vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.UV2)+") in ivec2 in_lightmap;  // UV2\n");
+        vertexSrcBuilder.append(
+            vertexFormat.contains(VertexFormatElement.NORMAL) ?
+            "layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.NORMAL)+") in vec3 in_normal; // Normal\n" :
+            "const vec3 in_normal = vec3(0.0, 1.0, 0.0);  // Normal\n"
+        );
+        if (hasMaterialFlags) {
+            vertexSrcBuilder.append("#define CANPIPE_MATERIAL_FLAGS\n");
+            vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_FLAGS)+") in int in_materialFlags;\n");
+        }
+        vertexSrcBuilder.append(
+            vertexFormat.contains(CanPipe.VertexFormatElements.AO) ?
+            "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.AO)+") in float in_ao;\n" :
+            "const float in_ao = 1.0;\n"
+        );
+        vertexSrcBuilder.append(
+            vertexFormat.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ?
+            "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.SPRITE_INDEX)+") in int in_spriteIndex;\n" :
+            "const int in_spriteIndex = -1\n;"
+        );
+        vertexSrcBuilder.append(
+            vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX) ?
+            "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_INDEX)+") in int in_materialIndex;\n" :
+            "const int in_materialIndex = -1;\n"
+        );
+        vertexSrcBuilder.append(
+            vertexFormat.contains(CanPipe.VertexFormatElements.TANGENT) ?
+            "layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.TANGENT)+") in vec4 in_tangent;\n" :
+            "const vec4 in_tangent = vec4(1.0);\n"
+        );
+        vertexSrcBuilder.append(
             """
 
             #include frex:shaders/api/vertex.glsl
@@ -219,7 +222,8 @@ public class MaterialPrograms {
             """
                 frx_pipelineVertex();
             }
-            """;
+            """
+        );
 
         String materialsFragmentSrc = "";
         usedMaterialIDs.clear();
@@ -350,7 +354,7 @@ public class MaterialPrograms {
 
         var renderPipeline = renderPipelineBuilder.build();
 
-        final String vertexSrcFinal = vertexSrc;
+        final String vertexSrcFinal = vertexSrcBuilder.toString();
         final String fragmentSrcFinal = fragmentSrc;
 
         var device = RenderSystem.getDevice();

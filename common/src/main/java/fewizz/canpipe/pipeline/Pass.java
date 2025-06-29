@@ -15,10 +15,10 @@ import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
-import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import blue.endless.jankson.JsonObject;
@@ -34,14 +34,14 @@ public class Pass extends PassBase {
     final RenderPipeline renderPipeline;
     // Textures (specified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually uses them
-    final List<Optional<? extends GlTextureView>> textureViews;
+    final List<Optional<? extends GpuTextureView>> textureViews;
     final Vector2i extent;
     final int lod;
     final int layer;
 
     private Pass(
         String name, Framebuffer framebuffer, RenderPipeline renderPipeline,
-        List<Optional<? extends GlTextureView>> textureViews,
+        List<Optional<? extends GpuTextureView>> textureViews,
         Vector2i extent, int lod, int layer
     ) {
         super(name);
@@ -54,7 +54,7 @@ public class Pass extends PassBase {
         }
         for (int i = 0; i < Math.min(samplers.size(), textureViews.size()); ++i) {
             String sampler = samplers.get(i);
-            Optional<? extends GlTextureView> texture = textureViews.get(i);
+            Optional<? extends GpuTextureView> texture = textureViews.get(i);
             if (texture.isEmpty() && renderPipeline.getSamplers() != null) {
                 throw new NullPointerException("Couldn't find texture for sampler \""+sampler +"\"");
             }
@@ -134,7 +134,7 @@ public class Pass extends PassBase {
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
         Function<String, RenderPipeline> getOrLoadProgram,
-        Function<String, Optional<GlTextureView>> getOrLoadPipelineOrResourcepackTextureView
+        Function<String, Optional<GpuTextureView>> getOrLoadPipelineOrResourcepackTextureView
     ) {
         String toggleConfig = json.get(String.class, "toggleConfig");
 
@@ -161,7 +161,7 @@ public class Pass extends PassBase {
         RenderPipeline program = getOrLoadProgram.apply(programName);
         Objects.nonNull(program);
 
-        List<Optional<? extends GlTextureView>> textureViews = new ArrayList<>();
+        List<Optional<? extends GpuTextureView>> textureViews = new ArrayList<>();
         for (String s : JanksonUtils.listOfStrings(json, "samplerImages")) {
             textureViews.add(getOrLoadPipelineOrResourcepackTextureView.apply(s));
         }
