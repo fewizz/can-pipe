@@ -52,7 +52,6 @@ public class Programs {
         var vertexLocation = ResourceLocation.parse(json.get(String.class, "vertexSource"));
         var fragmentLocation = ResourceLocation.parse(json.get(String.class, "fragmentSource"));
 
-        var device = RenderSystem.getDevice();
         var location = pipelineLocation.withSuffix("-"+name);
 
         var renderPipelineBuilder = RenderPipeline.builder()
@@ -81,7 +80,7 @@ public class Programs {
 
         RenderPipeline pipeline = renderPipelineBuilder.build();
 
-        ((DeviceExtended) device).canpipe_compilePipeline(
+        ((DeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
             pipeline,
             (ResourceLocation _location, ShaderType type) -> {
                 String source = getShaderSource.apply(_location).get();

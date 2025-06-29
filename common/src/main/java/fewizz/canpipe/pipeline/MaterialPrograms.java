@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -62,41 +61,6 @@ public class MaterialPrograms {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormat().toString());
         }
 
-        float alphaCutout;
-        if (
-            originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
-
-            // use ITEM_ENTITY_TARGET output state shard
-            originalRenderPipeline == RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL ||
-            originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
-            originalRenderPipeline == RenderPipelines.GLINT ||
-            originalRenderPipeline == RenderPipelines.LINES ||
-            originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
-            originalRenderPipeline == RenderPipelines.LINE_STRIP ||
-
-            originalRenderPipeline == RenderPipelines.CUTOUT ||
-            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
-            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
-            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
-            originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
-            originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
-            originalRenderPipeline == RenderPipelines.ENTITY_SMOOTH_CUTOUT ||
-            originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
-            originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
-            originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||
-            originalRenderPipeline == RenderPipelines.TRIPWIRE ||
-            originalRenderPipeline == RenderPipelines.BREEZE_WIND ||
-            originalRenderPipeline == RenderPipelines.ENERGY_SWIRL
-        ) {
-            alphaCutout = 0.1F;
-        }
-        else if (originalRenderPipeline == RenderPipelines.CUTOUT_MIPPED) {
-            alphaCutout = 0.5F;
-        }
-        else {
-            alphaCutout = 0.0F;
-        }
-
         String materialsVertexSrc = "";
         IntList usedMaterialIDs = new IntArrayList();
         for (Material m : Materials.allCopy()) {
@@ -111,21 +75,19 @@ public class MaterialPrograms {
         }
 
         boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
-
         boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
         boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
         boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
 
         var vertexSrcBuilder = new StringBuilder();
-        vertexSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
 
+        vertexSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
         if (depthPass) {
             vertexSrcBuilder.append("#define DEPTH_PASS\n");
         }
         if (flatVertexColor) {
             vertexSrcBuilder.append("#define CANPIPE_FLAT_VERTEX_COLOR\n");
         }
-
         vertexSrcBuilder.append("\n");
         vertexSrcBuilder.append("#include canpipe:shaders/uniform_blocks.glsl\n");
         vertexSrcBuilder.append("\n");
@@ -170,59 +132,64 @@ public class MaterialPrograms {
             "const vec4 in_tangent = vec4(1.0);\n"
         );
         vertexSrcBuilder.append(
-            """
+        """
 
-            #include frex:shaders/api/vertex.glsl
-            #include frex:shaders/api/view.glsl
+        #include frex:shaders/api/vertex.glsl
+        #include frex:shaders/api/view.glsl
 
-            """ +
-            materialsVertexSrc +
-            vertexSrc +
-            """
+        """
+        );
+        vertexSrcBuilder.append(materialsVertexSrc);
+        vertexSrcBuilder.append(vertexSrc);
+        vertexSrcBuilder.append(
+        """
 
-            void main() {
-                frx_vertex = vec4(in_vertex, 1.0);
-                frx_vertexColor = in_color;
-                frx_vertexNormal = in_normal;
-                frx_vertexLight = vec3(
-                    clamp(
-                        in_lightmap / 256.0,
-                        vec2(0.5 / 16.0),
-                        vec2(15.5 / 16.0)
-                    ),
-                    in_ao
-                );
-                frx_vertexTangent = in_tangent;
-                canpipe_spriteIndex = in_spriteIndex;
-                canpipe_materialIndex = in_materialIndex;
+        void main() {
+            frx_vertex = vec4(in_vertex, 1.0);
+            frx_vertexColor = in_color;
+            frx_vertexNormal = in_normal;
+            frx_vertexLight = vec3(
+                clamp(
+                    in_lightmap / 256.0,
+                    vec2(0.5 / 16.0),
+                    vec2(15.5 / 16.0)
+                ),
+                in_ao
+            );
+            frx_vertexTangent = in_tangent;
+            canpipe_spriteIndex = in_spriteIndex;
+            canpipe_materialIndex = in_materialIndex;
 
-                #if defined CANPIPE_HAS_TEXTURE_POS
-                    frx_texcoord = in_uv;
-                #endif
+            #if defined CANPIPE_HAS_TEXTURE_POS
+                frx_texcoord = in_uv;
+            #endif
 
-                #if defined CANPIPE_HAS_MATERIAL_FLAGS
-                    canpipe_materialFlags = in_materialFlags;
-                #endif
+            #if defined CANPIPE_HAS_MATERIAL_FLAGS
+                canpipe_materialFlags = in_materialFlags;
+            #endif
 
-                #if defined CANPIPE_HAS_OVERLAY_POS
-                    canpipe_overlayPos = in_overlayPos;
-                #endif
+            #if defined CANPIPE_HAS_OVERLAY_POS
+                canpipe_overlayPos = in_overlayPos;
+            #endif
 
-                if (frx_isGui && !frx_isHand) {
-                    frx_vertexNormal.y *= -1.0;  // compat
-                }
-
-            """+
-            "    switch (in_materialIndex) {\n" +
-            usedMaterialIDs.intStream().mapToObj(id ->
-            "        case "+id+": _material_"+id+"(); break;\n"
-            ).collect(Collectors.joining()) +
-            "        default: break;\n"+
-            "    }\n\n"+
-            """
-                frx_pipelineVertex();
+            if (frx_isGui && !frx_isHand) {
+                frx_vertexNormal.y *= -1.0;  // compat
             }
-            """
+
+            switch (in_materialIndex) {
+        """
+        );
+        usedMaterialIDs.intStream().forEach(id ->
+            vertexSrcBuilder.append("        case "+id+": _material_"+id+"(); break;\n")
+        );
+        vertexSrcBuilder.append(
+        """
+                default: break;
+            }
+
+            frx_pipelineVertex();
+        }
+        """
         );
 
         String materialsFragmentSrc = "";
@@ -238,64 +205,115 @@ public class MaterialPrograms {
             usedMaterialIDs.add(id);
         }
 
-        fragmentSrc =
-            "#extension GL_ARB_conservative_depth: enable\n\n"+
-            "#define CANPIPE_MATERIAL_SHADER\n"+
-            (depthPass ? "#define DEPTH_PASS\n" : "")+
-            (enablePBR ? "#define PBR_ENABLED\n" : "")+
-            "#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n"+
-            (flatVertexColor ? "#define CANPIPE_FLAT_VERTEX_COLOR\n" : "")+
-            (hasTexturePos ? "#define CANPIPE_HAS_TEXTURE_POS\n" : "")+
-            (hasOverlayPos ? "#define CANPIPE_HAS_OVERLAY_POS\n" : "")+
-            (hasMaterialFlags ? "#define CANPIPE_HAS_MATERIAL_FLAGS\n" : "")+
-            """
+        float alphaCutout;
+        if (
+            originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
 
-            layout (depth_unchanged) out float gl_FragDepth;
+            // use ITEM_ENTITY_TARGET output state shard
+            originalRenderPipeline == RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL ||
+            originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
+            originalRenderPipeline == RenderPipelines.GLINT ||
+            originalRenderPipeline == RenderPipelines.LINES ||
+            originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
+            originalRenderPipeline == RenderPipelines.LINE_STRIP ||
 
-            #include frex:shaders/api/fragment.glsl
-            #include frex:shaders/api/sampler.glsl
-            #include frex:shaders/api/material.glsl
-            #include frex:shaders/api/view.glsl
+            originalRenderPipeline == RenderPipelines.CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
+            originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
+            originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
+            originalRenderPipeline == RenderPipelines.ENTITY_SMOOTH_CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
+            originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
+            originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||
+            originalRenderPipeline == RenderPipelines.TRIPWIRE ||
+            originalRenderPipeline == RenderPipelines.BREEZE_WIND ||
+            originalRenderPipeline == RenderPipelines.ENERGY_SWIRL
+        ) {
+            alphaCutout = 0.1F;
+        }
+        else if (originalRenderPipeline == RenderPipelines.CUTOUT_MIPPED) {
+            alphaCutout = 0.5F;
+        }
+        else {
+            alphaCutout = 0.0F;
+        }
 
-            """ +
-            materialsFragmentSrc +
-            fragmentSrc +
-            """
+        var fragmentSrcBuilder = new StringBuilder();
+        fragmentSrcBuilder.append("#extension GL_ARB_conservative_depth: enable\n\n");
+        fragmentSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
+        fragmentSrcBuilder.append("#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n");
+        if (depthPass) {
+            fragmentSrcBuilder.append("#define DEPTH_PASS\n");
+        }
+        if (enablePBR) {
+            fragmentSrcBuilder.append("#define PBR_ENABLED\n");
+        }
+        if (flatVertexColor) {
+            fragmentSrcBuilder.append("#define CANPIPE_FLAT_VERTEX_COLOR\n");
+        }
+        if (hasTexturePos) {
+            fragmentSrcBuilder.append("#define CANPIPE_HAS_TEXTURE_POS\n");
+        }
+        if (hasOverlayPos) {
+            fragmentSrcBuilder.append("#define CANPIPE_HAS_OVERLAY_POS\n");
+        }
+        if (hasMaterialFlags) {
+            fragmentSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
+        }
+        fragmentSrcBuilder.append(
+        """
 
-            void main() {
-                #if defined CANPIPE_HAS_TEXTURE_POS
-                    frx_sampleColor = texture(frxs_baseColor, frx_texcoord, frx_matUnmipped * -4.0);
-                #else
-                    frx_sampleColor = vec4(1.0);
-                #endif
+        layout (depth_unchanged) out float gl_FragDepth;
 
-                frx_fragEmissive = frx_matEmissive;
-                frx_fragLight = frx_vertexLight;
-                frx_fragEnableAo = frx_matDisableAo == 0;
-                frx_fragEnableDiffuse = frx_matDisableDiffuse == 0;
+        #include frex:shaders/api/fragment.glsl
+        #include frex:shaders/api/sampler.glsl
+        #include frex:shaders/api/material.glsl
+        #include frex:shaders/api/view.glsl
 
-                #if defined PBR_ENABLED
-                    // TODO?
-                #endif
+        """);
+        fragmentSrcBuilder.append(materialsFragmentSrc);
+        fragmentSrcBuilder.append(fragmentSrc);
+        fragmentSrcBuilder.append(
+        """
 
-                frx_fragColor = frx_sampleColor * frx_vertexColor;
+        void main() {
+            #if defined CANPIPE_HAS_TEXTURE_POS
+                frx_sampleColor = texture(frxs_baseColor, frx_texcoord, frx_matUnmipped * -4.0);
+            #else
+                frx_sampleColor = vec4(1.0);
+            #endif
 
-                if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) {
-                    discard;
-                }
+            frx_fragEmissive = frx_matEmissive;
+            frx_fragLight = frx_vertexLight;
+            frx_fragEnableAo = frx_matDisableAo == 0;
+            frx_fragEnableDiffuse = frx_matDisableDiffuse == 0;
 
-                """+
-            "    switch (canpipe_materialIndex) {\n" +
-            usedMaterialIDs.intStream().mapToObj(id ->
-            "        case "+id+": _material_"+id+"(); break;\n"
-            ).collect(Collectors.joining()) +
-            "        default: break;\n"+
-            "    }\n\n"+
-            """
+            #if defined PBR_ENABLED
+                // TODO?
+            #endif
 
-                frx_pipelineFragment();
+            frx_fragColor = frx_sampleColor * frx_vertexColor;
+
+            if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) {
+                discard;
             }
-            """;
+
+            switch (canpipe_materialIndex) {
+        """
+        );
+        usedMaterialIDs.intStream().forEach(id ->
+            fragmentSrcBuilder.append("        case "+id+": _material_"+id+"(); break;\n")
+        );
+        fragmentSrcBuilder.append(
+        """
+                default: break;
+            }
+
+            frx_pipelineFragment();
+        }
+        """);
 
         var renderPipelineBuilder = RenderPipeline.builder();
         if (!depthPass) {
@@ -355,10 +373,9 @@ public class MaterialPrograms {
         var renderPipeline = renderPipelineBuilder.build();
 
         final String vertexSrcFinal = vertexSrcBuilder.toString();
-        final String fragmentSrcFinal = fragmentSrc;
+        final String fragmentSrcFinal = fragmentSrcBuilder.toString();
 
-        var device = RenderSystem.getDevice();
-        ((DeviceExtended) device).canpipe_compilePipeline(
+        ((DeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
             renderPipeline,
             (ResourceLocation location, ShaderType type) -> {
                 String source = type == ShaderType.VERTEX ? vertexSrcFinal : fragmentSrcFinal;
