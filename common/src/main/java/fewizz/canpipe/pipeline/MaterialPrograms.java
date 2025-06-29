@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Streams;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
@@ -358,10 +357,10 @@ public class MaterialPrograms {
         ((DeviceExtended) device).canpipe_compilePipeline(
             renderPipeline,
             (ResourceLocation location, ShaderType type) -> {
-                return type == ShaderType.VERTEX ? vertexSrcFinal : fragmentSrcFinal;
-            },
-            (ResourceLocation location, String source, ShaderType type) -> {
-                return Shaders.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize, (String s) -> {
+                String source = type == ShaderType.VERTEX ? vertexSrcFinal : fragmentSrcFinal;
+                return Shaders.preprocess(
+                    location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize,
+                (String s) -> {
                     s = s.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
                     s =
                         "#define mc_ub_dynamic_transforms DynamicTransforms\n"+

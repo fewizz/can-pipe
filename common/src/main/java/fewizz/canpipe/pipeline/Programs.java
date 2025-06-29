@@ -84,10 +84,10 @@ public class Programs {
         ((DeviceExtended) device).canpipe_compilePipeline(
             pipeline,
             (ResourceLocation _location, ShaderType type) -> {
-                return getShaderSource.apply(_location).get();
-            },
-            (ResourceLocation _location, String source, ShaderType type) -> {
-                return Shaders.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize, (s) -> {
+                String source = getShaderSource.apply(_location).get();
+                return Shaders.preprocess(
+                    location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize,
+                (s) -> {
                     s = s.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "// uniform ivec2 frxu_size;");
                     s = s.replaceAll("uniform\\s+int\\s+frxu_lod;", "// uniform int frxu_lod;");
                     s = s.replaceAll("uniform\\s+int\\s+frxu_layer;", "// uniform int frxu_layer;");
