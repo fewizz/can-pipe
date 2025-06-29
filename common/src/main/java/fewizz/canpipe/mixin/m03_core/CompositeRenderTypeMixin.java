@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 import fewizz.canpipe.mixininterface.CompositeRenderTypeExtended;
@@ -26,20 +25,12 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
     private RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            GlRenderPipeline glRenderPipeline = null;
-
-            {
-                Minecraft mc = Minecraft.getInstance();
-                if (!((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
-                    glRenderPipeline = p.materialPrograms.get(renderPipeline);
-                }
-                else {
-                    glRenderPipeline = p.shadows.materialPrograms().get(renderPipeline);
-                }
+            Minecraft mc = Minecraft.getInstance();
+            if (!((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
+                renderPipeline = p.materialPrograms.getOrDefault(renderPipeline, renderPipeline);
             }
-
-            if (glRenderPipeline != null) {
-                renderPipeline = glRenderPipeline.info();
+            else {
+                renderPipeline = p.shadows.materialPrograms().getOrDefault(renderPipeline, renderPipeline);
             }
         }
         return renderPipeline;

@@ -1,23 +1,18 @@
 package fewizz.canpipe.pipeline;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Streams;
-import com.mojang.blaze3d.opengl.GlRenderPipeline;
-import com.mojang.blaze3d.opengl.GlTextureView;
-import com.mojang.blaze3d.opengl.Uniform.Ubo;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -25,67 +20,15 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
+import fewizz.canpipe.mixininterface.DeviceExtended;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
 
-public class MaterialProgram extends ProgramBase {
+public class MaterialPrograms {
 
-    static final List<RenderPipeline.UniformDescription> DEFAULT_UNIFORMS = List.of(
-        new RenderPipeline.UniformDescription("canpipe_ub_material_program", UniformType.UNIFORM_BUFFER)
-    );
-
-    static final List<String> INTERNAL_SAMPLER_NAMES = List.of(
-        "frxs_baseColor", "canpipe_overlay", "frxs_lightmap", "canpipe_spritesExtents"
-    );
-
-    public final boolean shadow;
-    public final Map<String, GlTextureView> samplerToTexture;
-
-    private MaterialProgram(
-        ResourceLocation pipelineLocation, VertexFormat vertexFormat,
-        Shader vertexShader, Shader fragmentShader,
-        List<String> samplers,
-        List<Optional<? extends GlTextureView>> textureViews,
-        boolean shadow
-    ) {
-        super(
-            "material-program", vertexFormat,
-            Stream.concat(INTERNAL_SAMPLER_NAMES.stream(), samplers.stream()).toList(),
-            DEFAULT_UNIFORMS,
-            vertexShader, fragmentShader
-        );
-
-        if (samplers.size() > textureViews.size()) {
-            CanPipe.LOGGER.warn("Material program has more samplers than textures");
-        }
-        if (samplers.size() < textureViews.size()) {
-            CanPipe.LOGGER.warn("Material program has less samplers than textures");
-        }
-
-        Map<String, GlTextureView> samplerToTexture = new HashMap<>();
-        for (int i = 0; i < Math.min(samplers.size(), textureViews.size()); ++i) {
-            String sampler = samplers.get(i);
-            Optional<? extends GlTextureView> texture = textureViews.get(i);
-            if (texture.isEmpty()) {
-                if (this.getUniform(sampler) != null) {
-                    throw new NullPointerException("Couldn't find texture for sampler \""+sampler+"\"");
-                }
-                this.getUniforms().remove(sampler);
-            }
-            else {
-                samplerToTexture.put(sampler, texture.get());
-            }
-            samplerToTexture.put(sampler, texture.get());
-        }
-
-        this.samplerToTexture = Collections.unmodifiableMap(samplerToTexture);
-        this.shadow = shadow;
-    }
-
-    public static GlRenderPipeline load(
-        ResourceLocation pipelineLocation,
+    public static RenderPipeline load(
         RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
@@ -96,20 +39,14 @@ public class MaterialProgram extends ProgramBase {
         Map<ResourceLocation, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         List<String> samplers,
-        List<Optional<? extends GlTextureView>> textureViews,
         Function<ResourceLocation, Optional<String>> getShaderSource,
         float shadowsOffsetSlopeFactor,
         float shadowsOffsetBiasUnits
     ) {
         if (shadowFramebuffer != null && shadowFramebuffer.depthAttachment != null) {
-            var depthArray = shadowFramebuffer.depthAttachment.texture().view;
             samplers = Streams.concat(
                 samplers.stream(),
                 List.of("frxs_shadowMap", "frxs_shadowMapTexture").stream()
-            ).toList();
-            textureViews = Streams.concat(
-                textureViews.stream(),
-                List.of(Optional.of(depthArray), Optional.of(depthArray)).stream()
             ).toList();
         }
 
@@ -366,31 +303,13 @@ public class MaterialProgram extends ProgramBase {
             }
             """;
 
-        Function<String, String> postProcess = (String s) -> {
-            return s.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
-        };
-
-        var vertexShader = Shader.load(
-            vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion,
-            options, appliedOptions, getShaderSource, shadowFramebuffer, postProcess
-        );
-        var fragmentShader = Shader.load(
-            fragmentShaderLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion,
-            options, appliedOptions, getShaderSource, shadowFramebuffer, postProcess
-        );
-
-        var materialProgram = new MaterialProgram(
-            pipelineLocation, vertexFormat,
-            vertexShader, fragmentShader,
-            samplers, textureViews, depthPass
-        );
-
         var renderPipelineBuilder = RenderPipeline.builder();
         if (!depthPass) {
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath("canpipe", "material-"+originalRenderPipeline.getLocation().getPath());
             renderPipelineBuilder
-                .withLocation(ResourceLocation.fromNamespaceAndPath("canpipe", "material"))
-                .withVertexShader(ResourceLocation.fromNamespaceAndPath("canpipe", "material"))
-                .withFragmentShader(ResourceLocation.fromNamespaceAndPath("canpipe", "material"))
+                .withLocation(location)
+                .withVertexShader(location)
+                .withFragmentShader(location)
                 .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
                 .withDepthBias(originalRenderPipeline.getDepthBiasScaleFactor(), originalRenderPipeline.getDepthBiasConstant())
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
@@ -400,10 +319,11 @@ public class MaterialProgram extends ProgramBase {
                 .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
         }
         else {
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath("canpipe", "material_shadow-"+originalRenderPipeline.getLocation().getPath());
             renderPipelineBuilder
-                .withLocation(ResourceLocation.fromNamespaceAndPath("canpipe", "material-shadow"))
-                .withVertexShader(ResourceLocation.fromNamespaceAndPath("canpipe", "material-shadow"))
-                .withFragmentShader(ResourceLocation.fromNamespaceAndPath("canpipe", "material-shadow"))
+                .withLocation(location)
+                .withVertexShader(location)
+                .withFragmentShader(location)
                 .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
                 .withDepthBias(shadowsOffsetSlopeFactor, shadowsOffsetBiasUnits)
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
@@ -416,15 +336,57 @@ public class MaterialProgram extends ProgramBase {
         if (originalRenderPipeline.getBlendFunction().isPresent()) {
             renderPipelineBuilder.withBlend(originalRenderPipeline.getBlendFunction().get());
         }
-        for (var u : materialProgram.getUniforms().entrySet()) {
-            if (u.getValue() instanceof Ubo) {
-                renderPipelineBuilder.withUniform(u.getKey(), UniformType.UNIFORM_BUFFER);
-            }
+
+        renderPipelineBuilder.withUniform("canpipe_ub_material_program", UniformType.UNIFORM_BUFFER);
+
+        renderPipelineBuilder.withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
+
+        renderPipelineBuilder.withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("Projection", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("Fog", UniformType.UNIFORM_BUFFER);
+
+        renderPipelineBuilder.withSampler("frxs_baseColor");
+        renderPipelineBuilder.withSampler("canpipe_overlay");
+        renderPipelineBuilder.withSampler("frxs_lightmap");
+        renderPipelineBuilder.withSampler("canpipe_spritesExtents");
+
+        for (String sampler : samplers) {
+            renderPipelineBuilder.withSampler(sampler);
         }
 
         var renderPipeline = renderPipelineBuilder.build();
 
-        return new GlRenderPipeline(renderPipeline, materialProgram);
+        final String vertexSrcFinal = vertexSrc;
+        final String fragmentSrcFinal = fragmentSrc;
+
+        var device = RenderSystem.getDevice();
+        ((DeviceExtended) device).canpipe_compilePipeline(
+            renderPipeline,
+            (ResourceLocation location, ShaderType type) -> {
+                return type == ShaderType.VERTEX ? vertexSrcFinal : fragmentSrcFinal;
+            },
+            (ResourceLocation location, String source, ShaderType type) -> {
+                return Shaders.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer, (String s) -> {
+                    s = s.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
+                    s =
+                        "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
+                        "#define mc_ub_projection Projection\n"+
+                        "#define mc_ub_fog Fog\n"+
+                        "\n"+
+                        s;
+                    return s;
+                });
+            },
+            (String error) -> {
+                throw new RuntimeException(error);
+            }
+        );
+
+        return renderPipeline;
     }
 
 }

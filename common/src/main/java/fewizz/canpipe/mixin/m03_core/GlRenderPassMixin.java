@@ -17,10 +17,8 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
-import fewizz.canpipe.pipeline.MaterialProgram;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import fewizz.canpipe.pipeline.ProgramBase;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.ModelManager;
@@ -36,7 +34,11 @@ public abstract class GlRenderPassMixin {
     @SuppressWarnings("deprecation")
     @WrapMethod(method = "bindSampler")
     void onBindSampler(String name, GpuTextureView textureView, Operation<Void> original) {
-        if (pipeline != null && pipeline.program() instanceof MaterialProgram materialProgram) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null && pipeline != null && (
+            p.materialPrograms.values().contains(pipeline.info()) ||
+            (p.shadows != null && p.shadows.materialPrograms().values().contains(pipeline.info()))
+        )) {
             if (name.equals("Sampler0")) {
                 name = "frxs_baseColor";
 
@@ -66,7 +68,7 @@ public abstract class GlRenderPassMixin {
                 name = "frxs_lightmap";
             }
 
-            for (var e : materialProgram.samplerToTexture.entrySet()) {
+            for (var e : p.materialProgramSamplerImages.entrySet()) {
                 original.call(e.getKey(), e.getValue());
             }
         }
@@ -86,26 +88,28 @@ public abstract class GlRenderPassMixin {
         GlDevice instance, RenderPipeline renderPipeline,
         Operation<GlRenderPipeline> operation
     ) {
-        GlRenderPipeline result = null;
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            result = p.onRenderPassSetRenderPipeline(renderPipeline);
+            boolean isProgram = p.materialPrograms.values().contains(renderPipeline);
+            boolean isMaterialProgram =
+                p.materialPrograms.values().contains(renderPipeline) ||
+                (p.shadows != null && p.shadows.materialPrograms().values().contains(renderPipeline));
+
+            if (isProgram || isMaterialProgram) {
+                this.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
+                this.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
+                this.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
+                this.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
+                this.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
+            }
+
+            if (isMaterialProgram) {
+                this.setUniform("canpipe_ub_material_program", Uniforms.MATERIAL_PROGRAM_UBO);
+                this.bindSampler("frxs_lightmap", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView());
+            }
         }
-        if (
-            (result != null && result.program() instanceof ProgramBase) ||
-            (p != null && p.programs.values().contains(renderPipeline))
-        ) {
-            this.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
-            this.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
-            this.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
-            this.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
-            this.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
-        }
-        if (result != null && result.program() instanceof MaterialProgram) {
-            this.setUniform("canpipe_ub_material_program", Uniforms.MATERIAL_PROGRAM_UBO);
-            this.bindSampler("frxs_lightmap", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView());
-        }
-        return result != null ? result : operation.call(instance, renderPipeline);
+
+        return operation.call(instance, renderPipeline);
     }
 
 }

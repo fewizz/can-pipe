@@ -1,8 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,21 +14,15 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL33C;
 
 import com.google.common.collect.Iterators;
-import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.opengl.GlDevice;
-import com.mojang.blaze3d.opengl.GlShaderModule;
-import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.shaders.ShaderType;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
 import net.minecraft.resources.ResourceLocation;
 
-public class Shader extends GlShaderModule {
+public class Shaders {
 
     static final Predicate<String> CONTAINS_VERTEX_IN = Pattern.compile("\\s*in\\s+vec(3|4)\\s+in_vertex").asPredicate();
     static final Predicate<String> CONTAINS_UV_IN = Pattern.compile("\\s*in\\s+vec2\\s+in_uv").asPredicate();
@@ -49,56 +40,6 @@ public class Shader extends GlShaderModule {
     static final Pattern FLOAT_CONDITIONAL_PATTERN = Pattern.compile(
         "^\\s*(#if)\\s+("+FLOAT_PATTERN.pattern()+"|[[A-Za-z][0-9]_]+)\\s+([<>]|!=|==)\\s+("+FLOAT_PATTERN.pattern()+"|[[A-Za-z][0-9]_]+)"
     );
-
-    @SuppressWarnings("unused")
-    private final String source;  // for debugging
-
-    private Shader(int id, ResourceLocation location, String source, ShaderType type) {
-        super(id, location, type);
-        this.source = source;
-        if (RenderSystem.getDevice() instanceof GlDevice glDevice) {
-            glDevice.debugLabels().applyLabel(this);
-        }
-    }
-
-    static Shader load(
-        ResourceLocation location, String source, ShaderType type, int version,
-        Map<ResourceLocation, Option> options,
-        Map<Option.Element<?>, Object> appliedOptions,
-        Function<ResourceLocation, Optional<String>> getShaderSource,
-        @Nullable Framebuffer shadowFramebuffer,
-        Function<String, String> srcPostPreprocess
-    ) {
-        String preprocessedSource = preprocess(
-            location, source, type, version, options, appliedOptions,
-            getShaderSource, shadowFramebuffer, srcPostPreprocess
-        );
-        /* Can't use CompiledShader.compile, because it trims and truncates the log */
-        int id = GlStateManager.glCreateShader(GlConst.toGl(type));
-
-        // GFX.glObjectLabel(GL43C.GL_SHADER, id, location.toString());
-        GlStateManager.glShaderSource(id, preprocessedSource);
-        GlStateManager.glCompileShader(id);
-
-        if (GlStateManager.glGetShaderi(id, GL33C.GL_COMPILE_STATUS) == 0) {
-            int logLength = GlStateManager.glGetShaderi(id, GL33C.GL_INFO_LOG_LENGTH);
-            String log = GlStateManager.glGetShaderInfoLog(id, logLength);
-            Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
-            try {
-                Files.createDirectories(compilationErrorsPath);
-                Files.writeString(
-                    compilationErrorsPath.resolve(location.toDebugFileName()),
-                    preprocessedSource+"\n"+log
-                );
-            } catch (IOException e) {
-                CanPipe.LOGGER.warn("Couldn't save shader \""+location.toString()+"\" compilation error result", e);
-            }
-
-            throw new RuntimeException("Couldn't compile shader \""+location.toString()+"\": "+log);
-        }
-
-        return new Shader(id, location, preprocessedSource, type);
-    }
 
     public static String preprocess(
         ResourceLocation location, String source, ShaderType type, int version,

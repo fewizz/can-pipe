@@ -12,18 +12,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
-import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlTextureView;
-import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonObject;
@@ -39,7 +35,7 @@ import net.minecraft.world.level.Level;
 public class Pipeline implements AutoCloseable {
 
     public static record Shadows(
-        Map<RenderPipeline, GlRenderPipeline> materialPrograms,
+        Map<RenderPipeline, RenderPipeline> materialPrograms,
         List<Framebuffer> framebuffers,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
@@ -68,10 +64,10 @@ public class Pipeline implements AutoCloseable {
 
     public final @Nullable Shadows shadows;
 
-    public final Map<RenderPipeline, GlRenderPipeline> materialPrograms;
+    public final Map<RenderPipeline, RenderPipeline> materialPrograms;
+    public final Map<String, GlTextureView> materialProgramSamplerImages;
 
     public final Map<String, RenderPipeline> programs = new HashMap<>();
-    private final Map<Pair<ResourceLocation, ShaderType>, Shader> shaders = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
@@ -197,17 +193,6 @@ public class Pipeline implements AutoCloseable {
         // "materialProgram"
         boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
-        JsonObject materailProgram = pipelineJson.getObject("materialProgram");
-
-        var materialVertexShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "vertexSource"));
-        var materialFragmentShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "fragmentSource"));
-
-        List<String> samplers = JanksonUtils.listOfStrings(materailProgram, "samplers");
-        List<Optional<? extends GlTextureView>> samplerImages = new ArrayList<>() {{
-            for (String textureName : JanksonUtils.listOfStrings(materailProgram, "samplerImages")) {
-                add(getOrLoadPipelineOrResourcepackTextureView.apply(textureName));
-            }
-        }};
 
         var renderPipelines = new RenderPipeline[] {
             RenderPipelines.SOLID,
@@ -267,10 +252,10 @@ public class Pipeline implements AutoCloseable {
             var fragmentShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "fragmentSource"));
             var materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
                 renderPipeline -> renderPipeline,
-                renderPipeline -> MaterialProgram.load(
-                    location, renderPipeline, glslVersion, enablePBR, true, framebuffer,
+                renderPipeline -> MaterialPrograms.load(
+                    renderPipeline, glslVersion, enablePBR, true, framebuffer,
                     vertexShaderLocation, fragmentShaderLocation, options, appliedOptions,
-                    List.of(), List.of(),
+                    List.of(),
                     getShaderSource,
                     shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
                     shadowsJson.getFloat("offsetBiasUnits", 4.0F)
@@ -291,15 +276,34 @@ public class Pipeline implements AutoCloseable {
             this.shadows = null;
         }
 
+        JsonObject materailProgram = pipelineJson.getObject("materialProgram");
+
+        var materialVertexShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "vertexSource"));
+        var materialFragmentShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "fragmentSource"));
+
+        List<String> samplers = JanksonUtils.listOfStrings(materailProgram, "samplers");
         this.materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
             renderPipeline -> renderPipeline,
-            renderPipeline -> MaterialProgram.load(
-                location, renderPipeline, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffers.get(0) : null,
+            renderPipeline -> MaterialPrograms.load(
+                renderPipeline, glslVersion, enablePBR, false, this.shadows != null ? this.shadows.framebuffers.get(0) : null,
                 materialVertexShaderLocation, materialFragmentShaderLocation,
-                options, appliedOptions, samplers, samplerImages, getShaderSource,
+                options, appliedOptions, samplers, getShaderSource,
                 0.0F, 0.0F
             )
         ));
+
+        var samplerImagesNames = JanksonUtils.listOfStrings(materailProgram, "samplerImages");
+        Map<String, GlTextureView> samplerToImage = new HashMap<>();
+        for (int i = 0; i < Math.min(samplers.size(), samplerImagesNames.size()); ++i) {
+            String sampler = samplers.get(i);
+            var samplerImage = getOrLoadPipelineOrResourcepackTextureView.apply(samplerImagesNames.get(i)).get();
+            samplerToImage.put(sampler, samplerImage);
+        }
+        if (this.shadows != null) {
+            samplerToImage.put("frxs_shadowMap", this.shadows.framebuffers().get(0).depthAttachment.texture().view);
+            samplerToImage.put("frxs_shadowMapTexture", this.shadows.framebuffers().get(0).depthAttachment.texture().view);
+        }
+        this.materialProgramSamplerImages = samplerToImage;
 
         // "programs"
         Function<String, RenderPipeline> getOrLoadProgram = (String name) -> {
@@ -307,7 +311,7 @@ public class Pipeline implements AutoCloseable {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 JsonObject programJson = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
                 return Programs.load(
-                    programJson, location, this.shaders, getShaderSource, glslVersion,
+                    programJson, location, getShaderSource, glslVersion,
                     options, appliedOptions, this.shadows != null ? this.shadows.framebuffers.get(0) : null
                 );
             });
@@ -428,38 +432,6 @@ public class Pipeline implements AutoCloseable {
     public void close() {
         this.framebuffers.values().forEach(Framebuffer::close);
         this.textures.values().forEach(Texture::close);
-        this.shaders.values().forEach(Shader::close);
     }
 
-    public GlRenderPipeline onRenderPassSetRenderPipeline(RenderPipeline renderPipeline) {
-        GlRenderPipeline glRenderPipeline = null;
-        var location = renderPipeline.getLocation();
-
-        if (location.getNamespace().equals("canpipe") && location.getPath().equals("material")) {
-            for (var p : this.materialPrograms.values()) {
-                if (p.info() == renderPipeline) {
-                    glRenderPipeline = p;
-                    break;
-                }
-            }
-        }
-        else if (location.getNamespace().equals("canpipe") && location.getPath().equals("material-shadow")) {
-            for (var p : this.shadows.materialPrograms.values()) {
-                if (p.info() == renderPipeline) {
-                    glRenderPipeline = p;
-                    break;
-                }
-            }
-        }
-        /*else {
-            for (var p : this.programs.values()) {
-                if (p == renderPipeline) {
-                    glRenderPipeline = p;
-                    break;
-                }
-            }
-        }*/
-
-        return glRenderPipeline;
-    }
 }

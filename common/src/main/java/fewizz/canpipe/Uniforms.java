@@ -149,9 +149,7 @@ public class Uniforms {
         FOG.size()
     );
 
-    public static void updateFREXUniforms(
-        Matrix4f view, Matrix4f projection
-    ) {
+    public static void updateFREXUniforms(Matrix4f view, Matrix4f projection) {
         Minecraft mc = Minecraft.getInstance();
         Pipeline p = Pipelines.getCurrent();
         GameRendererExtended gre = (GameRendererExtended) mc.gameRenderer;

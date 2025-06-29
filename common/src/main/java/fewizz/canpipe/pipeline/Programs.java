@@ -43,7 +43,6 @@ public class Programs {
     static RenderPipeline load(
         JsonObject json,
         ResourceLocation pipelineLocation,
-        Map<Pair<ResourceLocation, ShaderType>, Shader> shaders,
         Function<ResourceLocation, Optional<String>> getShaderSource,
         int glslVersion,
         Map<ResourceLocation, Option> options,
@@ -90,21 +89,22 @@ public class Programs {
             (ResourceLocation _location, ShaderType type) -> {
                 return getShaderSource.apply(_location).get();
             },
-            (String source, ShaderType type) -> {
-                return Shader.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> {
+            (ResourceLocation _location, String source, ShaderType type) -> {
+                return Shaders.preprocess(location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowFramebuffer, (s) -> {
                     s = s.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "// uniform ivec2 frxu_size;");
                     s = s.replaceAll("uniform\\s+int\\s+frxu_lod;", "// uniform int frxu_lod;");
                     s = s.replaceAll("uniform\\s+int\\s+frxu_layer;", "// uniform int frxu_layer;");
                     s = s.replaceAll("uniform\\s+mat4\\s+frxu_frameProjectionMatrix;", "// uniform mat4 frxu_frameProjectionMatrix;");
                     s =
                         "layout(std140) uniform canpipe_ub_pass {\n"+
-                        "   uniform ivec2 frxu_size;\n"+
-                        "   uniform int frxu_lod;\n"+
-                        "   uniform int frxu_layer;\n"+
-                        "   uniform mat4 frxu_frameProjectionMatrix;\n"+
+                        "    uniform ivec2 frxu_size;\n"+
+                        "    uniform int frxu_lod;\n"+
+                        "    uniform int frxu_layer;\n"+
+                        "    uniform mat4 frxu_frameProjectionMatrix;\n"+
                         "};\n\n"+
                         s;
-                    return 
+
+                    return
                         "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
                         "#define mc_ub_projection Projection\n"+
                         "#define mc_ub_fog Fog\n"+
