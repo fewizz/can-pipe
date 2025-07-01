@@ -160,7 +160,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
                 center.mulProject(Uniforms.FRX_SHADOW_VIEW_MATRIX);
 
-                float depthTextureSize = (float) p.shadows.framebuffers().get(0).depthAttachment.texture().extent.x;
+                float depthTextureSize = (float) p.shadows.framebuffers().get(0).depthAttachment.textureView().getWidth(0);
                 float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
 
                 Vector3f dPos = Uniforms.FRX_CAMERA_POS.sub(Uniforms.FRX_LAST_CAMERA_POS, new Vector3f());

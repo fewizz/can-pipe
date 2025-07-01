@@ -68,7 +68,7 @@ public class Pipeline implements AutoCloseable {
     public final Map<String, GpuTextureView> materialProgramSamplerImages;
 
     private final Map<String, RenderPipeline> programs = new HashMap<>();
-    private final Map<String, Texture> textures = new HashMap<>();
+    private final Map<String, GpuTextureView> textureViews = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
     public final List<PassBase>
@@ -102,19 +102,23 @@ public class Pipeline implements AutoCloseable {
         this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
 
         // "images"
-        Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
-            return Optional.ofNullable(this.textures.computeIfAbsent(name, _name -> {
+        Function<String, Optional<GpuTextureView>> getOrLoadOptionalTextureView = (String name) -> {
+            return Optional.ofNullable(this.textureViews.computeIfAbsent(name, _name -> {
                 List<JsonObject> textures = JanksonUtils.listOfObjects(pipelineJson, "images");
                 Optional<JsonObject> possibleJson = textures.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
                 if (possibleJson.isEmpty()) {
                     return null;
                 }
-                return Texture.load(possibleJson.get(), location);
+                var mc = Minecraft.getInstance();
+                return RenderSystem.getDevice().createTextureView(
+                    Textures.load(possibleJson.get(), location, mc.getWindow().getWidth(), mc.getWindow().getHeight())
+                );
             }));
         };
 
-        Function<String, Texture> getOrLoadTexture = (String name) -> {
-            var result = getOrLoadOptionalTexture.apply(name);
+
+        Function<String, GpuTextureView> getOrLoadTextureView = (String name) -> {
+            var result = getOrLoadOptionalTextureView.apply(name);
             if (result.isEmpty()) {
                 throw new RuntimeException("Couldn't find texture \""+name+"\"");
             }
@@ -132,8 +136,8 @@ public class Pipeline implements AutoCloseable {
                 return Optional.of(mc.getTextureManager().getTexture(rl).getTextureView());
             }
             else {
-                var texture = getOrLoadOptionalTexture.apply(name).orElse(null);
-                return Optional.ofNullable(texture != null ? texture.view : null);
+                var textureView = getOrLoadOptionalTextureView.apply(name).orElse(null);
+                return Optional.ofNullable(textureView);
             }
         };
 
@@ -146,7 +150,7 @@ public class Pipeline implements AutoCloseable {
                     if (possibleJson.isEmpty()) {
                         return null;
                     }
-                    return Framebuffer.load(possibleJson.get(), location, getOrLoadTexture);
+                    return Framebuffer.load(possibleJson.get(), location, getOrLoadTextureView);
                 }
                 catch (Exception e) {
                     throw new RuntimeException("Error occured when tried to load framebuffer \""+name+"\"", e);
@@ -235,7 +239,7 @@ public class Pipeline implements AutoCloseable {
 
         Optional<Integer> shadowMapSize = (
             shadowFramebuffer != null ?
-            Optional.of(shadowFramebuffer.depthAttachment.texture().extent.x) :
+            Optional.of(shadowFramebuffer.depthAttachment.textureView().getWidth(0)) :
             Optional.empty()
         );
 
@@ -267,8 +271,8 @@ public class Pipeline implements AutoCloseable {
             samplerToImage.put(sampler, samplerImage);
         }
         if (shadowFramebuffer != null) {
-            samplerToImage.put("frxs_shadowMap", shadowFramebuffer.depthAttachment.texture().view);
-            samplerToImage.put("frxs_shadowMapTexture", shadowFramebuffer.depthAttachment.texture().view);
+            samplerToImage.put("frxs_shadowMap", shadowFramebuffer.depthAttachment.textureView());
+            samplerToImage.put("frxs_shadowMapTexture", shadowFramebuffer.depthAttachment.textureView());
         }
         this.materialProgramSamplerImages = samplerToImage;
 
@@ -282,7 +286,7 @@ public class Pipeline implements AutoCloseable {
                     shadowFramebuffer.name+"_"+(i+1),
                     shadowFramebuffer.colorAttachments,
                     new Framebuffer.DepthAttachment(
-                        shadowFramebuffer.depthAttachment.texture(),
+                        shadowFramebuffer.depthAttachment.textureView(),
                         shadowFramebuffer.depthAttachment.clearDepth(),
                         shadowFramebuffer.depthAttachment.lod(),
                         Optional.of(i)  // layer
@@ -368,7 +372,7 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onWindowSizeChanged(int w, int h) {
-        this.textures.forEach((n, t) -> t.onWindowSizeChanged(w, h));
+        // this.textures.forEach((n, t) -> t.onWindowSizeChanged(w, h));
         this.framebuffers.forEach((n, f) -> f.resize(w, h));
         this.runResizePasses = true;
     }
@@ -454,7 +458,7 @@ public class Pipeline implements AutoCloseable {
     @Override
     public void close() {
         this.framebuffers.values().forEach(Framebuffer::close);
-        this.textures.values().forEach(Texture::close);
+        // this.textures.values().forEach(Texture::close);
     }
 
 }

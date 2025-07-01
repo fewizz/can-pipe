@@ -20,7 +20,7 @@ import fewizz.canpipe.UniformBufferStruct;
 import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
 import fewizz.canpipe.UniformBufferStruct.IntUniform;
 import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
-import fewizz.canpipe.mixininterface.DeviceExtended;
+import fewizz.canpipe.mixininterface.GpuDeviceExtended;
 import net.minecraft.resources.ResourceLocation;
 
 
@@ -80,7 +80,7 @@ public class Programs {
 
         RenderPipeline pipeline = renderPipelineBuilder.build();
 
-        ((DeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
             pipeline,
             (ResourceLocation _location, ShaderType type) -> {
                 String source = getShaderSource.apply(_location).get();

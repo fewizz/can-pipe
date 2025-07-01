@@ -125,7 +125,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
     private static final Map<String, TexFormat> ADDITIONAL_TEXTURE_FORMATS = new HashMap<>() {{
         put("DEPTH_COMPONENT32F", new TexFormat(GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
         put("DEPTH_COMPONENT", new TexFormat(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
-        put("DEPTH_COMPONENT32", new TexFormat(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
+        // put("DEPTH_COMPONENT32", new TexFormat(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));  // already defined as DEPTH32
 
         put("RED", new TexFormat(GL_RED, GL_RED, GL_FLOAT, 1*4, true, false));
         // put("RED8", new TexFormat(GL_RED8, GL_RED, GL_FLOAT, 1*4, true, false));
@@ -152,7 +152,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         put("RGB12", new TexFormat(GL_RGB12, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGB16", new TexFormat(GL_RGB16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGB16_SNORM", new TexFormat(GL_RGB16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB32UI", new TexFormat(GL_RGB32UI, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB32UI", new TexFormat(GL_RGB32UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGB16F", new TexFormat(GL_RGB16F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("RGB32F", new TexFormat(GL_RGB32F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
         put("R11F_G11F_B10F", new TexFormat(GL_R11F_G11F_B10F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
@@ -403,7 +403,8 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
                 .findFirst().get().getPrevious()
             ).name;
 
-        for (int i = 0; i < ADDITIONAL_TEXTURE_FORMATS.size(); ++i) {
+        int offset = 4;
+        for (int i = offset; i < ADDITIONAL_TEXTURE_FORMATS.size()+offset; ++i) {
             insns.add(new FieldInsnNode(GETSTATIC, classNode.name, textureFormatsOffsetFieldName, "[I"));
             insns.add(new IntInsnNode(BIPUSH, i));
             insns.add(new IntInsnNode(BIPUSH, i+1));

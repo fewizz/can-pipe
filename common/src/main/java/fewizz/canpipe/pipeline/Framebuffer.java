@@ -12,31 +12,34 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.GL40C;
 
 import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.TextureType;
 import fewizz.canpipe.mixininterface.GlDebugLabelExtended;
+import fewizz.canpipe.mixininterface.GpuTextureExtended;
 import net.minecraft.resources.ResourceLocation;
 
 public class Framebuffer extends RenderTarget implements AutoCloseable {
 
     public static record ColorAttachment(
-        Texture texture,
+        GpuTextureView textureView,
         Vector4f clearColor,
         int lod,
         int layer,
@@ -44,7 +47,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
     ) {}
 
     public static record DepthAttachment(
-        Texture texture,
+        GpuTextureView textureView,
         double clearDepth,
         Optional<Integer> lod,
         Optional<Integer> layer
@@ -102,17 +105,36 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
 
         if (this.colorAttachments.size() > 0) {
             var firstColor = this.colorAttachments.get(0);
-            this.colorTexture = firstColor.texture;
+            this.colorTexture = firstColor.textureView.texture();
             this.colorTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
             this.colorTexture.setTextureFilter(FilterMode.NEAREST, true);
-            extent.max(firstColor.texture.extent);
+            extent.x = Math.max(extent.x, firstColor.textureView.getWidth(0));
+            extent.y = Math.max(extent.y, firstColor.textureView.getHeight(0));
             lod = Math.max(lod, firstColor.lod);
         }
         if (this.depthAttachment != null) {
-            this.depthTexture = this.depthAttachment.texture;
+            var texture = this.depthAttachment.textureView().texture();
+            this.depthTexture = new GlTexture(
+                GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
+                this.name, texture.getFormat(),
+                texture.getWidth(0), texture.getHeight(0),
+                1, // texture.getDepthOrLayers(),
+                texture.getMipLevels(), ((GlTexture)texture).glId()
+            ) {
+
+                @Override public void close() {}
+                @Override public boolean isClosed() { return false; }
+                @Override public void flushModeChanges(int target) {}
+
+                @Override
+                public int getFbo(DirectStateAccess directStateAccess, @Nullable GpuTexture gpuTexture) {
+                    return glID();
+                }
+            }; //this.depthAttachment.textureView.texture();
             this.depthTexture.setTextureFilter(FilterMode.NEAREST, false);
             this.depthTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
-            extent.max(this.depthAttachment.texture.extent);
+            extent.x = Math.max(extent.x, depthAttachment.textureView.getWidth(0));
+            extent.y = Math.max(extent.y, depthAttachment.textureView.getHeight(0));
             lod = Math.max(lod, this.depthAttachment.lod.orElse(0));
         }
 
@@ -125,10 +147,10 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         {
             var texture = this.colorTexture != null ? this.colorTexture : this.depthTexture;
             this.colorTexture = new GlTexture(
-                GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_TEXTURE_BINDING,
+                GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
                 this.name, texture.getFormat(),
-                this.width, this.height,
-                texture.getDepthOrLayers(),
+                texture.getWidth(0), texture.getHeight(0),
+                1, // texture.getDepthOrLayers(),
                 texture.getMipLevels(), ((GlTexture)texture).glId()
             ) {
 
@@ -157,25 +179,31 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         for (int attachmentIndex = 0; attachmentIndex < colorAttachments.size(); ++attachmentIndex) {
             var attachment = colorAttachments.get(attachmentIndex);
 
-            if (attachment.texture.target == GL33C.GL_TEXTURE_2D) {
-                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.target, attachment.texture.glId(), attachment.lod);
-            } else if (attachment.texture.target == GL33C.GL_TEXTURE_2D_ARRAY || attachment.texture.target == GL33C.GL_TEXTURE_3D) {
-                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.glId(), attachment.lod, attachment.layer);
-            } else if (attachment.texture.target == GL33C.GL_TEXTURE_CUBE_MAP) {
+            var textureType = ((GpuTextureExtended) attachment.textureView.texture()).canpipe_getType();
+            var textureID = ((GlTextureView) attachment.textureView).texture().glId();
+
+            if (textureType == TextureType.TYPE_2D) {
+                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_2D, textureID, attachment.lod);
+            } else if (textureType == TextureType.TYPE_2D) {
+                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.lod, attachment.layer);
+            } else if (textureType == TextureType.TYPE_CUBE_MAP) {
                 int face = attachment.face != -1 ? attachment.face : attachment.layer;  // for compatibility
-                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, attachment.texture.glId(), attachment.lod);
-            } else if (attachment.texture.target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
-                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, attachment.texture.glId(), attachment.lod, attachment.layer * 6 + attachment.face);
-            } else {
+                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureID, attachment.lod);
+            } /* else if (attachment.textureView.target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
+                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.lod, attachment.layer * 6 + attachment.face);
+            } */ else {
                 throw new NotImplementedException();
             }
         }
 
         if (this.depthAttachment != null) {
-            if (this.depthAttachment.texture.target == GL33C.GL_TEXTURE_2D) {
-                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, this.depthAttachment.texture.target, this.depthAttachment.texture.glId(), this.depthAttachment.lod.orElse(0));
-            } else if (this.depthAttachment.texture.target == GL33C.GL_TEXTURE_2D_ARRAY || this.depthAttachment.texture.target == GL33C.GL_TEXTURE_3D) {
-                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, this.depthAttachment.texture.glId(), this.depthAttachment.lod.orElse(0), this.depthAttachment.layer.orElse(0));
+            var textureType = ((GpuTextureExtended) this.depthAttachment.textureView.texture()).canpipe_getType();
+            var textureID = ((GlTextureView) this.depthAttachment.textureView).texture().glId();
+
+            if (textureType == TextureType.TYPE_2D) {
+                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, GL33C.GL_TEXTURE_2D, textureID, this.depthAttachment.lod.orElse(0));
+            } else if (textureType == TextureType.TYPE_2D_ARRAY) {
+                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, textureID, this.depthAttachment.lod.orElse(0), this.depthAttachment.layer.orElse(0));
             } else {
                 throw new NotImplementedException();
             }
@@ -194,12 +222,14 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
 
         if (this.depthAttachment != null) {
             GFX.glClearDepth(this.depthAttachment.clearDepth);
-            Texture depthTexture = this.depthAttachment.texture;
+            GpuTexture depthTexture = this.depthAttachment.textureView.texture();
+            TextureType textureType = ((GpuTextureExtended) this.depthAttachment.textureView.texture()).canpipe_getType();
+            var textureID = ((GlTextureView) this.depthAttachment.textureView).texture().glId();
 
-            if (depthTexture.target == GL33C.GL_TEXTURE_2D_ARRAY || depthTexture.target == GL33C.GL_TEXTURE_3D) {
+            if (textureType == TextureType.TYPE_2D_ARRAY) {
                 for (int lod = this.depthAttachment.lod.orElse(depthTexture.getMipLevels()-1); lod >= this.depthAttachment.lod.orElse(0); --lod) {
-                    for (int layer = this.depthAttachment.layer.orElse(depthTexture.extent.z-1); layer >= this.depthAttachment.layer.orElse(0); --layer) {
-                        GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, depthTexture.glId(), lod, layer);
+                    for (int layer = this.depthAttachment.layer.orElse(depthTexture.getDepthOrLayers()-1); layer >= this.depthAttachment.layer.orElse(0); --layer) {
+                        GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, textureID, lod, layer);
                         GlStateManager._depthMask(true);
                         GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
                     }
@@ -224,7 +254,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
     static Framebuffer load(
         JsonObject framebufferO,
         ResourceLocation pipelineLocation,
-        Function<String, Texture> getOrLoadTexture
+        Function<String, GpuTextureView> getOrLoadTextureView
     ) {
         String name = framebufferO.get(String.class, "name");
         List<Framebuffer.ColorAttachment> colorAttachements = new ArrayList<>();
@@ -252,7 +282,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
                 }
             }
 
-            var texture = getOrLoadTexture.apply(textureName);
+            var texture = getOrLoadTextureView.apply(textureName);
             colorAttachements.add(new Framebuffer.ColorAttachment(texture, clearColor, lod, layer, face));
         }
 
@@ -260,7 +290,7 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         JsonObject depthAttachementO = framebufferO.getObject("depthAttachment");
 
         if (depthAttachementO != null) {
-            var texture = getOrLoadTexture.apply(depthAttachementO.get(String.class, "image"));
+            var texture = getOrLoadTextureView.apply(depthAttachementO.get(String.class, "image"));
             var lod = Optional.ofNullable(depthAttachementO.get(Integer.class, "lod"));
             var layer = Optional.ofNullable(depthAttachementO.get(Integer.class, "layer"));
 

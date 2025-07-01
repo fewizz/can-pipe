@@ -39,6 +39,11 @@ public class GlStateManagerMixin {
         idToTargetMap.put(id, target);
     }
 
+    @SuppressWarnings("unused")
+    private static int canpipe_getTextureTarget(int id) {
+        return idToTargetMap.getOrDefault(id, GL33C.GL_TEXTURE_2D);
+    }
+
     @Inject(
         method = "_bindTexture",
         at = @At(
