@@ -10,15 +10,18 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.opengl.GlConst;
+import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.platform.NativeImage.Format;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.mixin.m02_texture_targets.GlStateManagerAccessor;
 import fewizz.canpipe.mixininterface.CommandEncoderExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -109,6 +112,17 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         } finally {
             this.canpipe_type = null;
         }
+    }
+
+    @ModifyExpressionValue(
+        method = "trySetup",
+        at = @At(
+            value = "CONSTANT",
+            args = "intValue=3553"  // GL_TEXTURE_2D
+        )
+    )
+    int fixTextureTarget(int target, @Local GlTexture glTexture) {
+        return GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
     }
 
 }

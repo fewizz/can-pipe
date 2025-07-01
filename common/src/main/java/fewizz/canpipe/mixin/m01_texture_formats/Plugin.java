@@ -125,7 +125,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
     private static final Map<String, TexFormat> ADDITIONAL_TEXTURE_FORMATS = new HashMap<>() {{
         put("DEPTH_COMPONENT32F", new TexFormat(GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
         put("DEPTH_COMPONENT", new TexFormat(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
-        // put("DEPTH_COMPONENT32", new TexFormat(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));  // already defined as DEPTH32
+        put("DEPTH_COMPONENT32", new TexFormat(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));  // already defined as DEPTH32
 
         put("RED", new TexFormat(GL_RED, GL_RED, GL_FLOAT, 1*4, true, false));
         // put("RED8", new TexFormat(GL_RED8, GL_RED, GL_FLOAT, 1*4, true, false));

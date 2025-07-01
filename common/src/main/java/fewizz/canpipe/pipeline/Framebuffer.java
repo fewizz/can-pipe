@@ -106,8 +106,8 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
         if (this.colorAttachments.size() > 0) {
             var firstColor = this.colorAttachments.get(0);
             this.colorTexture = firstColor.textureView.texture();
-            this.colorTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
-            this.colorTexture.setTextureFilter(FilterMode.NEAREST, true);
+            // this.colorTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
+            // this.colorTexture.setTextureFilter(FilterMode.NEAREST, true);
             extent.x = Math.max(extent.x, firstColor.textureView.getWidth(0));
             extent.y = Math.max(extent.y, firstColor.textureView.getHeight(0));
             lod = Math.max(lod, firstColor.lod);
@@ -130,9 +130,9 @@ public class Framebuffer extends RenderTarget implements AutoCloseable {
                 public int getFbo(DirectStateAccess directStateAccess, @Nullable GpuTexture gpuTexture) {
                     return glID();
                 }
-            }; //this.depthAttachment.textureView.texture();
-            this.depthTexture.setTextureFilter(FilterMode.NEAREST, false);
-            this.depthTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
+            };
+            // this.depthTexture.setTextureFilter(FilterMode.NEAREST, false);
+            //this.depthTexture.setAddressMode(AddressMode.CLAMP_TO_EDGE);
             extent.x = Math.max(extent.x, depthAttachment.textureView.getWidth(0));
             extent.y = Math.max(extent.y, depthAttachment.textureView.getHeight(0));
             lod = Math.max(lod, this.depthAttachment.lod.orElse(0));
