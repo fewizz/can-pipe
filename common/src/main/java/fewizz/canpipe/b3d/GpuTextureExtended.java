@@ -1,0 +1,13 @@
+package fewizz.canpipe.b3d;
+
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+
+public interface GpuTextureExtended {
+
+    TextureType canpipe_getType();
+    void canpipe_setMipmapMode(FilterMode filterMode);
+    void canpipe_setAddressModeR(AddressMode addressMode);
+    void canpipe_setCompareOp(CompareOp compareOp);
+
+}

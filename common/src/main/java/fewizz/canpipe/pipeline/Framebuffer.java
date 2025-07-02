@@ -31,9 +31,9 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.TextureType;
-import fewizz.canpipe.mixininterface.GlDebugLabelExtended;
-import fewizz.canpipe.mixininterface.GpuTextureExtended;
+import fewizz.canpipe.b3d.GlDebugLabelExtended;
+import fewizz.canpipe.b3d.GpuTextureExtended;
+import fewizz.canpipe.b3d.TextureType;
 import net.minecraft.resources.ResourceLocation;
 
 public class Framebuffer extends RenderTarget implements AutoCloseable {

@@ -1,0 +1,21 @@
+{
+    "required": true,
+    "compatibilityLevel": "JAVA_21",
+    "package": "fewizz.canpipe.b3d.mixin",
+    "plugin": "fewizz.canpipe.b3d.mixin.Plugin",
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "client": [
+        "GlCommandEncoderMixin",
+        "GlConstMixin",
+        "GlConstSwitchMetaMixin",
+        "GlDebugLabelCoreMixin",
+        "GlDebugLabelExtMixin",
+        "GlDeviceMixin",
+        "GlStateManagerAccessor",
+        "GlStateManagerMixin",
+        "GlTextureMixin",
+        "TextureFormatMixin"
+    ]
+}

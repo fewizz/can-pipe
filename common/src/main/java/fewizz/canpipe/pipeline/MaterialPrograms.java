@@ -14,9 +14,9 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
-import fewizz.canpipe.mixininterface.GpuDeviceExtended;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.renderer.RenderPipelines;

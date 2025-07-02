@@ -9,10 +9,10 @@ import com.mojang.blaze3d.textures.TextureFormat;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.TextureCompareOp;
-import fewizz.canpipe.TextureType;
-import fewizz.canpipe.mixininterface.GpuDeviceExtended;
-import fewizz.canpipe.mixininterface.GpuTextureExtended;
+import fewizz.canpipe.b3d.CompareOp;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuTextureExtended;
+import fewizz.canpipe.b3d.TextureType;
 import net.minecraft.resources.ResourceLocation;
 
 
@@ -72,7 +72,7 @@ public class Textures {
         AddressMode r = null;
 
         boolean compare = false;
-        TextureCompareOp compareOp = null;
+        CompareOp compareOp = null;
 
         for (var paramsObject : JanksonUtils.listOfObjects(json, "texParams")) {
             String paramName = paramsObject.get(String.class, "name");
@@ -126,12 +126,12 @@ public class Textures {
             }
             else if (paramName.equals("TEXTURE_COMPARE_FUNC")) {
                 compareOp = switch(paramValue) {
-                    case "NEVER" -> TextureCompareOp.NEVER;
-                    case "LESS" -> TextureCompareOp.LESS;
-                    case "LEQUAL" -> TextureCompareOp.LESS_OR_EQUAL;
-                    case "NOTEQUAL" -> TextureCompareOp.NOT_EQUAL;
-                    case "GEQUAL" -> TextureCompareOp.GREATER_OR_EQUAL;
-                    case "ALWAYS" -> TextureCompareOp.ALWAYS;
+                    case "NEVER" -> CompareOp.NEVER;
+                    case "LESS" -> CompareOp.LESS;
+                    case "LEQUAL" -> CompareOp.LESS_OR_EQUAL;
+                    case "NOTEQUAL" -> CompareOp.NOT_EQUAL;
+                    case "GEQUAL" -> CompareOp.GREATER_OR_EQUAL;
+                    case "ALWAYS" -> CompareOp.ALWAYS;
                     default -> throw new RuntimeException(paramValue);
                 };
             }

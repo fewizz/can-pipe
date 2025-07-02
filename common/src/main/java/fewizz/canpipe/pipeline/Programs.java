@@ -20,7 +20,7 @@ import fewizz.canpipe.UniformBufferStruct;
 import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
 import fewizz.canpipe.UniformBufferStruct.IntUniform;
 import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
-import fewizz.canpipe.mixininterface.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
 import net.minecraft.resources.ResourceLocation;
 
 
