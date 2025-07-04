@@ -1,6 +1,7 @@
 package fewizz.canpipe.b3d.mixin;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -28,22 +29,26 @@ import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
 
 import fewizz.canpipe.GFX;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.TextureType;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.resources.ResourceLocation;
 
 @Mixin(GlDevice.class)
 public abstract class GlDeviceMixin implements GpuDeviceExtended {
 
+    @Shadow @Final private GlDebugLabel debugLabels;
+    @Shadow abstract GlRenderPipeline compilePipeline(RenderPipeline pipeline, BiFunction<ResourceLocation, ShaderType, String> shaderSource);
+
     @Unique private Consumer<String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
     @Unique private TextureType canpipe_textureType = null;
-
-    @Shadow @Final private GlDebugLabel debugLabels;
-    @Shadow abstract GlRenderPipeline compilePipeline(RenderPipeline pipeline, BiFunction<ResourceLocation, ShaderType, String> shaderSource);
+    @Unique private Object2IntMap<List<GpuTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
 
     @Override
     public CompiledRenderPipeline canpipe_compilePipeline(

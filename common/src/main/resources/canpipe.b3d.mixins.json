@@ -12,10 +12,12 @@
         "GlConstSwitchMetaMixin",
         "GlDebugLabelCoreMixin",
         "GlDebugLabelExtMixin",
+        "GlDeviceAccessor",
         "GlDeviceMixin",
         "GlStateManagerAccessor",
         "GlStateManagerMixin",
         "GlTextureMixin",
+        "GlTextureViewMixin",
         "TextureFormatMixin"
     ]
 }
