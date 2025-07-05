@@ -77,14 +77,14 @@ public class AbstractTerrainRenderContextMixin {
         MutableQuadViewImpl instance,
         int vertexIndex,
         int newColor,
-        Operation<MutableQuadViewImpl> original
+        Operation<MutableQuadViewImpl> operation
     ) {
         // don't set color, set AO instead
         if (Pipelines.getCurrent() != null) {
             ((MutableQuadViewExtended) instance).canpipe_setAO(vertexIndex, this.aoCalc.ao[vertexIndex]);
             return null;
         }
-        return original.call(instance, vertexIndex, newColor);
+        return operation.call(instance, vertexIndex, newColor);
     }
 
 }

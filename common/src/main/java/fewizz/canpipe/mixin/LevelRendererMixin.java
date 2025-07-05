@@ -280,13 +280,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     PostChain onTransparencyPostChainCreation(
         LevelRenderer instance,
-        Operation<PostChain> original,
+        Operation<PostChain> opration,
         @Local RenderTargetDescriptor renderTargetDescriptor,
         @Local FrameGraphBuilder frameGraphBuilder
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) {
-            return original.call(instance);  // Initialise transparency post chain normally
+            return opration.call(instance);  // Initialise transparency post chain normally
         }
         // Don't create transparency post chain, will be handled by pipeline
 
@@ -309,12 +309,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             ")Lnet/minecraft/client/renderer/culling/Frustum;"
         )
     )
-    private static Frustum dontOffsetShadowFrustum(Frustum frustum, int size, Operation<Frustum> original) {
+    private static Frustum dontOffsetShadowFrustum(Frustum frustum, int size, Operation<Frustum> operation) {
         var mc = Minecraft.getInstance();
         if (((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
             return frustum;
         }
-        return original.call(frustum, size);
+        return operation.call(frustum, size);
     }
 
     @ModifyExpressionValue(

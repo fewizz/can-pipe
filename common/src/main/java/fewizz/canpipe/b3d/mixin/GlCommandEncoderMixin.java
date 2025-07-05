@@ -39,7 +39,6 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.logging.LogUtils;
 
-import fewizz.canpipe.GFX;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
@@ -271,7 +270,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
             target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V"
         )
     )
-    public void clearNonZeroDepthLayer(int mask, Operation<Void> original, @Local GpuTexture depthTexture) {
+    public void clearNonZeroDepthLayer(int mask, Operation<Void> operation, @Local GpuTexture depthTexture) {
         if (this.canpipe_clearDepthBaseArrayLayer != -1) {
             var glTexture = (GlTexture) depthTexture;
 
@@ -289,7 +288,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
             }
         }
         else {
-            original.call(mask);
+            operation.call(mask);
         }
     }
 

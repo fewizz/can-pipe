@@ -10,9 +10,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -67,7 +68,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
         return this.getReplacedRenderPipeline(this.renderPipeline);
     }
 
-    @Redirect(
+    @WrapOperation(
         method = "draw",
         at = @At(
             value = "INVOKE",
@@ -82,12 +83,13 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
     )
     RenderPass onCreateRenderPass(
         CommandEncoder instance, Supplier<String> supplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView gpuTextureView2, OptionalDouble optionalDouble,
+        Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
     ) {
         if (renderTarget instanceof Framebuffer framebuffer) {
             return ((CommandEncoderExtended) instance).canpipe_createRenderPass(supplier, framebuffer.colorAttachments, gpuTextureView2);
         }
-        return instance.createRenderPass(supplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);
+        return operation.call(instance, supplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);
     }
 
 }

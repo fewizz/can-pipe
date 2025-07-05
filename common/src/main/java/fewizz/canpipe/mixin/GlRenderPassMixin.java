@@ -33,7 +33,7 @@ public abstract class GlRenderPassMixin {
 
     @SuppressWarnings("deprecation")
     @WrapMethod(method = "bindSampler")
-    void onBindSampler(String name, GpuTextureView textureView, Operation<Void> original) {
+    void onBindSampler(String name, GpuTextureView textureView, Operation<Void> operation) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null && pipeline != null && p.isMaterialProgramRenderPipeline(pipeline.info())) {
             if (name.equals("Sampler0")) {
@@ -53,7 +53,7 @@ public abstract class GlRenderPassMixin {
                     // nothin will be read from it
                     atlas = mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
                 }
-                original.call(
+                operation.call(
                     "canpipe_spritesExtents",
                     ((TextureAtlasExtended) atlas).canpipe_getSpriteData()
                 );
@@ -66,10 +66,10 @@ public abstract class GlRenderPassMixin {
             }
 
             for (var e : p.materialProgramSamplerImages.entrySet()) {
-                original.call(e.getKey(), e.getValue());
+                operation.call(e.getKey(), e.getValue());
             }
         }
-        original.call(name, textureView);
+        operation.call(name, textureView);
     }
 
     @WrapOperation(

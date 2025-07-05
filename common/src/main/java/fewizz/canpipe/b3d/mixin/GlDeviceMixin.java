@@ -34,7 +34,6 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
 
-import fewizz.canpipe.GFX;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.TextureType;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;

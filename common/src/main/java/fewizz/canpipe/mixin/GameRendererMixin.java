@@ -287,11 +287,11 @@ public class GameRendererMixin implements GameRendererExtended {
     }
 
     @WrapMethod(method = "getDepthFar")
-    float wrapGetDepthFar(Operation<Float> original) {
+    float wrapGetDepthFar(Operation<Float> operation) {
         if (this.canpipe_depthFarOverride != null) {
             return this.canpipe_depthFarOverride;
         }
-        return original.call();
+        return operation.call();
     }
 
     @Override

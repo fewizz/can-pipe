@@ -1,18 +1,9 @@
 package fewizz.canpipe.mixin;
 
-import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.opengl.GlCommandEncoder;
-import com.mojang.blaze3d.systems.RenderSystem;
-
-import fewizz.canpipe.Uniforms;
-import fewizz.canpipe.pipeline.Pipeline;
-import fewizz.canpipe.pipeline.Pipelines;
 
 @Mixin(GlCommandEncoder.class)
 public class GlCommandEncoderMixin {
