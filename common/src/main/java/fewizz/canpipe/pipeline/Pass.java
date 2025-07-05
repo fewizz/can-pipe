@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Function;
 
 import org.joml.Matrix4f;
@@ -28,6 +27,7 @@ import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.ARGB;
 
 public class Pass extends PassBase {
 
@@ -189,7 +189,17 @@ public class Pass extends PassBase {
 
         @Override
         public void apply() {
-            // framebuffer.bindAndClearFully();
+            var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+            for (int i = 0; i < this.framebuffer.colorAttachments.size(); ++i) {
+                var clearColor = this.framebuffer.colorClearColors.get(i);
+                commandEncoder.clearColorTexture(
+                    this.framebuffer.colorAttachments.get(i).texture(),
+                    ARGB.colorFromFloat(clearColor.x, clearColor.y, clearColor.z, clearColor.w)
+                );
+            }
+            if (this.framebuffer.depthAttachment != null) {
+                commandEncoder.clearDepthTexture(this.framebuffer.depthAttachment.texture(), this.framebuffer.depthClearDepth);
+            }
         }
 
     };
