@@ -1,5 +1,6 @@
 package fewizz.canpipe.b3d.mixin;
 
+import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -59,7 +60,7 @@ public class GlStateManagerMixin {
         // otherwise we may have a situation where multiple texture targets are bound to same texture unit
         // https://community.khronos.org/t/binding-different-targets-to-same-unit/76935
         if (prevTarget != newTarget) {
-            GFX.glBindTexture(prevTarget, 0);
+            GL11C.glBindTexture(prevTarget, 0);
         }
     }
 

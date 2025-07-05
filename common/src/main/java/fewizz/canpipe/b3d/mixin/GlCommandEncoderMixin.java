@@ -172,7 +172,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
                         var depthAttachment = attachments.getRight();
 
                         GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, id);
-                        GFX.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
+                        GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
 
                         for (int attachmentIndex = 0; attachmentIndex < colorAttachments.size(); ++attachmentIndex) {
                             var attachment = colorAttachments.get(attachmentIndex);
@@ -184,7 +184,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
                             if (textureType == TextureType.TYPE_2D) {
                                 GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_2D, textureID, attachment.baseMipLevel());
                             } else if (textureType == TextureType.TYPE_2D) {
-                                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.baseMipLevel(), attachmentExt.canpipe_baseArrayLayer());
+                                GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.baseMipLevel(), attachmentExt.canpipe_baseArrayLayer());
                             } else if (textureType == TextureType.TYPE_CUBE_MAP) {
                                 int face = attachmentExt.canpipe_baseArrayLayer() % 6;
                                 // int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
@@ -203,7 +203,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
                             if (textureType == TextureType.TYPE_2D) {
                                 GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, GL33C.GL_TEXTURE_2D, textureID, depthAttachment.baseMipLevel());
                             } else if (textureType == TextureType.TYPE_2D_ARRAY) {
-                                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, textureID, depthAttachment.baseMipLevel(), ((GpuTextureViewExtended) depthAttachment).canpipe_baseArrayLayer());
+                                GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, textureID, depthAttachment.baseMipLevel(), ((GpuTextureViewExtended) depthAttachment).canpipe_baseArrayLayer());
                             } else {
                                 throw new NotImplementedException();
                             }

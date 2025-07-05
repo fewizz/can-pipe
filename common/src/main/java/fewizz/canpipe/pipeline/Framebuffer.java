@@ -49,7 +49,12 @@ public class Framebuffer extends RenderTarget {
     }
 
     @Override
-    public void destroyBuffers() {}
+    public void destroyBuffers() {
+        this.colorTextureView = null;
+        this.colorTexture = null;
+        this.depthTextureView = null;
+        this.depthTexture = null;
+    }
 
     @Override
     public void createBuffers(int width, int height) {

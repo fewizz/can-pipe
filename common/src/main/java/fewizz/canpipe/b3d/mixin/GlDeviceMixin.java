@@ -185,7 +185,7 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
                         );
                     }
                     else if (this.canpipe_textureType == TextureType.TYPE_2D_ARRAY) {
-                        GFX.glTexImage3D(GL33C.GL_TEXTURE_2D_ARRAY, lod, GlConst.toGlInternalId(textureFormat), w, h, depthOrLayers, 0, GlConst.toGlExternalId(textureFormat), GlConst.toGlType(textureFormat), (ByteBuffer) null);
+                        GL33C.glTexImage3D(GL33C.GL_TEXTURE_2D_ARRAY, lod, GlConst.toGlInternalId(textureFormat), w, h, depthOrLayers, 0, GlConst.toGlExternalId(textureFormat), GlConst.toGlType(textureFormat), (ByteBuffer) null);
                     }
                     else {
                         throw new RuntimeException();
