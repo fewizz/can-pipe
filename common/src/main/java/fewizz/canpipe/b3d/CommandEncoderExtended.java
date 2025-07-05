@@ -24,4 +24,9 @@ public interface CommandEncoderExtended extends CommandEncoder {
         Supplier<String> supplier, List<GpuTextureView> colorAttachments, @Nullable GpuTextureView depthAttachment
     );
 
+    // Simpler version of https://registry.khronos.org/vulkan/specs/latest/man/html/vkCmdClearDepthStencilImage.html
+    void canpipe_clearDepthTexture(
+        GpuTexture texture, double depth, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
+    );
+
 }

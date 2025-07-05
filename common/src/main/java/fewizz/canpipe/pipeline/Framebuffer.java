@@ -8,7 +8,6 @@ import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector4f;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -26,22 +25,8 @@ import net.minecraft.resources.ResourceLocation;
 
 public class Framebuffer extends RenderTarget {
 
-    public static record ColorAttachment(
-        GpuTextureView textureView,
-        Vector4f clearColor,
-        int lod,
-        int layer
-    ) {}
-
-    public static record DepthAttachment(
-        GpuTextureView textureView,
-        double clearDepth,
-        Optional<Integer> lod,
-        Optional<Integer> layer
-    ) {}
-
     public final List<GpuTextureView> colorAttachments;
-    public final List<Vector4f> colorClearColors;
+    public final List<Integer> colorClearColors;
     public final @Nullable GpuTextureView depthAttachment;
     public final @Nullable Double depthClearDepth;
     public final String name;
@@ -50,7 +35,7 @@ public class Framebuffer extends RenderTarget {
         ResourceLocation pipelineLocation,
         String name,
         List<GpuTextureView> colorAttachments,
-        List<Vector4f> colorClearColors,
+        List<Integer> colorClearColors,
         GpuTextureView depthAttachment,
         Double depthClearDepth
     ) {
@@ -83,8 +68,8 @@ public class Framebuffer extends RenderTarget {
 
         this.width = width;
         this.height = height;
-        this.viewWidth = this.width;
-        this.viewHeight = this.height;
+        this.viewWidth = width;
+        this.viewHeight = height;
     }
 
     static Framebuffer load(
@@ -93,7 +78,8 @@ public class Framebuffer extends RenderTarget {
         Function<String, GpuTexture> getOrLoadTexture
     ) {
         String name = framebufferO.get(String.class, "name");
-        List<Framebuffer.ColorAttachment> colorAttachments = new ArrayList<>();
+        List<GpuTextureView> colorAttachments = new ArrayList<>();
+        List<Integer> colorClearColors = new ArrayList<>();
 
         for (var colorAttachementO : JanksonUtils.listOfObjects(framebufferO, "colorAttachments")) {
             String textureName = colorAttachementO.get(String.class, "image");
@@ -101,17 +87,12 @@ public class Framebuffer extends RenderTarget {
             int layer = colorAttachementO.getInt("layer", 0);
             int face = colorAttachementO.getInt("face", -1);
 
-            Vector4f clearColor = new Vector4f(0.0F);
+            int clearColor = 0;
             JsonElement clearColorRaw = colorAttachementO.get("clearColor");
             if (clearColorRaw != null) {
                 Object clearColorO = ((JsonPrimitive) clearColorRaw).getValue();
-                if (clearColorO instanceof Long l) {
-                    clearColor.set(
-                        (l >> 24) & 0xFF,
-                        (l >> 16) & 0xFF,
-                        (l >> 8 ) & 0xFF,
-                        (l >> 0 ) & 0xFF
-                    ).div(255.0F);
+                if (clearColorO instanceof Long clearColorL) {
+                    clearColor = (int) (long) clearColorL;
                 }
                 else {
                     throw new NotImplementedException(clearColorO.getClass().getName());
@@ -133,32 +114,29 @@ public class Framebuffer extends RenderTarget {
             var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                 texture, lod, 1, layer, 1
             );
-            colorAttachments.add(new Framebuffer.ColorAttachment(textureView, clearColor, lod, layer));
+            colorAttachments.add(textureView);
+            colorClearColors.add(clearColor);
         }
 
-        Framebuffer.DepthAttachment depthAttachment = null;
+        GpuTextureView depthAttachment = null;
+        Double depthClearDepth = null;
         JsonObject depthAttachmentO = framebufferO.getObject("depthAttachment");
 
         if (depthAttachmentO != null) {
             var lod = Optional.ofNullable(depthAttachmentO.get(Integer.class, "lod"));
             var layer = Optional.ofNullable(depthAttachmentO.get(Integer.class, "layer"));
-
             var texture = getOrLoadTexture.apply(depthAttachmentO.get(String.class, "image"));
             var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                 texture, lod.orElse(0), 1, layer.orElse(0), 1
             );
-
-            double clearDepth = depthAttachmentO.getDouble("clearDepth", 1.0);
-            depthAttachment = new Framebuffer.DepthAttachment(textureView, clearDepth, lod, layer);
+            depthAttachment = textureView;
+            depthClearDepth = depthAttachmentO.getDouble("clearDepth", 1.0);
         }
 
         return new Framebuffer(
-            pipelineLocation,
-            name,
-            colorAttachments.stream().map(a -> a.textureView()).toList(),
-            colorAttachments.stream().map(a -> a.clearColor()).toList(),
-            depthAttachment != null ? depthAttachment.textureView() : null,
-            depthAttachment != null ? depthAttachment.clearDepth() : null
+            pipelineLocation, name,
+            colorAttachments, colorClearColors,
+            depthAttachment, depthClearDepth
         );
     }
 

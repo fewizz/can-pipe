@@ -30,6 +30,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -177,6 +179,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         mc.options.entityShadows().set(false);
 
         PoseStack poseStack = new PoseStack();
+        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
 
         for (int cascade = 0; cascade < p.shadows.cascadeRadii().size()+1; ++cascade) {
             Profiler.get().popPush("cascade " +cascade);
@@ -186,7 +189,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             try (MemoryStack memoryStack = MemoryStack.stackPush()) {
                 var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM.size());
                 Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-                RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+                commandEncoder.writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
             }
 
             Frustum shadowFrustum = new ShadowFrustum(
@@ -211,7 +214,14 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             try {
                 Framebuffer shadowFramebuffer = p.shadows.framebuffers().get(cascade);
                 mc.mainRenderTarget = shadowFramebuffer;
-                // shadowFramebuffer.bindAndClearFully();
+                commandEncoder.canpipe_clearDepthTexture(
+                    shadowFramebuffer.depthAttachment.texture(),
+                    shadowFramebuffer.depthClearDepth,
+                    shadowFramebuffer.depthAttachment.baseMipLevel(),
+                    shadowFramebuffer.depthAttachment.mipLevels(),
+                    ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_baseArrayLayer(),
+                    ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_layerCount()
+                );
 
                 Profiler.get().popPush("render sections");
                 ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
@@ -250,7 +260,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM.size());
             Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+            commandEncoder.writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
         }
 
         modelViewMatrixStack.popMatrix();

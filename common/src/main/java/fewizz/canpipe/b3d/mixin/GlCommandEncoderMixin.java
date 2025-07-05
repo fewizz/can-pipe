@@ -21,6 +21,8 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.opengl.GlConst;
@@ -49,11 +51,16 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
     @Unique private VertexFormatElement.Type canpipe_type = null;
     @Unique private List<GlTextureView> canpipe_colorAttachements = null;
+    @Unique private int canpipe_clearDepthBaseMipLevel = -1;
+    @Unique private int canpipe_clearDepthLevelCount = -1;
+    @Unique private int canpipe_clearDepthBaseArrayLayer = -1;
+    @Unique private int canpipe_clearDepthLayerCount = -1;
 
     @Shadow private boolean inRenderPass;
     @Shadow @Final private static Logger LOGGER = LogUtils.getLogger();
     @Shadow @Final private GlDevice device;
     @Shadow private RenderPipeline lastPipeline;
+    @Shadow @Final private int drawFbo;
 
     @ModifyExpressionValue(
         method = "writeToTexture("+
@@ -236,6 +243,67 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
                 return new GlRenderPass((GlCommandEncoder)(Object)this, depthTextureView != null);
             }
         }
+    }
+
+    @Override
+    public void canpipe_clearDepthTexture(
+        GpuTexture texture, double depth, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
+    ) {
+        try {
+            this.canpipe_clearDepthBaseMipLevel = baseMipLevel;
+            this.canpipe_clearDepthLevelCount = levelCount;
+            this.canpipe_clearDepthBaseArrayLayer = baseArrayLayer;
+            this.canpipe_clearDepthLayerCount = layerCount;
+            this.clearDepthTexture(texture, depth);
+        }
+        finally {
+            this.canpipe_clearDepthBaseMipLevel = -1;
+            this.canpipe_clearDepthLevelCount = -1;
+            this.canpipe_clearDepthBaseArrayLayer = -1;
+            this.canpipe_clearDepthLayerCount = -1;
+        }
+    }
+
+    @WrapOperation(
+        method = "clearDepthTexture",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V"
+        )
+    )
+    public void clearNonZeroDepthLayer(int mask, Operation<Void> original, @Local GpuTexture depthTexture) {
+        if (this.canpipe_clearDepthBaseArrayLayer != -1) {
+            var glTexture = (GlTexture) depthTexture;
+
+            int minLevel = this.canpipe_clearDepthBaseMipLevel != -1 ? this.canpipe_clearDepthBaseMipLevel : 0;
+            int levels = this.canpipe_clearDepthLevelCount != -1 ? this.canpipe_clearDepthLevelCount : 1;
+
+            int minLayer = this.canpipe_clearDepthBaseArrayLayer != -1 ? this.canpipe_clearDepthBaseArrayLayer : 0;
+            int layers = this.canpipe_clearDepthLayerCount != -1 ? this.canpipe_clearDepthLayerCount : 1;
+
+            for (int level = minLevel; level < minLevel + levels; ++level) {
+                for (int layer = minLayer; layer < minLayer + layers; ++layer) {
+                    GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, glTexture.glId(), level, layer);
+                    GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
+                }
+            }
+        }
+        else {
+            original.call(mask);
+        }
+    }
+
+    @Overwrite
+    private void verifyDepthTexture(GpuTexture texture) {
+        if (!texture.getFormat().hasDepthAspect()) {
+            throw new IllegalStateException("Trying to clear a non-depth texture as depth");
+        } else if (texture.isClosed()) {
+            throw new IllegalStateException("Depth texture is closed");
+        } else if ((texture.usage() & 8) == 0) {
+            throw new IllegalStateException("Depth texture must have USAGE_RENDER_ATTACHMENT");
+        }/* else if (texture.getDepthOrLayers() > 1) {
+            throw new UnsupportedOperationException("Clearing a texture with multiple layers or depths is not yet supported");
+        }*/
     }
 
 }

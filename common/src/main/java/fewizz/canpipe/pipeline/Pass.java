@@ -191,14 +191,16 @@ public class Pass extends PassBase {
         public void apply() {
             var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
             for (int i = 0; i < this.framebuffer.colorAttachments.size(); ++i) {
-                var clearColor = this.framebuffer.colorClearColors.get(i);
                 commandEncoder.clearColorTexture(
                     this.framebuffer.colorAttachments.get(i).texture(),
-                    ARGB.colorFromFloat(clearColor.x, clearColor.y, clearColor.z, clearColor.w)
+                    this.framebuffer.colorClearColors.get(i)
                 );
             }
             if (this.framebuffer.depthAttachment != null) {
-                commandEncoder.clearDepthTexture(this.framebuffer.depthAttachment.texture(), this.framebuffer.depthClearDepth);
+                commandEncoder.clearDepthTexture(
+                    this.framebuffer.depthAttachment.texture(),
+                    this.framebuffer.depthClearDepth
+                );
             }
         }
 

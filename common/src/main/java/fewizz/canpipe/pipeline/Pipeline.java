@@ -283,14 +283,16 @@ public class Pipeline implements AutoCloseable {
         if (shadowsJson != null) {
             // Instead of one shadow framebuffer, we create N (= number of cascades) framebuffers for different layers
             List<Framebuffer> framebuffers = new ArrayList<>();
+            int baseArrayLayer = ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_baseArrayLayer();
+            int layerCount = ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_layerCount();
             var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
             for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
                 var depthLayerTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                     shadowFramebuffer.depthAttachment.texture(),
                     shadowFramebuffer.depthAttachment.baseMipLevel(),
                     shadowFramebuffer.depthAttachment.mipLevels(),
-                    ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_baseArrayLayer(),
-                    ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_layerCount()
+                    baseArrayLayer + layerCount * i,
+                    layerCount
                 );
                 framebuffers.add(new Framebuffer(
                     location,
