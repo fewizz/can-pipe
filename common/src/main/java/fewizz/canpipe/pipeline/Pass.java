@@ -24,6 +24,7 @@ import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
@@ -101,13 +102,14 @@ public class Pass extends PassBase {
             new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f(), 0.0F
         );
 
+        var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+
         try (
-            RenderPass renderPass = RenderSystem.getDevice()
-                .createCommandEncoder()
-                .createRenderPass(
-                    () -> "can-pipe pass \""+this.name+"\"",
-                    this.framebuffer.getColorTextureView(), OptionalInt.empty()
-                )
+            RenderPass renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(
+                () -> "can-pipe pass \""+this.name+"\"",
+                this.framebuffer.colorAttachments,
+                this.framebuffer.depthAttachment
+            )
         ) {
             renderPass.setPipeline(this.renderPipeline);
 
@@ -187,7 +189,7 @@ public class Pass extends PassBase {
 
         @Override
         public void apply() {
-            framebuffer.bindAndClearFully();
+            // framebuffer.bindAndClearFully();
         }
 
     };

@@ -5,9 +5,13 @@ import java.util.List;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,7 +37,11 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.logging.LogUtils;
 
+import fewizz.canpipe.GFX;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.GpuTextureExtended;
+import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import fewizz.canpipe.b3d.TextureType;
 import net.minecraft.util.ARGB;
 
 @Mixin(GlCommandEncoder.class)
@@ -91,48 +99,116 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         return GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
     }
 
+    @Override
+    public RenderPass canpipe_createRenderPass(
+        Supplier<String> supplier,
+        List<GpuTextureView> colorAttachments,
+        @Nullable GpuTextureView depthAttachment
+    ) {
+        try {
+            this.canpipe_colorAttachements = colorAttachments.stream().map(a -> (GlTextureView)a).toList();
+            return this.createRenderPass(
+                supplier, this.canpipe_colorAttachements.size() > 0 ? this.canpipe_colorAttachements.get(0) : null, OptionalInt.empty(),
+                depthAttachment, OptionalDouble.empty()
+            );
+        }
+        finally {
+            this.canpipe_colorAttachements = null;
+        }
+    }
+
     @Overwrite
     @Override
     public RenderPass createRenderPass(
-        Supplier<String> supplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView gpuTextureView2, OptionalDouble optionalDouble
+        Supplier<String> supplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView depthTextureView, OptionalDouble optionalDouble
     ) {
+        // if (gpuTextureView == null) {
+            // CanPipe.trap();
+        // }
         if (this.inRenderPass) {
             throw new IllegalStateException("Close the existing render pass before creating a new one!");
         } else {
-            if (optionalDouble.isPresent() && gpuTextureView2 == null) {
+            if (optionalDouble.isPresent() && depthTextureView == null) {
                 LOGGER.warn("Depth clear value was provided but no depth texture is being used");
             }
 
-            if (gpuTextureView.isClosed()) {
+            if (gpuTextureView != null && gpuTextureView.isClosed()) {
                 throw new IllegalStateException("Color texture is closed");
-            } else if ((gpuTextureView.texture().usage() & 8) == 0) {
+            } else if (gpuTextureView != null && (gpuTextureView.texture().usage() & 8) == 0) {
                 throw new IllegalStateException("Color texture must have USAGE_RENDER_ATTACHMENT");
-            } else if (gpuTextureView.texture().getDepthOrLayers() > 1) {
+            } else if (gpuTextureView != null && gpuTextureView.texture().getDepthOrLayers() > 1) {
                 throw new UnsupportedOperationException("Textures with multiple depths or layers are not yet supported as an attachment");
             } else {
-                if (gpuTextureView2 != null) {
-                    if (gpuTextureView2.isClosed()) {
+                if (depthTextureView != null) {
+                    if (depthTextureView.isClosed()) {
                         throw new IllegalStateException("Depth texture is closed");
                     }
 
-                    if ((gpuTextureView2.texture().usage() & 8) == 0) {
+                    if ((depthTextureView.texture().usage() & 8) == 0) {
                         throw new IllegalStateException("Depth texture must have USAGE_RENDER_ATTACHMENT");
                     }
 
-                    if (gpuTextureView2.texture().getDepthOrLayers() > 1) {
+                    /*if (gpuTextureView2.texture().getDepthOrLayers() > 1) {
                         throw new UnsupportedOperationException("Textures with multiple depths or layers are not yet supported as an attachment");
-                    }
+                    }*/
                 }
 
                 this.inRenderPass = true;
                 this.device.debugLabels().pushDebugGroup(supplier);
 
+                int fboID;
                 if (this.canpipe_colorAttachements != null) {
-                    ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
+                    var cache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
+                    fboID = cache.computeIfAbsent(Pair.of(this.canpipe_colorAttachements, (GlTextureView) depthTextureView), (Pair<List<GlTextureView>, GlTextureView> attachments) -> {
+                        int id = GlStateManager.glGenFramebuffers();
+                        var colorAttachments = attachments.getLeft();
+                        var depthAttachment = attachments.getRight();
+
+                        GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, id);
+                        GFX.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
+
+                        for (int attachmentIndex = 0; attachmentIndex < colorAttachments.size(); ++attachmentIndex) {
+                            var attachment = colorAttachments.get(attachmentIndex);
+                            var attachmentExt = (GpuTextureViewExtended) attachment;
+
+                            var textureType = ((GpuTextureExtended) attachment.texture()).canpipe_getType();
+                            var textureID = ((GlTextureView) attachment).texture().glId();
+
+                            if (textureType == TextureType.TYPE_2D) {
+                                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_2D, textureID, attachment.baseMipLevel());
+                            } else if (textureType == TextureType.TYPE_2D) {
+                                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.baseMipLevel(), attachmentExt.canpipe_baseArrayLayer());
+                            } else if (textureType == TextureType.TYPE_CUBE_MAP) {
+                                int face = attachmentExt.canpipe_baseArrayLayer() % 6;
+                                // int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
+                                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureID, attachment.baseMipLevel());
+                            } /* else if (attachment.textureView.target == GL40C.GL_TEXTURE_CUBE_MAP_ARRAY) {
+                                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.lod, attachment.layer * 6 + attachment.face);
+                            } */ else {
+                                throw new NotImplementedException();
+                            }
+                        }
+
+                        if (depthAttachment != null) {
+                            var textureType = ((GpuTextureExtended) depthAttachment.texture()).canpipe_getType();
+                            var textureID = ((GlTextureView) depthAttachment).texture().glId();
+
+                            if (textureType == TextureType.TYPE_2D) {
+                                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, GL33C.GL_TEXTURE_2D, textureID, depthAttachment.baseMipLevel());
+                            } else if (textureType == TextureType.TYPE_2D_ARRAY) {
+                                GFX.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, textureID, depthAttachment.baseMipLevel(), ((GpuTextureViewExtended) depthAttachment).canpipe_baseArrayLayer());
+                            } else {
+                                throw new NotImplementedException();
+                            }
+                        }
+                        return id;
+                    });
+                }
+                else {
+                    fboID = ((GlTexture) gpuTextureView.texture()).getFbo(this.device.directStateAccess(), depthTextureView == null ? null : depthTextureView.texture());
                 }
 
-                int i = ((GlTexture)gpuTextureView.texture()).getFbo(this.device.directStateAccess(), gpuTextureView2 == null ? null : gpuTextureView2.texture());
-                GlStateManager._glBindFramebuffer(36160, i);
+                GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, fboID);
                 int j = 0;
                 if (optionalInt.isPresent()) {
                     int k = optionalInt.getAsInt();
@@ -140,7 +216,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
                     j |= 16384;
                 }
 
-                if (gpuTextureView2 != null && optionalDouble.isPresent()) {
+                if (depthTextureView != null && optionalDouble.isPresent()) {
                     GL11.glClearDepth(optionalDouble.getAsDouble());
                     j |= 256;
                 }
@@ -152,9 +228,12 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
                     GlStateManager._clear(j);
                 }
 
-                GlStateManager._viewport(0, 0, gpuTextureView.getWidth(0), gpuTextureView.getHeight(0));
+                int width = gpuTextureView != null ? gpuTextureView.getWidth(0) : depthTextureView.getWidth(0);
+                int height = gpuTextureView != null ? gpuTextureView.getHeight(0) : depthTextureView.getHeight(0);
+
+                GlStateManager._viewport(0, 0, width, height);
                 this.lastPipeline = null;
-                return new GlRenderPass((GlCommandEncoder)(Object)this, gpuTextureView2 != null);
+                return new GlRenderPass((GlCommandEncoder)(Object)this, depthTextureView != null);
             }
         }
     }

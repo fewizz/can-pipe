@@ -19,12 +19,16 @@ import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -117,12 +121,12 @@ public class Pipeline implements AutoCloseable {
         };
 
 
-        Function<String, GpuTextureView> getOrLoadTextureView = (String name) -> {
+        Function<String, GpuTexture> getOrLoadTexture = (String name) -> {
             var result = getOrLoadOptionalTextureView.apply(name);
             if (result.isEmpty()) {
                 throw new RuntimeException("Couldn't find texture \""+name+"\"");
             }
-            return result.get();
+            return result.get().texture();
         };
 
         Function<String, Optional<GpuTextureView>> getOrLoadPipelineOrResourcepackTextureView = (String name) -> {
@@ -150,7 +154,7 @@ public class Pipeline implements AutoCloseable {
                     if (possibleJson.isEmpty()) {
                         return null;
                     }
-                    return Framebuffer.load(possibleJson.get(), location, getOrLoadTextureView);
+                    return Framebuffer.load(possibleJson.get(), location, getOrLoadTexture);
                 }
                 catch (Exception e) {
                     throw new RuntimeException("Error occured when tried to load framebuffer \""+name+"\"", e);
@@ -239,7 +243,7 @@ public class Pipeline implements AutoCloseable {
 
         Optional<Integer> shadowMapSize = (
             shadowFramebuffer != null ?
-            Optional.of(shadowFramebuffer.depthAttachment.textureView().getWidth(0)) :
+            Optional.of(shadowFramebuffer.depthAttachment.getWidth(0)) :
             Optional.empty()
         );
 
@@ -271,8 +275,8 @@ public class Pipeline implements AutoCloseable {
             samplerToImage.put(sampler, samplerImage);
         }
         if (shadowFramebuffer != null) {
-            samplerToImage.put("frxs_shadowMap", shadowFramebuffer.depthAttachment.textureView());
-            samplerToImage.put("frxs_shadowMapTexture", shadowFramebuffer.depthAttachment.textureView());
+            samplerToImage.put("frxs_shadowMap", shadowFramebuffer.depthAttachment);
+            samplerToImage.put("frxs_shadowMapTexture", shadowFramebuffer.depthAttachment);
         }
         this.materialProgramSamplerImages = samplerToImage;
 
@@ -281,16 +285,20 @@ public class Pipeline implements AutoCloseable {
             List<Framebuffer> framebuffers = new ArrayList<>();
             var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
             for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
+                var depthLayerTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                    shadowFramebuffer.depthAttachment.texture(),
+                    shadowFramebuffer.depthAttachment.baseMipLevel(),
+                    shadowFramebuffer.depthAttachment.mipLevels(),
+                    ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_baseArrayLayer(),
+                    ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_layerCount()
+                );
                 framebuffers.add(new Framebuffer(
                     location,
                     shadowFramebuffer.name+"_"+(i+1),
-                    shadowFramebuffer.colorAttachments,
-                    new Framebuffer.DepthAttachment(
-                        shadowFramebuffer.depthAttachment.textureView(),
-                        shadowFramebuffer.depthAttachment.clearDepth(),
-                        shadowFramebuffer.depthAttachment.lod(),
-                        Optional.of(i)  // layer
-                    )
+                    List.of(),// defaultFramebuffer.colorAttachments,
+                    List.of(),// defaultFramebuffer.colorClearColors,
+                    depthLayerTextureView,
+                    shadowFramebuffer.depthClearDepth
                 ));
             }
 
@@ -457,7 +465,7 @@ public class Pipeline implements AutoCloseable {
 
     @Override
     public void close() {
-        this.framebuffers.values().forEach(Framebuffer::close);
+        // this.framebuffers.values().forEach(Framebuffer::close);
         // this.textures.values().forEach(Texture::close);
     }
 

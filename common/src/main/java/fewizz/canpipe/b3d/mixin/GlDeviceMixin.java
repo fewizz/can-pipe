@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Final;
@@ -25,6 +26,7 @@ import com.mojang.blaze3d.opengl.GlRenderPipeline;
 import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -48,7 +50,9 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
     @Unique private Consumer<String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
     @Unique private TextureType canpipe_textureType = null;
-    @Unique private Object2IntMap<List<GpuTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
+    @Unique private Object2IntMap<Pair<List<GlTextureView>, GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
+    @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
+    @Unique private int canpipe_pendingTextureViewLayerCount = -1;
 
     @Override
     public CompiledRenderPipeline canpipe_compilePipeline(
@@ -199,6 +203,22 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
                 this.debugLabels.applyLabel(glTexture);
                 return glTexture;
             }
+        }
+    }
+
+    @Override
+    public GpuTextureView canpipe_createTextureView(
+        GpuTexture gpuTexture, int baseMip, int levelCount,
+        int baseLayer, int layerCount // added
+    ) {
+        try {
+            this.canpipe_pendingTextureViewBaseLayer = baseLayer;
+            this.canpipe_pendingTextureViewLayerCount = layerCount;
+            return this.createTextureView(gpuTexture, baseMip, levelCount);
+        }
+        finally {
+            this.canpipe_pendingTextureViewBaseLayer = -1;
+            this.canpipe_pendingTextureViewLayerCount = -1;
         }
     }
 

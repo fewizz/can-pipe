@@ -211,7 +211,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             try {
                 Framebuffer shadowFramebuffer = p.shadows.framebuffers().get(cascade);
                 mc.mainRenderTarget = shadowFramebuffer;
-                shadowFramebuffer.bindAndClearFully();
+                // shadowFramebuffer.bindAndClearFully();
 
                 Profiler.get().popPush("render sections");
                 ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);

@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.platform.NativeImage.Format;
 import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -19,7 +20,7 @@ public interface CommandEncoderExtended extends CommandEncoder {
         VertexFormatElement.Type type  // added
     );
 
-    void canpipe_createRenderPass(
+    RenderPass canpipe_createRenderPass(
         Supplier<String> supplier, List<GpuTextureView> colorAttachments, @Nullable GpuTextureView depthAttachment
     );
 

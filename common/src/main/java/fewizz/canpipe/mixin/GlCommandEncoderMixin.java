@@ -19,7 +19,7 @@ public class GlCommandEncoderMixin {
 
     @Shadow private boolean inRenderPass;
 
-    @ModifyArg(
+    /*@ModifyArg(
         method = "createRenderPass("+
             "Ljava/util/function/Supplier;"+
             "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
@@ -42,7 +42,7 @@ public class GlCommandEncoderMixin {
             }
             else */
 
-            int renderTarget = 0;
+            /*int renderTarget = 0;
 
             if (framebufferID == p.translucentTerrainFramebuffer.glID()) {
                 renderTarget = 1;
@@ -66,6 +66,6 @@ public class GlCommandEncoderMixin {
         }
 
         return framebufferID;
-    }
+    }*/
 
 }
