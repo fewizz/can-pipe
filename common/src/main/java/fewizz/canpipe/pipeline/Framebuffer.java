@@ -59,7 +59,7 @@ public class Framebuffer extends RenderTarget {
 
     @Override
     public void resize(int width, int height) {
-        // Don't listen for MC's window resize, managed by Pipeline
+        // managed by pipeline
     }
 
     public void onWindowSizeChanged() {
@@ -70,18 +70,23 @@ public class Framebuffer extends RenderTarget {
 
     @Override
     public void destroyBuffers() {
-        for (var colorAttachment : this.colorAttachments) {
-            colorAttachment.close();
+        if (this.colorAttachments != null) {
+            for (var colorAttachment : this.colorAttachments) {
+                colorAttachment.close();
+            }
+            this.colorAttachments = null;
         }
-        this.colorAttachments = null;
-        this.colorTextureView = null;
-        this.colorTexture = null;
 
         if (this.depthAttachment != null) {
             this.depthAttachment.close();
-            this.depthTextureView = null;
-            this.depthTexture = null;
+            this.depthAttachment = null;
         }
+
+        this.depthTextureView = null;
+        this.depthTexture = null;
+
+        this.colorTextureView = null;
+        this.colorTexture = null;
     }
 
     @Override

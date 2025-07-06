@@ -129,9 +129,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
     public RenderPass createRenderPass(
         Supplier<String> supplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView depthTextureView, OptionalDouble optionalDouble
     ) {
-        // if (gpuTextureView == null) {
-            // CanPipe.trap();
-        // }
         if (this.inRenderPass) {
             throw new IllegalStateException("Close the existing render pass before creating a new one!");
         } else {
@@ -298,7 +295,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         if (!texture.getFormat().hasDepthAspect()) {
             throw new IllegalStateException("Trying to clear a non-depth texture as depth");
         } else if (texture.isClosed()) {
-            CanPipe.trap();
             throw new IllegalStateException("Depth texture is closed");
         } else if ((texture.usage() & 8) == 0) {
             throw new IllegalStateException("Depth texture must have USAGE_RENDER_ATTACHMENT");

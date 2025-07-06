@@ -19,6 +19,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
@@ -86,7 +87,11 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
         Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
     ) {
-        if (renderTarget instanceof Framebuffer framebuffer) {
+        if (
+            renderTarget instanceof Framebuffer framebuffer &&
+            RenderSystem.outputColorTextureOverride == null &&
+            RenderSystem.outputDepthTextureOverride == null
+        ) {
             return ((CommandEncoderExtended) instance).canpipe_createRenderPass(supplier, framebuffer.colorAttachments, gpuTextureView2);
         }
         return operation.call(instance, supplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);

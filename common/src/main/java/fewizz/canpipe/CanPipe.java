@@ -34,10 +34,6 @@ public class CanPipe {
         return mc.gameDirectory.toPath().resolve("config/can-pipe.json");
     }
 
-    public static void trap() {
-        int i = 0;
-    }
-
     public static class VertexFormatElements {
 
         public static final VertexFormatElement
