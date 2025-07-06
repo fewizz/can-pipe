@@ -65,8 +65,8 @@ public abstract class GlRenderPassMixin {
                 name = "frxs_lightmap";
             }
 
-            for (var e : p.materialProgramSamplerImages.entrySet()) {
-                operation.call(e.getKey(), e.getValue());
+            for (var e : p.materialProgramSamplerTextures.entrySet()) {
+                operation.call(e.getKey(), e.getValue().getTextureView());
             }
         }
         operation.call(name, textureView);
