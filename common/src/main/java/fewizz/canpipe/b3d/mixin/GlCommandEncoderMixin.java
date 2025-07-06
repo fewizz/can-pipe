@@ -39,6 +39,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.logging.LogUtils;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
@@ -297,6 +298,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         if (!texture.getFormat().hasDepthAspect()) {
             throw new IllegalStateException("Trying to clear a non-depth texture as depth");
         } else if (texture.isClosed()) {
+            CanPipe.trap();
             throw new IllegalStateException("Depth texture is closed");
         } else if ((texture.usage() & 8) == 0) {
             throw new IllegalStateException("Depth texture must have USAGE_RENDER_ATTACHMENT");

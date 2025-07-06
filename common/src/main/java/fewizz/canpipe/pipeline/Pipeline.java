@@ -20,7 +20,6 @@ import org.lwjgl.system.MemoryStack;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTexture;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
@@ -112,8 +111,7 @@ public class Pipeline implements AutoCloseable {
                 if (possibleJson.isEmpty()) {
                     return null;
                 }
-                var mc = Minecraft.getInstance();
-                return Texture.load(possibleJson.get(), location, mc.getWindow().getWidth(), mc.getWindow().getHeight());
+                return Texture.load(possibleJson.get(), location);
             }));
         };
 
@@ -286,21 +284,28 @@ public class Pipeline implements AutoCloseable {
             int layerCount = ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_layerCount();
             var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
             for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
-                var depthLayerTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
-                    shadowFramebuffer.depthAttachment.texture(),
-                    shadowFramebuffer.depthAttachment.baseMipLevel(),
-                    shadowFramebuffer.depthAttachment.mipLevels(),
-                    baseArrayLayer + layerCount * i,
-                    layerCount
-                );
-                framebuffers.add(new Framebuffer(
+                // final Framebuffer fb = shadowFramebuffer;
+                final int cascade = i;
+                String shadowMapTextureName = shadowFramebuffer.depthAttachment.texture().getLabel();
+                Texture shadowMapTexture = getOrLoadTexture.apply(shadowMapTextureName);
+                Framebuffer fb = new Framebuffer(
                     location,
-                    shadowFramebuffer.name+"_"+(i+1),
-                    List.of(),// defaultFramebuffer.colorAttachments,
+                    shadowFramebuffer.name+"_"+(cascade+1),
+                    () -> List.of(),// defaultFramebuffer.colorAttachments,
                     List.of(),// defaultFramebuffer.colorClearColors,
-                    depthLayerTextureView,
+                    () -> {
+                        return ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                            shadowMapTexture.getTexture(),
+                            shadowMapTexture.getTextureView().baseMipLevel(),
+                            shadowMapTexture.getTextureView().mipLevels(),
+                            baseArrayLayer + layerCount * cascade,
+                            layerCount
+                        );
+                    },
                     shadowFramebuffer.depthClearDepth
-                ));
+                );
+                framebuffers.add(fb);
+                this.framebuffers.put(fb.name, fb);
             }
 
             var vertexShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "vertexSource"));
@@ -381,8 +386,8 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onWindowSizeChanged(int w, int h) {
-        // this.textures.forEach((n, t) -> t.onWindowSizeChanged(w, h));
-        this.framebuffers.forEach((n, f) -> f.resize(w, h));
+        this.textures.forEach((n, t) -> t.onWindowSizeChanged());
+        this.framebuffers.forEach((n, f) -> f.onWindowSizeChanged());
         this.runResizePasses = true;
     }
 

@@ -1,6 +1,6 @@
 package fewizz.canpipe.pipeline;
 
-import org.jetbrains.annotations.Nullable;
+import java.util.function.Supplier;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
@@ -15,43 +15,38 @@ import fewizz.canpipe.b3d.CompareOp;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import fewizz.canpipe.b3d.TextureType;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 
 
 public class Texture extends AbstractTexture {
+    private final Supplier<GpuTexture> gpuTextureSupplier;
+    private final boolean recreateOnResize;
 
-    Texture(
-        String name, TextureType textureType, TextureFormat textureFormat, int width, int height, int depth, int levels,
-        FilterMode minFilter, FilterMode magFilter, @Nullable FilterMode mipFilter,
-        AddressMode u, AddressMode v, @Nullable AddressMode r,
-        @Nullable CompareOp compareOp
-    ) {
-        this.texture = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTexture(
-            name,
-            GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
-            textureFormat,
-            width, height, depth, levels,
-            textureType
-        );
-
-        texture.setTextureFilter(minFilter, magFilter, false);
-        ((GpuTextureExtended) texture).canpipe_setMipmapMode(mipFilter);
-        texture.setAddressMode(u, v);
-        ((GpuTextureExtended) texture).canpipe_setAddressModeR(r);
-        ((GpuTextureExtended) texture).canpipe_setCompareOp(compareOp);
-
+    private Texture(String name, boolean recreateOnResize, Supplier<GpuTexture> gpuTextureUpdater) {
+        this.gpuTextureSupplier = gpuTextureUpdater;
+        this.recreateOnResize = recreateOnResize;
+        this.texture = this.gpuTextureSupplier.get();
         this.textureView = RenderSystem.getDevice().createTextureView(this.texture);
     }
 
-    static Texture load(JsonObject json, ResourceLocation pipelineLocation, int defaultWidth, int defaultHeight) {
+    void onWindowSizeChanged() {
+        if (this.recreateOnResize) {
+            this.close();
+            this.texture = this.gpuTextureSupplier.get();
+            this.textureView = RenderSystem.getDevice().createTextureView(this.texture);
+        }
+    }
+
+    static Texture load(JsonObject json, ResourceLocation pipelineLocation) {
         String name = json.get(String.class, "name");
 
         int maxLod = json.getInt("lod", 0);
         int size = json.getInt("size", 0);
 
-        int width = json.getInt("width", size != 0 ? size : defaultWidth);
-        int height = json.getInt("height", size != 0 ? size : defaultHeight);
+        int width = json.getInt("width", size);
+        int height = json.getInt("height", size);
         int depth = json.getInt("depth", 1);
 
         String targetStr = json.get(String.class, "target");
@@ -143,10 +138,37 @@ public class Texture extends AbstractTexture {
                 default -> throw new RuntimeException("Unsupported texture type \""+targetStr+"\"");
             };
 
-            return new Texture(
-                name, textureType, textureFormat, width, height, depth, maxLod+1,
-                min, mag, mip, u, v, r, compare ? compareOp : null
-            );
+            final FilterMode minFilter = min;
+            final FilterMode magFilter = mag;
+            final FilterMode mipFilter = mip;
+            final AddressMode uAddressMode = u;
+            final AddressMode vAddressMode = v;
+            final AddressMode rAddressMode = r;
+            final CompareOp depthCompareOp = compare ? compareOp : null;
+
+            boolean recreateOnResize = width == 0 || height == 0;
+
+            return new Texture(name, recreateOnResize, () -> {
+                int w = width, h = height;
+                var window = Minecraft.getInstance().getWindow();
+                if (width <= 0) { w = window.getWidth(); }
+                if (height <= 0) { h = window.getHeight(); }
+
+                GpuTexture texture = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTexture(
+                    name,
+                    GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
+                    textureFormat,
+                    w, h, depth, maxLod+1,
+                    textureType
+                );
+
+                texture.setTextureFilter(minFilter, magFilter, false);
+                ((GpuTextureExtended) texture).canpipe_setMipmapMode(mipFilter);
+                texture.setAddressMode(uAddressMode, vAddressMode);
+                ((GpuTextureExtended) texture).canpipe_setAddressModeR(rAddressMode);
+                ((GpuTextureExtended) texture).canpipe_setCompareOp(depthCompareOp);
+                return texture;
+            });
         } catch (Exception e) {
             throw new RuntimeException("Couldn't create texture \""+name+"\"", e);
         }

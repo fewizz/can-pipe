@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.Nullable;
@@ -20,43 +21,74 @@ import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import fewizz.canpipe.b3d.TextureType;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 
 public class Framebuffer extends RenderTarget {
 
-    public final List<GpuTextureView> colorAttachments;
-    public final List<Integer> colorClearColors;
-    public final @Nullable GpuTextureView depthAttachment;
-    public final @Nullable Double depthClearDepth;
     public final String name;
+
+    private final Supplier<List<GpuTextureView>> colorAttachmentsSupplier;
+    private final Supplier<GpuTextureView> depthAttachmentSupplier;
+
+    public List<GpuTextureView> colorAttachments;
+    public final List<Integer> colorClearColors;
+    public @Nullable GpuTextureView depthAttachment;
+    public @Nullable final Double depthClearDepth;
 
     Framebuffer(
         ResourceLocation pipelineLocation,
         String name,
-        List<GpuTextureView> colorAttachments,
+        Supplier<List<GpuTextureView>> colorAttachmentsSupplier,
         List<Integer> colorClearColors,
-        GpuTextureView depthAttachment,
-        Double depthClearDepth
+        Supplier<GpuTextureView> depthAttachmentSupplier,
+        @Nullable Double depthClearDepth
     ) {
-        super(name, depthAttachment != null);
+        super(name, depthClearDepth != null);
         this.name = name;
-        this.colorAttachments = Collections.unmodifiableList(colorAttachments);
+
+        this.colorAttachmentsSupplier = colorAttachmentsSupplier;
+        this.depthAttachmentSupplier = depthAttachmentSupplier;
+
+        this.colorAttachments = this.colorAttachmentsSupplier.get();
         this.colorClearColors = Collections.unmodifiableList(colorClearColors);
-        this.depthAttachment = depthAttachment;
+        this.depthAttachment = this.depthAttachmentSupplier.get();
         this.depthClearDepth = depthClearDepth;
-        this.createBuffers(-1, -1);
+        onWindowSizeChanged();
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        // Don't listen for MC's window resize, managed by Pipeline
+    }
+
+    public void onWindowSizeChanged() {
+        this.destroyBuffers();
+        var window = Minecraft.getInstance().getWindow();
+        this.createBuffers(window.getWidth(), window.getHeight());
     }
 
     @Override
     public void destroyBuffers() {
+        for (var colorAttachment : this.colorAttachments) {
+            colorAttachment.close();
+        }
+        this.colorAttachments = null;
         this.colorTextureView = null;
         this.colorTexture = null;
-        this.depthTextureView = null;
-        this.depthTexture = null;
+
+        if (this.depthAttachment != null) {
+            this.depthAttachment.close();
+            this.depthTextureView = null;
+            this.depthTexture = null;
+        }
     }
 
     @Override
     public void createBuffers(int width, int height) {
+        this.colorAttachments = this.colorAttachmentsSupplier.get();
+        this.depthAttachment = depthAttachmentSupplier.get();
+
         if (this.colorAttachments.size() > 0) {
             this.colorTextureView = this.colorAttachments.get(0);
             this.colorTexture = this.colorTextureView.texture();
@@ -82,15 +114,11 @@ public class Framebuffer extends RenderTarget {
         Function<String, Texture> getOrLoadTexture
     ) {
         String name = framebufferO.get(String.class, "name");
-        List<GpuTextureView> colorAttachments = new ArrayList<>();
         List<Integer> colorClearColors = new ArrayList<>();
 
-        for (var colorAttachementO : JanksonUtils.listOfObjects(framebufferO, "colorAttachments")) {
-            String textureName = colorAttachementO.get(String.class, "image");
-            int lod = colorAttachementO.getInt("lod", 0);
-            int layer = colorAttachementO.getInt("layer", 0);
-            int face = colorAttachementO.getInt("face", -1);
+        var colorAttachmentsA = JanksonUtils.listOfObjects(framebufferO, "colorAttachments");
 
+        for (var colorAttachementO : colorAttachmentsA) {
             int clearColor = 0;
             JsonElement clearColorRaw = colorAttachementO.get("clearColor");
             if (clearColorRaw != null) {
@@ -102,45 +130,56 @@ public class Framebuffer extends RenderTarget {
                     throw new NotImplementedException(clearColorO.getClass().getName());
                 }
             }
-
-            var texture = getOrLoadTexture.apply(textureName).getTexture();
-
-            // For cube arrays
-            // (https://registry.khronos.org/vulkan/specs/latest/man/html/VkImageSubresourceRange.html#_description)
-            if (face >= 0) {
-                if (((GpuTextureExtended) texture).canpipe_getType() != TextureType.TYPE_CUBE_MAP) {
-                    throw new RuntimeException("Face can be specified only for cube map textures");
-                }
-                layer *= 6;
-                layer += face;
-            }
-
-            var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
-                texture, lod, 1, layer, 1
-            );
-            colorAttachments.add(textureView);
             colorClearColors.add(clearColor);
         }
 
-        GpuTextureView depthAttachment = null;
         Double depthClearDepth = null;
         JsonObject depthAttachmentO = framebufferO.getObject("depthAttachment");
 
         if (depthAttachmentO != null) {
-            var lod = Optional.ofNullable(depthAttachmentO.get(Integer.class, "lod"));
-            var layer = Optional.ofNullable(depthAttachmentO.get(Integer.class, "layer"));
-            var texture = getOrLoadTexture.apply(depthAttachmentO.get(String.class, "image")).getTexture();
-            var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
-                texture, lod.orElse(0), 1, layer.orElse(0), 1
-            );
-            depthAttachment = textureView;
             depthClearDepth = depthAttachmentO.getDouble("clearDepth", 1.0);
         }
 
         return new Framebuffer(
             pipelineLocation, name,
-            colorAttachments, colorClearColors,
-            depthAttachment, depthClearDepth
+            () -> {
+                List<GpuTextureView> colorAttachments = new ArrayList<>();
+
+                for (var colorAttachementO : colorAttachmentsA) {
+                    int lod = colorAttachementO.getInt("lod", 0);
+                    int layer = colorAttachementO.getInt("layer", 0);
+                    int face = colorAttachementO.getInt("face", -1);
+                    String textureName = colorAttachementO.get(String.class, "image");
+                    var texture = getOrLoadTexture.apply(textureName).getTexture();
+
+                    // For cube arrays
+                    // (https://registry.khronos.org/vulkan/specs/latest/man/html/VkImageSubresourceRange.html#_description)
+                    if (face >= 0) {
+                        if (((GpuTextureExtended) texture).canpipe_getType() != TextureType.TYPE_CUBE_MAP) {
+                            throw new RuntimeException("Face can be specified only for cube map textures");
+                        }
+                        layer *= 6;
+                        layer += face;
+                    }
+                    colorAttachments.add(((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                        texture, lod, 1, layer, 1
+                    ));
+                }
+                return colorAttachments;
+            },
+            colorClearColors,
+            () -> {
+                GpuTextureView depthAttachment = null;
+                if (depthAttachmentO != null) {
+                    var lod = Optional.ofNullable(depthAttachmentO.get(Integer.class, "lod"));
+                    var layer = Optional.ofNullable(depthAttachmentO.get(Integer.class, "layer"));
+                    var texture = getOrLoadTexture.apply(depthAttachmentO.get(String.class, "image")).getTexture();
+                    depthAttachment = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                        texture, lod.orElse(0), 1, layer.orElse(0), 1
+                    );
+                }
+                return depthAttachment;
+            }, depthClearDepth
         );
     }
 
