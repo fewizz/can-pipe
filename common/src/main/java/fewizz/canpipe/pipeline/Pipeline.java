@@ -19,7 +19,6 @@ import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
@@ -72,7 +71,7 @@ public class Pipeline implements AutoCloseable {
     public final Map<String, GpuTextureView> materialProgramSamplerImages;
 
     private final Map<String, RenderPipeline> programs = new HashMap<>();
-    private final Map<String, GpuTextureView> textureViews = new HashMap<>();
+    private final Map<String, GpuTexture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
     public final List<PassBase>
@@ -106,30 +105,28 @@ public class Pipeline implements AutoCloseable {
         this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
 
         // "images"
-        Function<String, Optional<GpuTextureView>> getOrLoadOptionalTextureView = (String name) -> {
-            return Optional.ofNullable(this.textureViews.computeIfAbsent(name, _name -> {
+        Function<String, Optional<GpuTexture>> getOrLoadOptionalTexture = (String name) -> {
+            return Optional.ofNullable(this.textures.computeIfAbsent(name, _name -> {
                 List<JsonObject> textures = JanksonUtils.listOfObjects(pipelineJson, "images");
                 Optional<JsonObject> possibleJson = textures.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
                 if (possibleJson.isEmpty()) {
                     return null;
                 }
                 var mc = Minecraft.getInstance();
-                return RenderSystem.getDevice().createTextureView(
-                    Textures.load(possibleJson.get(), location, mc.getWindow().getWidth(), mc.getWindow().getHeight())
-                );
+                return Textures.load(possibleJson.get(), location, mc.getWindow().getWidth(), mc.getWindow().getHeight());
             }));
         };
 
-
         Function<String, GpuTexture> getOrLoadTexture = (String name) -> {
-            var result = getOrLoadOptionalTextureView.apply(name);
+            var result = getOrLoadOptionalTexture.apply(name);
             if (result.isEmpty()) {
                 throw new RuntimeException("Couldn't find texture \""+name+"\"");
             }
-            return result.get().texture();
+            return result.get();
         };
 
         Function<String, Optional<GpuTextureView>> getOrLoadPipelineOrResourcepackTextureView = (String name) -> {
+            GpuTextureView textureView = null;
             if (name.contains(":")) {
                 var mc = Minecraft.getInstance();
                 var rl = ResourceLocation.parse(name);
@@ -137,12 +134,15 @@ public class Pipeline implements AutoCloseable {
                 if (rl.equals(ResourceLocation.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
                     rl = ItemRenderer.ENCHANTED_GLINT_ITEM;
                 }
-                return Optional.of(mc.getTextureManager().getTexture(rl).getTextureView());
+                textureView = mc.getTextureManager().getTexture(rl).getTextureView();
             }
             else {
-                var textureView = getOrLoadOptionalTextureView.apply(name).orElse(null);
-                return Optional.ofNullable(textureView);
+                var texture = getOrLoadOptionalTexture.apply(name).orElse(null);
+                if (texture != null) {
+                    textureView = RenderSystem.getDevice().createTextureView(texture);
+                }
             }
+            return Optional.ofNullable(textureView);
         };
 
         // "framebuffers"
