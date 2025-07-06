@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonElement;
@@ -80,7 +79,7 @@ public class Framebuffer extends RenderTarget {
     static Framebuffer load(
         JsonObject framebufferO,
         ResourceLocation pipelineLocation,
-        Function<String, GpuTexture> getOrLoadTexture
+        Function<String, Texture> getOrLoadTexture
     ) {
         String name = framebufferO.get(String.class, "name");
         List<GpuTextureView> colorAttachments = new ArrayList<>();
@@ -104,7 +103,7 @@ public class Framebuffer extends RenderTarget {
                 }
             }
 
-            var texture = getOrLoadTexture.apply(textureName);
+            var texture = getOrLoadTexture.apply(textureName).getTexture();
 
             // For cube arrays
             // (https://registry.khronos.org/vulkan/specs/latest/man/html/VkImageSubresourceRange.html#_description)
@@ -130,7 +129,7 @@ public class Framebuffer extends RenderTarget {
         if (depthAttachmentO != null) {
             var lod = Optional.ofNullable(depthAttachmentO.get(Integer.class, "lod"));
             var layer = Optional.ofNullable(depthAttachmentO.get(Integer.class, "layer"));
-            var texture = getOrLoadTexture.apply(depthAttachmentO.get(String.class, "image"));
+            var texture = getOrLoadTexture.apply(depthAttachmentO.get(String.class, "image")).getTexture();
             var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                 texture, lod.orElse(0), 1, layer.orElse(0), 1
             );

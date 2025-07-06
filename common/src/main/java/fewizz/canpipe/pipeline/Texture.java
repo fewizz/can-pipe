@@ -1,5 +1,7 @@
 package fewizz.canpipe.pipeline;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
@@ -13,12 +15,36 @@ import fewizz.canpipe.b3d.CompareOp;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import fewizz.canpipe.b3d.TextureType;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
 
 
-public class Textures {
+public class Texture extends AbstractTexture {
 
-    static GpuTexture load(JsonObject json, ResourceLocation pipelineLocation, int defaultWidth, int defaultHeight) {
+    Texture(
+        String name, TextureType textureType, TextureFormat textureFormat, int width, int height, int depth, int levels,
+        FilterMode minFilter, FilterMode magFilter, @Nullable FilterMode mipFilter,
+        AddressMode u, AddressMode v, @Nullable AddressMode r,
+        @Nullable CompareOp compareOp
+    ) {
+        this.texture = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTexture(
+            name,
+            GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
+            textureFormat,
+            width, height, depth, levels,
+            textureType
+        );
+
+        texture.setTextureFilter(minFilter, magFilter, false);
+        ((GpuTextureExtended) texture).canpipe_setMipmapMode(mipFilter);
+        texture.setAddressMode(u, v);
+        ((GpuTextureExtended) texture).canpipe_setAddressModeR(r);
+        ((GpuTextureExtended) texture).canpipe_setCompareOp(compareOp);
+
+        this.textureView = RenderSystem.getDevice().createTextureView(this.texture);
+    }
+
+    static Texture load(JsonObject json, ResourceLocation pipelineLocation, int defaultWidth, int defaultHeight) {
         String name = json.get(String.class, "name");
 
         int maxLod = json.getInt("lod", 0);
@@ -29,39 +55,7 @@ public class Textures {
         int depth = json.getInt("depth", 1);
 
         String targetStr = json.get(String.class, "target");
-        TextureType textureType = switch (targetStr) {
-            case "TEXTURE_2D" -> TextureType.TYPE_2D;
-            case "TEXTURE_2D_ARRAY" -> TextureType.TYPE_2D_ARRAY;
-            case "TEXTURE_CUBE_MAP" -> TextureType.TYPE_CUBE_MAP;
-            default -> throw new RuntimeException("Unsupported texture type \""+targetStr+"\"");
-        };
-
         String internalFormatStr = json.get(String.class, "internalFormat");
-        /*
-        if (internalFormatStr == null) { internalFormatStr = "RGBA8"; }
-        int internalFormat = glConst.apply(internalFormatStr);
-
-        int target = targetStr != null ? glConst.apply(targetStr) : GL33C.GL_TEXTURE_2D;
-
-        String pixelFormatStr = json.get(String.class, "pixelFormat");
-        int pixelFormat = pixelFormatStr != null ? glConst.apply(pixelFormatStr) : GL33C.GL_RGBA;
-
-        String pixelDataTypeStr = json.get(String.class, "pixelDataType");
-        int pixelDataType = pixelDataTypeStr != null ? glConst.apply(pixelDataTypeStr) : GL33C.GL_UNSIGNED_BYTE;
-        */
-
-        GpuTexture texture;
-        try {
-            texture = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTexture(
-                name,
-                GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
-                TextureFormat.valueOf(internalFormatStr),
-                width, height, depth, maxLod+1,
-                textureType
-            );
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't create texture \""+name+"\"", e);
-        }
 
         FilterMode min = FilterMode.NEAREST;
         FilterMode mag = FilterMode.NEAREST;
@@ -140,13 +134,22 @@ public class Textures {
             }
         }
 
-        texture.setTextureFilter(min, mag, false);
-        ((GpuTextureExtended) texture).canpipe_setMipmapMode(mip);
-        texture.setAddressMode(u, v);
-        ((GpuTextureExtended) texture).canpipe_setAddressModeR(r);
-        ((GpuTextureExtended) texture).canpipe_setCompareOp(compare ? compareOp : null);
+        try {
+            TextureFormat textureFormat = TextureFormat.valueOf(internalFormatStr);
+            TextureType textureType = switch (targetStr) {
+                case "TEXTURE_2D" -> TextureType.TYPE_2D;
+                case "TEXTURE_2D_ARRAY" -> TextureType.TYPE_2D_ARRAY;
+                case "TEXTURE_CUBE_MAP" -> TextureType.TYPE_CUBE_MAP;
+                default -> throw new RuntimeException("Unsupported texture type \""+targetStr+"\"");
+            };
 
-        return texture;
+            return new Texture(
+                name, textureType, textureFormat, width, height, depth, maxLod+1,
+                min, mag, mip, u, v, r, compare ? compareOp : null
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't create texture \""+name+"\"", e);
+        }
     }
 
 }

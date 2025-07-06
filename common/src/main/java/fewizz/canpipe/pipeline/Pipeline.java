@@ -71,7 +71,7 @@ public class Pipeline implements AutoCloseable {
     public final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
     private final Map<String, RenderPipeline> programs = new HashMap<>();
-    private final Map<String, GpuTexture> textures = new HashMap<>();
+    private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
     public final List<PassBase>
@@ -105,7 +105,7 @@ public class Pipeline implements AutoCloseable {
         this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
 
         // "images"
-        Function<String, Optional<GpuTexture>> getOrLoadOptionalTexture = (String name) -> {
+        Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
             return Optional.ofNullable(this.textures.computeIfAbsent(name, _name -> {
                 List<JsonObject> textures = JanksonUtils.listOfObjects(pipelineJson, "images");
                 Optional<JsonObject> possibleJson = textures.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
@@ -113,11 +113,11 @@ public class Pipeline implements AutoCloseable {
                     return null;
                 }
                 var mc = Minecraft.getInstance();
-                return Textures.load(possibleJson.get(), location, mc.getWindow().getWidth(), mc.getWindow().getHeight());
+                return Texture.load(possibleJson.get(), location, mc.getWindow().getWidth(), mc.getWindow().getHeight());
             }));
         };
 
-        Function<String, GpuTexture> getOrLoadTexture = (String name) -> {
+        Function<String, Texture> getOrLoadTexture = (String name) -> {
             var result = getOrLoadOptionalTexture.apply(name);
             if (result.isEmpty()) {
                 throw new RuntimeException("Couldn't find texture \""+name+"\"");
@@ -137,11 +137,7 @@ public class Pipeline implements AutoCloseable {
                 texture = mc.getTextureManager().getTexture(rl);
             }
             else {
-                var gpuTexture = getOrLoadOptionalTexture.apply(name).orElse(null);
-                texture = new AbstractTexture() {{
-                    this.texture = gpuTexture;
-                    this.textureView = RenderSystem.getDevice().createTextureView(texture);
-                }};
+                texture = getOrLoadOptionalTexture.apply(name).orElse(null);
             }
             return Optional.ofNullable(texture);
         };
