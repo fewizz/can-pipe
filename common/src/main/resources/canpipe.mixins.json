@@ -15,7 +15,6 @@
     "CompositeRenderTypeMixin",
     "EquipmentLayerRendererMixin",
     "GameRendererMixin",
-    "GlCommandEncoderMixin",
     "GlRenderPassMixin",
     "ItemBlockRenderTypesMixin",
     "ItemRendererMixin",

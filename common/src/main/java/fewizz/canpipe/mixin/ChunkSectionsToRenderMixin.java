@@ -24,6 +24,9 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
+import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 
 @Mixin(ChunkSectionsToRender.class)
@@ -51,6 +54,7 @@ public class ChunkSectionsToRenderMixin {
     void postRenderGroup(CallbackInfo ci) {
         if (Uniforms.CANPIPE_ORIGIN_TYPE.get() == 0) { return; }
         Uniforms.CANPIPE_ORIGIN_TYPE.set(0);  // camera
+        Uniforms.CANPIPE_RENDER_TARGET.set(0);
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
@@ -75,9 +79,19 @@ public class ChunkSectionsToRenderMixin {
     RenderPass replaceColorAttachments(
         CommandEncoder instance, Supplier<String> supplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView gpuTextureView2, OptionalDouble optionalDouble,
         Operation<RenderPass> operation,
-        @Local RenderTarget renderTarget
+        @Local RenderTarget renderTarget,
+        @Local ChunkSectionLayerGroup group
     ) {
         if (renderTarget instanceof Framebuffer framebuffer) {
+            Pipeline p = Pipelines.getCurrent();
+            if (p.translucentTerrainFramebuffer == framebuffer) {
+                Uniforms.CANPIPE_RENDER_TARGET.set(1);  // translucent render target
+                try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                    var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
+                    Uniforms.MATERIAL_PROGRAM.writeTo(builder);
+                    RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+                }
+            }
             return ((CommandEncoderExtended) instance).canpipe_createRenderPass(supplier, framebuffer.colorAttachments, gpuTextureView2);
         }
         return operation.call(instance, supplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);

@@ -38,9 +38,9 @@ public class ItemStackLayerRenderStateMixin implements ItemStackLayerRenderState
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/entity/ItemRenderer;renderItem("+
-                "Lnet/minecraft/world/item/ItemDisplayContext;"+  // 0
-                "Lcom/mojang/blaze3d/vertex/PoseStack;"+  // 1
-                "Lnet/minecraft/client/renderer/MultiBufferSource;"+  // 2
+                "Lnet/minecraft/world/item/ItemDisplayContext;"+
+                "Lcom/mojang/blaze3d/vertex/PoseStack;"+
+                "Lnet/minecraft/client/renderer/MultiBufferSource;"+
                 "II[I"+
                 "Ljava/util/List;"+
                 "Lnet/minecraft/client/renderer/RenderType;"+
