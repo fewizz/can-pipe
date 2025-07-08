@@ -20,11 +20,11 @@ public class ItemBlockRenderTypesMixin {
             target = "Lnet/minecraft/client/renderer/Sheets;translucentItemSheet()Lnet/minecraft/client/renderer/RenderType;"
         )
     )
-    private static RenderType replaceItemStackTranslucentItemSheetWithSolidOne(RenderType rt) {
+    private static RenderType replaceItemStackTranslucentItemSheetWithSolidOne(RenderType renderType) {
         if (Pipelines.getCurrent() != null) {
-            rt = Sheets.solidBlockSheet();
+            renderType = Sheets.cutoutBlockSheet();
         }
-        return rt;
+        return renderType;
     }
 
 }

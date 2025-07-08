@@ -7,7 +7,6 @@ import java.util.OptionalInt;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
@@ -39,9 +38,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.logging.LogUtils;
 
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.b3d.GpuTextureExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import net.minecraft.util.ARGB;
 
@@ -59,7 +56,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
     @Shadow @Final private static Logger LOGGER = LogUtils.getLogger();
     @Shadow @Final private GlDevice device;
     @Shadow private RenderPipeline lastPipeline;
-    @Shadow @Final private int drawFbo;
 
     @ModifyExpressionValue(
         method = "writeToTexture("+
@@ -178,7 +174,8 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
                             if ((attachment.texture().usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0) {
                                 int face = attachmentExt.canpipe_baseArrayLayer() % 6;
-                                // int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
+                                int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
+                                if (layer > 0) { throw new RuntimeException(); }
                                 GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureID, attachment.baseMipLevel());
                             }
                             else if (attachment.texture().getDepthOrLayers() > 1 || attachmentExt.canpipe_baseArrayLayer() > 0) {
@@ -284,17 +281,15 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         }
     }
 
-    @Overwrite
-    private void verifyDepthTexture(GpuTexture texture) {
-        if (!texture.getFormat().hasDepthAspect()) {
-            throw new IllegalStateException("Trying to clear a non-depth texture as depth");
-        } else if (texture.isClosed()) {
-            throw new IllegalStateException("Depth texture is closed");
-        } else if ((texture.usage() & 8) == 0) {
-            throw new IllegalStateException("Depth texture must have USAGE_RENDER_ATTACHMENT");
-        }/* else if (texture.getDepthOrLayers() > 1) {
-            throw new UnsupportedOperationException("Clearing a texture with multiple layers or depths is not yet supported");
-        }*/
+    @ModifyExpressionValue(
+        method = "verifyDepthTexture",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I"
+        )
+    )
+    private int allowDepthTextureWithMultipleLayers(int layers) {
+        return 1;  // don't throw if texture.getDepthOrLayers() > 1
     }
 
 }
