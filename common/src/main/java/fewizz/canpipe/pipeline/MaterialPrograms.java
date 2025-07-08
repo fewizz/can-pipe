@@ -108,7 +108,7 @@ public class MaterialPrograms {
             "const vec3 in_normal = vec3(0.0, 1.0, 0.0);  // Normal\n"
         );
         if (hasMaterialFlags) {
-            vertexSrcBuilder.append("#define CANPIPE_MATERIAL_FLAGS\n");
+            vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
             vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(CanPipe.VertexFormatElements.MATERIAL_FLAGS)+") in int in_materialFlags;\n");
         }
         vertexSrcBuilder.append(
