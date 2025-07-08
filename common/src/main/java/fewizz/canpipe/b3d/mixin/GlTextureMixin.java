@@ -21,7 +21,6 @@ import com.mojang.blaze3d.textures.GpuTexture;
 
 import fewizz.canpipe.b3d.CompareOp;
 import fewizz.canpipe.b3d.GpuTextureExtended;
-import fewizz.canpipe.b3d.TextureType;
 
 @Mixin(GlTexture.class)
 public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExtended {
@@ -37,14 +36,14 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
     @Unique protected AddressMode canpipe_addressModeR = null;
     @Unique protected CompareOp canpipe_compareOp = null;
 
-    @Override
+    /*@Override
     public TextureType canpipe_getType() {
         int target = GlStateManagerAccessor.canpipe_getTextureTarget(this.id);
         if (target == GL33C.GL_TEXTURE_2D) { return TextureType.TYPE_2D; }
         else if (target == GL33C.GL_TEXTURE_2D_ARRAY) { return TextureType.TYPE_2D_ARRAY; }
         else if (target == GL33C.GL_TEXTURE_CUBE_MAP) { return TextureType.TYPE_CUBE_MAP; }
         else { throw new RuntimeException("Unexpected texture target: "+target); }
-    }
+    }*/
 
     @Override
     public void canpipe_setMipmapMode(FilterMode filterMode) {

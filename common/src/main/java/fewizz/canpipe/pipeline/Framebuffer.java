@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonElement;
@@ -20,7 +21,6 @@ import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
-import fewizz.canpipe.b3d.TextureType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 
@@ -160,7 +160,7 @@ public class Framebuffer extends RenderTarget {
                     // For cube arrays
                     // (https://registry.khronos.org/vulkan/specs/latest/man/html/VkImageSubresourceRange.html#_description)
                     if (face >= 0) {
-                        if (((GpuTextureExtended) texture).canpipe_getType() != TextureType.TYPE_CUBE_MAP) {
+                        if ((texture.usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) == 0) {
                             throw new RuntimeException("Face can be specified only for cube map textures");
                         }
                         layer *= 6;

@@ -12,9 +12,7 @@ import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.CompareOp;
-import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
-import fewizz.canpipe.b3d.TextureType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -131,12 +129,12 @@ public class Texture extends AbstractTexture {
 
         try {
             TextureFormat textureFormat = TextureFormat.valueOf(internalFormatStr);
-            TextureType textureType = switch (targetStr) {
-                case "TEXTURE_2D" -> TextureType.TYPE_2D;
-                case "TEXTURE_2D_ARRAY" -> TextureType.TYPE_2D_ARRAY;
-                case "TEXTURE_CUBE_MAP" -> TextureType.TYPE_CUBE_MAP;
-                default -> throw new RuntimeException("Unsupported texture type \""+targetStr+"\"");
-            };
+
+            if (targetStr.equals("TEXTURE_2D_ARRAY") && depth <= 1) {
+                CanPipe.LOGGER.warn("Texture \""+name+"\" type is TEXTURE_2D_ARRAY, but depth="+depth);
+            }
+
+            boolean cubeMapCompatible = targetStr.equals("TEXTURE_CUBE_MAP");
 
             final FilterMode minFilter = min;
             final FilterMode magFilter = mag;
@@ -154,12 +152,18 @@ public class Texture extends AbstractTexture {
                 if (width <= 0) { w = window.getWidth(); }
                 if (height <= 0) { h = window.getHeight(); }
 
-                GpuTexture texture = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTexture(
-                    name,
-                    GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
+                int usage = GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING;
+                int depthOrLayers = depth;
+
+                if (cubeMapCompatible) {
+                    usage |= GpuTexture.USAGE_CUBEMAP_COMPATIBLE;
+                    depthOrLayers *= 6;
+                }
+
+                GpuTexture texture = RenderSystem.getDevice().createTexture(
+                    name, usage,
                     textureFormat,
-                    w, h, depth, maxLod+1,
-                    textureType
+                    w, h, depthOrLayers, maxLod+1
                 );
 
                 texture.setTextureFilter(minFilter, magFilter, false);
