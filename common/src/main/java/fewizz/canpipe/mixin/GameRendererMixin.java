@@ -74,8 +74,11 @@ public class GameRendererMixin implements GameRendererExtended {
         Uniforms.CANPIPE_SHADOW_CENTER[1].set(0.0);
         Uniforms.CANPIPE_SHADOW_CENTER[2].set(0.0);
         Uniforms.CANPIPE_SHADOW_CENTER[3].set(0.0);
+
         this.canpipe_worldViewMatrix = null;
         this.canpipe_worldProjectionMatrix = null;
+
+        Uniforms.CANPIPE_RENDER_TARGET.set(-1);
     }
 
     @Inject(method = "resize", at = @At("HEAD"))

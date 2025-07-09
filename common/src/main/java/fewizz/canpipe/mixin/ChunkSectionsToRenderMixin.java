@@ -53,7 +53,6 @@ public class ChunkSectionsToRenderMixin {
     void postRenderGroup(CallbackInfo ci) {
         if (Uniforms.CANPIPE_ORIGIN_TYPE.get() == 0) { return; }
         Uniforms.CANPIPE_ORIGIN_TYPE.set(0);  // camera
-        Uniforms.CANPIPE_RENDER_TARGET.set(0);
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());

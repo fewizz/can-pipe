@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -458,8 +460,7 @@ public class Pipeline implements AutoCloseable {
     }
 
     @SuppressWarnings("deprecation")
-    public RenderPass createRenderPass(CommandEncoderExtended commandEncoder, Supplier<String> name, Framebuffer framebuffer) {
-        int prevTarget = Uniforms.CANPIPE_RENDER_TARGET.get();
+    public RenderPass createRenderPass(CommandEncoderExtended commandEncoder, Supplier<String> name, @Nullable Framebuffer framebuffer) {
         int newTarget = 0;
         if (framebuffer == this.translucentTerrainFramebuffer) {
             newTarget = 1;
@@ -470,16 +471,24 @@ public class Pipeline implements AutoCloseable {
         if (framebuffer == this.particlesFramebuffer) {
             newTarget = 3;
         }
-        if (prevTarget != newTarget) {
-            Uniforms.CANPIPE_RENDER_TARGET.set(1);  // translucent render target
+        if (Uniforms.CANPIPE_RENDER_TARGET.get() != newTarget) {
+            Uniforms.CANPIPE_RENDER_TARGET.set(newTarget);  // translucent render target
             try (MemoryStack memoryStack = MemoryStack.stackPush()) {
                 var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
                 Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-                RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+                commandEncoder.writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
             }
         }
 
-        RenderPass renderPass = commandEncoder.canpipe_createRenderPass(name, framebuffer.colorAttachments, framebuffer.depthAttachment);
+        RenderPass renderPass;
+        // For example, when rendering gui items
+        if (RenderSystem.outputColorTextureOverride != null && RenderSystem.outputDepthTextureOverride != null) {
+            renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, OptionalInt.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
+        }
+        else {
+            renderPass = commandEncoder.canpipe_createRenderPass(name, framebuffer.colorAttachments, framebuffer.depthAttachment);
+        }
+
         renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
         renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
         renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);

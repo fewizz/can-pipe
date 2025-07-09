@@ -46,7 +46,7 @@ public class Uniforms {
 
     public static final UniformBufferStruct MATERIAL_PROGRAM = new UniformBufferStruct();
     public static final IntUniform FRXU_CASCADE = MATERIAL_PROGRAM.add(new IntUniform());
-    public static final IntUniform CANPIPE_RENDER_TARGET = MATERIAL_PROGRAM.add(new IntUniform(){{set(-1);}});
+    public static final IntUniform CANPIPE_RENDER_TARGET = MATERIAL_PROGRAM.add(new IntUniform());
     public static final IntUniform CANPIPE_ORIGIN_TYPE = MATERIAL_PROGRAM.add(new IntUniform());
     public static final GpuBuffer MATERIAL_PROGRAM_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe material-program UBO",

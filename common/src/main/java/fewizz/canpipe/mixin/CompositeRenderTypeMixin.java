@@ -87,11 +87,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
         Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
     ) {
-        if (
-            renderTarget instanceof Framebuffer framebuffer &&
-            RenderSystem.outputColorTextureOverride == null &&
-            RenderSystem.outputDepthTextureOverride == null
-        ) {
+        if (renderTarget instanceof Framebuffer framebuffer) {
             return Pipelines.getCurrent().createRenderPass((CommandEncoderExtended) instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);
