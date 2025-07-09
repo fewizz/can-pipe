@@ -5,7 +5,6 @@ import java.util.OptionalInt;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,7 +15,6 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
@@ -24,7 +22,6 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.mixininterface.CompositeRenderTypeExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -86,7 +83,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
         )
     )
     RenderPass onCreateRenderPass(
-        CommandEncoder instance, Supplier<String> supplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView gpuTextureView2, OptionalDouble optionalDouble,
+        CommandEncoder instance, Supplier<String> nameSupplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView gpuTextureView2, OptionalDouble optionalDouble,
         Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
     ) {
@@ -95,26 +92,9 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
             RenderSystem.outputColorTextureOverride == null &&
             RenderSystem.outputDepthTextureOverride == null
         ) {
-            Pipeline p = Pipelines.getCurrent();
-            int prevTarget = Uniforms.CANPIPE_RENDER_TARGET.get();
-            int newTarget = 0;
-            if (framebuffer == p.translucentItemEntityFramebuffer) {
-                newTarget = 2;
-            }
-            if (framebuffer == p.particlesFramebuffer) {
-                newTarget = 3;
-            }
-            if (prevTarget != newTarget) {
-                Uniforms.CANPIPE_RENDER_TARGET.set(newTarget);
-                try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-                    var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
-                    Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-                    RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-                }
-            }
-            return ((CommandEncoderExtended) instance).canpipe_createRenderPass(supplier, framebuffer.colorAttachments, gpuTextureView2);
+            return Pipelines.getCurrent().createRenderPass((CommandEncoderExtended) instance, nameSupplier, framebuffer);
         }
-        return operation.call(instance, supplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);
+        return operation.call(instance, nameSupplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);
     }
 
 }

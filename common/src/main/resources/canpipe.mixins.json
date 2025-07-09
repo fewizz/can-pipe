@@ -15,7 +15,6 @@
     "CompositeRenderTypeMixin",
     "EquipmentLayerRendererMixin",
     "GameRendererMixin",
-    "GlRenderPassMixin",
     "ItemBlockRenderTypesMixin",
     "ItemRendererMixin",
     "ItemStackLayerRenderStateMixin",

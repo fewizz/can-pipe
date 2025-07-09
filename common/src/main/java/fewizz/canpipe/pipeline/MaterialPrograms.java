@@ -361,9 +361,9 @@ public class MaterialPrograms {
         renderPipelineBuilder.withUniform("Projection", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("Fog", UniformType.UNIFORM_BUFFER);
 
-        renderPipelineBuilder.withSampler("frxs_baseColor");
-        renderPipelineBuilder.withSampler("canpipe_overlay");
-        renderPipelineBuilder.withSampler("frxs_lightmap");
+        renderPipelineBuilder.withSampler("Sampler0");
+        renderPipelineBuilder.withSampler("Sampler1");
+        renderPipelineBuilder.withSampler("Sampler2");
         renderPipelineBuilder.withSampler("canpipe_spritesExtents");
 
         for (String sampler : samplers) {
@@ -383,6 +383,9 @@ public class MaterialPrograms {
                         "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
                         "#define mc_ub_projection Projection\n"+
                         "#define mc_ub_fog Fog\n"+
+                        "#define frxs_baseColor Sampler0\n"+
+                        "#define canpipe_overlay Sampler1\n"+
+                        "#define frxs_lightmap Sampler2\n"+
                         "\n"+
                         src;
                     return src;

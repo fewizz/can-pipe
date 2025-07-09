@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,17 +20,22 @@ import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
@@ -449,6 +455,62 @@ public class Pipeline implements AutoCloseable {
         for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply();
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    public RenderPass createRenderPass(CommandEncoderExtended commandEncoder, Supplier<String> name, Framebuffer framebuffer) {
+        int prevTarget = Uniforms.CANPIPE_RENDER_TARGET.get();
+        int newTarget = 0;
+        if (framebuffer == this.translucentTerrainFramebuffer) {
+            newTarget = 1;
+        }
+        if (framebuffer == this.translucentItemEntityFramebuffer) {
+            newTarget = 2;
+        }
+        if (framebuffer == this.particlesFramebuffer) {
+            newTarget = 3;
+        }
+        if (prevTarget != newTarget) {
+            Uniforms.CANPIPE_RENDER_TARGET.set(1);  // translucent render target
+            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
+                Uniforms.MATERIAL_PROGRAM.writeTo(builder);
+                RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
+            }
+        }
+
+        RenderPass renderPass = commandEncoder.canpipe_createRenderPass(name, framebuffer.colorAttachments, framebuffer.depthAttachment);
+        renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
+        renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
+        renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
+        renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
+        renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
+        renderPass.setUniform("canpipe_ub_material_program", Uniforms.MATERIAL_PROGRAM_UBO);
+
+        var sampler0 = RenderSystem.getShaderTexture(0);
+        if (sampler0 != null) {
+            var mc = Minecraft.getInstance();
+            TextureAtlas atlas = null;
+            for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
+                var possibleAtlas = mc.getModelManager().getAtlas(atlasLoc);
+                if (possibleAtlas.getTexture() == sampler0.texture()) {
+                    atlas = possibleAtlas;
+                    break;
+                }
+            }
+            if (atlas == null) {  // we just need to bind something
+                atlas = mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
+            }
+            renderPass.bindSampler("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).canpipe_getSpriteData());
+        }
+
+        renderPass.bindSampler("Sampler2", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView());
+
+        for (var e : this.materialProgramSamplerTextures.entrySet()) {
+            renderPass.bindSampler(e.getKey(), e.getValue().getTextureView());
+        }
+
+        return renderPass;
     }
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {

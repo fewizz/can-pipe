@@ -22,6 +22,7 @@ import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
@@ -124,6 +125,13 @@ public class Pass extends PassBase {
             renderPass.setUniform("DynamicTransforms", dynamicTransforms);
 
             renderPass.setUniform("canpipe_ub_pass", Programs.PASS_UBO);
+
+            renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
+            renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
+            renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
+            renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
+            renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
+
             renderPass.setVertexBuffer(0, vertexBuffer);
             renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
             renderPass.drawIndexed(0, 0, 6, 0);
