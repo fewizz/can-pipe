@@ -9,24 +9,25 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
+import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlDevice;
-import com.mojang.blaze3d.opengl.GlRenderPass;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.opengl.GlTextureView;
@@ -40,7 +41,6 @@ import com.mojang.logging.LogUtils;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
-import net.minecraft.util.ARGB;
 
 @Mixin(GlCommandEncoder.class)
 public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
@@ -119,118 +119,118 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         }
     }
 
-    @Overwrite
-    @Override
-    public RenderPass createRenderPass(
-        Supplier<String> supplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView depthTextureView, OptionalDouble optionalDouble
+    @ModifyExpressionValue(
+        method = "createRenderPass("+
+            "Ljava/util/function/Supplier;"+
+            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+            "Ljava/util/OptionalInt;"+
+            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+            "Ljava/util/OptionalDouble;"+
+        ")Lcom/mojang/blaze3d/systems/RenderPass;",
+        at = {
+            @At(
+                value = "INVOKE",
+                target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I",
+                ordinal = 0
+            ),
+            @At(
+                value = "INVOKE",
+                target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I",
+                ordinal = 1
+            )
+        }
+    )
+    int suppressMaxLayerCheckError(int layers) {
+        return 0;
+    }
+
+    @Inject(
+        method = "createRenderPass("+
+            "Ljava/util/function/Supplier;"+
+            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+            "Ljava/util/OptionalInt;"+
+            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+            "Ljava/util/OptionalDouble;"+
+        ")Lcom/mojang/blaze3d/systems/RenderPass;",
+        at = @At("HEAD")
+    )
+    void replaceTextureViewIfNull(
+        CallbackInfoReturnable<Void> ci,
+        @Local(argsOnly = true, ordinal = 0) LocalRef<GpuTextureView> colorTextureView,
+        @Local(argsOnly = true, ordinal = 1) GpuTextureView depthTextureView
     ) {
-        if (this.inRenderPass) {
-            throw new IllegalStateException("Close the existing render pass before creating a new one!");
-        } else {
-            if (optionalDouble.isPresent() && depthTextureView == null) {
-                LOGGER.warn("Depth clear value was provided but no depth texture is being used");
+        if (colorTextureView.get() != null) return;
+
+        if (this.canpipe_colorAttachements != null && this.canpipe_colorAttachements.size() > 0) {
+            colorTextureView.set(this.canpipe_colorAttachements.get(0));
+        }
+        else {
+            colorTextureView.set(depthTextureView);
+        }
+    }
+
+    @WrapOperation(
+        method = "createRenderPass("+
+            "Ljava/util/function/Supplier;"+
+            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+            "Ljava/util/OptionalInt;"+
+            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+            "Ljava/util/OptionalDouble;"+
+        ")Lcom/mojang/blaze3d/systems/RenderPass;",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/opengl/GlTexture;getFbo(Lcom/mojang/blaze3d/opengl/DirectStateAccess;Lcom/mojang/blaze3d/textures/GpuTexture;)I"
+        )
+    )
+    int ifColorAttachmentsCountNotEqualsOne(
+        GlTexture colorTexture, DirectStateAccess dsa, GpuTexture depthTexture, Operation<Integer> operation,
+        @Local(argsOnly = true, ordinal = 1) GpuTextureView depthTextureView
+    ) {
+        if (this.canpipe_colorAttachements == null) {
+            return operation.call(colorTexture, dsa, depthTexture);
+        }
+
+        var fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
+
+        return fboCache.computeIfAbsent(Pair.of(this.canpipe_colorAttachements, (GlTextureView) depthTextureView), (Pair<List<GlTextureView>, GlTextureView> attachments) -> {
+            int id = GlStateManager.glGenFramebuffers();
+            var colorAttachments = attachments.getLeft();
+
+            GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, id);
+            GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
+
+            for (int attachmentIndex = 0; attachmentIndex < colorAttachments.size(); ++attachmentIndex) {
+                var attachment = colorAttachments.get(attachmentIndex);
+                var attachmentExt = (GpuTextureViewExtended) attachment;
+
+                var textureID = ((GlTextureView) attachment).texture().glId();
+
+                if ((attachment.texture().usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0) {
+                    int face = attachmentExt.canpipe_baseArrayLayer() % 6;
+                    int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
+                    if (layer > 0) { throw new RuntimeException(); }
+                    GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureID, attachment.baseMipLevel());
+                }
+                else if (attachment.texture().getDepthOrLayers() > 1 || attachmentExt.canpipe_baseArrayLayer() > 0) {
+                    GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.baseMipLevel(), attachmentExt.canpipe_baseArrayLayer());
+                } else {
+                    GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_2D, textureID, attachment.baseMipLevel());
+                }
             }
 
-            if (gpuTextureView != null && gpuTextureView.isClosed()) {
-                throw new IllegalStateException("Color texture is closed");
-            } else if (gpuTextureView != null && (gpuTextureView.texture().usage() & 8) == 0) {
-                throw new IllegalStateException("Color texture must have USAGE_RENDER_ATTACHMENT");
-            // } else if (gpuTextureView != null && gpuTextureView.texture().getDepthOrLayers() > 1) {
-                // throw new UnsupportedOperationException("Textures with multiple depths or layers are not yet supported as an attachment");
-            } else {
-                if (depthTextureView != null) {
-                    if (depthTextureView.isClosed()) {
-                        throw new IllegalStateException("Depth texture is closed");
-                    }
+            if (depthTextureView != null) {
+                var depthAttachmentExt = (GpuTextureViewExtended) depthTextureView;
+                var textureID = ((GlTextureView) depthTextureView).texture().glId();
 
-                    if ((depthTextureView.texture().usage() & 8) == 0) {
-                        throw new IllegalStateException("Depth texture must have USAGE_RENDER_ATTACHMENT");
-                    }
-
-                    /*if (gpuTextureView2.texture().getDepthOrLayers() > 1) {
-                        throw new UnsupportedOperationException("Textures with multiple depths or layers are not yet supported as an attachment");
-                    }*/
-                }
-
-                this.inRenderPass = true;
-                this.device.debugLabels().pushDebugGroup(supplier);
-
-                int fboID;
-                if (this.canpipe_colorAttachements != null) {
-                    var cache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
-                    fboID = cache.computeIfAbsent(Pair.of(this.canpipe_colorAttachements, (GlTextureView) depthTextureView), (Pair<List<GlTextureView>, GlTextureView> attachments) -> {
-                        int id = GlStateManager.glGenFramebuffers();
-                        var colorAttachments = attachments.getLeft();
-                        var depthAttachment = attachments.getRight();
-
-                        GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, id);
-                        GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
-
-                        for (int attachmentIndex = 0; attachmentIndex < colorAttachments.size(); ++attachmentIndex) {
-                            var attachment = colorAttachments.get(attachmentIndex);
-                            var attachmentExt = (GpuTextureViewExtended) attachment;
-
-                            var textureID = ((GlTextureView) attachment).texture().glId();
-
-                            if ((attachment.texture().usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0) {
-                                int face = attachmentExt.canpipe_baseArrayLayer() % 6;
-                                int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
-                                if (layer > 0) { throw new RuntimeException(); }
-                                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureID, attachment.baseMipLevel());
-                            }
-                            else if (attachment.texture().getDepthOrLayers() > 1 || attachmentExt.canpipe_baseArrayLayer() > 0) {
-                                GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.baseMipLevel(), attachmentExt.canpipe_baseArrayLayer());
-                            } else {
-                                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_2D, textureID, attachment.baseMipLevel());
-                            }
-                        }
-
-                        if (depthAttachment != null) {
-                            var depthAttachmentExt = (GpuTextureViewExtended) depthAttachment;
-                            var textureID = ((GlTextureView) depthAttachment).texture().glId();
-
-                            if (depthAttachment.texture().getDepthOrLayers() > 1 || depthAttachmentExt.canpipe_baseArrayLayer() > 0) {
-                                GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, textureID, depthAttachment.baseMipLevel(), depthAttachmentExt.canpipe_baseArrayLayer());
-                            }
-                            else {
-                                GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, GL33C.GL_TEXTURE_2D, textureID, depthAttachment.baseMipLevel());
-                            }
-                        }
-                        return id;
-                    });
+                if (depthTextureView.texture().getDepthOrLayers() > 1 || depthAttachmentExt.canpipe_baseArrayLayer() > 0) {
+                    GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, textureID, depthTextureView.baseMipLevel(), depthAttachmentExt.canpipe_baseArrayLayer());
                 }
                 else {
-                    fboID = ((GlTexture) gpuTextureView.texture()).getFbo(this.device.directStateAccess(), depthTextureView == null ? null : depthTextureView.texture());
+                    GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, GL33C.GL_TEXTURE_2D, textureID, depthTextureView.baseMipLevel());
                 }
-
-                GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, fboID);
-                int j = 0;
-                if (optionalInt.isPresent()) {
-                    int k = optionalInt.getAsInt();
-                    GL11.glClearColor(ARGB.redFloat(k), ARGB.greenFloat(k), ARGB.blueFloat(k), ARGB.alphaFloat(k));
-                    j |= 16384;
-                }
-
-                if (depthTextureView != null && optionalDouble.isPresent()) {
-                    GL11.glClearDepth(optionalDouble.getAsDouble());
-                    j |= 256;
-                }
-
-                if (j != 0) {
-                    GlStateManager._disableScissorTest();
-                    GlStateManager._depthMask(true);
-                    GlStateManager._colorMask(true, true, true, true);
-                    GlStateManager._clear(j);
-                }
-
-                int width = gpuTextureView != null ? gpuTextureView.getWidth(0) : depthTextureView.getWidth(0);
-                int height = gpuTextureView != null ? gpuTextureView.getHeight(0) : depthTextureView.getHeight(0);
-
-                GlStateManager._viewport(0, 0, width, height);
-                this.lastPipeline = null;
-                return new GlRenderPass((GlCommandEncoder)(Object)this, depthTextureView != null);
             }
-        }
+            return id;
+        });
     }
 
     @Override
