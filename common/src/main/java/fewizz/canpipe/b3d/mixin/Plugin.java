@@ -1,34 +1,13 @@
 package fewizz.canpipe.b3d.mixin;
 
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.IntUnaryOperator;
-import java.util.stream.StreamSupport;
-
-import static org.lwjgl.opengl.GL11C.GL_DEPTH_COMPONENT;
 import static org.lwjgl.opengl.GL11C.GL_FLOAT;
-import static org.lwjgl.opengl.GL11C.GL_R3_G3_B2;
 import static org.lwjgl.opengl.GL11C.GL_RED;
-import static org.lwjgl.opengl.GL11C.GL_RGB10;
-import static org.lwjgl.opengl.GL11C.GL_RGB10_A2;
-import static org.lwjgl.opengl.GL11C.GL_RGB12;
 import static org.lwjgl.opengl.GL11C.GL_RGB16;
-import static org.lwjgl.opengl.GL11C.GL_RGB4;
-import static org.lwjgl.opengl.GL11C.GL_RGB5;
-import static org.lwjgl.opengl.GL11C.GL_RGB5_A1;
 import static org.lwjgl.opengl.GL11C.GL_RGB8;
 import static org.lwjgl.opengl.GL11C.GL_RGBA;
 import static org.lwjgl.opengl.GL11C.GL_RGBA12;
 import static org.lwjgl.opengl.GL11C.GL_RGBA16;
-import static org.lwjgl.opengl.GL11C.GL_RGBA2;
-import static org.lwjgl.opengl.GL11C.GL_RGBA4;
 import static org.lwjgl.opengl.GL11C.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL14C.GL_DEPTH_COMPONENT32;
-import static org.lwjgl.opengl.GL30C.GL_DEPTH_COMPONENT32F;
 import static org.lwjgl.opengl.GL30C.GL_R11F_G11F_B10F;
 import static org.lwjgl.opengl.GL30C.GL_R16;
 import static org.lwjgl.opengl.GL30C.GL_R16F;
@@ -43,6 +22,7 @@ import static org.lwjgl.opengl.GL30C.GL_RGB32F;
 import static org.lwjgl.opengl.GL30C.GL_RGB32UI;
 import static org.lwjgl.opengl.GL30C.GL_RGBA16F;
 import static org.lwjgl.opengl.GL30C.GL_RGBA32F;
+import static org.lwjgl.opengl.GL30C.GL_RGBA_INTEGER;
 import static org.lwjgl.opengl.GL31C.GL_R16_SNORM;
 import static org.lwjgl.opengl.GL31C.GL_R8_SNORM;
 import static org.lwjgl.opengl.GL31C.GL_RG16_SNORM;
@@ -50,7 +30,15 @@ import static org.lwjgl.opengl.GL31C.GL_RG8_SNORM;
 import static org.lwjgl.opengl.GL31C.GL_RGB16_SNORM;
 import static org.lwjgl.opengl.GL31C.GL_RGB8_SNORM;
 import static org.lwjgl.opengl.GL31C.GL_RGBA8_SNORM;
-import static org.lwjgl.opengl.GL33C.*;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.IntUnaryOperator;
+import java.util.stream.StreamSupport;
+
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -86,71 +74,72 @@ import net.minecraft.client.Screenshot;
 public class Plugin implements IMixinConfigPlugin, Opcodes {
 
     /**
-     * internalFormat - will be used in {@link GlConst#toGlInternalId(TextureFormat)}, which in used in
-     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
-     * 
-     * format - will be used in {@link GlConst#toGlExternalId(TextureFormat)}, which is used in
-     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)} and
-     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
-     * 
-     * type - will be used in {@link GlConst#toGlType(TextureFormat)}, which is used in
-     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)} and
-     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)}
-     * 
      * pixelSize - will be used in {@link TextureFormat#pixelSize()}, which is used in
      * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)},
      * {@link TextureUtil#writeAsPNG(Path, String, GpuTexture, int, IntUnaryOperator)} and
      * {@link Screenshot#takeScreenshot(RenderTarget, Consumer)}
-     * 
+     *
      * hasColorAspect - will be used in {@link TextureFormat#hasColorAspect()}, which is checked in
      * {@link GlCommandEncoder#clearColorTexture(GpuTexture, int)},
      * {@link GlCommandEncoder#clearColorAndDepthTextures(GpuTexture, int, GpuTexture, double)} and
      * {@link GlCommandEncoder#presentTexture(GpuTexture)}
-     * 
+     *
      * hasDepthAspect - will be used in {@link TextureFormat#hasDepthAspect()}, which is checked in
      * {@link GlCommandEncoder#clearColorAndDepthTextures(GpuTexture, int, GpuTexture, double)},
      * {@link GlCommandEncoder#clearDepthTexture(GpuTexture, double)},
      * {@link GlCommandEncoder#copyTextureToTexture(GpuTexture, GpuTexture, int, int, int, int, int, int, int)} and
      * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
-     */
+     *
+     * glInternalFormat - will be used in {@link GlConst#toGlInternalId(TextureFormat)}, which in used in
+     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
+     *
+     * glFormat - will be used in {@link GlConst#toGlExternalId(TextureFormat)}, which is used in
+     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)} and
+     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
+     *
+     * glType - will be used in {@link GlConst#toGlType(TextureFormat)}, which is used in
+     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)} and
+     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)}
+     **/
     public record TexFormat(
+        String name,  // enum name
         int pixelSize, boolean hasColorAspect, boolean hasDepthAspect,  // Will go into TextureFormat
         int glInternalFormat, int glFormat, int glType  // Will go into GlConst
     ) {}
 
-    private static final Map<String, TexFormat> ADDITIONAL_TEXTURE_FORMATS = new HashMap<>() {{
+    private static final List<TexFormat> ADDITIONAL_TEXTURE_FORMATS = new ArrayList<>() {{
         // put("DEPTH_COMPONENT32", new TexFormat(1*4, false, true, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT));  // already defined as DEPTH32
 
-        // put("RED8", new TexFormat(1*4, true, false, GL_RED8, GL_RED, GL_FLOAT));  // already defined
-        put("R8_UNORM", new TexFormat(1*1, true, false, GL_R8, GL_RED, GL_UNSIGNED_BYTE));
-        put("R8_SNORM", new TexFormat(1*1, true, false, GL_R8_SNORM, GL_RED, GL_UNSIGNED_BYTE));
-        put("R16_UNORM", new TexFormat(1*1, true, false, GL_R16, GL_RED, GL_UNSIGNED_BYTE));
-        put("R16_SNORM", new TexFormat(1*1, true, false, GL_R16_SNORM, GL_RED, GL_UNSIGNED_BYTE));
-        put("R16_SFLOAT", new TexFormat(1*4, true, false, GL_R16F, GL_RED, GL_FLOAT));
-        put("R32_SFLOAT", new TexFormat(1*4, true, false, GL_R32F, GL_RED, GL_FLOAT));
+        // add(new TexFormat("RED8", 1*4, true, false, GL_RED8, GL_RED, GL_FLOAT));  // already defined
+        add(new TexFormat("R8_UNORM", 1*1, true, false, GL_R8, GL_RED, GL_UNSIGNED_BYTE));
+        add(new TexFormat("R8_SNORM", 1*1, true, false, GL_R8_SNORM, GL_RED, GL_UNSIGNED_BYTE));
+        add(new TexFormat("R16_UNORM", 1*1, true, false, GL_R16, GL_RED, GL_UNSIGNED_BYTE));
+        add(new TexFormat("R16_SNORM", 1*1, true, false, GL_R16_SNORM, GL_RED, GL_UNSIGNED_BYTE));
+        add(new TexFormat("R16_SFLOAT", 1*4, true, false, GL_R16F, GL_RED, GL_FLOAT));
+        add(new TexFormat("R32_SFLOAT", 1*4, true, false, GL_R32F, GL_RED, GL_FLOAT));
 
-        put("RG8_UNORM", new TexFormat(4*1, true, false, GL_RG8, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RG8_SNORM", new TexFormat(4*1, true, false, GL_RG8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RG16_UNORM", new TexFormat(4*1, true, false, GL_RG16, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RG16_SNORM", new TexFormat(4*1, true, false, GL_RG16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RG16_SFLOAT", new TexFormat(1*4, true, false, GL_RG16F, GL_RED, GL_FLOAT));
-        put("RG32_SFLOAT", new TexFormat(1*4, true, false, GL_RG32F, GL_RED, GL_FLOAT));
+        add(new TexFormat("RG8_UNORM", 4*1, true, false, GL_RG8, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RG8_SNORM", 4*1, true, false, GL_RG8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RG16_UNORM", 4*1, true, false, GL_RG16, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RG16_SNORM", 4*1, true, false, GL_RG16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RG16_SFLOAT", 1*4, true, false, GL_RG16F, GL_RED, GL_FLOAT));
+        add(new TexFormat("RG32_SFLOAT", 1*4, true, false, GL_RG32F, GL_RED, GL_FLOAT));
 
-        put("RGB8_UNORM", new TexFormat(4*1, true, false, GL_RGB8, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RGB8_SNORM", new TexFormat(4*1, true, false, GL_RGB8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RGB16_UNORM", new TexFormat(4*1, true, false, GL_RGB16, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RGB16_SNORM", new TexFormat(4*1, true, false, GL_RGB16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RGB32_UINT", new TexFormat(4*1, true, false, GL_RGB32UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE));
-        put("RGB16_SFLOAT", new TexFormat(4*1, true, false, GL_RGB16F, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RGB32_SFLOAT", new TexFormat(4*1, true, false, GL_RGB32F, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("B10G11R11_UFLOAT_PACK32", new TexFormat(4*1, true, false, GL_R11F_G11F_B10F, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGB8_UNORM", 4*1, true, false, GL_RGB8, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGB8_SNORM", 4*1, true, false, GL_RGB8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGB16_UNORM", 4*1, true, false, GL_RGB16, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGB16_SNORM", 4*1, true, false, GL_RGB16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGB32_UINT", 4*1, true, false, GL_RGB32UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGB16_SFLOAT", 4*1, true, false, GL_RGB16F, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGB32_SFLOAT", 4*1, true, false, GL_RGB32F, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("B10G11R11_UFLOAT_PACK32", 4*1, true, false, GL_R11F_G11F_B10F, GL_RGBA, GL_UNSIGNED_BYTE));
 
-        // put("RGBA8_UNORM", new TexFormat(4*1, true, false, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE)); already defined as RGBA8
-        put("RGBA8_SNORM", new TexFormat(4*1, true, false, GL_RGBA8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("R12X4G12X4B12X4A12X4_UNORM_4PACK16", new TexFormat(4*1, true, false, GL_RGBA12, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RGBA16_UNORM", new TexFormat(4*1, true, false, GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RGBA16_SFLOAT", new TexFormat(4*1, true, false, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE));
-        put("RGBA32_SFLOAT", new TexFormat(4*1, true, false, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE));
+        // add(new TexFormat("RGBA8_UNORM", 4*1, true, false, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE)); already defined as RGBA8
+        add(new TexFormat("RGBA8_SNORM", 4*1, true, false, GL_RGBA8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("R12X4G12X4B12X4A12X4_UNORM_4PACK16", 4*1, true, false, GL_RGBA12, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGBA16_UNORM", 4*1, true, false, GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGBA16_SFLOAT", 4*1, true, false, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGBA32_SFLOAT", 4*1, true, false, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE));
     }};
 
     @Override
@@ -181,8 +170,6 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
     }
 
     private static void patchTextureFormat(ClassNode classNode) {
-        // hard way, adding new texture types into enum
-
         String desc = "L"+classNode.name+";";
 
         // $values
@@ -197,7 +184,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
 
         AbstractInsnNode sizeArgInsn = (AbstractInsnNode) aNewArrayInsn.getPrevious();
 
-        int i = switch (sizeArgInsn.getOpcode()) {
+        int formatsCount = switch (sizeArgInsn.getOpcode()) {
             case ICONST_3 -> 3;  // should be 3
             case ICONST_4 -> 4;
             case ICONST_5 -> 5;  // Neo adds DEPTH24_STENCIL8 and DEPTH32F_STENCIL8
@@ -206,20 +193,20 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             default -> throw new RuntimeException("Unexpected texture formats count");
         };
 
-        arrayInitMethod.instructions.insert(sizeArgInsn, new IntInsnNode(SIPUSH, i + ADDITIONAL_TEXTURE_FORMATS.size()));
+        arrayInitMethod.instructions.insert(sizeArgInsn, new IntInsnNode(SIPUSH, formatsCount + ADDITIONAL_TEXTURE_FORMATS.size()));
         arrayInitMethod.instructions.remove(sizeArgInsn);
 
-        for (var e : ADDITIONAL_TEXTURE_FORMATS.entrySet()) {
-            classNode.fields.add(new FieldNode(ACC_PUBLIC | ACC_FINAL | ACC_STATIC | ACC_ENUM, e.getKey(), desc, null, null));
+        for (var tex : ADDITIONAL_TEXTURE_FORMATS) {
+            classNode.fields.add(new FieldNode(ACC_PUBLIC | ACC_FINAL | ACC_STATIC | ACC_ENUM, tex.name, desc, null, null));
 
             InsnList createNewEntry = new InsnList();
             createNewEntry.add(new TypeInsnNode(NEW, classNode.name));
             createNewEntry.add(new InsnNode(DUP));
-            createNewEntry.add(new LdcInsnNode(e.getKey()));
-            createNewEntry.add(new IntInsnNode(BIPUSH, i));
-            createNewEntry.add(new IntInsnNode(BIPUSH, Integer.valueOf(e.getValue().pixelSize)));
+            createNewEntry.add(new LdcInsnNode(tex.name));
+            createNewEntry.add(new IntInsnNode(BIPUSH, formatsCount));
+            createNewEntry.add(new IntInsnNode(BIPUSH, Integer.valueOf(tex.pixelSize)));
             createNewEntry.add(new MethodInsnNode(INVOKESPECIAL, classNode.name, "<init>", "(Ljava/lang/String;II)V"));
-            createNewEntry.add(new FieldInsnNode(PUTSTATIC, classNode.name, e.getKey(), desc));
+            createNewEntry.add(new FieldInsnNode(PUTSTATIC, classNode.name, tex.name, desc));
 
             classInitMethod.instructions.insertBefore(
                 StreamSupport.stream(classInitMethod.instructions.spliterator(), false)
@@ -230,8 +217,8 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
 
             InsnList addNewEntry = new InsnList();
             addNewEntry.add(new InsnNode(DUP)); // dup array
-            addNewEntry.add(new IntInsnNode(BIPUSH, i));
-            addNewEntry.add(new FieldInsnNode(GETSTATIC, classNode.name, e.getKey(), desc));
+            addNewEntry.add(new IntInsnNode(BIPUSH, formatsCount));
+            addNewEntry.add(new FieldInsnNode(GETSTATIC, classNode.name, tex.name, desc));
             addNewEntry.add(new InsnNode(AASTORE));
             arrayInitMethod.instructions.insertBefore(
                 StreamSupport.stream(arrayInitMethod.instructions.spliterator(), false)
@@ -240,7 +227,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
                 addNewEntry
             );
 
-            ++i;
+            ++formatsCount;
         }
 
         {
@@ -254,10 +241,10 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             ).get();
 
             InsnList insns = new InsnList();
-            for (var e : ADDITIONAL_TEXTURE_FORMATS.entrySet()) {
-                if (!e.getValue().hasColorAspect) continue;
+            for (var tex : ADDITIONAL_TEXTURE_FORMATS) {
+                if (!tex.hasColorAspect) continue;
                 insns.add(new VarInsnNode(ALOAD, 0));
-                insns.add(new FieldInsnNode(GETSTATIC, classNode.name, e.getKey(), desc));
+                insns.add(new FieldInsnNode(GETSTATIC, classNode.name, tex.name, desc));
                 insns.add(new JumpInsnNode(IF_ACMPEQ, trueLabel));
             }
             hasColorAspect.instructions.insert(hasColorAspect.instructions.getFirst(), insns);
@@ -273,10 +260,10 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             hasDepthAspect.instructions.insertBefore(const1, trueLabel);
 
             InsnList insns = new InsnList();
-            for (var e : ADDITIONAL_TEXTURE_FORMATS.entrySet()) {
-                if (!e.getValue().hasDepthAspect) continue;
+            for (var tex : ADDITIONAL_TEXTURE_FORMATS) {
+                if (!tex.hasDepthAspect) continue;
                 insns.add(new VarInsnNode(ALOAD, 0));
-                insns.add(new FieldInsnNode(GETSTATIC, classNode.name, e.getKey(), desc));
+                insns.add(new FieldInsnNode(GETSTATIC, classNode.name, tex.name, desc));
                 insns.add(new JumpInsnNode(IF_ACMPEQ, trueLabel));
             }
             hasDepthAspect.instructions.insert(hasDepthAspect.instructions.getFirst(), insns);
@@ -301,11 +288,11 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             InsnList insns = new InsnList();
             insns.add(new JumpInsnNode(GOTO, beforeReturn));
 
-            for (var e : ADDITIONAL_TEXTURE_FORMATS.entrySet()) {
+            for (var tex : ADDITIONAL_TEXTURE_FORMATS) {
                 LabelNode label = new LabelNode(new Label());
                 switchNode.labels.add(label);
                 insns.add(label);
-                insns.add(new LdcInsnNode(e.getValue().glInternalFormat));
+                insns.add(new LdcInsnNode(tex.glInternalFormat));
                 insns.add(new JumpInsnNode(GOTO, beforeReturn));
             }
             switchNode.max += ADDITIONAL_TEXTURE_FORMATS.size();
@@ -328,11 +315,11 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             InsnList insns = new InsnList();
             insns.add(new JumpInsnNode(GOTO, beforeReturn));
 
-            for (var e : ADDITIONAL_TEXTURE_FORMATS.entrySet()) {
+            for (var tex : ADDITIONAL_TEXTURE_FORMATS) {
                 LabelNode label = new LabelNode(new Label());
                 switchNode.labels.add(label);
                 insns.add(label);
-                insns.add(new LdcInsnNode(e.getValue().glFormat));
+                insns.add(new LdcInsnNode(tex.glFormat));
                 insns.add(new JumpInsnNode(GOTO, beforeReturn));
             }
             switchNode.max += ADDITIONAL_TEXTURE_FORMATS.size();
@@ -355,11 +342,11 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             InsnList insns = new InsnList();
             insns.add(new JumpInsnNode(GOTO, beforeReturn));
 
-            for (var e : ADDITIONAL_TEXTURE_FORMATS.entrySet()) {
+            for (var tex : ADDITIONAL_TEXTURE_FORMATS) {
                 LabelNode label = new LabelNode(new Label());
                 switchNode.labels.add(label);
                 insns.add(label);
-                insns.add(new LdcInsnNode(e.getValue().glType));
+                insns.add(new LdcInsnNode(tex.glType));
                 insns.add(new JumpInsnNode(GOTO, beforeReturn));
             }
             switchNode.max += ADDITIONAL_TEXTURE_FORMATS.size();
@@ -372,20 +359,34 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             .filter(m -> m.name.equals("<clinit>")).findFirst().get();
         InsnList insns = new InsnList();
 
-        String textureFormatsOffsetFieldName =
-            ((FieldInsnNode) StreamSupport.stream(clinit.instructions.spliterator(), false)
-                .filter(insn -> insn instanceof FieldInsnNode fin && fin.name.equals("RGBA8"))
-                .findFirst().get().getPrevious()
-            ).name;
+        FieldInsnNode lastTextureFormatInsn = null;
+        int formatsCount = 0;
 
-        int offset = 4;
-        for (int i = offset; i < ADDITIONAL_TEXTURE_FORMATS.size()+offset; ++i) {
-            insns.add(new FieldInsnNode(GETSTATIC, classNode.name, textureFormatsOffsetFieldName, "[I"));
-            insns.add(new IntInsnNode(BIPUSH, i));
-            insns.add(new IntInsnNode(BIPUSH, i+1));
-            insns.add(new InsnNode(IASTORE));
+        for (var insn : clinit.instructions) {
+            if (insn instanceof FieldInsnNode fieldInsn && fieldInsn.desc.equals("Lcom/mojang/blaze3d/textures/TextureFormat;")) {
+                lastTextureFormatInsn = fieldInsn;
+                formatsCount += 1;
+            }
         }
-        clinit.instructions.insertBefore(clinit.instructions.getLast(), insns);
+
+        String textureFormatsOffsetFieldName = ((FieldInsnNode) lastTextureFormatInsn.getPrevious()).name;
+        AbstractInsnNode astore_0 = lastTextureFormatInsn;
+        while (!(astore_0 instanceof VarInsnNode varInsn && varInsn.getOpcode() == ASTORE && varInsn.var == 0)) {
+            astore_0 = astore_0.getNext();
+        }
+
+        LabelNode label = (LabelNode) astore_0.getNext();
+
+        for (var tex : ADDITIONAL_TEXTURE_FORMATS) {
+            insns.add(new FieldInsnNode(GETSTATIC, classNode.name, textureFormatsOffsetFieldName, "[I"));
+            insns.add(new FieldInsnNode(GETSTATIC, "com/mojang/blaze3d/textures/TextureFormat", tex.name, "Lcom/mojang/blaze3d/textures/TextureFormat;"));
+            insns.add(new MethodInsnNode(INVOKEVIRTUAL, "com/mojang/blaze3d/textures/TextureFormat", "ordinal", "()I"));
+            insns.add(new IntInsnNode(BIPUSH, formatsCount+1));
+            insns.add(new InsnNode(IASTORE));
+            formatsCount += 1;
+        }
+
+        clinit.instructions.insert(label, insns);
     }
 
 }

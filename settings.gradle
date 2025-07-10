@@ -3,18 +3,18 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         maven {
-            name = 'Fabric'
-            url = 'https://maven.fabricmc.net/'
+            name = "Fabric"
+            url = "https://maven.fabricmc.net/"
         }
         maven {
-            name = 'NeoForge'
-            url = 'https://maven.neoforged.net/releases'
+            name = "NeoForge"
+            url = "https://maven.neoforged.net/releases"
         }
     }
 }
 
-rootProject.name = 'can-pipe'
+rootProject.name = "can-pipe"
 
 include "common"
 include "fabric"
-// include "neoforge"
+include "neoforge"

@@ -11,13 +11,10 @@ credits="${credits}"
 description = '''${description}'''
 
 [[mixins]]
-config = "${mod_id}.mixins.01_texture_formats.json"
+config = "${mod_id}.b3d.mixins.json"
 
 [[mixins]]
-config = "${mod_id}.mixins.02_texture_targets.json"
-
-[[mixins]]
-config = "${mod_id}.mixins.03_core.json"
+config = "${mod_id}.mixins.json"
 
 [[dependencies.${mod_id}]]
 modId = "neoforge"

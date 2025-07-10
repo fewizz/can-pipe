@@ -8,8 +8,8 @@ base {
 
 repositories {
     maven {
-        name = 'ParchmentMC'
-        url = 'https://maven.parchmentmc.org'
+        name = "ParchmentMC"
+        url = "https://maven.parchmentmc.org"
     }
     maven {
         name = "Terraformers"
@@ -76,6 +76,7 @@ loom {
             runDir '../run'
             appendProjectPathToConfigName = false
             programArg "--renderDebugLabels"
+            vmArgs "-Dmixin.debug=true"
         }
     }
 }
