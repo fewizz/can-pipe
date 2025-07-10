@@ -29,10 +29,7 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
         return this.canpipe_layerCount;
     }
 
-    @Inject(
-        method = "<init>",
-        at = @At("TAIL")
-    )
+    @Inject(method = "<init>", at = @At("TAIL"))
     void onInitEnd(CallbackInfo ci) {
         var device = RenderSystem.getDevice();
         this.canpipe_baseArrayLayer = ((GlDeviceAccessor) device).get_canpipe_pendingTextureViewBaseLayer();

@@ -10,8 +10,6 @@
         "GlCommandEncoderMixin",
         "GlConstMixin",
         "GlConstSwitchMetaMixin",
-        "GlDebugLabelCoreMixin",
-        "GlDebugLabelExtMixin",
         "GlDeviceAccessor",
         "GlDeviceMixin",
         "GlStateManagerAccessor",
