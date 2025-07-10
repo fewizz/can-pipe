@@ -61,7 +61,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
                 .createTexture(
                     location.toString()+"-sprites-extents",
                     GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
-                    TextureFormat.valueOf("RGBA32F"),
+                    TextureFormat.valueOf("RGBA32_SFLOAT"),
                     width, height, 1, 1
                 );
 

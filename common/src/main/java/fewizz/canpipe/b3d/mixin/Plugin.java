@@ -114,60 +114,43 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
      * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
      */
     public record TexFormat(
-        int internalFormat,
-        int format,
-        int type,
-        int pixelSize,
-        boolean hasColorAspect,
-        boolean hasDepthAspect
+        int pixelSize, boolean hasColorAspect, boolean hasDepthAspect,  // Will go into TextureFormat
+        int glInternalFormat, int glFormat, int glType  // Will go into GlConst
     ) {}
 
     private static final Map<String, TexFormat> ADDITIONAL_TEXTURE_FORMATS = new HashMap<>() {{
-        put("DEPTH_COMPONENT32F", new TexFormat(GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
-        put("DEPTH_COMPONENT", new TexFormat(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));
-        put("DEPTH_COMPONENT32", new TexFormat(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT, 1*4, false, true));  // already defined as DEPTH32
+        // put("DEPTH_COMPONENT32", new TexFormat(1*4, false, true, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT));  // already defined as DEPTH32
 
-        put("RED", new TexFormat(GL_RED, GL_RED, GL_FLOAT, 1*4, true, false));
-        // put("RED8", new TexFormat(GL_RED8, GL_RED, GL_FLOAT, 1*4, true, false));
-        put("R8", new TexFormat(GL_R8, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
-        put("R8_SNORM", new TexFormat(GL_R8_SNORM, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
-        put("R16", new TexFormat(GL_R16, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
-        put("R16_SNORM", new TexFormat(GL_R16_SNORM, GL_RED, GL_UNSIGNED_BYTE, 1*1, true, false));
-        put("R16F", new TexFormat(GL_R16F, GL_RED, GL_FLOAT, 1*4, true, false));
-        put("R32F", new TexFormat(GL_R32F, GL_RED, GL_FLOAT, 1*4, true, false));
+        // put("RED8", new TexFormat(1*4, true, false, GL_RED8, GL_RED, GL_FLOAT));  // already defined
+        put("R8_UNORM", new TexFormat(1*1, true, false, GL_R8, GL_RED, GL_UNSIGNED_BYTE));
+        put("R8_SNORM", new TexFormat(1*1, true, false, GL_R8_SNORM, GL_RED, GL_UNSIGNED_BYTE));
+        put("R16_UNORM", new TexFormat(1*1, true, false, GL_R16, GL_RED, GL_UNSIGNED_BYTE));
+        put("R16_SNORM", new TexFormat(1*1, true, false, GL_R16_SNORM, GL_RED, GL_UNSIGNED_BYTE));
+        put("R16_SFLOAT", new TexFormat(1*4, true, false, GL_R16F, GL_RED, GL_FLOAT));
+        put("R32_SFLOAT", new TexFormat(1*4, true, false, GL_R32F, GL_RED, GL_FLOAT));
 
-        put("RG8", new TexFormat(GL_RG8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RG8_SNORM", new TexFormat(GL_RG8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RG16", new TexFormat(GL_RG16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RG16_SNORM", new TexFormat(GL_RG16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RG16F", new TexFormat(GL_RG16F, GL_RED, GL_FLOAT, 1*4, true, false));
-        put("RG32F", new TexFormat(GL_RG32F, GL_RED, GL_FLOAT, 1*4, true, false));
+        put("RG8_UNORM", new TexFormat(4*1, true, false, GL_RG8, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RG8_SNORM", new TexFormat(4*1, true, false, GL_RG8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RG16_UNORM", new TexFormat(4*1, true, false, GL_RG16, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RG16_SNORM", new TexFormat(4*1, true, false, GL_RG16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RG16_SFLOAT", new TexFormat(1*4, true, false, GL_RG16F, GL_RED, GL_FLOAT));
+        put("RG32_SFLOAT", new TexFormat(1*4, true, false, GL_RG32F, GL_RED, GL_FLOAT));
 
-        put("R3_G3_B2", new TexFormat(GL_R3_G3_B2, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB4", new TexFormat(GL_RGB4, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB5", new TexFormat(GL_RGB5, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB8", new TexFormat(GL_RGB8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB8_SNORM", new TexFormat(GL_RGB8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB10", new TexFormat(GL_RGB10, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB12", new TexFormat(GL_RGB12, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB16", new TexFormat(GL_RGB16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB16_SNORM", new TexFormat(GL_RGB16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB32UI", new TexFormat(GL_RGB32UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB16F", new TexFormat(GL_RGB16F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB32F", new TexFormat(GL_RGB32F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("R11F_G11F_B10F", new TexFormat(GL_R11F_G11F_B10F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        put("RGB8_UNORM", new TexFormat(4*1, true, false, GL_RGB8, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RGB8_SNORM", new TexFormat(4*1, true, false, GL_RGB8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RGB16_UNORM", new TexFormat(4*1, true, false, GL_RGB16, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RGB16_SNORM", new TexFormat(4*1, true, false, GL_RGB16_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RGB32_UINT", new TexFormat(4*1, true, false, GL_RGB32UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE));
+        put("RGB16_SFLOAT", new TexFormat(4*1, true, false, GL_RGB16F, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RGB32_SFLOAT", new TexFormat(4*1, true, false, GL_RGB32F, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("B10G11R11_UFLOAT_PACK32", new TexFormat(4*1, true, false, GL_R11F_G11F_B10F, GL_RGBA, GL_UNSIGNED_BYTE));
 
-        put("RGBA2", new TexFormat(GL_RGBA2, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGBA4", new TexFormat(GL_RGBA4, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB5_A1", new TexFormat(GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        // put("RGBA8", new TexFormat(GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false)); already defined
-        put("RGBA8_SNORM", new TexFormat(GL_RGBA8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB10_A2", new TexFormat(GL_RGB10_A2, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGB10_A2UI", new TexFormat(GL_RGB10_A2UI, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGBA12", new TexFormat(GL_RGBA12, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGBA16", new TexFormat(GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGBA16F", new TexFormat(GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
-        put("RGBA32F", new TexFormat(GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE, 4*1, true, false));
+        // put("RGBA8_UNORM", new TexFormat(4*1, true, false, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE)); already defined as RGBA8
+        put("RGBA8_SNORM", new TexFormat(4*1, true, false, GL_RGBA8_SNORM, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("R12X4G12X4B12X4A12X4_UNORM_4PACK16", new TexFormat(4*1, true, false, GL_RGBA12, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RGBA16_UNORM", new TexFormat(4*1, true, false, GL_RGBA16, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RGBA16_SFLOAT", new TexFormat(4*1, true, false, GL_RGBA16F, GL_RGBA, GL_UNSIGNED_BYTE));
+        put("RGBA32_SFLOAT", new TexFormat(4*1, true, false, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE));
     }};
 
     @Override
@@ -220,12 +203,8 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
             case ICONST_5 -> 5;  // Neo adds DEPTH24_STENCIL8 and DEPTH32F_STENCIL8
             case BIPUSH -> ((IntInsnNode) sizeArgInsn).operand;
             case SIPUSH -> ((IntInsnNode) sizeArgInsn).operand;
-            default -> -1;
+            default -> throw new RuntimeException("Unexpected texture formats count");
         };
-
-        if (i == -1) {
-            throw new RuntimeException("Unexpected texture formats count");
-        }
 
         arrayInitMethod.instructions.insert(sizeArgInsn, new IntInsnNode(SIPUSH, i + ADDITIONAL_TEXTURE_FORMATS.size()));
         arrayInitMethod.instructions.remove(sizeArgInsn);
@@ -326,7 +305,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
                 LabelNode label = new LabelNode(new Label());
                 switchNode.labels.add(label);
                 insns.add(label);
-                insns.add(new LdcInsnNode(e.getValue().internalFormat));
+                insns.add(new LdcInsnNode(e.getValue().glInternalFormat));
                 insns.add(new JumpInsnNode(GOTO, beforeReturn));
             }
             switchNode.max += ADDITIONAL_TEXTURE_FORMATS.size();
@@ -353,7 +332,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
                 LabelNode label = new LabelNode(new Label());
                 switchNode.labels.add(label);
                 insns.add(label);
-                insns.add(new LdcInsnNode(e.getValue().format));
+                insns.add(new LdcInsnNode(e.getValue().glFormat));
                 insns.add(new JumpInsnNode(GOTO, beforeReturn));
             }
             switchNode.max += ADDITIONAL_TEXTURE_FORMATS.size();
@@ -380,7 +359,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
                 LabelNode label = new LabelNode(new Label());
                 switchNode.labels.add(label);
                 insns.add(label);
-                insns.add(new LdcInsnNode(e.getValue().type));
+                insns.add(new LdcInsnNode(e.getValue().glType));
                 insns.add(new JumpInsnNode(GOTO, beforeReturn));
             }
             switchNode.max += ADDITIONAL_TEXTURE_FORMATS.size();

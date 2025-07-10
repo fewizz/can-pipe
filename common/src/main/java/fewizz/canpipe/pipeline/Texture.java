@@ -49,6 +49,38 @@ public class Texture extends AbstractTexture {
 
         String targetStr = json.get(String.class, "target");
         String internalFormatStr = json.get(String.class, "internalFormat");
+        TextureFormat textureFormat = switch (internalFormatStr) {
+            case "DEPTH_COMPONENT" -> TextureFormat.DEPTH32;
+            case "DEPTH_COMPONENT32" -> TextureFormat.DEPTH32;
+            case "RED8" -> TextureFormat.RED8;
+            case "R8" -> TextureFormat.valueOf("R8_UNORM");
+            case "R8_SNORM" -> TextureFormat.valueOf("R8_SNORM");
+            case "R16" -> TextureFormat.valueOf("R16_UNORM");
+            case "R16_SNORM" -> TextureFormat.valueOf("R16_SNORM");
+            case "R16F" -> TextureFormat.valueOf("R16_SFLOAT");
+            case "R32F" -> TextureFormat.valueOf("R32_SFLOAT");
+            case "RG8" -> TextureFormat.valueOf("RG8_UNORM");
+            case "RG8_SNORM" -> TextureFormat.valueOf("RG8_SNORM");
+            case "RG16" -> TextureFormat.valueOf("RG16_UNORM");
+            case "RG16_SNORM" -> TextureFormat.valueOf("RG16_SNORM");
+            case "RG16F" -> TextureFormat.valueOf("RG16_SFLOAT");
+            case "RG32F" -> TextureFormat.valueOf("RG32_SFLOAT");
+            case "RGB8" -> TextureFormat.valueOf("RGB8_UNORM");
+            case "RGB8_SNORM" -> TextureFormat.valueOf("RGB8_SNORM");
+            case "RGB16" -> TextureFormat.valueOf("RGB16_UNORM");
+            case "RGB16_SNORM" -> TextureFormat.valueOf("RGB16_SNORM");
+            case "RGB32UI" -> TextureFormat.valueOf("RGB32_UINT");
+            case "RGB16F" -> TextureFormat.valueOf("RGB16_SFLOAT");
+            case "RGB32F" -> TextureFormat.valueOf("RGB32_SFLOAT");
+            case "R11F_G11F_B10F" -> TextureFormat.valueOf("B10G11R11_UFLOAT_PACK32");
+            case "RGBA8" -> TextureFormat.RGBA8;
+            case "RGBA8_SNORM" -> TextureFormat.valueOf("RGBA8_SNORM");
+            case "RGBA12" -> TextureFormat.valueOf("R12X4G12X4B12X4A12X4_UNORM_4PACK16");
+            case "RGBA16" -> TextureFormat.valueOf("RGBA16_UNORM");
+            case "RGBA16F" -> TextureFormat.valueOf("RGBA16_SFLOAT");
+            case "RGBA32F" -> TextureFormat.valueOf("RGBA32_SFLOAT");
+            default -> { throw new RuntimeException(internalFormatStr); }
+        };
 
         FilterMode min = FilterMode.NEAREST;
         FilterMode mag = FilterMode.NEAREST;
@@ -128,8 +160,6 @@ public class Texture extends AbstractTexture {
         }
 
         try {
-            TextureFormat textureFormat = TextureFormat.valueOf(internalFormatStr);
-
             if (targetStr.equals("TEXTURE_2D_ARRAY") && depth <= 1) {
                 CanPipe.LOGGER.warn("Texture \""+name+"\" type is TEXTURE_2D_ARRAY, but depth="+depth);
             }
