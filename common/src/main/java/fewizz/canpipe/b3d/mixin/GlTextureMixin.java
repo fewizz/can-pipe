@@ -15,11 +15,11 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 
-import fewizz.canpipe.b3d.CompareOp;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 
 @Mixin(GlTexture.class)
@@ -34,16 +34,7 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
 
     @Unique protected FilterMode canpipe_mipFilter = null;
     @Unique protected AddressMode canpipe_addressModeR = null;
-    @Unique protected CompareOp canpipe_compareOp = null;
-
-    /*@Override
-    public TextureType canpipe_getType() {
-        int target = GlStateManagerAccessor.canpipe_getTextureTarget(this.id);
-        if (target == GL33C.GL_TEXTURE_2D) { return TextureType.TYPE_2D; }
-        else if (target == GL33C.GL_TEXTURE_2D_ARRAY) { return TextureType.TYPE_2D_ARRAY; }
-        else if (target == GL33C.GL_TEXTURE_CUBE_MAP) { return TextureType.TYPE_CUBE_MAP; }
-        else { throw new RuntimeException("Unexpected texture target: "+target); }
-    }*/
+    @Unique protected DepthTestFunction canpipe_compareOp = null;
 
     @Override
     public void canpipe_setMipmapMode(FilterMode filterMode) {
@@ -59,7 +50,7 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
     }
 
     @Override
-    public void canpipe_setCompareOp(CompareOp compareOp) {
+    public void canpipe_setCompareOp(DepthTestFunction compareOp) {
         this.canpipe_compareOp = compareOp;
         this.modesDirty = true;
     }
@@ -112,16 +103,7 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
     private void beforeModesDirtyFalse(int target, CallbackInfo ci) {
         if (this.canpipe_compareOp != null) {
             GlStateManager._texParameter(target, GL33C.GL_TEXTURE_COMPARE_MODE, GL33C.GL_COMPARE_REF_TO_TEXTURE);
-            GlStateManager._texParameter(target, GL33C.GL_TEXTURE_COMPARE_FUNC, switch(this.canpipe_compareOp) {
-                case CompareOp.NEVER -> GL33C.GL_NEVER;
-                case CompareOp.LESS -> GL33C.GL_LESS;
-                case CompareOp.EQUAL -> GL33C.GL_EQUAL;
-                case CompareOp.LESS_OR_EQUAL -> GL33C.GL_LEQUAL;
-                case CompareOp.GREATER -> GL33C.GL_GREATER;
-                case CompareOp.NOT_EQUAL -> GL33C.GL_NOTEQUAL;
-                case CompareOp.GREATER_OR_EQUAL -> GL33C.GL_GEQUAL;
-                case CompareOp.ALWAYS -> GL33C.GL_ALWAYS;
-            });
+            GlStateManager._texParameter(target, GL33C.GL_TEXTURE_COMPARE_FUNC, GlConst.toGl(this.canpipe_compareOp));
         }
         else {
             GlStateManager._texParameter(target, GL33C.GL_TEXTURE_COMPARE_MODE, GL33C.GL_NONE);

@@ -2,6 +2,7 @@ package fewizz.canpipe.pipeline;
 
 import java.util.function.Supplier;
 
+import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
@@ -11,7 +12,6 @@ import com.mojang.blaze3d.textures.TextureFormat;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.b3d.CompareOp;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -91,7 +91,7 @@ public class Texture extends AbstractTexture {
         AddressMode r = null;
 
         boolean compare = false;
-        CompareOp compareOp = null;
+        DepthTestFunction compareOp = null;
 
         for (var paramsObject : JanksonUtils.listOfObjects(json, "texParams")) {
             String paramName = paramsObject.get(String.class, "name");
@@ -145,12 +145,14 @@ public class Texture extends AbstractTexture {
             }
             else if (paramName.equals("TEXTURE_COMPARE_FUNC")) {
                 compareOp = switch(paramValue) {
-                    case "NEVER" -> CompareOp.NEVER;
-                    case "LESS" -> CompareOp.LESS;
-                    case "LEQUAL" -> CompareOp.LESS_OR_EQUAL;
-                    case "NOTEQUAL" -> CompareOp.NOT_EQUAL;
-                    case "GEQUAL" -> CompareOp.GREATER_OR_EQUAL;
-                    case "ALWAYS" -> CompareOp.ALWAYS;
+                    case "EQUAL" -> DepthTestFunction.EQUAL_DEPTH_TEST;
+                    case "LESS" -> DepthTestFunction.LESS_DEPTH_TEST;
+                    case "LEQUAL" -> DepthTestFunction.LEQUAL_DEPTH_TEST;
+                    case "GREATER" -> DepthTestFunction.GREATER_DEPTH_TEST;
+                    case "ALWAYS" -> DepthTestFunction.NO_DEPTH_TEST;
+                    // case "NEVER" -> ;
+                    // case "NOTEQUAL" -> ;
+                    // case "GEQUAL" -> ;
                     default -> throw new RuntimeException(paramValue);
                 };
             }
@@ -172,7 +174,7 @@ public class Texture extends AbstractTexture {
             final AddressMode uAddressMode = u;
             final AddressMode vAddressMode = v;
             final AddressMode rAddressMode = r;
-            final CompareOp depthCompareOp = compare ? compareOp : null;
+            final DepthTestFunction depthCompareOp = compare ? compareOp : null;
 
             boolean recreateOnResize = width == 0 || height == 0;
 
