@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 @Mixin(ChunkSectionLayer.class)
 public class ChunkSectionLayerMixin {
 
-    @ModifyReturnValue(method="pipeline", at=@At("RETURN"))
+    @ModifyReturnValue(method = "pipeline", at = @At("RETURN"))
     public RenderPipeline pipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
 

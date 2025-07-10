@@ -57,25 +57,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
     @Shadow @Final private GlDevice device;
     @Shadow private RenderPipeline lastPipeline;
 
-    @ModifyExpressionValue(
-        method = "writeToTexture("+
-            "Lcom/mojang/blaze3d/textures/GpuTexture;"+
-            "Ljava/nio/IntBuffer;"+
-            "Lcom/mojang/blaze3d/platform/NativeImage$Format;"+
-            "IIIIII"+
-        ")V",
-        at = @At(
-            value = "CONSTANT",
-            args = "intValue=5121"  // UNSIGNED_BYTE
-        )
-    )
-    public int writeToTexture(int type) {
-        if (this.canpipe_type != null) {
-            type = GlConst.toGl(this.canpipe_type);
-        }
-        return type;
-    }
-
     @Override
     public void canpipe_writeToTexture(
         GpuTexture gpuTexture, IntBuffer intBuffer, Format format, int i, int j, int k, int l, int m, int n,
@@ -90,15 +71,23 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         }
     }
 
-    @ModifyExpressionValue(
-        method = "trySetup",
-        at = @At(
-            value = "CONSTANT",
-            args = "intValue=3553"  // GL_TEXTURE_2D
-        )
-    )
-    int fixTextureTarget(int target, @Local GlTexture glTexture) {
-        return GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
+    @Override
+    public void canpipe_clearDepthTexture(
+        GpuTexture texture, double depth, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
+    ) {
+        try {
+            this.canpipe_clearDepthBaseMipLevel = baseMipLevel;
+            this.canpipe_clearDepthLevelCount = levelCount;
+            this.canpipe_clearDepthBaseArrayLayer = baseArrayLayer;
+            this.canpipe_clearDepthLayerCount = layerCount;
+            this.clearDepthTexture(texture, depth);
+        }
+        finally {
+            this.canpipe_clearDepthBaseMipLevel = -1;
+            this.canpipe_clearDepthLevelCount = -1;
+            this.canpipe_clearDepthBaseArrayLayer = -1;
+            this.canpipe_clearDepthLayerCount = -1;
+        }
     }
 
     @Override
@@ -117,6 +106,30 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         finally {
             this.canpipe_colorAttachements = null;
         }
+    }
+
+    @ModifyExpressionValue(
+        method = "writeToTexture("+
+            "Lcom/mojang/blaze3d/textures/GpuTexture;"+
+            "Ljava/nio/IntBuffer;"+
+            "Lcom/mojang/blaze3d/platform/NativeImage$Format;"+
+            "IIIIII"+
+        ")V",
+        at = @At(value = "CONSTANT", args = "intValue=5121")  // UNSIGNED_BYTE
+    )
+    public int writeToTexture(int type) {
+        if (this.canpipe_type != null) {
+            type = GlConst.toGl(this.canpipe_type);
+        }
+        return type;
+    }
+
+    @ModifyExpressionValue(
+        method = "trySetup",
+        at = @At(value = "CONSTANT", args = "intValue=3553")  // GL_TEXTURE_2D
+    )
+    int fixTextureTarget(int target, @Local GlTexture glTexture) {
+        return GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
     }
 
     @ModifyExpressionValue(
@@ -233,31 +246,9 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         });
     }
 
-    @Override
-    public void canpipe_clearDepthTexture(
-        GpuTexture texture, double depth, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
-    ) {
-        try {
-            this.canpipe_clearDepthBaseMipLevel = baseMipLevel;
-            this.canpipe_clearDepthLevelCount = levelCount;
-            this.canpipe_clearDepthBaseArrayLayer = baseArrayLayer;
-            this.canpipe_clearDepthLayerCount = layerCount;
-            this.clearDepthTexture(texture, depth);
-        }
-        finally {
-            this.canpipe_clearDepthBaseMipLevel = -1;
-            this.canpipe_clearDepthLevelCount = -1;
-            this.canpipe_clearDepthBaseArrayLayer = -1;
-            this.canpipe_clearDepthLayerCount = -1;
-        }
-    }
-
     @WrapOperation(
         method = "clearDepthTexture",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V"
-        )
+        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V")
     )
     public void clearNonZeroDepthLayer(int mask, Operation<Void> operation, @Local GpuTexture depthTexture) {
         if (this.canpipe_clearDepthBaseArrayLayer != -1) {
@@ -283,10 +274,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
     @ModifyExpressionValue(
         method = "verifyDepthTexture",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I"
-        )
+        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I")
     )
     private int allowDepthTextureWithMultipleLayers(int layers) {
         return 1;  // don't throw if texture.getDepthOrLayers() > 1

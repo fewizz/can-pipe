@@ -61,6 +61,23 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
         }
     }
 
+
+    @Override
+    public GpuTextureView canpipe_createTextureView(
+        GpuTexture gpuTexture, int baseMip, int levelCount,
+        int baseLayer, int layerCount // added
+    ) {
+        try {
+            this.canpipe_pendingTextureViewBaseLayer = baseLayer;
+            this.canpipe_pendingTextureViewLayerCount = layerCount;
+            return this.createTextureView(gpuTexture, baseMip, levelCount);
+        }
+        finally {
+            this.canpipe_pendingTextureViewBaseLayer = -1;
+            this.canpipe_pendingTextureViewLayerCount = -1;
+        }
+    }
+
     @ModifyExpressionValue(
         method = "compileShader",
         at = @At(value = "CONSTANT", args = "intValue=32768")
@@ -88,22 +105,6 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
             this.canpipe_onCompilationError.accept(this.canpipe_compilationLog);
         }
         return module;
-    }
-
-    @Override
-    public GpuTextureView canpipe_createTextureView(
-        GpuTexture gpuTexture, int baseMip, int levelCount,
-        int baseLayer, int layerCount // added
-    ) {
-        try {
-            this.canpipe_pendingTextureViewBaseLayer = baseLayer;
-            this.canpipe_pendingTextureViewLayerCount = layerCount;
-            return this.createTextureView(gpuTexture, baseMip, levelCount);
-        }
-        finally {
-            this.canpipe_pendingTextureViewBaseLayer = -1;
-            this.canpipe_pendingTextureViewLayerCount = -1;
-        }
     }
 
     @ModifyExpressionValue(

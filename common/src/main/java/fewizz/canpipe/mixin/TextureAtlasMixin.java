@@ -70,7 +70,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
             // commandEncoder.writeToTexture(
             //     this.canpipe_spritesData, byteBuff.asIntBuffer(), NativeImage.Format.RGBA, 0, 0, 0, 0, width, height
             // );
-            // uses GL_UNSIGNED_BYTE internally, so instead:
+            // uses GL_UNSIGNED_BYTE internally, we have this instead:
 
             ((CommandEncoderExtended) commandEncoder).canpipe_writeToTexture(
                 this.canpipe_spritesData, byteBuff.asIntBuffer(), NativeImage.Format.RGBA, 0, 0, 0, 0, width, height,
