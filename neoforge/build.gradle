@@ -23,6 +23,10 @@ neoForge {
             ideName = "NeoForge"
             gameDirectory = new File(project.rootDir, "/run")
         }
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
     }
 
     mods {
@@ -34,9 +38,11 @@ neoForge {
 
 dependencies {
     jarJar implementation("blue.endless:jankson:1.2.3")
-    // implementation files("/home/fewizz/Cinnabar/build/libs/cinnabar-1.21.7-0.0.5-alpha.jar")
-    // implementation files("/home/fewizz/Cinnabar/build/libs/cinnabar-1.21.7-0.0.5-alpha-packed.jar")
     additionalRuntimeClasspath "blue.endless:jankson:1.2.3"
+
+    compileOnly files("/home/fewizz/Cinnabar/build/libs/cinnabar-1.21.8-0.0.5-alpha-packed.jar")
+    compileOnly "org.lwjgl:lwjgl-vulkan:3.3.3"
+    additionalRuntimeClasspath files("/home/fewizz/Cinnabar/build/libs/cinnabar-1.21.8-0.0.5-alpha.jar")
 }
 
 processResources {
