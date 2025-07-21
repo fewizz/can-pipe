@@ -1,6 +1,5 @@
 package fewizz.canpipe.b3d.mixin;
 
-import java.nio.IntBuffer;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -26,17 +25,14 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.GlCommandEncoder;
-import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.NativeImage.Format;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.mojang.logging.LogUtils;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
@@ -45,7 +41,6 @@ import fewizz.canpipe.b3d.GpuTextureViewExtended;
 @Mixin(GlCommandEncoder.class)
 public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
-    @Unique private VertexFormatElement.Type canpipe_type = null;
     @Unique private List<GlTextureView> canpipe_colorAttachements = null;
     @Unique private int canpipe_clearDepthBaseMipLevel = -1;
     @Unique private int canpipe_clearDepthLevelCount = -1;
@@ -56,20 +51,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
     @Shadow @Final private static Logger LOGGER = LogUtils.getLogger();
     @Shadow @Final private GlDevice device;
     @Shadow private RenderPipeline lastPipeline;
-
-    @Override
-    public void canpipe_writeToTexture(
-        GpuTexture gpuTexture, IntBuffer intBuffer, Format format, int i, int j, int k, int l, int m, int n,
-        VertexFormatElement.Type type  // added
-    ) {
-        try {
-            this.canpipe_type = type;
-            // buffer size check will be incorrect, but anyway...
-            this.writeToTexture(gpuTexture, intBuffer, format, i, j, k, l, m, n);
-        } finally {
-            this.canpipe_type = null;
-        }
-    }
 
     @Override
     public void canpipe_clearDepthTexture(
@@ -106,22 +87,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         finally {
             this.canpipe_colorAttachements = null;
         }
-    }
-
-    @ModifyExpressionValue(
-        method = "writeToTexture("+
-            "Lcom/mojang/blaze3d/textures/GpuTexture;"+
-            "Ljava/nio/IntBuffer;"+
-            "Lcom/mojang/blaze3d/platform/NativeImage$Format;"+
-            "IIIIII"+
-        ")V",
-        at = @At(value = "CONSTANT", args = "intValue=5121")  // UNSIGNED_BYTE
-    )
-    public int writeToTexture(int type) {
-        if (this.canpipe_type != null) {
-            type = GlConst.toGl(this.canpipe_type);
-        }
-        return type;
     }
 
     @ModifyExpressionValue(
