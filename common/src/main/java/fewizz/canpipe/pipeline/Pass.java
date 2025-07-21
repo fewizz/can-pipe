@@ -108,7 +108,7 @@ public class Pass extends PassBase {
             RenderPass renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(
                 () -> "can-pipe pass \""+this.name+"\"",
                 this.framebuffer.colorAttachments,
-                this.framebuffer.depthAttachment
+                this.framebuffer.getDepthTextureView()
             )
         ) {
             renderPass.setPipeline(this.renderPipeline);
@@ -197,17 +197,14 @@ public class Pass extends PassBase {
         @Override
         public void apply() {
             var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-            for (int i = 0; i < this.framebuffer.colorAttachments.size(); ++i) {
+            for (int i = 0; i < this.framebuffer.colorAttachmentTextures.size(); ++i) {
                 commandEncoder.clearColorTexture(
-                    this.framebuffer.colorAttachments.get(i).texture(),
+                    this.framebuffer.colorAttachmentTextures.get(i),
                     this.framebuffer.colorClearColors.get(i)
                 );
             }
-            if (this.framebuffer.depthAttachment != null) {
-                commandEncoder.clearDepthTexture(
-                    this.framebuffer.depthAttachment.texture(),
-                    this.framebuffer.depthClearDepth
-                );
+            if (this.framebuffer.getDepthTexture() != null) {
+                commandEncoder.clearDepthTexture(this.framebuffer.getDepthTexture(), this.framebuffer.depthClearDepth);
             }
         }
 

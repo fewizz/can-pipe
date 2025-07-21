@@ -34,6 +34,8 @@ neoForge {
 
 dependencies {
     jarJar implementation("blue.endless:jankson:1.2.3")
+    // implementation files("/home/fewizz/Cinnabar/build/libs/cinnabar-1.21.7-0.0.5-alpha.jar")
+    // implementation files("/home/fewizz/Cinnabar/build/libs/cinnabar-1.21.7-0.0.5-alpha-packed.jar")
     additionalRuntimeClasspath "blue.endless:jankson:1.2.3"
 }
 

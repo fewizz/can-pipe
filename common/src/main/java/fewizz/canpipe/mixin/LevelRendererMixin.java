@@ -215,12 +215,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 Framebuffer shadowFramebuffer = p.shadows.framebuffers().get(cascade);
                 mc.mainRenderTarget = shadowFramebuffer;
                 commandEncoder.canpipe_clearDepthTexture(
-                    shadowFramebuffer.depthAttachment.texture(),
+                    shadowFramebuffer.getDepthTexture(),
                     shadowFramebuffer.depthClearDepth,
-                    shadowFramebuffer.depthAttachment.baseMipLevel(),
-                    shadowFramebuffer.depthAttachment.mipLevels(),
-                    ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_baseArrayLayer(),
-                    ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_layerCount()
+                    shadowFramebuffer.getDepthTextureView().baseMipLevel(),
+                    shadowFramebuffer.getDepthTextureView().mipLevels(),
+                    ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
+                    ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_layerCount()
                 );
 
                 Profiler.get().popPush("render sections");

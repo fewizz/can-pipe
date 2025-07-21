@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -24,6 +25,8 @@ import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
@@ -176,6 +179,13 @@ public class Pipeline implements AutoCloseable {
         JsonObject targetsJson = pipelineJson.getObject("drawTargets");
 
         this.defaultFramebuffer = getOrLoadFramebuffer.apply(pipelineJson.get(String.class, "defaultFramebuffer"));
+        if (this.defaultFramebuffer.colorAttachmentTextures.size() != 1) {
+            throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" has "+this.defaultFramebuffer.colorAttachmentTextures.size()+" color attachments, should have only one");
+        }
+        if (this.defaultFramebuffer.getDepthTexture() == null) {
+            throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" doesn't have depth attachment");
+        }
+
         this.solidFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "solidTerrain"));
         this.translucentTerrainFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentTerrain"));
         this.translucentItemEntityFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentEntity"));
@@ -246,7 +256,7 @@ public class Pipeline implements AutoCloseable {
 
         Optional<Integer> shadowMapSize = (
             shadowFramebuffer != null ?
-            Optional.of(shadowFramebuffer.depthAttachment.getWidth(0)) :
+            Optional.of(shadowFramebuffer.getDepthTexture().getWidth(0)) :
             Optional.empty()
         );
 
@@ -278,7 +288,7 @@ public class Pipeline implements AutoCloseable {
             samplerToTexture.put(sampler, samplerImage);
         }
         if (shadowFramebuffer != null) {
-            String shadowMapTextureName = shadowFramebuffer.depthAttachment.texture().getLabel();
+            String shadowMapTextureName = shadowFramebuffer.getDepthTexture().getLabel();
             AbstractTexture shadowMapTexture = getOrLoadPipelineOrResourcepackTexture.apply(shadowMapTextureName).get();
             samplerToTexture.put("frxs_shadowMap", shadowMapTexture);
             samplerToTexture.put("frxs_shadowMapTexture", shadowMapTexture);
@@ -288,27 +298,30 @@ public class Pipeline implements AutoCloseable {
         if (shadowsJson != null) {
             // Instead of one shadow framebuffer, we create N (= number of cascades) framebuffers for different layers
             List<Framebuffer> framebuffers = new ArrayList<>();
-            int baseArrayLayer = ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_baseArrayLayer();
-            int layerCount = ((GpuTextureViewExtended) shadowFramebuffer.depthAttachment).canpipe_layerCount();
+            int baseArrayLayer = ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer();
+            int layerCount = ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_layerCount();
             var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
             for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
                 // final Framebuffer fb = shadowFramebuffer;
                 final int cascade = i;
-                String shadowMapTextureName = shadowFramebuffer.depthAttachment.texture().getLabel();
-                Texture shadowMapTexture = getOrLoadTexture.apply(shadowMapTextureName);
+                GpuTexture shadowMapTexture = shadowFramebuffer.getDepthTexture();
+                GpuTextureView shadowMapTextureView = shadowFramebuffer.getDepthTextureView();
+                // String shadowMapTextureName = shadowFramebuffer.getDepthTexture().getLabel();
+                // Texture shadowMapTexture = getOrLoadTexture.apply(shadowMapTextureName);
                 Framebuffer fb = new Framebuffer(
                     location,
                     shadowFramebuffer.name+"_"+(cascade+1),
                     () -> List.of(),// defaultFramebuffer.colorAttachments,
                     List.of(),// defaultFramebuffer.colorClearColors,
                     () -> {
-                        return ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
-                            shadowMapTexture.getTexture(),
-                            shadowMapTexture.getTextureView().baseMipLevel(),
-                            shadowMapTexture.getTextureView().mipLevels(),
+                        var shadowMapCascadeTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                            shadowMapTexture,
+                            shadowMapTextureView.baseMipLevel(),
+                            shadowMapTextureView.mipLevels(),
                             baseArrayLayer + layerCount * cascade,
                             layerCount
                         );
+                        return Pair.of(shadowMapTexture, shadowMapCascadeTextureView);
                     },
                     shadowFramebuffer.depthClearDepth
                 );
@@ -486,7 +499,7 @@ public class Pipeline implements AutoCloseable {
             renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, OptionalInt.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
         }
         else {
-            renderPass = commandEncoder.canpipe_createRenderPass(name, framebuffer.colorAttachments, framebuffer.depthAttachment);
+            renderPass = commandEncoder.canpipe_createRenderPass(name, framebuffer.colorAttachments, framebuffer.getDepthTextureView());
         }
 
         renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);

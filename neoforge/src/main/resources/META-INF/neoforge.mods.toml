@@ -16,6 +16,9 @@ config = "${mod_id}.b3d.mixins.json"
 [[mixins]]
 config = "${mod_id}.mixins.json"
 
+[[mixins]]
+config = "${mod_id}.neoforge.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type="required"

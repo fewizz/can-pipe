@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -20,7 +21,6 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
-import fewizz.canpipe.b3d.GpuTextureExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 
@@ -28,20 +28,21 @@ public class Framebuffer extends RenderTarget {
 
     public final String name;
 
-    private final Supplier<List<GpuTextureView>> colorAttachmentsSupplier;
-    private final Supplier<GpuTextureView> depthAttachmentSupplier;
+    private final Supplier<List<Pair<GpuTexture, GpuTextureView>>> colorAttachmentsSupplier;
+    private final Supplier<Pair<GpuTexture, GpuTextureView>> depthAttachmentSupplier;
 
-    public List<GpuTextureView> colorAttachments;
+    public final List<GpuTextureView> colorAttachments;
+    public final List<GpuTexture> colorAttachmentTextures;  // neoforge: GlTextureView.texture points to GlTexture, but we need ValidationGpuTexture
     public final List<Integer> colorClearColors;
-    public @Nullable GpuTextureView depthAttachment;
+
     public @Nullable final Double depthClearDepth;
 
     Framebuffer(
         ResourceLocation pipelineLocation,
         String name,
-        Supplier<List<GpuTextureView>> colorAttachmentsSupplier,
+        Supplier<List<Pair<GpuTexture, GpuTextureView>>> colorAttachmentsSupplier,
         List<Integer> colorClearColors,
-        Supplier<GpuTextureView> depthAttachmentSupplier,
+        Supplier<Pair<GpuTexture, GpuTextureView>> depthAttachmentSupplier,
         @Nullable Double depthClearDepth
     ) {
         super(name, depthClearDepth != null);
@@ -50,11 +51,14 @@ public class Framebuffer extends RenderTarget {
         this.colorAttachmentsSupplier = colorAttachmentsSupplier;
         this.depthAttachmentSupplier = depthAttachmentSupplier;
 
-        this.colorAttachments = this.colorAttachmentsSupplier.get();
+        this.colorAttachments = new ArrayList<>();
+        this.colorAttachmentTextures = new ArrayList<>();
         this.colorClearColors = Collections.unmodifiableList(colorClearColors);
-        this.depthAttachment = this.depthAttachmentSupplier.get();
+
         this.depthClearDepth = depthClearDepth;
-        onWindowSizeChanged();
+
+        var window = Minecraft.getInstance().getWindow();
+        this.createBuffers(window.getWidth(), window.getHeight());
     }
 
     @Override
@@ -70,16 +74,13 @@ public class Framebuffer extends RenderTarget {
 
     @Override
     public void destroyBuffers() {
-        if (this.colorAttachments != null) {
-            for (var colorAttachment : this.colorAttachments) {
-                colorAttachment.close();
-            }
-            this.colorAttachments = null;
+        for (var colorAttachment : this.colorAttachments) {
+            colorAttachment.close();
         }
 
-        if (this.depthAttachment != null) {
-            this.depthAttachment.close();
-            this.depthAttachment = null;
+        if (this.depthTextureView != null) {
+            this.depthTextureView.close();
+            this.depthTextureView = null;
         }
 
         this.depthTextureView = null;
@@ -91,18 +92,24 @@ public class Framebuffer extends RenderTarget {
 
     @Override
     public void createBuffers(int width, int height) {
-        this.colorAttachments = this.colorAttachmentsSupplier.get();
-        this.depthAttachment = depthAttachmentSupplier.get();
+        this.colorAttachmentTextures.clear();
+        this.colorAttachments.clear();
+        for (var t : this.colorAttachmentsSupplier.get()) {
+            this.colorAttachmentTextures.add(t.getLeft());
+            this.colorAttachments.add(t.getRight());
+        }
+
+        var t = this.depthAttachmentSupplier.get();
+        this.depthTexture = t.getLeft();
+        this.depthTextureView = t.getRight();
 
         if (this.colorAttachments.size() > 0) {
             this.colorTextureView = this.colorAttachments.get(0);
-            this.colorTexture = this.colorTextureView.texture();
+            this.colorTexture = this.colorAttachmentTextures.get(0);
             width = Math.max(width, this.colorTextureView.getWidth(0));
             height = Math.max(height, this.colorTextureView.getHeight(0));
         }
-        if (this.depthAttachment != null) {
-            this.depthTextureView = this.depthAttachment;
-            this.depthTexture = this.depthTextureView.texture();
+        if (this.depthTextureView != null) {
             width = Math.max(width, this.depthTextureView.getWidth(0));
             height = Math.max(height, this.depthTextureView.getHeight(0));
         }
@@ -148,7 +155,7 @@ public class Framebuffer extends RenderTarget {
         return new Framebuffer(
             pipelineLocation, name,
             () -> {
-                List<GpuTextureView> colorAttachments = new ArrayList<>();
+                List<Pair<GpuTexture, GpuTextureView>> colorAttachments = new ArrayList<>();
 
                 for (var colorAttachementO : colorAttachmentsA) {
                     int lod = colorAttachementO.getInt("lod", 0);
@@ -166,24 +173,26 @@ public class Framebuffer extends RenderTarget {
                         layer *= 6;
                         layer += face;
                     }
-                    colorAttachments.add(((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                    var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                         texture, lod, 1, layer, 1
-                    ));
+                    );
+                    colorAttachments.add(Pair.of(texture, textureView));
                 }
                 return colorAttachments;
             },
             colorClearColors,
             () -> {
                 GpuTextureView depthAttachment = null;
+                GpuTexture texture = null;
                 if (depthAttachmentO != null) {
                     var lod = Optional.ofNullable(depthAttachmentO.get(Integer.class, "lod"));
                     var layer = Optional.ofNullable(depthAttachmentO.get(Integer.class, "layer"));
-                    var texture = getOrLoadTexture.apply(depthAttachmentO.get(String.class, "image")).getTexture();
+                    texture = getOrLoadTexture.apply(depthAttachmentO.get(String.class, "image")).getTexture();
                     depthAttachment = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                         texture, lod.orElse(0), 1, layer.orElse(0), 1
                     );
                 }
-                return depthAttachment;
+                return Pair.of(texture, depthAttachment);
             }, depthClearDepth
         );
     }

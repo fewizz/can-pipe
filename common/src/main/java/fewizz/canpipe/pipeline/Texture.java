@@ -48,8 +48,13 @@ public class Texture extends AbstractTexture {
         int depth = json.getInt("depth", 1);
 
         String targetStr = json.get(String.class, "target");
+        if (targetStr == null) {
+            targetStr = "TEXTURE_2D";
+        }
+
         String internalFormatStr = json.get(String.class, "internalFormat");
         TextureFormat textureFormat = switch (internalFormatStr) {
+            case null -> TextureFormat.RGBA8;
             case "DEPTH_COMPONENT" -> TextureFormat.DEPTH32;
             case "DEPTH_COMPONENT32" -> TextureFormat.DEPTH32;
             case "RED8" -> TextureFormat.RED8;

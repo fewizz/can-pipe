@@ -7,10 +7,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import fewizz.canpipe.b3d.GLService;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 
 @Mixin(GlTextureView.class)
@@ -31,7 +33,7 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
 
     @Inject(method = "<init>", at = @At("TAIL"))
     void onInitEnd(CallbackInfo ci) {
-        var device = RenderSystem.getDevice();
+        GlDevice device = GLService.getRealGLDevice();
         this.canpipe_baseArrayLayer = ((GlDeviceAccessor) device).get_canpipe_pendingTextureViewBaseLayer();
         this.canpipe_layerCount = ((GlDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount();
     }
@@ -45,7 +47,8 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
         )
     )
     public void afterTextureRemoveViews(CallbackInfo ci) {
-        var fboCache = ((GlDeviceAccessor) RenderSystem.getDevice()).get_canpipe_framebufferCache();
+        GlDevice device = GLService.getRealGLDevice();
+        var fboCache = ((GlDeviceAccessor) device).get_canpipe_framebufferCache();
         fboCache.object2IntEntrySet().removeIf(kv -> {
             var colorsAndDepth = kv.getKey();
             var id = kv.getIntValue();
