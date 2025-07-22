@@ -98,9 +98,9 @@ public class Texture extends AbstractTexture {
         boolean compare = false;
         DepthTestFunction compareOp = null;
 
-        for (var paramsObject : JanksonUtils.listOfObjects(json, "texParams")) {
-            String paramName = paramsObject.get(String.class, "name");
-            String paramValue = paramsObject.get(String.class, "val");
+        for (var paramsJson : JanksonUtils.listOfObjects(json, "texParams")) {
+            String paramName = paramsJson.get(String.class, "name");
+            String paramValue = paramsJson.get(String.class, "val");
 
             if (paramName.equals("TEXTURE_MIN_FILTER")) {
                 switch (paramValue) {

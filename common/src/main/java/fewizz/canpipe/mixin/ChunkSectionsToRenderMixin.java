@@ -24,7 +24,9 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
+import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 
@@ -84,6 +86,23 @@ public class ChunkSectionsToRenderMixin {
             return Pipelines.getCurrent().createRenderPass((CommandEncoderExtended) instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, colorTextureView, clearColor, depthTextureView, clearDepth);
+    }
+
+    @Inject(
+        method = "renderGroup",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/systems/RenderPass;drawMultipleIndexed("+
+                "Ljava/util/Collection;"+
+                "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
+                "Lcom/mojang/blaze3d/vertex/VertexFormat$IndexType;"+
+                "Ljava/util/Collection;"+
+                "Ljava/lang/Object;"+
+            ")V"
+        )
+    )
+    void bindSpritesExtentsBeforeDrawing(CallbackInfo ci, @Local RenderPass renderPass, @Local ChunkSectionLayer chunkSectionLayer) {
+        Pipeline.bindSpritesExtentsSampler(renderPass, chunkSectionLayer.textureView());
     }
 
 }

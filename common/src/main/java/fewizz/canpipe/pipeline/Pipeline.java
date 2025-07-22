@@ -472,7 +472,6 @@ public class Pipeline implements AutoCloseable {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public RenderPass createRenderPass(CommandEncoderExtended commandEncoder, Supplier<String> name, @Nullable Framebuffer framebuffer) {
         int newTarget = 0;
         if (framebuffer == this.translucentTerrainFramebuffer) {
@@ -511,19 +510,7 @@ public class Pipeline implements AutoCloseable {
 
         var sampler0 = RenderSystem.getShaderTexture(0);
         if (sampler0 != null) {
-            var mc = Minecraft.getInstance();
-            TextureAtlas atlas = null;
-            for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
-                var possibleAtlas = mc.getModelManager().getAtlas(atlasLoc);
-                if (possibleAtlas.getTexture() == sampler0.texture()) {
-                    atlas = possibleAtlas;
-                    break;
-                }
-            }
-            if (atlas == null) {  // we just need to bind something
-                atlas = mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
-            }
-            renderPass.bindSampler("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).canpipe_getSpriteData());
+            bindSpritesExtentsSampler(renderPass, sampler0);
         }
 
         renderPass.bindSampler("Sampler2", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView());
@@ -533,6 +520,22 @@ public class Pipeline implements AutoCloseable {
         }
 
         return renderPass;
+    }
+
+    public static void bindSpritesExtentsSampler(RenderPass renderPass, GpuTextureView sampler0) {
+        var mc = Minecraft.getInstance();
+        TextureAtlas atlas = null;
+        for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
+            var possibleAtlas = mc.getModelManager().getAtlas(atlasLoc);
+            if (possibleAtlas.getTexture() == sampler0.texture()) {
+                atlas = possibleAtlas;
+                break;
+            }
+        }
+        if (atlas == null) {  // we just need to bind something
+            atlas = mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
+        }
+        renderPass.bindSampler("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).canpipe_getSpriteData());
     }
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {
