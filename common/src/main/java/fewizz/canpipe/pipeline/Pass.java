@@ -24,6 +24,7 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
@@ -197,26 +198,24 @@ public class Pass extends PassBase {
         @Override
         public void apply() {
             var commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
-            for (int i = 0; i < this.framebuffer.colorTextures.length; ++i) {
-                if (this.framebuffer.colorTextures[i].getDepthOrLayers() > 1) {
-                    commandEncoder.canpipe_clearColorTexture(
-                        this.framebuffer.colorTextures[i],
-                        this.framebuffer.colorTextureClearColors[i],
-                        0,  // base level
-                        this.framebuffer.colorTextures[i].getMipLevels(),
-                        0,  // base layer
-                        this.framebuffer.colorTextures[i].getDepthOrLayers()
-                    );
-                }
+            for (int i = 0; i < this.framebuffer.colorTextureViews.length; ++i) {
+                commandEncoder.canpipe_clearColorTexture(
+                    this.framebuffer.colorTextures[i],
+                    this.framebuffer.colorTextureClearColors[i],
+                    this.framebuffer.colorTextureViews[i].baseMipLevel(),
+                    this.framebuffer.colorTextureViews[i].mipLevels(),
+                    ((GpuTextureViewExtended) this.framebuffer.colorTextureViews[i]).canpipe_baseArrayLayer(),
+                    ((GpuTextureViewExtended) this.framebuffer.colorTextureViews[i]).canpipe_layerCount()
+                );
             }
             if (this.framebuffer.getDepthTexture() != null) {
                 commandEncoder.canpipe_clearDepthTexture(
                     this.framebuffer.getDepthTexture(),
                     this.framebuffer.depthTextureClearDepth,
-                    0,  // base level
-                    this.framebuffer.getDepthTexture().getMipLevels(),
-                    0,  // base layer
-                    this.framebuffer.getDepthTexture().getDepthOrLayers()
+                    this.framebuffer.getDepthTextureView().baseMipLevel(),
+                    this.framebuffer.getDepthTextureView().mipLevels(),
+                    ((GpuTextureViewExtended) this.framebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
+                    ((GpuTextureViewExtended) this.framebuffer.getDepthTextureView()).canpipe_layerCount()
                 );
             }
         }
