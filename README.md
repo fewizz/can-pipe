@@ -11,12 +11,7 @@ Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader 
 
 , and probably many other things.
 
-Performance is obviously not on par with `Canvas`.
-
-## Cursed bits (only small fraction of them)
-* Since MC 1.21.5, available texture formats are hardcoded in `TextureFormat` enum,
-so we extend it and [provide](https://github.com/fewizz/can-pipe/blob/1e5dabe53713c440c02294b7aa4b66a1d273b1cb/common/src/main/java/fewizz/canpipe/mixin/m01_texture_formats/Plugin.java#L125) additional, most used formats
-* Doesn't provide `FRAPI` renderer, parasitizes on `Indigo` instead
+Performance is not on par with `Canvas`.
 
 ## Shader pipelines that are known to work
 [Forget-Me-Not](https://modrinth.com/shader/forgetmenot) and
@@ -29,7 +24,3 @@ so we extend it and [provide](https://github.com/fewizz/can-pipe/blob/1e5dabe537
 1. Install this mod
 2. Put preferred shaderpacks into `resourcepacks` directory and activate them
 3. In video settings, click on `Pipeline: ...` to switch between available pipelines
-
-## Note on FREX
-Can-pipe doesn't use [FREX](https://github.com/vram-guild/frex.git).
-Currently, can-pipe includes some FREX shader files, with slight modifications.
