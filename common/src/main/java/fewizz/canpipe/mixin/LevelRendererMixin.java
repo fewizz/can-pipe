@@ -216,7 +216,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 mc.mainRenderTarget = shadowFramebuffer;
                 commandEncoder.canpipe_clearDepthTexture(
                     shadowFramebuffer.getDepthTexture(),
-                    shadowFramebuffer.depthClearDepth,
+                    shadowFramebuffer.depthTextureClearDepth,
                     shadowFramebuffer.getDepthTextureView().baseMipLevel(),
                     shadowFramebuffer.getDepthTextureView().mipLevels(),
                     ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),

@@ -1,10 +1,9 @@
 package fewizz.canpipe.pipeline;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -21,44 +20,40 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 
 public class Framebuffer extends RenderTarget {
 
     public final String name;
 
-    private final Supplier<List<Pair<GpuTexture, GpuTextureView>>> colorAttachmentsSupplier;
+    private final IntFunction<Pair<GpuTexture, GpuTextureView>> colorAttachmentsSupplier;
     private final Supplier<Pair<GpuTexture, GpuTextureView>> depthAttachmentSupplier;
 
-    public final List<GpuTextureView> colorAttachments;
-    public final List<GpuTexture> colorAttachmentTextures;  // neoforge: GlTextureView.texture points to GlTexture, but we need ValidationGpuTexture
-    public final List<Integer> colorClearColors;
+    public final GpuTexture[] colorTextures;
+    public final GpuTextureView[] colorTextureViews;
+    public final int[] colorTextureClearColors;
 
-    public @Nullable final Double depthClearDepth;
+    public @Nullable final Double depthTextureClearDepth;
 
     Framebuffer(
         ResourceLocation pipelineLocation,
         String name,
-        Supplier<List<Pair<GpuTexture, GpuTextureView>>> colorAttachmentsSupplier,
-        List<Integer> colorClearColors,
-        Supplier<Pair<GpuTexture, GpuTextureView>> depthAttachmentSupplier,
+        IntFunction<Pair<GpuTexture, GpuTextureView>> colorTextureSupplier,
+        int[] colorClearColors,
+        Supplier<Pair<GpuTexture, GpuTextureView>> depthTextureSupplier,
         @Nullable Double depthClearDepth
     ) {
         super(name, depthClearDepth != null);
+
         this.name = name;
+        this.colorAttachmentsSupplier = colorTextureSupplier;
+        this.depthAttachmentSupplier = depthTextureSupplier;
+        this.colorTextures = new GpuTexture[colorClearColors.length];
+        this.colorTextureViews = new GpuTextureView[colorClearColors.length];
+        this.colorTextureClearColors = colorClearColors;
+        this.depthTextureClearDepth = depthClearDepth;
 
-        this.colorAttachmentsSupplier = colorAttachmentsSupplier;
-        this.depthAttachmentSupplier = depthAttachmentSupplier;
-
-        this.colorAttachments = new ArrayList<>();
-        this.colorAttachmentTextures = new ArrayList<>();
-        this.colorClearColors = Collections.unmodifiableList(colorClearColors);
-
-        this.depthClearDepth = depthClearDepth;
-
-        var window = Minecraft.getInstance().getWindow();
-        this.createBuffers(window.getWidth(), window.getHeight());
+        this.createBuffers(-1, -1);
     }
 
     @Override
@@ -68,14 +63,13 @@ public class Framebuffer extends RenderTarget {
 
     public void onWindowSizeChanged() {
         this.destroyBuffers();
-        var window = Minecraft.getInstance().getWindow();
-        this.createBuffers(window.getWidth(), window.getHeight());
+        this.createBuffers(-1, -1);
     }
 
     @Override
     public void destroyBuffers() {
-        for (var colorAttachment : this.colorAttachments) {
-            colorAttachment.close();
+        for (var colorTextureView : this.colorTextureViews) {
+            colorTextureView.close();
         }
 
         if (this.depthTextureView != null) {
@@ -92,108 +86,117 @@ public class Framebuffer extends RenderTarget {
 
     @Override
     public void createBuffers(int width, int height) {
-        this.colorAttachmentTextures.clear();
-        this.colorAttachments.clear();
-        for (var t : this.colorAttachmentsSupplier.get()) {
-            this.colorAttachmentTextures.add(t.getLeft());
-            this.colorAttachments.add(t.getRight());
+        this.width = this.height = this.viewWidth = this.viewHeight = -1;
+
+        Consumer<GpuTextureView> updateSize = (textureView) -> {
+            int w = textureView.getWidth(0);
+            int h = textureView.getHeight(0);
+
+            if (this.width == -1) {  // first time
+                this.width = this.viewWidth = w;
+                this.height = this.viewHeight = h;
+                return;
+            }
+
+            if (w != this.width) {
+                throw new RuntimeException("Expected texture view width="+this.width+", but got width="+w);
+            }
+            if (h != this.height) {
+                throw new RuntimeException("Expected texture view height="+this.height+", but got height="+h);
+            }
+        };
+
+        for (int i = 0; i < this.colorTextures.length; ++i) {
+            var colorTextureAndView = this.colorAttachmentsSupplier.apply(i);
+            this.colorTextures[i] = colorTextureAndView.getLeft();
+            this.colorTextureViews[i] = colorTextureAndView.getRight();
+            updateSize.accept(this.colorTextureViews[i]);
         }
 
-        var t = this.depthAttachmentSupplier.get();
-        this.depthTexture = t.getLeft();
-        this.depthTextureView = t.getRight();
-
-        if (this.colorAttachments.size() > 0) {
-            this.colorTextureView = this.colorAttachments.get(0);
-            this.colorTexture = this.colorAttachmentTextures.get(0);
-            width = Math.max(width, this.colorTextureView.getWidth(0));
-            height = Math.max(height, this.colorTextureView.getHeight(0));
+        if (this.colorTextures.length > 0) {
+            this.colorTexture = this.colorTextures[0];
+            this.colorTextureView = this.colorTextureViews[0];
         }
+
+        var depthTextureAndView = this.depthAttachmentSupplier.get();
+        this.depthTexture = depthTextureAndView.getLeft();
+        this.depthTextureView = depthTextureAndView.getRight();
         if (this.depthTextureView != null) {
-            width = Math.max(width, this.depthTextureView.getWidth(0));
-            height = Math.max(height, this.depthTextureView.getHeight(0));
+            updateSize.accept(this.depthTextureView);
         }
-
-        this.width = width;
-        this.height = height;
-        this.viewWidth = width;
-        this.viewHeight = height;
     }
 
     static Framebuffer load(
-        JsonObject framebufferO,
+        JsonObject framebufferJson,
         ResourceLocation pipelineLocation,
         Function<String, Texture> getOrLoadTexture
     ) {
-        String name = framebufferO.get(String.class, "name");
-        List<Integer> colorClearColors = new ArrayList<>();
+        String name = framebufferJson.get(String.class, "name");
+        var colorAttachmentJsons = JanksonUtils.listOfObjects(framebufferJson, "colorAttachments");
 
-        var colorAttachmentsA = JanksonUtils.listOfObjects(framebufferO, "colorAttachments");
+        int[] colorTextureClearColors = new int[colorAttachmentJsons.size()];
 
-        for (var colorAttachementO : colorAttachmentsA) {
-            int clearColor = 0;
-            JsonElement clearColorRaw = colorAttachementO.get("clearColor");
-            if (clearColorRaw != null) {
-                Object clearColorO = ((JsonPrimitive) clearColorRaw).getValue();
-                if (clearColorO instanceof Long clearColorL) {
+        for (int i = 0; i < colorTextureClearColors.length; ++i) {
+            int clearColor = 0x00000000;
+            JsonElement clearColorJson = colorAttachmentJsons.get(i).get("clearColor");
+            if (clearColorJson != null) {
+                Object clearColorRaw = ((JsonPrimitive) clearColorJson).getValue();
+                if (clearColorRaw instanceof Long clearColorL) {
                     clearColor = (int) (long) clearColorL;
                 }
                 else {
-                    throw new NotImplementedException(clearColorO.getClass().getName());
+                    throw new NotImplementedException(clearColorRaw.getClass().getName());
                 }
             }
-            colorClearColors.add(clearColor);
+            colorTextureClearColors[i] = clearColor;
         }
 
         Double depthClearDepth = null;
-        JsonObject depthAttachmentO = framebufferO.getObject("depthAttachment");
+        JsonObject depthAttachmentJson = framebufferJson.getObject("depthAttachment");
 
-        if (depthAttachmentO != null) {
-            depthClearDepth = depthAttachmentO.getDouble("clearDepth", 1.0);
+        if (depthAttachmentJson != null) {
+            depthClearDepth = depthAttachmentJson.getDouble("clearDepth", 1.0);
         }
 
         return new Framebuffer(
             pipelineLocation, name,
-            () -> {
-                List<Pair<GpuTexture, GpuTextureView>> colorAttachments = new ArrayList<>();
+            (int idx) -> {
+                JsonObject colorAttachmentJson = colorAttachmentJsons.get(idx);
+                int lod = colorAttachmentJson.getInt("lod", 0);
+                int layer = colorAttachmentJson.getInt("layer", 0);
+                int face = colorAttachmentJson.getInt("face", -1);
+                String textureName = colorAttachmentJson.get(String.class, "image");
+                GpuTexture texture = getOrLoadTexture.apply(textureName).getTexture();
 
-                for (var colorAttachementO : colorAttachmentsA) {
-                    int lod = colorAttachementO.getInt("lod", 0);
-                    int layer = colorAttachementO.getInt("layer", 0);
-                    int face = colorAttachementO.getInt("face", -1);
-                    String textureName = colorAttachementO.get(String.class, "image");
-                    var texture = getOrLoadTexture.apply(textureName).getTexture();
-
-                    // For cube arrays
-                    // (https://registry.khronos.org/vulkan/specs/latest/man/html/VkImageSubresourceRange.html#_description)
-                    if (face >= 0) {
-                        if ((texture.usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) == 0) {
-                            throw new RuntimeException("Face can be specified only for cube map textures");
-                        }
-                        layer *= 6;
-                        layer += face;
+                // For cube arrays
+                // (https://registry.khronos.org/vulkan/specs/latest/man/html/VkImageSubresourceRange.html#_description)
+                if (face >= 0) {
+                    if ((texture.usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) == 0) {
+                        throw new RuntimeException("Face can be specified only for cube map textures");
                     }
-                    var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
-                        texture, lod, 1, layer, 1
-                    );
-                    colorAttachments.add(Pair.of(texture, textureView));
+                    layer *= 6;
+                    layer += face;
                 }
-                return colorAttachments;
+                var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                    texture, lod, 1, layer, 1
+                );
+                return Pair.of(texture, textureView);
             },
-            colorClearColors,
+            colorTextureClearColors,
             () -> {
-                GpuTextureView depthAttachment = null;
                 GpuTexture texture = null;
-                if (depthAttachmentO != null) {
-                    var lod = Optional.ofNullable(depthAttachmentO.get(Integer.class, "lod"));
-                    var layer = Optional.ofNullable(depthAttachmentO.get(Integer.class, "layer"));
-                    texture = getOrLoadTexture.apply(depthAttachmentO.get(String.class, "image")).getTexture();
-                    depthAttachment = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                GpuTextureView textureView = null;
+                if (depthAttachmentJson != null) {
+                    var lod = Optional.ofNullable(depthAttachmentJson.get(Integer.class, "lod"));
+                    var layer = Optional.ofNullable(depthAttachmentJson.get(Integer.class, "layer"));
+                    texture = getOrLoadTexture.apply(depthAttachmentJson.get(String.class, "image")).getTexture();
+                    textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                         texture, lod.orElse(0), 1, layer.orElse(0), 1
                     );
                 }
-                return Pair.of(texture, depthAttachment);
-            }, depthClearDepth
+                return Pair.of(texture, textureView);
+            },
+            depthClearDepth
         );
     }
 

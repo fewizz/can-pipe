@@ -1,6 +1,5 @@
 package fewizz.canpipe.b3d.mixin;
 
-import java.util.List;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
@@ -41,7 +40,7 @@ import fewizz.canpipe.b3d.GpuTextureViewExtended;
 @Mixin(GlCommandEncoder.class)
 public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
-    @Unique private List<GlTextureView> canpipe_colorAttachements = null;
+    @Unique private GpuTextureView[] canpipe_colorAttachements = null;
     @Unique private int canpipe_clearDepthBaseMipLevel = -1;
     @Unique private int canpipe_clearDepthLevelCount = -1;
     @Unique private int canpipe_clearDepthBaseArrayLayer = -1;
@@ -74,13 +73,13 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
     @Override
     public RenderPass canpipe_createRenderPass(
         Supplier<String> supplier,
-        List<GpuTextureView> colorAttachments,
+        GpuTextureView[] colorAttachments,
         @Nullable GpuTextureView depthAttachment
     ) {
         try {
-            this.canpipe_colorAttachements = colorAttachments.stream().map(a -> (GlTextureView)a).toList();
+            this.canpipe_colorAttachements = colorAttachments;
             return this.createRenderPass(
-                supplier, this.canpipe_colorAttachements.size() > 0 ? this.canpipe_colorAttachements.get(0) : null, OptionalInt.empty(),
+                supplier, this.canpipe_colorAttachements.length > 0 ? this.canpipe_colorAttachements[0] : null, OptionalInt.empty(),
                 depthAttachment, OptionalDouble.empty()
             );
         }
@@ -139,8 +138,8 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
     ) {
         if (colorTextureView.get() != null) return;
 
-        if (this.canpipe_colorAttachements != null && this.canpipe_colorAttachements.size() > 0) {
-            colorTextureView.set(this.canpipe_colorAttachements.get(0));
+        if (this.canpipe_colorAttachements != null && this.canpipe_colorAttachements.length > 0) {
+            colorTextureView.set(this.canpipe_colorAttachements[0]);
         }
         else {
             colorTextureView.set(depthTextureView);
@@ -170,15 +169,15 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
         var fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
 
-        return fboCache.computeIfAbsent(Pair.of(this.canpipe_colorAttachements, (GlTextureView) depthTextureView), (Pair<List<GlTextureView>, GlTextureView> attachments) -> {
+        return fboCache.computeIfAbsent(Pair.of(this.canpipe_colorAttachements, (GlTextureView) depthTextureView), (Pair<GpuTextureView[], GlTextureView> attachments) -> {
             int id = GlStateManager.glGenFramebuffers();
             var colorAttachments = attachments.getLeft();
 
             GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, id);
-            GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.size()).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
+            GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.length).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
 
-            for (int attachmentIndex = 0; attachmentIndex < colorAttachments.size(); ++attachmentIndex) {
-                var attachment = colorAttachments.get(attachmentIndex);
+            for (int attachmentIndex = 0; attachmentIndex < colorAttachments.length; ++attachmentIndex) {
+                var attachment = colorAttachments[attachmentIndex];
                 var attachmentExt = (GpuTextureViewExtended) attachment;
 
                 var textureID = ((GlTextureView) attachment).texture().glId();

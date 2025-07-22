@@ -179,8 +179,8 @@ public class Pipeline implements AutoCloseable {
         JsonObject targetsJson = pipelineJson.getObject("drawTargets");
 
         this.defaultFramebuffer = getOrLoadFramebuffer.apply(pipelineJson.get(String.class, "defaultFramebuffer"));
-        if (this.defaultFramebuffer.colorAttachmentTextures.size() != 1) {
-            throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" has "+this.defaultFramebuffer.colorAttachmentTextures.size()+" color attachments, should have only one");
+        if (this.defaultFramebuffer.colorTextures.length != 1) {
+            throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" has "+this.defaultFramebuffer.colorTextures.length+" color attachments, should have only one");
         }
         if (this.defaultFramebuffer.getDepthTexture() == null) {
             throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" doesn't have depth attachment");
@@ -311,8 +311,8 @@ public class Pipeline implements AutoCloseable {
                 Framebuffer fb = new Framebuffer(
                     location,
                     shadowFramebuffer.name+"_"+(cascade+1),
-                    () -> List.of(),// defaultFramebuffer.colorAttachments,
-                    List.of(),// defaultFramebuffer.colorClearColors,
+                    (idx) -> { throw new RuntimeException("Should not be called"); },  // color textures
+                    new int[]{},  // clear colors
                     () -> {
                         var shadowMapCascadeTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                             shadowMapTexture,
@@ -323,7 +323,7 @@ public class Pipeline implements AutoCloseable {
                         );
                         return Pair.of(shadowMapTexture, shadowMapCascadeTextureView);
                     },
-                    shadowFramebuffer.depthClearDepth
+                    shadowFramebuffer.depthTextureClearDepth
                 );
                 framebuffers.add(fb);
                 this.framebuffers.put(fb.name, fb);
@@ -499,7 +499,7 @@ public class Pipeline implements AutoCloseable {
             renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, OptionalInt.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
         }
         else {
-            renderPass = commandEncoder.canpipe_createRenderPass(name, framebuffer.colorAttachments, framebuffer.getDepthTextureView());
+            renderPass = commandEncoder.canpipe_createRenderPass(name, framebuffer.colorTextureViews, framebuffer.getDepthTextureView());
         }
 
         renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
