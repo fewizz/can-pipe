@@ -196,15 +196,28 @@ public class Pass extends PassBase {
 
         @Override
         public void apply() {
-            var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+            var commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
             for (int i = 0; i < this.framebuffer.colorTextures.length; ++i) {
-                commandEncoder.clearColorTexture(
-                    this.framebuffer.colorTextures[i],
-                    this.framebuffer.colorTextureClearColors[i]
-                );
+                if (this.framebuffer.colorTextures[i].getDepthOrLayers() > 1) {
+                    commandEncoder.canpipe_clearColorTexture(
+                        this.framebuffer.colorTextures[i],
+                        this.framebuffer.colorTextureClearColors[i],
+                        0,  // base level
+                        this.framebuffer.colorTextures[i].getMipLevels(),
+                        0,  // base layer
+                        this.framebuffer.colorTextures[i].getDepthOrLayers()
+                    );
+                }
             }
             if (this.framebuffer.getDepthTexture() != null) {
-                commandEncoder.clearDepthTexture(this.framebuffer.getDepthTexture(), this.framebuffer.depthTextureClearDepth);
+                commandEncoder.canpipe_clearDepthTexture(
+                    this.framebuffer.getDepthTexture(),
+                    this.framebuffer.depthTextureClearDepth,
+                    0,  // base level
+                    this.framebuffer.getDepthTexture().getMipLevels(),
+                    0,  // base layer
+                    this.framebuffer.getDepthTexture().getDepthOrLayers()
+                );
             }
         }
 

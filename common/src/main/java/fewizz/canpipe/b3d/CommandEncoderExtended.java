@@ -20,4 +20,8 @@ public interface CommandEncoderExtended extends CommandEncoder {
         GpuTexture texture, double depth, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
     );
 
+    void canpipe_clearColorTexture(
+        GpuTexture texture, int color, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
+    );
+
 }

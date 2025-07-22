@@ -1,6 +1,5 @@
 package fewizz.canpipe.neoforge.mixin;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
@@ -26,7 +25,7 @@ public abstract class ValidationCommandEncoderMixin implements CommandEncoderExt
 
     @Override
     public RenderPass canpipe_createRenderPass(
-        Supplier<String> supplier, List<GpuTextureView> colorAttachments, @Nullable GpuTextureView depthAttachment
+        Supplier<String> supplier, GpuTextureView[] colorAttachments, @Nullable GpuTextureView depthAttachment
     ) {
         return ((CommandEncoderExtended) this.realCommandEncoder).canpipe_createRenderPass(
             supplier, colorAttachments, depthAttachment

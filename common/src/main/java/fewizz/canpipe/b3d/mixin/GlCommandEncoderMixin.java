@@ -41,34 +41,15 @@ import fewizz.canpipe.b3d.GpuTextureViewExtended;
 public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
     @Unique private GpuTextureView[] canpipe_colorAttachements = null;
-    @Unique private int canpipe_clearDepthBaseMipLevel = -1;
-    @Unique private int canpipe_clearDepthLevelCount = -1;
-    @Unique private int canpipe_clearDepthBaseArrayLayer = -1;
-    @Unique private int canpipe_clearDepthLayerCount = -1;
+    @Unique private int canpipe_clearBaseLevel = -1;
+    @Unique private int canpipe_clearLevelCount = -1;
+    @Unique private int canpipe_clearBaseLayer = -1;
+    @Unique private int canpipe_clearLayerCount = -1;
 
     @Shadow private boolean inRenderPass;
     @Shadow @Final private static Logger LOGGER = LogUtils.getLogger();
     @Shadow @Final private GlDevice device;
     @Shadow private RenderPipeline lastPipeline;
-
-    @Override
-    public void canpipe_clearDepthTexture(
-        GpuTexture texture, double depth, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
-    ) {
-        try {
-            this.canpipe_clearDepthBaseMipLevel = baseMipLevel;
-            this.canpipe_clearDepthLevelCount = levelCount;
-            this.canpipe_clearDepthBaseArrayLayer = baseArrayLayer;
-            this.canpipe_clearDepthLayerCount = layerCount;
-            this.clearDepthTexture(texture, depth);
-        }
-        finally {
-            this.canpipe_clearDepthBaseMipLevel = -1;
-            this.canpipe_clearDepthLevelCount = -1;
-            this.canpipe_clearDepthBaseArrayLayer = -1;
-            this.canpipe_clearDepthLayerCount = -1;
-        }
-    }
 
     @Override
     public RenderPass canpipe_createRenderPass(
@@ -210,30 +191,105 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         });
     }
 
+    @Override
+    public void canpipe_clearDepthTexture(
+        GpuTexture texture, double depth, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
+    ) {
+        try {
+            this.canpipe_clearBaseLevel = baseMipLevel;
+            this.canpipe_clearLevelCount = levelCount;
+            this.canpipe_clearBaseLayer = baseArrayLayer;
+            this.canpipe_clearLayerCount = layerCount;
+            this.clearDepthTexture(texture, depth);
+        }
+        finally {
+            this.canpipe_clearBaseLevel = -1;
+            this.canpipe_clearLevelCount = -1;
+            this.canpipe_clearBaseLayer = -1;
+            this.canpipe_clearLayerCount = -1;
+        }
+    }
+
+    @Override
+    public void canpipe_clearColorTexture(
+        GpuTexture texture, int color, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
+    ) {
+        try {
+            this.canpipe_clearBaseLevel = baseMipLevel;
+            this.canpipe_clearLevelCount = levelCount;
+            this.canpipe_clearBaseLayer = baseArrayLayer;
+            this.canpipe_clearLayerCount = layerCount;
+            this.clearColorTexture(texture, color);
+        }
+        finally {
+            this.canpipe_clearBaseLevel = -1;
+            this.canpipe_clearLevelCount = -1;
+            this.canpipe_clearBaseLayer = -1;
+            this.canpipe_clearLayerCount = -1;
+        }
+    }
+
+    @WrapOperation(
+        method = "clearColorTexture",
+        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V")
+    )
+    public void clearNonZeroColorLayer(int mask, Operation<Void> operation, @Local GpuTexture colorTexture) {
+        if (this.canpipe_clearBaseLayer == -1) {
+            operation.call(mask);
+            return;
+        }
+
+        var glTexture = (GlTexture) colorTexture;
+
+        for (int level = this.canpipe_clearBaseLevel; level < this.canpipe_clearBaseLevel + this.canpipe_clearLevelCount; ++level) {
+            for (int layer = this.canpipe_clearBaseLayer; layer < this.canpipe_clearBaseLayer + this.canpipe_clearLayerCount; ++layer) {
+                if (glTexture.getDepthOrLayers() > 1) {
+                    GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0, glTexture.glId(), level, layer);
+                }
+                else {
+                    int target = GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
+                    GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0, target, glTexture.glId(), level);
+                }
+                operation.call(mask);  // GlStateManager._clear(GL33C.GL_COLOR_BUFFER_BIT);
+            }
+        }
+    }
+
     @WrapOperation(
         method = "clearDepthTexture",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V")
     )
     public void clearNonZeroDepthLayer(int mask, Operation<Void> operation, @Local GpuTexture depthTexture) {
-        if (this.canpipe_clearDepthBaseArrayLayer != -1) {
-            var glTexture = (GlTexture) depthTexture;
+        if (this.canpipe_clearBaseLayer == -1) {
+            operation.call(mask);
+            return;
+        }
 
-            int minLevel = this.canpipe_clearDepthBaseMipLevel != -1 ? this.canpipe_clearDepthBaseMipLevel : 0;
-            int levels = this.canpipe_clearDepthLevelCount != -1 ? this.canpipe_clearDepthLevelCount : 1;
+        var glTexture = (GlTexture) depthTexture;
 
-            int minLayer = this.canpipe_clearDepthBaseArrayLayer != -1 ? this.canpipe_clearDepthBaseArrayLayer : 0;
-            int layers = this.canpipe_clearDepthLayerCount != -1 ? this.canpipe_clearDepthLayerCount : 1;
-
-            for (int level = minLevel; level < minLevel + levels; ++level) {
-                for (int layer = minLayer; layer < minLayer + layers; ++layer) {
+        for (int level = this.canpipe_clearBaseLevel; level < this.canpipe_clearBaseLevel + this.canpipe_clearLevelCount; ++level) {
+            for (int layer = this.canpipe_clearBaseLayer; layer < this.canpipe_clearBaseLayer + this.canpipe_clearLayerCount; ++layer) {
+                if (glTexture.getDepthOrLayers() > 1) {
                     GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, glTexture.glId(), level, layer);
-                    GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
                 }
+                else {
+                    int target = GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
+                    GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, target, glTexture.glId(), level);
+                }
+                operation.call(mask);  // GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
             }
         }
-        else {
-            operation.call(mask);
+    }
+
+    @ModifyExpressionValue(
+        method = "verifyColorTexture",
+        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I")
+    )
+    private int allowColorTextureWithMultipleLayers(int layers) {
+        if (this.canpipe_clearBaseLayer != -1) {
+            layers = 1;  // replacing texture.getDepthOrLayers() with 1
         }
+        return layers;
     }
 
     @ModifyExpressionValue(
@@ -241,7 +297,10 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I")
     )
     private int allowDepthTextureWithMultipleLayers(int layers) {
-        return 1;  // don't throw if texture.getDepthOrLayers() > 1
+        if (this.canpipe_clearBaseLayer != -1) {
+            layers = 1;  // replacing texture.getDepthOrLayers() with 1
+        }
+        return layers;
     }
 
 }
