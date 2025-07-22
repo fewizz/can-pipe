@@ -28,7 +28,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
+import blue.endless.jankson.JsonArray;
+import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
+import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
@@ -98,6 +101,34 @@ public class Pipeline implements AutoCloseable {
         this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
 
         JsonObject pipelineJson = rawPipeline.getPipelineJson(appliedOptions);
+
+        /* Manually fixing some shaderpacks here */
+
+        // https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5
+        if (this.location.getNamespace().contains("forgetmenot")) {
+            var programs = pipelineJson.get(JsonArray.class, "programs");
+            if (programs != null) {
+                programs.stream().filter(
+                    (JsonElement program) ->
+                        program instanceof JsonObject programJson &&
+                        programJson.containsKey("name") &&
+                        programJson.get(String.class, "name").equals("depth_downsample")
+                ).findFirst().ifPresent(program -> {
+                    JsonObject programJson = (JsonObject) program;
+                    JsonArray samplers = programJson.get(JsonArray.class, "samplers");
+                    if (samplers.size() != 1 || !(samplers.get(0) instanceof JsonPrimitive)) {
+                        return;
+                    }
+                    JsonPrimitive sampler = (JsonPrimitive) samplers.get(0);
+                    if (sampler.asString().equals("u_depth")) {
+                        samplers.set(0, JsonPrimitive.of("u_depth_mips"));
+                    }
+                });
+            }
+        }
+
+        /* End of shaderpacks fixing */
+
         var options = rawPipeline.options;
 
         Function<String, Object> optionValueByName = (String name) -> {
