@@ -32,6 +32,7 @@ import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
@@ -121,7 +122,32 @@ public class Pipeline implements AutoCloseable {
                     }
                     JsonPrimitive sampler = (JsonPrimitive) samplers.get(0);
                     if (sampler.asString().equals("u_depth")) {
+                        CanPipe.LOGGER.warn("replacing sampler \"u_depth\" with \"u_depth_mips\" for program \"depth_downsample\"");
                         samplers.set(0, JsonPrimitive.of("u_depth_mips"));
+                    }
+                });
+            }
+        }
+
+        // https://github.com/ambrosia13/Aerie-Shaders/pull/2
+        if (this.location.getNamespace().contains("aerie")) {
+            var programs = pipelineJson.get(JsonArray.class, "programs");
+            if (programs != null) {
+                programs.stream().filter(
+                    (JsonElement program) ->
+                        program instanceof JsonObject programJson &&
+                        programJson.containsKey("name") &&
+                        programJson.get(String.class, "name").equals("copy")
+                ).findFirst().ifPresent(program -> {
+                    JsonObject programJson = (JsonObject) program;
+                    JsonArray samplers = programJson.get(JsonArray.class, "samplers");
+                    if (samplers.size() != 1 || !(samplers.get(0) instanceof JsonPrimitive)) {
+                        return;
+                    }
+                    JsonPrimitive sampler = (JsonPrimitive) samplers.get(0);
+                    if (sampler.asString().equals("u_composite")) {
+                        CanPipe.LOGGER.warn("replacing sampler \"u_composite\" with \"u_color\" for program \"copy\"");
+                        samplers.set(0, JsonPrimitive.of("u_color"));
                     }
                 });
             }
