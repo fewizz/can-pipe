@@ -29,6 +29,7 @@ import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.resources.ResourceLocation;
 
 public class Pass extends PassBase {
 
@@ -36,17 +37,19 @@ public class Pass extends PassBase {
     final RenderPipeline renderPipeline;
     // Textures (specified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually uses them
-    final List<Optional<? extends AbstractTexture>> textureViews;
+    final List<AbstractTexture> textureViews;
     final Vector2i extent;
     final int lod;
     final int layer;
 
     private Pass(
         String name, Framebuffer framebuffer, RenderPipeline renderPipeline,
-        List<Optional<? extends AbstractTexture>> samplerTextures,
+        List<Optional<AbstractTexture>> samplerTextures,
         Vector2i extent, int lod, int layer
     ) {
         super(name);
+        this.textureViews = new ArrayList<>();
+    
         var samplers = renderPipeline.getSamplers();
         if (samplers.size() > samplerTextures.size()) {
             CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+name+"\"");
@@ -56,15 +59,18 @@ public class Pass extends PassBase {
         }
         for (int i = 0; i < Math.min(samplers.size(), samplerTextures.size()); ++i) {
             String sampler = samplers.get(i);
-            var samplerTexture = samplerTextures.get(i);
-            if (samplerTexture.isEmpty() && renderPipeline.getSamplers() != null) {
-                throw new NullPointerException("Couldn't find texture for sampler \""+sampler +"\"");
-            }
+            var samplerTexture = samplerTextures.get(i).orElseGet(() -> {
+                CanPipe.LOGGER.warn("Couldn't find texture for sampler \""+sampler +"\", \"barrier\" texture will be used instead");
+                Minecraft mc = Minecraft.getInstance();
+                return mc.getTextureManager().getTexture(
+                    ResourceLocation.withDefaultNamespace("textures/item/barrier.png")
+                );
+            });
+            this.textureViews.add(samplerTexture);
         }
 
         this.framebuffer = framebuffer;
         this.renderPipeline = renderPipeline;
-        this.textureViews = samplerTextures;
         this.extent = extent;
         this.lod = lod;
         this.layer = layer;
@@ -117,9 +123,8 @@ public class Pass extends PassBase {
             var samplers = this.renderPipeline.getSamplers();
             for (int i = 0; i < Math.min(samplers.size(), this.textureViews.size()); ++i) {
                 String sampler = samplers.get(i);
-                this.textureViews.get(i).ifPresent(texture -> {
-                    renderPass.bindSampler(sampler, texture.getTextureView());
-                });
+                var samplerTexture = this.textureViews.get(i);
+                renderPass.bindSampler(sampler, samplerTexture.getTextureView());
             }
 
             RenderSystem.bindDefaultUniforms(renderPass);
@@ -144,7 +149,7 @@ public class Pass extends PassBase {
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
         Function<String, RenderPipeline> getOrLoadProgram,
-        Function<String, Optional<? extends AbstractTexture>> getOrLoadPipelineOrResourcepackTexture
+        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture
     ) {
         String toggleConfig = json.get(String.class, "toggleConfig");
 
@@ -168,10 +173,10 @@ public class Pass extends PassBase {
             return Optional.of(new Pass.FREXClear(passName, framebuffer.get()));
         }
 
-        RenderPipeline program = getOrLoadProgram.apply(programName);
-        Objects.nonNull(program);
+        RenderPipeline renderPipeline = getOrLoadProgram.apply(programName);
+        Objects.nonNull(renderPipeline);
 
-        List<Optional<? extends AbstractTexture>> samplerTextures = new ArrayList<>();
+        List<Optional<AbstractTexture>> samplerTextures = new ArrayList<>();
         for (String s : JanksonUtils.listOfStrings(json, "samplerImages")) {
             samplerTextures.add(getOrLoadPipelineOrResourcepackTexture.apply(s));
         }
@@ -184,7 +189,7 @@ public class Pass extends PassBase {
         int lod = json.getInt("lod", 0);
         int layer = json.getInt("layer", 0);
 
-        return Optional.of(new Pass(passName, framebuffer.get(), program, samplerTextures, extent, lod, layer));
+        return Optional.of(new Pass(passName, framebuffer.get(), renderPipeline, samplerTextures, extent, lod, layer));
     }
 
     static class FREXClear extends PassBase {

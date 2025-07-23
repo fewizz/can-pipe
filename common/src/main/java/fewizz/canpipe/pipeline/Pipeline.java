@@ -191,7 +191,7 @@ public class Pipeline implements AutoCloseable {
             return result.get();
         };
 
-        Function<String, Optional<? extends AbstractTexture>> getOrLoadPipelineOrResourcepackTexture = (String name) -> {
+        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture = (String name) -> {
             AbstractTexture texture = null;
             if (name.contains(":")) {
                 var mc = Minecraft.getInstance();
