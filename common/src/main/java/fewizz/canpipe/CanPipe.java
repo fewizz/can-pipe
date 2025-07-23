@@ -20,9 +20,6 @@ public class CanPipe {
     public static final KeyMapping PIPELINES_RELOAD_KEY = new KeyMapping(
         "can-pipe.key.reloadPipelines", GLFW.GLFW_KEY_UNKNOWN, "can-pipe.key.categories.can-pipe"
     );
-    public static final KeyMapping PIPELINE_IO_DEBUG = new KeyMapping(
-        "can-pipe.key.pipelineIODebug", GLFW.GLFW_KEY_UNKNOWN, "can-pipe.key.categories.can-pipe"
-    );
 
     public static Path getCompilationErrorsDirPath() {
         Minecraft mc = Minecraft.getInstance();
