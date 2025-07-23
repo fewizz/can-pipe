@@ -2,7 +2,6 @@ package fewizz.canpipe.b3d.mixin;
 
 import org.lwjgl.opengl.GL33C;
 import org.objectweb.asm.Opcodes;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -29,7 +28,6 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
         super(0, null, null, 0, 0, 0, 0);
     }
 
-    @Shadow @Final protected int id;
     @Shadow protected boolean modesDirty;
 
     @Unique protected FilterMode canpipe_mipFilter = null;

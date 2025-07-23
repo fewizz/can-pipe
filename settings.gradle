@@ -18,3 +18,5 @@ rootProject.name = "can-pipe"
 include "common"
 include "fabric"
 include "neoforge"
+
+// gradle.startParameter.offline=true

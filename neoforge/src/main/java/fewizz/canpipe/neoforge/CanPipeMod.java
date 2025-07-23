@@ -1,5 +1,6 @@
-package fewizz.canpipe;
+package fewizz.canpipe.neoforge;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;

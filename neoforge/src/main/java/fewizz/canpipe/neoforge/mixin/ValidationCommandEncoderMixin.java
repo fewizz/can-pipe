@@ -45,4 +45,17 @@ public abstract class ValidationCommandEncoderMixin implements CommandEncoderExt
         );
     }
 
+    @Override
+    public void canpipe_clearColorTexture(
+        GpuTexture texture, int color, int baseMipLevel, int levelCount,
+        int baseArrayLayer, int layerCount
+    ) {
+        if (!(texture instanceof ValidationGpuTexture validationTexture)) {
+            throw new IllegalArgumentException();
+        }
+        ((CommandEncoderExtended) this.realCommandEncoder).canpipe_clearColorTexture(
+            validationTexture.getRealTexture(), color, baseMipLevel, levelCount, baseArrayLayer, layerCount
+        );
+    }
+
 }

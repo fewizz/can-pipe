@@ -43,3 +43,5 @@ common/src/main/java/com/*
 common/src/main/java/net/*
 fabric/src/main/java/net/*
 common/src/main/resources/assets/minecraft/*
+
+neoforge-cinnabar/*
