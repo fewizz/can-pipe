@@ -31,7 +31,7 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
     @Shadow protected boolean modesDirty;
 
     @Unique protected FilterMode canpipe_mipFilter = null;
-    @Unique protected AddressMode canpipe_addressModeR = null;
+    @Unique protected AddressMode canpipe_addressModeW = null;
     @Unique protected DepthTestFunction canpipe_compareOp = null;
 
     @Override
@@ -42,8 +42,8 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
     }
 
     @Override
-    public void canpipe_setAddressModeR(AddressMode addressMode) {
-        this.canpipe_addressModeR = addressMode;
+    public void canpipe_setAddressModeW(AddressMode addressMode) {
+        this.canpipe_addressModeW = addressMode;
         this.modesDirty = true;
     }
 
@@ -84,8 +84,8 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
         )
     )
     private void afterSettingVAddressingMode(int target, CallbackInfo ci) {
-        if (this.canpipe_addressModeR != null) {
-            GlStateManager._texParameter(target, GL33C.GL_TEXTURE_WRAP_R, GlConst.toGl(this.canpipe_addressModeR));
+        if (this.canpipe_addressModeW != null) {
+            GlStateManager._texParameter(target, GL33C.GL_TEXTURE_WRAP_R, GlConst.toGl(this.canpipe_addressModeW));
         }
     }
 

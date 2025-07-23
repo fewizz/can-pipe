@@ -206,7 +206,7 @@ public class Texture extends AbstractTexture {
                 texture.setTextureFilter(minFilter, magFilter, false);
                 ((GpuTextureExtended) texture).canpipe_setMipmapMode(mipFilter);
                 texture.setAddressMode(uAddressMode, vAddressMode);
-                ((GpuTextureExtended) texture).canpipe_setAddressModeR(rAddressMode);
+                ((GpuTextureExtended) texture).canpipe_setAddressModeW(rAddressMode);
                 ((GpuTextureExtended) texture).canpipe_setCompareOp(depthCompareOp);
                 return texture;
             });

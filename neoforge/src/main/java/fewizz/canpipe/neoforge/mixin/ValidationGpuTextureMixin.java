@@ -24,8 +24,8 @@ public abstract class ValidationGpuTextureMixin implements GpuTextureExtended {
     }
 
     @Override
-    public void canpipe_setAddressModeR(AddressMode addressMode) {
-        ((GpuTextureExtended) realTexture).canpipe_setAddressModeR(addressMode);
+    public void canpipe_setAddressModeW(AddressMode addressMode) {
+        ((GpuTextureExtended) realTexture).canpipe_setAddressModeW(addressMode);
     }
 
     @Override
