@@ -94,7 +94,7 @@ public class Texture extends AbstractTexture {
 
         AddressMode u = AddressMode.REPEAT;
         AddressMode v = AddressMode.REPEAT;
-        AddressMode r = null;
+        AddressMode w = null;
 
         boolean compare = false;
         DepthTestFunction compareOp = null;
@@ -136,7 +136,7 @@ public class Texture extends AbstractTexture {
                 };
             }
             else if (paramName.equals("TEXTURE_WRAP_R")) {
-                r = switch (paramValue) {
+                w = switch (paramValue) {
                     case "CLAMP_TO_EDGE" -> AddressMode.CLAMP_TO_EDGE;
                     case "REPEAT" -> AddressMode.REPEAT;
                     default -> throw new RuntimeException(paramValue);
@@ -179,7 +179,7 @@ public class Texture extends AbstractTexture {
             final FilterMode mipFilter = mip;
             final AddressMode addressModeU = u;
             final AddressMode addressModeV = v;
-            final AddressMode addressModeW = r;
+            final AddressMode addressModeW = w;
             final DepthTestFunction depthCompareOp = compare ? compareOp : null;
 
             boolean recreateOnResize = width == 0 || height == 0;
