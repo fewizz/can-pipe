@@ -163,22 +163,32 @@ public class Framebuffer extends RenderTarget {
             (int idx) -> {
                 JsonObject colorAttachmentJson = colorAttachmentJsons.get(idx);
                 int lod = colorAttachmentJson.getInt("lod", 0);
-                int layer = colorAttachmentJson.getInt("layer", 0);
+                int baseLayer = colorAttachmentJson.getInt("layer", 0);
+                int layerCount = 1;
                 int face = colorAttachmentJson.getInt("face", -1);
                 String textureName = colorAttachmentJson.get(String.class, "image");
                 GpuTexture texture = getOrLoadTexture.apply(textureName).getTexture();
 
-                // For cube arrays
                 // (https://registry.khronos.org/vulkan/specs/latest/man/html/VkImageSubresourceRange.html#_description)
+                boolean cubemap = (texture.usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) == 1;
+
+                // specific cubemap face
                 if (face >= 0) {
-                    if ((texture.usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) == 0) {
+                    if (!cubemap) {
                         throw new RuntimeException("Face can be specified only for cube map textures");
                     }
-                    layer *= 6;
-                    layer += face;
+                    baseLayer *= 6;
+                    baseLayer += face;
                 }
+
+                // whole cubemap
+                if (face == -1 && cubemap) {
+                    baseLayer *= 6;
+                    layerCount = 6;
+                }
+
                 var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
-                    texture, lod, 1, layer, 1
+                    texture, lod, 1, baseLayer, layerCount
                 );
                 return Pair.of(texture, textureView);
             },

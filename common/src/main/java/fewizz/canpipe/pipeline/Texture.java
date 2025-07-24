@@ -70,18 +70,19 @@ public class Texture extends AbstractTexture {
             case "RG16_SNORM" -> TextureFormat.valueOf("RG16_SNORM");
             case "RG16F" -> TextureFormat.valueOf("RG16_SFLOAT");
             case "RG32F" -> TextureFormat.valueOf("RG32_SFLOAT");
-            case "RGB8" -> TextureFormat.valueOf("RGB8_UNORM");
-            case "RGB8_SNORM" -> TextureFormat.valueOf("RGB8_SNORM");
-            case "RGB16" -> TextureFormat.valueOf("RGB16_UNORM");
-            case "RGB16_SNORM" -> TextureFormat.valueOf("RGB16_SNORM");
-            case "RGB32UI" -> TextureFormat.valueOf("RGB32_UINT");
-            case "RGB16F" -> TextureFormat.valueOf("RGB16_SFLOAT");
-            case "RGB32F" -> TextureFormat.valueOf("RGB32_SFLOAT");
+            case "RGB8" -> TextureFormat.RGBA8;                           // not RGB8_UNORM
+            case "RGB8_SNORM" -> TextureFormat.valueOf("RGBA8_SNORM");    // not RGB8_SNORM
+            case "RGB16" -> TextureFormat.valueOf("RGBA16_UNORM");        // not RGB16_UNORM
+            case "RGB16_SNORM" -> TextureFormat.valueOf("RGBA16_SNORM");  // not RGB16_SNORM
+            case "RGB32UI" -> TextureFormat.valueOf("RGBA32_UINT");       // not RGB32_UINT
+            case "RGB16F" -> TextureFormat.valueOf("RGBA16_SFLOAT");      // not RGB16_SFLOAT
+            case "RGB32F" -> TextureFormat.valueOf("RGBA32_SFLOAT");      // not RGB32_SFLOAT
             case "R11F_G11F_B10F" -> TextureFormat.valueOf("B10G11R11_UFLOAT_PACK32");
             case "RGBA8" -> TextureFormat.RGBA8;
             case "RGBA8_SNORM" -> TextureFormat.valueOf("RGBA8_SNORM");
             case "RGBA12" -> TextureFormat.valueOf("R12X4G12X4B12X4A12X4_UNORM_4PACK16");
             case "RGBA16" -> TextureFormat.valueOf("RGBA16_UNORM");
+            case "RGBA32UI" -> TextureFormat.valueOf("RGBA32_UINT");
             case "RGBA16F" -> TextureFormat.valueOf("RGBA16_SFLOAT");
             case "RGBA32F" -> TextureFormat.valueOf("RGBA32_SFLOAT");
             default -> { throw new RuntimeException(internalFormatStr); }
@@ -176,9 +177,9 @@ public class Texture extends AbstractTexture {
             final FilterMode minFilter = min;
             final FilterMode magFilter = mag;
             final FilterMode mipFilter = mip;
-            final AddressMode uAddressMode = u;
-            final AddressMode vAddressMode = v;
-            final AddressMode rAddressMode = r;
+            final AddressMode addressModeU = u;
+            final AddressMode addressModeV = v;
+            final AddressMode addressModeW = r;
             final DepthTestFunction depthCompareOp = compare ? compareOp : null;
 
             boolean recreateOnResize = width == 0 || height == 0;
@@ -205,8 +206,8 @@ public class Texture extends AbstractTexture {
 
                 texture.setTextureFilter(minFilter, magFilter, false);
                 ((GpuTextureExtended) texture).canpipe_setMipmapMode(mipFilter);
-                texture.setAddressMode(uAddressMode, vAddressMode);
-                ((GpuTextureExtended) texture).canpipe_setAddressModeW(rAddressMode);
+                texture.setAddressMode(addressModeU, addressModeV);
+                ((GpuTextureExtended) texture).canpipe_setAddressModeW(addressModeW);
                 ((GpuTextureExtended) texture).canpipe_setCompareOp(depthCompareOp);
                 return texture;
             });

@@ -3,14 +3,13 @@ package fewizz.canpipe.b3d.mixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.b3d.GLService;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;

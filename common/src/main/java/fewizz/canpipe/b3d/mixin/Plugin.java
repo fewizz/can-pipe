@@ -112,6 +112,7 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         add(new TexFormat("RGBA8_SNORM", 4*1, true, false, GL33C.GL_RGBA8_SNORM, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
         add(new TexFormat("R12X4G12X4B12X4A12X4_UNORM_4PACK16", 4*1, true, false, GL33C.GL_RGBA12, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
         add(new TexFormat("RGBA16_UNORM", 4*1, true, false, GL33C.GL_RGBA16, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGBA32_UINT", 4*1, true, false, GL33C.GL_RGBA32UI, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
         add(new TexFormat("RGBA16_SFLOAT", 4*1, true, false, GL33C.GL_RGBA16F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
         add(new TexFormat("RGBA32_SFLOAT", 4*1, true, false, GL33C.GL_RGBA32F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
     }};
