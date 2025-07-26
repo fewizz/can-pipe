@@ -24,9 +24,7 @@ import fewizz.canpipe.b3d.GpuTextureExtended;
 @Mixin(GlTexture.class)
 public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExtended {
 
-    public GlTextureMixin() {
-        super(0, null, null, 0, 0, 0, 0);
-    }
+    public GlTextureMixin() { super(0, null, null, 0, 0, 0, 0); }
 
     @Shadow protected boolean modesDirty;
 
@@ -51,6 +49,11 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
     public void canpipe_setCompareOp(DepthTestFunction compareOp) {
         this.canpipe_compareOp = compareOp;
         this.modesDirty = true;
+    }
+
+    @Inject(method = "setUseMipmaps", at = @At("HEAD"))
+    void onSetUseMipmaps(boolean value, CallbackInfo ci) {
+        this.canpipe_mipFilter = value ? FilterMode.LINEAR : null;
     }
 
     @ModifyExpressionValue(

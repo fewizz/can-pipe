@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -42,9 +41,11 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
 
     @Unique private Consumer<String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
-    @Unique private Object2IntMap<Pair<List<GlTextureView>, GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
+
+    /** Color textures + depth texture at the end (nullable) **/
+    @Unique private Object2IntMap<List<GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
 
     @Override
     public CompiledRenderPipeline canpipe_compilePipeline(

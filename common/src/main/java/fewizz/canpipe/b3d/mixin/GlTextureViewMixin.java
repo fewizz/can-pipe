@@ -49,13 +49,12 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
         GlDevice device = GLService.getRealGLDevice();
         var fboCache = ((GlDeviceAccessor) device).get_canpipe_framebufferCache();
         fboCache.object2IntEntrySet().removeIf(kv -> {
-            var colorsAndDepth = kv.getKey();
+            var textures = kv.getKey();
             var id = kv.getIntValue();
             boolean remove = false;
-            for (var colorAttachment : colorsAndDepth.getKey()) {
-                remove |= colorAttachment == (Object) this;
+            for (var texture : textures) {
+                remove |= texture == (Object) this;
             }
-            remove |= colorsAndDepth.getRight() == (Object) this;
             if (remove) {
                 GlStateManager._glDeleteFramebuffers(id);
                 return true;

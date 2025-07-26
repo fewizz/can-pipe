@@ -1,11 +1,13 @@
 package fewizz.canpipe.b3d.mixin;
 
+import java.util.List;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;
@@ -36,20 +38,21 @@ import com.mojang.logging.LogUtils;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 @Mixin(GlCommandEncoder.class)
 public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
+
+    @Shadow private boolean inRenderPass;
+    @Shadow @Final private static Logger LOGGER = LogUtils.getLogger();
+    @Shadow @Final private GlDevice device;
+    @Shadow private RenderPipeline lastPipeline;
 
     @Unique private GpuTextureView[] canpipe_colorAttachements = null;
     @Unique private int canpipe_clearBaseLevel = -1;
     @Unique private int canpipe_clearLevelCount = -1;
     @Unique private int canpipe_clearBaseLayer = -1;
     @Unique private int canpipe_clearLayerCount = -1;
-
-    @Shadow private boolean inRenderPass;
-    @Shadow @Final private static Logger LOGGER = LogUtils.getLogger();
-    @Shadow @Final private GlDevice device;
-    @Shadow private RenderPipeline lastPipeline;
 
     @Override
     public RenderPass canpipe_createRenderPass(
@@ -144,29 +147,37 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         GlTexture colorTexture, DirectStateAccess dsa, GpuTexture depthTexture, Operation<Integer> operation,
         @Local(argsOnly = true, ordinal = 1) GpuTextureView depthTextureView
     ) {
-        if (this.canpipe_colorAttachements == null) {
+        if (this.canpipe_colorAttachements == null) {  // Not canpipe_createRenderPass
             return operation.call(colorTexture, dsa, depthTexture);
         }
 
-        var fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
+        Object2IntMap<List<GlTextureView>> fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
 
-        return fboCache.computeIfAbsent(Pair.of(this.canpipe_colorAttachements, (GlTextureView) depthTextureView), (Pair<GpuTextureView[], GlTextureView> attachments) -> {
+        var colorAttachments = this.canpipe_colorAttachements;
+
+        var fboTextureViewsStream = Stream.of(this.canpipe_colorAttachements);
+        if (depthTextureView != null) {
+            fboTextureViewsStream = Stream.concat(fboTextureViewsStream, Stream.of(depthTextureView));
+        }
+        // Creating such object on every renderpass creation is kinda messy
+        List<GlTextureView> fboTextrureViewsKey = fboTextureViewsStream.map(tex -> (GlTextureView)tex).collect(Collectors.toUnmodifiableList());
+
+        return fboCache.computeIfAbsent(fboTextrureViewsKey, k -> {
             int id = GlStateManager.glGenFramebuffers();
-            var colorAttachments = attachments.getLeft();
 
             GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, id);
             GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.length).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
 
             for (int attachmentIndex = 0; attachmentIndex < colorAttachments.length; ++attachmentIndex) {
-                var attachment = colorAttachments[attachmentIndex];
-                var attachmentExt = (GpuTextureViewExtended) attachment;
+                GpuTextureView attachment = colorAttachments[attachmentIndex];
+                GpuTextureViewExtended attachmentExt = (GpuTextureViewExtended) attachment;
 
                 var textureID = ((GlTextureView) attachment).texture().glId();
 
                 if ((attachment.texture().usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0) {
                     int face = attachmentExt.canpipe_baseArrayLayer() % 6;
                     int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
-                    if (layer > 0) { throw new RuntimeException(); }
+                    if (layer > 0) { throw new RuntimeException("Cubemap with layer "+layer+""); }
                     GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureID, attachment.baseMipLevel());
                 }
                 else if (attachment.texture().getDepthOrLayers() > 1 || attachmentExt.canpipe_baseArrayLayer() > 0) {

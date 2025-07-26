@@ -9,10 +9,6 @@ import java.util.function.IntUnaryOperator;
 import java.util.stream.StreamSupport;
 
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengl.GL30C;
-import org.lwjgl.opengl.GL31C;
-import org.lwjgl.opengl.GL32C;
-import org.lwjgl.opengl.GL33C;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;

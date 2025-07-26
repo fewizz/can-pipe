@@ -185,10 +185,11 @@ public class Texture extends AbstractTexture {
             boolean recreateOnResize = width == 0 || height == 0;
 
             return new Texture(name, recreateOnResize, () -> {
-                int w = width, h = height;
+                int newWidth = width; int newHeight = height;
+
                 var window = Minecraft.getInstance().getWindow();
-                if (width <= 0) { w = window.getWidth(); }
-                if (height <= 0) { h = window.getHeight(); }
+                if (newWidth <= 0) { newWidth = window.getWidth(); }
+                if (newHeight <= 0) { newHeight = window.getHeight(); }
 
                 int usage = GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING;
                 int depthOrLayers = depth;
@@ -201,7 +202,7 @@ public class Texture extends AbstractTexture {
                 GpuTexture texture = RenderSystem.getDevice().createTexture(
                     name, usage,
                     textureFormat,
-                    w, h, depthOrLayers, maxLod+1
+                    newWidth, newHeight, depthOrLayers, maxLod+1
                 );
 
                 texture.setTextureFilter(minFilter, magFilter, false);
