@@ -52,10 +52,8 @@ public class Programs {
         var vertexLocation = ResourceLocation.parse(json.get(String.class, "vertexSource"));
         var fragmentLocation = ResourceLocation.parse(json.get(String.class, "fragmentSource"));
 
-        var location = pipelineLocation.withSuffix("-"+name);
-
         var renderPipelineBuilder = RenderPipeline.builder()
-            .withLocation(location)
+            .withLocation(pipelineLocation.withSuffix("-"+name))
             .withVertexShader(vertexLocation)
             .withFragmentShader(fragmentLocation)
             .withDepthWrite(false)
@@ -80,33 +78,36 @@ public class Programs {
 
         RenderPipeline pipeline = renderPipelineBuilder.build();
 
+        Function<String, String> postprocess = (src) -> {
+            src = src.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "// uniform ivec2 frxu_size;");
+            src = src.replaceAll("uniform\\s+int\\s+frxu_lod;", "// uniform int frxu_lod;");
+            src = src.replaceAll("uniform\\s+int\\s+frxu_layer;", "// uniform int frxu_layer;");
+            src = src.replaceAll("uniform\\s+mat4\\s+frxu_frameProjectionMatrix;", "// uniform mat4 frxu_frameProjectionMatrix;");
+            src =
+                "layout(std140) uniform canpipe_ub_pass {\n"+
+                "    uniform ivec2 frxu_size;\n"+
+                "    uniform int frxu_lod;\n"+
+                "    uniform int frxu_layer;\n"+
+                "    uniform mat4 frxu_frameProjectionMatrix;\n"+
+                "};\n\n"+
+                src;
+
+            return
+                "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
+                "#define mc_ub_projection Projection\n"+
+                "#define mc_ub_fog Fog\n"+
+                "\n"+
+                src;
+        };
+
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
             pipeline,
-            (ResourceLocation _location, ShaderType type) -> {
-                String source = getShaderSource.apply(_location).get();
+            (ResourceLocation location, ShaderType type) -> {
+                String src = getShaderSource.apply(location).get();
                 return Shaders.process(
-                    location, source, type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize,
-                (s) -> {
-                    s = s.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "// uniform ivec2 frxu_size;");
-                    s = s.replaceAll("uniform\\s+int\\s+frxu_lod;", "// uniform int frxu_lod;");
-                    s = s.replaceAll("uniform\\s+int\\s+frxu_layer;", "// uniform int frxu_layer;");
-                    s = s.replaceAll("uniform\\s+mat4\\s+frxu_frameProjectionMatrix;", "// uniform mat4 frxu_frameProjectionMatrix;");
-                    s =
-                        "layout(std140) uniform canpipe_ub_pass {\n"+
-                        "    uniform ivec2 frxu_size;\n"+
-                        "    uniform int frxu_lod;\n"+
-                        "    uniform int frxu_layer;\n"+
-                        "    uniform mat4 frxu_frameProjectionMatrix;\n"+
-                        "};\n\n"+
-                        s;
-
-                    return
-                        "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
-                        "#define mc_ub_projection Projection\n"+
-                        "#define mc_ub_fog Fog\n"+
-                        "\n"+
-                        s;
-                });
+                    location, src, type, glslVersion, options, appliedOptions,
+                    getShaderSource, shadowMapSize, postprocess
+                );
             },
             (String error) -> {
                 throw new RuntimeException(error);

@@ -368,7 +368,7 @@ public class Pipeline implements AutoCloseable {
                 Framebuffer fb = new Framebuffer(
                     location,
                     shadowFramebuffer.name+"_"+(cascade+1),
-                    (idx) -> { throw new RuntimeException("Should not be called"); },  // color textures
+                    (idx) -> { throw new RuntimeException("Color texture getter should not be called"); },
                     new int[]{},  // clear colors
                     () -> {
                         var shadowMapCascadeTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(

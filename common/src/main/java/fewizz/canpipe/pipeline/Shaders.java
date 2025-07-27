@@ -173,9 +173,7 @@ public class Shaders {
         return new Iterator<String>() {
             Iterator<String> innerIter = Collections.emptyIterator();
 
-            {
-                prepareInnerIter();
-            }
+            { prepareInnerIter(); }
 
             @Override
             public String next() {

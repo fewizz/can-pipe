@@ -30,7 +30,7 @@ public class MaterialPrograms {
         RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
-        boolean depthPass,
+        boolean shadow,
         Optional<Integer> shadowMapSize,
         ResourceLocation vertexShaderLocation,
         ResourceLocation fragmentShaderLocation,
@@ -41,9 +41,6 @@ public class MaterialPrograms {
         float shadowsOffsetSlopeFactor,
         float shadowsOffsetBiasUnits
     ) {
-        String vertexSrcInitial = getShaderSource.apply(vertexShaderLocation).get();
-        String fragmentSrcInitial = getShaderSource.apply(fragmentShaderLocation).get();
-
         VertexFormat vertexFormat;
         if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.BLOCK) {
             vertexFormat = CanPipe.VertexFormats.BLOCK;
@@ -61,10 +58,104 @@ public class MaterialPrograms {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormat().toString());
         }
 
+        var renderPipelineBuilder = RenderPipeline.builder();
+        {
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(
+                "canpipe", (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
+            );
+            renderPipelineBuilder
+                .withLocation(location)
+                .withVertexShader(location)
+                .withFragmentShader(location)
+                .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
+                .withDepthBias(
+                    !shadow ? originalRenderPipeline.getDepthBiasScaleFactor() : shadowsOffsetSlopeFactor,
+                    !shadow ? originalRenderPipeline.getDepthBiasConstant() : shadowsOffsetBiasUnits
+                )
+                .withPolygonMode(originalRenderPipeline.getPolygonMode())
+                .withCull(!shadow ? originalRenderPipeline.isCull() : false)
+                .withColorWrite(originalRenderPipeline.isWriteColor(), originalRenderPipeline.isWriteAlpha())
+                .withDepthWrite(originalRenderPipeline.isWriteDepth())
+                .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
+        }
+
+        if (originalRenderPipeline.getBlendFunction().isPresent()) {
+            renderPipelineBuilder.withBlend(originalRenderPipeline.getBlendFunction().get());
+        }
+
+        renderPipelineBuilder.withUniform("canpipe_ub_material_program", UniformType.UNIFORM_BUFFER);
+
+        renderPipelineBuilder.withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
+
+        renderPipelineBuilder.withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("Projection", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("Fog", UniformType.UNIFORM_BUFFER);
+
+        renderPipelineBuilder.withSampler("Sampler0");
+        renderPipelineBuilder.withSampler("Sampler1");
+        renderPipelineBuilder.withSampler("Sampler2");
+        renderPipelineBuilder.withSampler("canpipe_spritesExtents");
+
+        for (String sampler : samplers) {
+            renderPipelineBuilder.withSampler(sampler);
+        }
+
+        var renderPipeline = renderPipelineBuilder.build();
+
+        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow);
+        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, enablePBR);
+
+        Function<String, String> postprocess = (String src) -> {
+            src = src.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
+            src =
+                "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
+                "#define mc_ub_projection Projection\n"+
+                "#define mc_ub_fog Fog\n"+
+                "#define frxs_baseColor Sampler0\n"+
+                "#define canpipe_overlay Sampler1\n"+
+                "#define frxs_lightmap Sampler2\n"+
+                "\n"+
+                src;
+            return src;
+        };
+
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
+            renderPipeline,
+            (ResourceLocation location, ShaderType type) -> {
+                String src = switch (type) {
+                    case ShaderType.VERTEX -> vertexSrc;
+                    case ShaderType.FRAGMENT -> fragmentSrc;
+                };
+                return Shaders.process(
+                    location, src, type, glslVersion, options, appliedOptions,
+                    getShaderSource, shadowMapSize, postprocess
+                );
+            },
+            (String error) -> {
+                throw new RuntimeException(error);
+            }
+        );
+
+        return renderPipeline;
+    }
+
+    private static String getVertexSrc(
+        ResourceLocation vertexShaderLocation,
+        Function<ResourceLocation, Optional<String>> getShaderSource,
+        VertexFormat vertexFormat,
+        RenderPipeline originalRenderPipeline,
+        boolean shadow
+    ) {
+        String vertexSrcOriginal = getShaderSource.apply(vertexShaderLocation).get();
+
         String materialsVertexSrc = "";
         IntList usedMaterialIDs = new IntArrayList();
         for (Material m : Materials.allCopy()) {
-            String src = depthPass ? m.depthVertexShaderSource : m.vertexShaderSource;
+            String src = shadow ? m.depthVertexShaderSource : m.vertexShaderSource;
             if (src == null) {
                 continue;
             }
@@ -82,7 +173,7 @@ public class MaterialPrograms {
         var vertexSrcBuilder = new StringBuilder();
 
         vertexSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
-        if (depthPass) {
+        if (shadow) {
             vertexSrcBuilder.append("#define DEPTH_PASS\n");
         }
         if (flatVertexColor) {
@@ -140,7 +231,7 @@ public class MaterialPrograms {
         """
         );
         vertexSrcBuilder.append(materialsVertexSrc);
-        vertexSrcBuilder.append(vertexSrcInitial);
+        vertexSrcBuilder.append(vertexSrcOriginal);
         vertexSrcBuilder.append(
         """
 
@@ -192,10 +283,23 @@ public class MaterialPrograms {
         """
         );
 
+        return vertexSrcBuilder.toString();
+    }
+
+    private static String getFragmentSrc(
+        ResourceLocation fragmentShaderLocation,
+        Function<ResourceLocation, Optional<String>> getShaderSource,
+        VertexFormat vertexFormat,
+        RenderPipeline originalRenderPipeline,
+        boolean shadow,
+        boolean enablePBR
+    ) {
+        String fragmentSrcOriginal = getShaderSource.apply(fragmentShaderLocation).get();
+
         String materialsFragmentSrc = "";
-        usedMaterialIDs.clear();
+        IntList usedMaterialIDs = new IntArrayList();
         for (Material m : Materials.allCopy()) {
-            String src = depthPass ? m.depthFragmentShaderSource : m.fragmentShaderSource;
+            String src = shadow ? m.depthFragmentShaderSource : m.fragmentShaderSource;
             if (src == null) {
                 continue;
             }
@@ -240,11 +344,17 @@ public class MaterialPrograms {
             alphaCutout = 0.0F;
         }
 
+        boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
+        boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
+        boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
+        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
+
         var fragmentSrcBuilder = new StringBuilder();
+
         fragmentSrcBuilder.append("#extension GL_ARB_conservative_depth: enable\n\n");
         fragmentSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
         fragmentSrcBuilder.append("#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n");
-        if (depthPass) {
+        if (shadow) {
             fragmentSrcBuilder.append("#define DEPTH_PASS\n");
         }
         if (enablePBR) {
@@ -274,7 +384,7 @@ public class MaterialPrograms {
 
         """);
         fragmentSrcBuilder.append(materialsFragmentSrc);
-        fragmentSrcBuilder.append(fragmentSrcInitial);
+        fragmentSrcBuilder.append(fragmentSrcOriginal);
         fragmentSrcBuilder.append(
         """
 
@@ -315,88 +425,7 @@ public class MaterialPrograms {
         }
         """);
 
-        var renderPipelineBuilder = RenderPipeline.builder();
-        if (!depthPass) {
-            ResourceLocation location = ResourceLocation.fromNamespaceAndPath("canpipe", "material-"+originalRenderPipeline.getLocation().getPath());
-            renderPipelineBuilder
-                .withLocation(location)
-                .withVertexShader(location)
-                .withFragmentShader(location)
-                .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
-                .withDepthBias(originalRenderPipeline.getDepthBiasScaleFactor(), originalRenderPipeline.getDepthBiasConstant())
-                .withPolygonMode(originalRenderPipeline.getPolygonMode())
-                .withCull(originalRenderPipeline.isCull())
-                .withColorWrite(originalRenderPipeline.isWriteColor(), originalRenderPipeline.isWriteAlpha())
-                .withDepthWrite(originalRenderPipeline.isWriteDepth())
-                .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
-        }
-        else {
-            ResourceLocation location = ResourceLocation.fromNamespaceAndPath("canpipe", "material_shadow-"+originalRenderPipeline.getLocation().getPath());
-            renderPipelineBuilder
-                .withLocation(location)
-                .withVertexShader(location)
-                .withFragmentShader(location)
-                .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
-                .withDepthBias(shadowsOffsetSlopeFactor, shadowsOffsetBiasUnits)
-                .withPolygonMode(originalRenderPipeline.getPolygonMode())
-                .withCull(false)  // Light can pass through chunk edge. Not ideal solution
-                .withColorWrite(originalRenderPipeline.isWriteColor(), originalRenderPipeline.isWriteAlpha())
-                .withDepthWrite(originalRenderPipeline.isWriteDepth())
-                .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
-        }
-
-        if (originalRenderPipeline.getBlendFunction().isPresent()) {
-            renderPipelineBuilder.withBlend(originalRenderPipeline.getBlendFunction().get());
-        }
-
-        renderPipelineBuilder.withUniform("canpipe_ub_material_program", UniformType.UNIFORM_BUFFER);
-
-        renderPipelineBuilder.withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
-
-        renderPipelineBuilder.withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("Projection", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("Fog", UniformType.UNIFORM_BUFFER);
-
-        renderPipelineBuilder.withSampler("Sampler0");
-        renderPipelineBuilder.withSampler("Sampler1");
-        renderPipelineBuilder.withSampler("Sampler2");
-        renderPipelineBuilder.withSampler("canpipe_spritesExtents");
-
-        for (String sampler : samplers) {
-            renderPipelineBuilder.withSampler(sampler);
-        }
-
-        var renderPipeline = renderPipelineBuilder.build();
-
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
-            renderPipeline,
-            (ResourceLocation location, ShaderType type) -> Shaders.process(
-                location, (type == ShaderType.VERTEX ? vertexSrcBuilder : fragmentSrcBuilder).toString(),
-                type, glslVersion, options, appliedOptions, getShaderSource, shadowMapSize,
-                (String src) -> {
-                    src = src.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
-                    src =
-                        "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
-                        "#define mc_ub_projection Projection\n"+
-                        "#define mc_ub_fog Fog\n"+
-                        "#define frxs_baseColor Sampler0\n"+
-                        "#define canpipe_overlay Sampler1\n"+
-                        "#define frxs_lightmap Sampler2\n"+
-                        "\n"+
-                        src;
-                    return src;
-                }
-            ),
-            (String error) -> {
-                throw new RuntimeException(error);
-            }
-        );
-
-        return renderPipeline;
+        return fragmentSrcBuilder.toString();
     }
 
 }
