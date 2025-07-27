@@ -1,7 +1,8 @@
 package fewizz.canpipe.b3d;
 
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
+
+import org.apache.commons.lang3.function.TriConsumer;
 
 import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -17,7 +18,7 @@ public interface GpuDeviceExtended extends GpuDevice {
     CompiledRenderPipeline canpipe_precompilePipeline(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
-        Consumer<String> onCompilationError
+        TriConsumer<String, ResourceLocation, String> onCompilationError
     );
 
     GpuTextureView canpipe_createTextureView(

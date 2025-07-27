@@ -1,5 +1,8 @@
 package fewizz.canpipe.pipeline;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -135,8 +138,18 @@ public class MaterialPrograms {
                     getShaderSource, shadowMapSize, postprocess
                 );
             },
-            (String error) -> {
-                throw new RuntimeException(error);
+            (String log, ResourceLocation location, String src) -> {
+                Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
+                try {
+                    Files.createDirectories(compilationErrorsPath);
+                    Files.writeString(
+                        compilationErrorsPath.resolve(location.toDebugFileName()),
+                        src+"\n"+log
+                    );
+                } catch (IOException e) {
+                    CanPipe.LOGGER.warn("Couldn't save \""+location.toString()+"\" compilation error", e);
+                }
+                throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
             }
         );
 

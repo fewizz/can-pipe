@@ -4,8 +4,8 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
+import org.apache.commons.lang3.function.TriConsumer;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -37,9 +37,7 @@ import net.minecraft.resources.ResourceLocation;
 @Mixin(GlDevice.class)
 public abstract class GlDeviceMixin implements GpuDeviceExtended {
 
-    @Shadow abstract GlRenderPipeline compilePipeline(RenderPipeline pipeline, BiFunction<ResourceLocation, ShaderType, String> shaderSource);
-
-    @Unique private Consumer<String> canpipe_onCompilationError = null;
+    @Unique private TriConsumer<String, ResourceLocation, String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
@@ -51,7 +49,7 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
     public CompiledRenderPipeline canpipe_precompilePipeline(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
-        Consumer<String> onCompilationError
+        TriConsumer<String, ResourceLocation, String> onCompilationError
     ) {
         try {
             this.canpipe_onCompilationError = onCompilationError;
@@ -101,9 +99,13 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
     }
 
     @ModifyReturnValue(method = "compileShader", at = @At("RETURN"))
-    GlShaderModule onCompilationError(GlShaderModule module) {
+    GlShaderModule onCompilationError(
+        GlShaderModule module,
+        @Local(ordinal = 0) String source,
+        @Local(ordinal = 0) GlDevice.ShaderCompilationKey key
+    ) {
         if (module == GlShaderModule.INVALID_SHADER && this.canpipe_onCompilationError != null) {
-            this.canpipe_onCompilationError.accept(this.canpipe_compilationLog);
+            this.canpipe_onCompilationError.accept(this.canpipe_compilationLog, key.id(), source);
         }
         return module;
     }
