@@ -36,11 +36,11 @@ public class BlockRenderDispatcherMixin {
             // ((VertexConsumerExtended) vc).canpipe_recomputeNormal(true);
             if (
                 bs != null &&
-                vc instanceof BufferBuilder bb &&
-                bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
+                vc instanceof VertexConsumerExtended vce &&
+                vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
             ) {
                 MaterialMap materialMap = MaterialMaps.getForBlock(bs.getBlock());
-                ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(materialMap);
+                vce.canpipe_setSharedMaterialMap(materialMap);
             }
         }
     }
@@ -59,10 +59,10 @@ public class BlockRenderDispatcherMixin {
             // (VertexConsumerExtended) vc).canpipe_recomputeNormal(false);
             if (
                 bs != null &&
-                vc instanceof BufferBuilder bb &&
-                bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
+                vc instanceof VertexConsumerExtended vce &&
+                vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
             ) {
-                ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(null);
+                vce.canpipe_setSharedMaterialMap(null);
             }
         }
     }

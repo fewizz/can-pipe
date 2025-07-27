@@ -8,7 +8,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipe;
@@ -36,8 +35,7 @@ public class LiquidBlockRendererMixin {
     ) {
         if (
             vc instanceof VertexConsumerExtended vce &&
-            vc instanceof BufferBuilder bb &&
-            bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
         ) {
 
             @SuppressWarnings("deprecation")

@@ -314,4 +314,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         return MemoryUtil.memGetFloat(posPtr + (vertexOffset*this.vertexSize + element*Float.BYTES));
     }
 
+    @Override
+    public VertexFormat canpipe_getVertexFormat() {
+        return this.format;
+    }
+
 }

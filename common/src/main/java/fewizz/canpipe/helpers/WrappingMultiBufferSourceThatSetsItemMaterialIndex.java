@@ -27,14 +27,14 @@ public class WrappingMultiBufferSourceThatSetsItemMaterialIndex implements Multi
     public VertexConsumer getBuffer(RenderType renderType) {
         var vertexConsumer = this.source.getBuffer(renderType);
         if (
-            vertexConsumer instanceof BufferBuilder bb &&
-            bb.format.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            vertexConsumer instanceof VertexConsumerExtended vce &&
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)
         ) {
             MaterialMap materialMap = null;
             if (this.item instanceof BlockItem bi) {
                 materialMap = MaterialMaps.getForBlock(bi.getBlock());
             }
-            ((VertexConsumerExtended) bb).canpipe_setSharedMaterialMap(materialMap);
+            vce.canpipe_setSharedMaterialMap(materialMap);
         }
         return vertexConsumer;
     }

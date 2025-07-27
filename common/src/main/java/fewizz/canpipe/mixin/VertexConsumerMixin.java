@@ -27,8 +27,11 @@ public interface VertexConsumerMixin {
         at = @At("HEAD")
     )
     default void setSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
-        if (this instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(() -> bakedQuad.sprite());
+        if (
+            this instanceof VertexConsumerExtended vce &&
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
+        ) {
+            vce.canpipe_setSpriteSupplier(() -> bakedQuad.sprite());
         }
     }
 
@@ -41,8 +44,11 @@ public interface VertexConsumerMixin {
         at = @At("RETURN")
     )
     default void resetSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
-        if (this instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(null);
+        if (
+            this instanceof VertexConsumerExtended vce &&
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
+        ) {
+            vce.canpipe_setSpriteSupplier(null);
         }
     }
 
@@ -57,7 +63,9 @@ public interface VertexConsumerMixin {
         argsOnly = true
     )
     default float[] dontBlendColorWithAO(float[] ao) {
-        boolean requiresAO = this instanceof BufferBuilder bb && bb.format.contains(CanPipe.VertexFormatElements.AO);
+        boolean requiresAO =
+            this instanceof VertexConsumerExtended vce &&
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO);
         return requiresAO ? new float[]{1.0F, 1.0F, 1.0F, 1.0F, ao[0], ao[1], ao[2], ao[3]} : ao;
     }
 
@@ -74,10 +82,11 @@ public interface VertexConsumerMixin {
         @Local(ordinal = 0, argsOnly = true) float[] ao,
         @Local(ordinal = 5) int vertexIndex
     ) {
-        if (this instanceof BufferBuilder bb) {
-            if (bb.format.contains(CanPipe.VertexFormatElements.AO)) {
-                ((VertexConsumerExtended) bb).canpipe_setAO(ao[vertexIndex + 4]);  // because of the change above
-            }
+        if (
+            this instanceof VertexConsumerExtended vce &&
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)
+        ) {
+            vce.canpipe_setAO(ao[vertexIndex + 4]);  // because of the change above
         }
     }
 

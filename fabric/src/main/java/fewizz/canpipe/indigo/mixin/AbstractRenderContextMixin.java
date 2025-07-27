@@ -29,15 +29,15 @@ public class AbstractRenderContextMixin {
     )
     void setSpriteIndex(
         MutableQuadViewImpl quad,
-        VertexConsumer vertexConsumer,
+        VertexConsumer vc,
         CallbackInfo ci
     ) {
         if (
-            vertexConsumer instanceof BufferBuilder bb
-            && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
-            && quad instanceof MutableQuadViewExtended mq
+            vc instanceof VertexConsumerExtended vce &&
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX) &&
+            quad instanceof MutableQuadViewExtended mq
         ) {
-            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(mq::canpipe_getSprite);
+            vce.canpipe_setSpriteSupplier(mq::canpipe_getSprite);
         }
     }
 
@@ -50,14 +50,14 @@ public class AbstractRenderContextMixin {
     )
     void resetSpriteIndex(
         MutableQuadViewImpl quad,
-        VertexConsumer vertexConsumer,
+        VertexConsumer vc,
         CallbackInfo ci
     ) {
         if (
-            vertexConsumer instanceof BufferBuilder bb
-            && bb.format.contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
+            vc instanceof VertexConsumerExtended vce &&
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
         ) {
-            ((VertexConsumerExtended) bb).canpipe_setSpriteSupplier(null);
+            vce.canpipe_setSpriteSupplier(null);
         }
     }
 
@@ -75,16 +75,16 @@ public class AbstractRenderContextMixin {
     )
     void setExtendedVertexElements(
         MutableQuadViewImpl quad,
-        VertexConsumer vertexConsumer,
+        VertexConsumer vc,
         CallbackInfo ci,
         @Local(ordinal = 0) int quadVertexIndex
     ) {
         if (
-            vertexConsumer instanceof BufferBuilder bb &&
+            vc instanceof VertexConsumerExtended vce &&
             quad instanceof MutableQuadViewExtended q
         ) {
-            if (bb.format.contains(CanPipe.VertexFormatElements.AO)) {
-                ((VertexConsumerExtended) bb).canpipe_setAO(q.canpipe_getAO(quadVertexIndex));
+            if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)) {
+                vce.canpipe_setAO(q.canpipe_getAO(quadVertexIndex));
             }
         }
     }

@@ -27,7 +27,7 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
         return this.ao[index];
     }
 
-    @ModifyReturnValue(method = "hasShade", at = @At("RETURN"))
+    @ModifyReturnValue(method = "diffuseShade", at = @At("RETURN"))
     boolean hasShade(boolean original) {
         // diffuse lighting is handled by pipeline
         if (Pipelines.getCurrent() != null) {
