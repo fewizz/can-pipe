@@ -26,7 +26,7 @@ public class MaterialPrograms {
 
     private MaterialPrograms() {}
 
-    public static RenderPipeline load(
+    static RenderPipeline load(
         RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
@@ -123,7 +123,7 @@ public class MaterialPrograms {
             return src;
         };
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_compilePipeline(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipeline(
             renderPipeline,
             (ResourceLocation location, ShaderType type) -> {
                 String src = switch (type) {

@@ -97,7 +97,7 @@ public class Pipeline implements AutoCloseable {
     private boolean runInitPasses = true;
     private boolean runResizePasses = true;
 
-    public Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) { try {
+    Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) { try {
         this.location = rawPipeline.location;
         this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
 
@@ -453,14 +453,10 @@ public class Pipeline implements AutoCloseable {
         throw e;
     }}
 
-    public boolean isPassProgramRenderPipeline(RenderPipeline renderPipeline) {
-        return this.programs.containsValue(renderPipeline);
-    }
-
-    public boolean isMaterialProgramRenderPipeline(RenderPipeline renderPipeline) {
-        return this.materialPrograms.containsValue(renderPipeline) || (
-            this.shadows != null && this.shadows.materialPrograms().containsValue(renderPipeline)
-        );
+    @Override
+    public void close() {
+        this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
+        this.textures.values().forEach(Texture::close);
     }
 
     public void onWindowSizeChanged(int w, int h) {
@@ -611,12 +607,6 @@ public class Pipeline implements AutoCloseable {
         }
 
         return result;
-    }
-
-    @Override
-    public void close() {
-        this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
-        this.textures.values().forEach(Texture::close);
     }
 
 }

@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public interface GpuDeviceExtended extends GpuDevice {
 
-    CompiledRenderPipeline canpipe_compilePipeline(
+    CompiledRenderPipeline canpipe_precompilePipeline(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
         Consumer<String> onCompilationError

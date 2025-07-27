@@ -141,6 +141,7 @@ final public class Pipelines implements PreparableReloadListener {
             } catch (Exception e) {
                 e.printStackTrace();
                 Pipelines.loadingError = e;
+                RenderSystem.getDevice().clearPipelineCache();
             }
         }
 

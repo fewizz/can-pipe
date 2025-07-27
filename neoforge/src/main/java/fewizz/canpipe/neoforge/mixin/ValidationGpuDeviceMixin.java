@@ -24,12 +24,12 @@ public abstract class ValidationGpuDeviceMixin implements GpuDeviceExtended {
     @Shadow @Final protected GpuDevice realDevice;
 
     @Override
-    public CompiledRenderPipeline canpipe_compilePipeline(
+    public CompiledRenderPipeline canpipe_precompilePipeline(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
         Consumer<String> onCompilationError
     ) {
-        return ((GpuDeviceExtended) realDevice).canpipe_compilePipeline(
+        return ((GpuDeviceExtended) realDevice).canpipe_precompilePipeline(
             pipeline, shaderSource, onCompilationError
         );
     }
