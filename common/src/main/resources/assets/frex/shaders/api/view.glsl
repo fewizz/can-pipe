@@ -1,7 +1,8 @@
-#include canpipe:shaders/uniform_blocks.glsl
+#include minecraft:shaders/include/dynamictransforms.glsl
+#include minecraft:shaders/include/projection.glsl
 
 layout(std140) uniform frx_ub_view {
-    // uniform mat4 frx_viewMatrix;  provided by mc_modelViewMatrix
+    // uniform mat4 frx_viewMatrix;  provided by DynamicTransforms
     uniform mat4 frx_inverseViewMatrix;
     uniform mat4 frx_lastViewMatrix;
 
@@ -14,7 +15,7 @@ layout(std140) uniform frx_ub_view {
 
     // chunk block pos when frx_modelOriginRegion is true, camera pos when frx_modelOriginCamera is true, vec3(0.0) otherwise
     uniform vec4 frx_modelToWorld;
-    // uniform vec4 frx_modelToCamera; provided by mc_modelToCamera
+    // uniform vec4 frx_modelToCamera; provided by DynamicTransforms
 
     uniform vec4 canpipe_shadowCenter_0;
     uniform vec4 canpipe_shadowCenter_1;
@@ -41,9 +42,9 @@ const vec3 frx_entityView = vec3(0.0);  // TODO define
 const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO define
 const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
 
-#define frx_viewMatrix mc_modelViewMatrix
-#define frx_projectionMatrix mc_projectionMatrix
-#define frx_modelToCamera vec4(mc_modelToCamera, 0.0)
+#define frx_viewMatrix ModelViewMat
+#define frx_projectionMatrix ProjMat
+#define frx_modelToCamera vec4(ModelOffset, 0.0)
 
 #define frx_modelOriginCamera (canpipe_originType == 0)
 #define frx_modelOriginRegion (canpipe_originType == 1)

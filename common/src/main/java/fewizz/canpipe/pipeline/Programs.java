@@ -95,13 +95,7 @@ public class Programs {
                 "    uniform mat4 frxu_frameProjectionMatrix;\n"+
                 "};\n\n"+
                 src;
-
-            return
-                "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
-                "#define mc_ub_projection Projection\n"+
-                "#define mc_ub_fog Fog\n"+
-                "\n"+
-                src;
+            return src;
         };
 
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipeline(

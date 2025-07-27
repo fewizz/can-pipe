@@ -1,4 +1,4 @@
-#include canpipe:shaders/uniform_blocks.glsl
+#include minecraft:shaders/include/fog.glsl
 
 layout(std140) uniform frx_ub_fog {
     uniform vec4 frx_fogColor;
@@ -7,5 +7,5 @@ layout(std140) uniform frx_ub_fog {
     uniform int frx_fogEnabled;
 };
 
-#define frx_fogStart mc_fogRenderDistanceStart
-#define frx_fogEnd mc_fogRenderDistanceEnd
+#define frx_fogStart FogRenderDistanceStart
+#define frx_fogEnd FogRenderDistanceEnd

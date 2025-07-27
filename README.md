@@ -1,5 +1,5 @@
 # can-pipe
-Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader pipelines using minimal amount of mixins
+Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader pipelines
 
 ## 
 

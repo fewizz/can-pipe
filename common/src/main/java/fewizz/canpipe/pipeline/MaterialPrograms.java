@@ -117,13 +117,12 @@ public class MaterialPrograms {
         Function<String, String> postprocess = (String src) -> {
             src = src.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
             src =
-                "#define mc_ub_dynamic_transforms DynamicTransforms\n"+
-                "#define mc_ub_projection Projection\n"+
-                "#define mc_ub_fog Fog\n"+
-                "#define frxs_baseColor Sampler0\n"+
-                "#define canpipe_overlay Sampler1\n"+
-                "#define frxs_lightmap Sampler2\n"+
                 "\n"+
+                "layout(std140) uniform canpipe_ub_material_program {\n"+
+                "       uniform int frxu_cascade;\n"+
+                "       uniform int canpipe_renderTarget;\n"+
+                "       uniform int canpipe_originType;"+
+                "};\n\n"+
                 src;
             return src;
         };
@@ -195,7 +194,7 @@ public class MaterialPrograms {
             vertexSrcBuilder.append("#define CANPIPE_FLAT_VERTEX_COLOR\n");
         }
         vertexSrcBuilder.append("\n");
-        vertexSrcBuilder.append("#include canpipe:shaders/uniform_blocks.glsl\n");
+        vertexSrcBuilder.append("#include frex:shaders/api/view.glsl\n");
         vertexSrcBuilder.append("\n");
         vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.POSITION)+") in vec3 in_vertex;  // Position\n");
         vertexSrcBuilder.append("layout(location = "+vertexFormat.getElements().indexOf(VertexFormatElement.COLOR)+") in vec4 in_color;  // Color\n");
@@ -366,7 +365,6 @@ public class MaterialPrograms {
 
         var fragmentSrcBuilder = new StringBuilder();
 
-        fragmentSrcBuilder.append("#extension GL_ARB_conservative_depth: enable\n\n");
         fragmentSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
         fragmentSrcBuilder.append("#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n");
         if (shadow) {
@@ -389,8 +387,6 @@ public class MaterialPrograms {
         }
         fragmentSrcBuilder.append(
         """
-
-        layout (depth_unchanged) out float gl_FragDepth;
 
         #include frex:shaders/api/fragment.glsl
         #include frex:shaders/api/sampler.glsl

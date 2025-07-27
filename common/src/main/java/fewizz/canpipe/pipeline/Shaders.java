@@ -196,8 +196,14 @@ public class Shaders {
                 }
 
                 var lineAndIsCommentedAt = linesIter.next();
+
                 String line = lineAndIsCommentedAt.getLeft();
                 Int2BooleanFunction isCommentedAt = lineAndIsCommentedAt.getRight();
+
+                // MC's shader files always(?) specify this version
+                if (line.trim().equals("#version 150") && sourceLocation.getNamespace().equals("minecraft")) {
+                    line = "// "+line;
+                }
 
                 var includeMatcher = INCLUDE_PATTERN.matcher(line);
 
