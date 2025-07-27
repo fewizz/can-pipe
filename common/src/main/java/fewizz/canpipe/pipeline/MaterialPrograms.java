@@ -12,6 +12,7 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -101,7 +102,8 @@ public class MaterialPrograms {
         renderPipelineBuilder.withSampler("Sampler0");
         renderPipelineBuilder.withSampler("Sampler1");
         renderPipelineBuilder.withSampler("Sampler2");
-        renderPipelineBuilder.withSampler("canpipe_spritesExtents");
+
+        renderPipelineBuilder.withUniform("canpipe_spritesExtents", UniformType.TEXEL_BUFFER, TextureFormat.valueOf("RGBA16_UNORM"));
 
         for (String sampler : samplers) {
             renderPipelineBuilder.withSampler(sampler);

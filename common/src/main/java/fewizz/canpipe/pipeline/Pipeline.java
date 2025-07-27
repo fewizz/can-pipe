@@ -588,7 +588,7 @@ public class Pipeline implements AutoCloseable {
         if (atlas == null) {  // we just need to bind something
             atlas = mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
         }
-        renderPass.bindSampler("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).canpipe_getSpriteData());
+        renderPass.setUniform("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).canpipe_getSpritesExtentsBuffer());
     }
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {
