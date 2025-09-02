@@ -1,5 +1,5 @@
 plugins {
-    id 'net.neoforged.moddev' version '2.0.103'
+    id "net.neoforged.moddev" version "${mod_dev_gradle_version}"
 }
 
 base {
@@ -10,7 +10,7 @@ compileJava.source project(":common").sourceSets.main.allSource
 
 neoForge {
     version = neoforge_current_version
-    accessTransformers.from(file('src/main/resources/META-INF/accesstransformer.cfg'))
+    accessTransformers.from(file("src/main/resources/META-INF/accesstransformer.cfg"))
 
     parchment {
         minecraftVersion = parchment_minecraft
@@ -57,7 +57,7 @@ processResources {
         'java_version'                    : java_version
     ]
 
-    filesMatching(['META-INF/neoforge.mods.toml', '*.mixins.json']) {
+    filesMatching(["META-INF/neoforge.mods.toml", "*.mixins.json"]) {
         expand expandProps
     }
     inputs.properties(expandProps)
