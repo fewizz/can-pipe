@@ -8,7 +8,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -31,7 +30,6 @@ public abstract class MinecraftMixin {
     @Inject(method = "handleKeybinds", at = @At("RETURN"))
     private void handleKeybinds(CallbackInfo ci) {
         while (CanPipe.PIPELINES_RELOAD_KEY.consumeClick()) {
-            RenderSystem.getDevice().clearPipelineCache();
             Pipelines.loadRawPipelines(Pipelines.readRawPipelines());
         }
     }

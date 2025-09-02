@@ -136,6 +136,8 @@ final public class Pipelines implements PreparableReloadListener {
         Pipeline loadedPipeline = null;
 
         if (raw != null) {
+            RenderSystem.getDevice().clearPipelineCache();
+
             try {
                 loadedPipeline = new Pipeline(raw, appliedOptions);
             } catch (Exception e) {
