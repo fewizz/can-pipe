@@ -1,7 +1,5 @@
 package fewizz.canpipe.mixin;
 
-import java.util.List;
-
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Matrix4fc;
@@ -38,7 +36,6 @@ import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -47,32 +44,38 @@ import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
-import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import net.minecraft.client.renderer.state.LevelRenderState;
+import net.minecraft.client.renderer.state.ParticlesRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.Vec3;
 
 @Mixin(value = LevelRenderer.class, priority = 1001)
 public abstract class LevelRendererMixin implements LevelRendererExtended {
 
-    // @Shadow @Final private List<Entity> visibleEntities;
-    // @Shadow @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
+    @Shadow @Final private LevelRenderState levelRenderState;
+    @Shadow @Final private SubmitNodeStorage submitNodeStorage;
+    @Shadow @Final private FeatureRenderDispatcher featureRenderDispatcher;
+    @Shadow @Final private ParticlesRenderState particlesRenderState;
+
     @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
     @Shadow @Final private RenderBuffers renderBuffers;
 
     @Shadow abstract ChunkSectionsToRender prepareChunkRenders(Matrix4fc matrix4fc, double d, double e, double f);
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
-    // @Shadow private void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode) {}
-    // @Shadow private boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list) { return false; }
-    /* @Shadow private void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list) {}
-    @Shadow private void applyFrustum(Frustum frustum) {}
-    @Shadow private void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f) {}*/
+    @Shadow private void cullTerrain(Camera camera, Frustum frustum, boolean bl) {}
+    @Shadow private void extractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState levelRenderState) {}
+    @Shadow private void extractVisibleBlockEntities(Camera camera, float f, LevelRenderState levelRenderState) {}
+    @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeStorage submitNodeStorage) {}
+    @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
 
     @Unique volatile private boolean canpipe_isRenderingShadows = false;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
@@ -148,7 +151,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
 
-        /*this.canpipe_isRenderingShadows = true;
+        this.canpipe_isRenderingShadows = true;
 
         Profiler.get().popPush("canpipe_shadows");
         Profiler.get().push("preparations");
@@ -199,16 +202,20 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             );
 
             if (cascade == 0) {
-                Profiler.get().push("setupRender");
-                this.setupRender(new Camera() {{
+                Profiler.get().push("cullTerrain");
+                /*this.setupRender(new Camera() {{
                     setPosition(camPos);
                     setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
-                }}, shadowFrustum, false, false);
+                }}, shadowFrustum, false, false);*/
             }
-            else {
-                Profiler.get().push("applyFrustum");
-                this.applyFrustum(shadowFrustum);
-            }
+            this.cullTerrain(
+                new Camera() {{
+                    setPosition(camPos);
+                    setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
+                }},
+                shadowFrustum,
+                false
+            );
 
             RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
 
@@ -232,23 +239,33 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 
                 if (p.shadows.allowEntities()) {
-                    Profiler.get().popPush("collect entities");
-                    this.collectVisibleEntities(camera, shadowFrustum, this.visibleEntities);
+                    Profiler.get().popPush("extract entities");
+                    this.extractVisibleEntities(camera, shadowFrustum, deltaTracker, this.levelRenderState);
+                    this.extractVisibleBlockEntities(camera, pt, this.levelRenderState);
 
                     Profiler.get().popPush("render entities");
 
-                    this.renderEntities(poseStack, bufferSource, camera, deltaTracker, this.visibleEntities);
-                    this.renderBlockEntities(poseStack, bufferSource, bufferSource, camera, deltaTracker.getGameTimeDeltaPartialTick(false));
+                    this.submitEntities(poseStack, levelRenderState, this.submitNodeStorage);
+                    this.submitBlockEntities(poseStack, levelRenderState, this.submitNodeStorage);
+                    this.featureRenderDispatcher.renderAllFeatures();
+
                     this.checkPoseStack(poseStack);
-                    this.visibleEntities.clear();
+                    this.levelRenderState.reset();
                 }
 
-                if (p.shadows.allowParticles()) {  // TODO
+                /*if (p.shadows.allowParticles()) {
+                    Profiler.get().popPush("extract particles");
+                    mc.particleEngine.extract(this.particlesRenderState, shadowFrustum, camera, pt);
+
                     Profiler.get().popPush("render particles");
-                    mc.particleEngine.render(camera, pt, bufferSource);
-                }
+                    this.particlesRenderState.submit(this.submitNodeStorage, this.levelRenderState.cameraRenderState);
+                    this.featureRenderDispatcher.renderAllFeatures();
+
+                    this.particlesRenderState.reset();
+                }*/
 
                 bufferSource.endBatch();
+
             } finally {
                 mc.mainRenderTarget = originalMainRenderTarget;
             }
@@ -269,7 +286,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         mc.options.entityShadows().set(prevEntityShadows);
         this.canpipe_isRenderingShadows = false;
 
-        Profiler.get().pop();*/
+        Profiler.get().pop();
     }
 
     @WrapOperation(
@@ -318,8 +335,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return operation.call(frustum, size);
     }
 
-    /*@ModifyExpressionValue(
-        method = "collectVisibleEntities",
+    @ModifyExpressionValue(
+        method = "extractVisibleEntities",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/Camera;isDetached()Z"
@@ -327,6 +344,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     private boolean addPlayerWhenCollectingVisibleEntities(boolean original) {
         return this.canpipe_isRenderingShadows ? true : original;
-    }*/
+    }
 
 }
