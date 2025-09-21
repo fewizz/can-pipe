@@ -23,7 +23,6 @@
     "LiquidBlockRendererMixin",
     "MinecraftMixin",
     "ModelBlockRendererMixin",
-    "ModelPartCubeMixin",
     "RenderSystemMixin",
     "RenderSystemAccessor",
     "SectionCompilerMixin",
