@@ -14,22 +14,23 @@ public class CanPipeClientInitializer implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloader(
-            ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "materials"),
-            Materials.INSTANCE
-        );
-        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloader(
-            ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "material-maps"),
-            MaterialMaps.INSTANCE
-        );
-        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloader(
-            ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "lights"),
-            Lights.INSTANCE
-        );
-        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloader(
-            ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "pipelines"),
-            Pipelines.INSTANCE
-        );
+        var clientResourcesLoader = ResourceLoader.get(PackType.CLIENT_RESOURCES);
+
+        var materials = ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "materials");
+        clientResourcesLoader.registerReloader(materials,Materials.INSTANCE);
+
+        var materialMaps = ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "material-maps");
+        clientResourcesLoader.registerReloader(materialMaps, MaterialMaps.INSTANCE);
+
+        var lights = ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "lights");
+        clientResourcesLoader.registerReloader(lights, Lights.INSTANCE);
+
+        var pipelines = ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "pipelines");
+        clientResourcesLoader.registerReloader(pipelines, Pipelines.INSTANCE);
+
+        clientResourcesLoader.addReloaderOrdering(materials, materialMaps);
+        clientResourcesLoader.addReloaderOrdering(lights, pipelines);
+        clientResourcesLoader.addReloaderOrdering(materialMaps, pipelines);
 
         KeyBindingHelper.registerKeyBinding(CanPipe.PIPELINES_RELOAD_KEY);
         // KeyBindingHelper.registerKeyBinding(CanPipe.PIPELINE_IO_DEBUG);

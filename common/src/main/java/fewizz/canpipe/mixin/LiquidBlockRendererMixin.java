@@ -1,6 +1,5 @@
 package fewizz.canpipe.mixin;
 
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -44,8 +43,6 @@ public class LiquidBlockRendererMixin {
 
             // TODO. Disgusting. Can't think of other universal way for finding sprite
             vce.canpipe_setSpriteSupplier(() -> {
-                MutableObject<TextureAtlasSprite> result = new MutableObject<>();
-
                 float u0 = vce.canpipe_getUV(0, 0);
                 float v0 = vce.canpipe_getUV(0, 1);
 
@@ -61,11 +58,11 @@ public class LiquidBlockRendererMixin {
                         spriteContainsUV(sprite, u1, v1) &&
                         spriteContainsUV(sprite, u2, v2)
                     ) {
-                        result.setValue(sprite);
+                        return sprite;
                     }
                 }
 
-                return result.getValue();
+                return null;
             });
 
             MaterialMap materialMap = MaterialMaps.getForFluid(fs.getType());
@@ -92,7 +89,9 @@ public class LiquidBlockRendererMixin {
 
     @Unique
     private static boolean spriteContainsUV(TextureAtlasSprite sprite, float u, float v) {
-        return sprite.getU0() <= u && u <= sprite.getU1() && sprite.getV0() <= v && v <= sprite.getV1();
+        return
+            sprite.getU0() <= u && u <= sprite.getU1() &&
+            sprite.getV0() <= v && v <= sprite.getV1();
     }
 
 }
