@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -45,6 +46,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
@@ -577,18 +579,20 @@ public class Pipeline implements AutoCloseable {
 
     public static void bindSpritesExtentsSampler(RenderPass renderPass, GpuTextureView sampler0) {
         var mc = Minecraft.getInstance();
-        TextureAtlas atlas = null;
-        for (var atlasLoc : ModelManager.VANILLA_ATLASES.keySet()) {
-            var possibleAtlas = mc.getModelManager().getAtlas(atlasLoc);
-            if (possibleAtlas.getTexture() == sampler0.texture()) {
-                atlas = possibleAtlas;
-                break;
+        MutableObject<TextureAtlas> atlas = new MutableObject<>();
+
+        mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
+            if (atlas.getValue() == null && possibleAtlas.getTexture() == sampler0.texture()) {
+                atlas.setValue(possibleAtlas);
             }
+        });
+        if (atlas.getValue() == null) {  // we just need to bind something
+            atlas.setValue(mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS));
         }
-        if (atlas == null) {  // we just need to bind something
-            atlas = mc.getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
-        }
-        renderPass.setUniform("canpipe_spritesExtents", ((TextureAtlasExtended) atlas).canpipe_getSpritesExtentsBuffer());
+        renderPass.setUniform(
+            "canpipe_spritesExtents",
+            ((TextureAtlasExtended) atlas.getValue()).canpipe_getSpritesExtentsBuffer()
+        );
     }
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {

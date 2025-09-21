@@ -201,7 +201,7 @@ public class Shaders {
                 Int2BooleanFunction isCommentedAt = lineAndIsCommentedAt.getRight();
 
                 // MC's shader files always(?) specify this version
-                if (line.trim().equals("#version 150") && sourceLocation.getNamespace().equals("minecraft")) {
+                if (line.trim().equals("#version 330") && sourceLocation.getNamespace().equals("minecraft")) {
                     line = "// "+line;
                 }
 

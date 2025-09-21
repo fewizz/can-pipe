@@ -61,18 +61,18 @@ import net.minecraft.world.phys.Vec3;
 @Mixin(value = LevelRenderer.class, priority = 1001)
 public abstract class LevelRendererMixin implements LevelRendererExtended {
 
-    @Shadow @Final private List<Entity> visibleEntities;
-    @Shadow @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
+    // @Shadow @Final private List<Entity> visibleEntities;
+    // @Shadow @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> visibleSections = new ObjectArrayList<>(10000);
     @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
     @Shadow @Final private RenderBuffers renderBuffers;
 
     @Shadow abstract ChunkSectionsToRender prepareChunkRenders(Matrix4fc matrix4fc, double d, double e, double f);
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
-    @Shadow private void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode) {}
-    @Shadow private boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list) { return false; }
-    @Shadow private void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list) {}
+    // @Shadow private void setupRender(Camera camera, Frustum frustum, boolean frustumWasAlreadyCaptured, boolean inSpectatorMode) {}
+    // @Shadow private boolean collectVisibleEntities(Camera camera, Frustum frustum, List<Entity> list) { return false; }
+    /* @Shadow private void renderEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Camera camera, DeltaTracker deltaTracker, List<Entity> list) {}
     @Shadow private void applyFrustum(Frustum frustum) {}
-    @Shadow private void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f) {}
+    @Shadow private void renderBlockEntities(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, MultiBufferSource.BufferSource bufferSource2, Camera camera, float f) {}*/
 
     @Unique volatile private boolean canpipe_isRenderingShadows = false;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
@@ -104,6 +104,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Camera camera,
         Matrix4f viewMatrix,
         Matrix4f projectionMatrix,
+        Matrix4f cullMatrix,
         GpuBufferSlice gpuBufferSlice,
         Vector4f clearColor,
         boolean renderSky,
@@ -147,7 +148,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
 
-        this.canpipe_isRenderingShadows = true;
+        /*this.canpipe_isRenderingShadows = true;
 
         Profiler.get().popPush("canpipe_shadows");
         Profiler.get().push("preparations");
@@ -242,7 +243,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                     this.visibleEntities.clear();
                 }
 
-                if (p.shadows.allowParticles()) {
+                if (p.shadows.allowParticles()) {  // TODO
                     Profiler.get().popPush("render particles");
                     mc.particleEngine.render(camera, pt, bufferSource);
                 }
@@ -268,7 +269,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         mc.options.entityShadows().set(prevEntityShadows);
         this.canpipe_isRenderingShadows = false;
 
-        Profiler.get().pop();
+        Profiler.get().pop();*/
     }
 
     @WrapOperation(
@@ -317,7 +318,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return operation.call(frustum, size);
     }
 
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = "collectVisibleEntities",
         at = @At(
             value = "INVOKE",
@@ -326,6 +327,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     private boolean addPlayerWhenCollectingVisibleEntities(boolean original) {
         return this.canpipe_isRenderingShadows ? true : original;
-    }
+    }*/
 
 }

@@ -86,15 +86,15 @@ public class Framebuffer extends RenderTarget {
 
     @Override
     public void createBuffers(int width, int height) {
-        this.width = this.height = this.viewWidth = this.viewHeight = -1;
+        this.width = this.height = -1;
 
         Consumer<GpuTextureView> updateSize = (textureView) -> {
             int w = textureView.getWidth(0);
             int h = textureView.getHeight(0);
 
             if (this.width == -1) {  // first time
-                this.width = this.viewWidth = w;
-                this.height = this.viewHeight = h;
+                this.width = w;
+                this.height = h;
                 return;
             }
 

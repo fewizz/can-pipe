@@ -13,7 +13,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 
@@ -35,14 +34,14 @@ final public class MaterialMaps implements PreparableReloadListener {
 
     @Override
     public CompletableFuture<Void> reload(
-        PreparationBarrier preparationBarrier,
-        ResourceManager resourceManager,
+        PreparableReloadListener.SharedState sharedState,
         Executor loadExecutor,
+        PreparableReloadListener.PreparationBarrier preparationBarrier,
         Executor applyExecutor
     ) {
         return CompletableFuture.supplyAsync(
             () -> {
-                return resourceManager.listResources(
+                return sharedState.resourceManager().listResources(
                     "materialmaps",
                     (ResourceLocation rl) -> {
                         String pathStr = rl.getPath();

@@ -24,7 +24,6 @@
     "MinecraftMixin",
     "ModelBlockRendererMixin",
     "ModelPartCubeMixin",
-    "ModelPartPolygonMixin",
     "RenderSystemMixin",
     "RenderSystemAccessor",
     "SectionCompilerMixin",

@@ -16,7 +16,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 final public class Materials implements PreparableReloadListener {
 
@@ -40,13 +39,13 @@ final public class Materials implements PreparableReloadListener {
 
     @Override
     public CompletableFuture<Void> reload(
-        PreparationBarrier preparationBarrier,
-        ResourceManager resourceManager,
+        PreparableReloadListener.SharedState sharedState,
         Executor loadExecutor,
+        PreparableReloadListener.PreparationBarrier preparationBarrier,
         Executor applyExecutor
     ) {
         return CompletableFuture.supplyAsync(() -> {
-                return resourceManager.listResources(
+                return sharedState.resourceManager().listResources(
                     "materials",
                     (ResourceLocation rl) -> {
                         String pathStr = rl.getPath();
@@ -70,7 +69,7 @@ final public class Materials implements PreparableReloadListener {
                         );
                         JsonObject materialJson = CanPipe.JANKSON.load(e.getValue().open());
                         Material material = new Material(
-                            resourceManager,
+                            sharedState.resourceManager(),
                             location,
                             materialJson
                         );

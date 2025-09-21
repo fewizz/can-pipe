@@ -40,7 +40,7 @@ public class ItemRendererMixin {
         return glint;
     }
 
-    @ModifyVariable(
+    /*@ModifyVariable(
         method = "getArmorFoilBuffer",
         at = @At("HEAD"),
         argsOnly = true,
@@ -57,7 +57,7 @@ public class ItemRendererMixin {
             hasFoil = false;
         }
         return hasFoil;
-    }
+    }*/
 
     @Inject(
         method = "renderItem",

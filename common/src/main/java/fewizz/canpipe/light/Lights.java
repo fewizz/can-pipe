@@ -10,7 +10,6 @@ import fewizz.canpipe.CanPipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 final public class Lights implements PreparableReloadListener {
 
@@ -25,14 +24,14 @@ final public class Lights implements PreparableReloadListener {
 
     @Override
     public CompletableFuture<Void> reload(
-        PreparationBarrier preparationBarrier,
-        ResourceManager resourceManager,
+        PreparableReloadListener.SharedState sharedState,
         Executor loadExecutor,
+        PreparableReloadListener.PreparationBarrier preparationBarrier,
         Executor applyExecutor
     ) {
         return CompletableFuture.supplyAsync(
             () -> {
-                return resourceManager.listResources(
+                return sharedState.resourceManager().listResources(
                     "lights/item",
                     (ResourceLocation rl) -> {
                         String pathStr = rl.getPath();

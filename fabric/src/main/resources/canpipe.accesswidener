@@ -9,5 +9,3 @@ accessible  field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojan
 mutable     field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
 
 accessible  class   net/minecraft/client/renderer/RenderType$CompositeRenderType
-
-accessible  field   net/minecraft/client/resources/model/ModelManager VANILLA_ATLASES  Ljava/util/Map;

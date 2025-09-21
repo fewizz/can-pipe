@@ -27,7 +27,6 @@ import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 final public class Pipelines implements PreparableReloadListener {
 
@@ -36,8 +35,10 @@ final public class Pipelines implements PreparableReloadListener {
 
     @Override
     public CompletableFuture<Void> reload(
-        PreparationBarrier preparationBarrier, ResourceManager resourceManager,
-        Executor loadExecutor, Executor applyExecutor
+        PreparableReloadListener.SharedState sharedState,
+        Executor loadExecutor,
+        PreparableReloadListener.PreparationBarrier preparationBarrier,
+        Executor applyExecutor
     ) {
         return CompletableFuture.supplyAsync(
             Pipelines::readRawPipelines, loadExecutor

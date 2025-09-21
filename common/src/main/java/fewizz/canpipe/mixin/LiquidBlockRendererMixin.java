@@ -19,6 +19,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.LiquidBlockRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.world.level.material.FluidState;
 
 @Mixin(LiquidBlockRenderer.class)
@@ -38,8 +39,7 @@ public class LiquidBlockRendererMixin {
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
         ) {
 
-            @SuppressWarnings("deprecation")
-            TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS);
+            TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
             var sprites = ((TextureAtlasExtended) atlas).canpipe_getSprites();
 
             // TODO. Disgusting. Can't think of other universal way for finding sprite

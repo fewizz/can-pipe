@@ -3,6 +3,7 @@ package fewizz.canpipe.mixin;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
@@ -205,10 +206,15 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 if (this.materialMap != null) {
                     if (this.materialMap.spriteMap != null && sprite != null) {
                         Minecraft mc = Minecraft.getInstance();
-                        TextureAtlas atlas = mc.getModelManager().getAtlas(sprite.atlasLocation());
+                        MutableObject<TextureAtlas> atlas = new MutableObject<>();
+                        mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
+                            if (atlas.getValue() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
+                                atlas.setValue(possibleAtlas);
+                            }
+                        });
 
                         for (var kv : this.materialMap.spriteMap.entrySet()) {
-                            if (atlas.getSprite(kv.getKey()) == sprite) {
+                            if (atlas.getValue().getSprite(kv.getKey()) == sprite) {
                                 material = kv.getValue();
                             }
                         }

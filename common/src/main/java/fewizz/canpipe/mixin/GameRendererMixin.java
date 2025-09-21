@@ -98,6 +98,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lnet/minecraft/client/Camera;"+
                 "Lorg/joml/Matrix4f;"+
                 "Lorg/joml/Matrix4f;"+
+                "Lorg/joml/Matrix4f;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
                 "Z"+
@@ -108,7 +109,7 @@ public class GameRendererMixin implements GameRendererExtended {
         DeltaTracker deltaTracker,
         CallbackInfo ci,
         @Local(ordinal = 0) Matrix4f projectionMatrix,
-        @Local(ordinal = 2) Matrix4f viewMatrix
+        @Local(ordinal = 1) Matrix4f viewMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) {
@@ -259,6 +260,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lnet/minecraft/client/Camera;"+
                 "Lorg/joml/Matrix4f;"+
                 "Lorg/joml/Matrix4f;"+
+                "Lorg/joml/Matrix4f;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
                 "Z"+
@@ -277,7 +279,7 @@ public class GameRendererMixin implements GameRendererExtended {
     void onRenderLevelEnd(
         CallbackInfo ci,
         @Local(ordinal = 0) Matrix4f projectionMatrix,
-        @Local(ordinal = 2) Matrix4f viewMatrix
+        @Local(ordinal = 1) Matrix4f viewMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {

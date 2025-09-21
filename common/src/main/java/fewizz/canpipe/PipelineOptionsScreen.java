@@ -31,6 +31,7 @@ import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -120,7 +121,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         protected void renderListBackground(GuiGraphics guiGraphics) {}
 
         @Override
-        protected void renderScrollbar(GuiGraphics guiGraphics) {
+        protected void renderScrollbar(GuiGraphics guiGraphics, int i, int j) {
             if (this.scrollbarVisible()) {
                 guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
@@ -145,10 +146,8 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
 
             @Override
-            public void render(
-                GuiGraphics guiGraphics, int index,
-                int top, int left,
-                int width, int height,
+            public void renderContent(
+                GuiGraphics guiGraphics,
                 int mouseX, int mouseY,
                 boolean hovering, float partialTick
             ) {
@@ -156,7 +155,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     minecraft.font,
                     this.name,
                     (PipelineOptionsList.this.width - this.width) / 2,
-                    top + (height - minecraft.font.lineHeight) / 2 - 5,
+                    this.getContentY() + (height - minecraft.font.lineHeight) / 2 - 5,
                     0xFFFFFFFF
                 );
             }
@@ -227,8 +226,8 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         protected void applyValue() {}
 
                         @Override
-                        public void onRelease(double mouseX, double mouseY) {
-                            super.onRelease(mouseX, mouseY);
+                        public void onRelease(MouseButtonEvent e) {
+                            super.onRelease(e);
                             var value = (this.value * (floatElement.max - floatElement.min)) + floatElement.min;
                             applyValue.accept(value);
                         }
@@ -257,8 +256,8 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         protected void applyValue() {}
 
                         @Override
-                        public void onRelease(double mouseX, double mouseY) {
-                            super.onRelease(mouseX, mouseY);
+                        public void onRelease(MouseButtonEvent e) {
+                            super.onRelease(e);
                             var value = (long)((this.value * (intElement.max - intElement.min)) + intElement.min);
                             applyValue.accept(value);
                         }
@@ -292,22 +291,20 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
 
             @Override
-            public void render(
-                GuiGraphics guiGraphics, int index,
-                int top, int left,
-                int width, int height,
+            public void renderContent(
+                GuiGraphics guiGraphics,
                 int mouseX, int mouseY,
                 boolean hovering, float partialTick
             ) {
                 this.nameWidget.setPosition(
                     PipelineOptionsList.this.width / 2 - this.nameWidget.getWidth() - 5 + RIGHT_SHIFT,
-                    top + (height - minecraft.font.lineHeight) / 2
+                    this.getContentY() + (height - minecraft.font.lineHeight) / 2
                 );
                 this.nameWidget.render(guiGraphics, mouseX, mouseY, partialTick);
 
                 this.valueWidget.setPosition(
                     PipelineOptionsList.this.width / 2 + 5 + RIGHT_SHIFT,
-                    top + (height - this.valueWidget.getHeight()) / 2
+                    this.getContentY() + (height - this.valueWidget.getHeight()) / 2
                 );
                 this.valueWidget.render(guiGraphics, mouseX, mouseY, partialTick);
             }

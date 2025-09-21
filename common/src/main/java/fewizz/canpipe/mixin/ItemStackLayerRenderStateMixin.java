@@ -33,7 +33,7 @@ public class ItemStackLayerRenderStateMixin implements ItemStackLayerRenderState
         this.canpipe_itemStack = null;
     }
 
-    @ModifyArg(
+    /*@ModifyArg(
         method = "render",
         at = @At(
             value = "INVOKE",
@@ -54,6 +54,6 @@ public class ItemStackLayerRenderStateMixin implements ItemStackLayerRenderState
             source,
             this.getItemStack().getItem()
         );
-    }
+    }*/
 
 }

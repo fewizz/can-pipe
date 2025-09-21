@@ -19,7 +19,7 @@ import net.minecraft.client.model.geom.ModelPart;
 @Mixin(ModelPart.Cube.class)
 public class ModelPartCubeMixin {
 
-    @Inject(
+    /*@Inject(
         method = "compile",
         at = @At(
             value = "INVOKE",
@@ -41,6 +41,6 @@ public class ModelPartCubeMixin {
                 setter.set(temp.x, temp.y, temp.z, tangent.inverseBitangent);
             });
         }
-    }
+    }*/
 
 }

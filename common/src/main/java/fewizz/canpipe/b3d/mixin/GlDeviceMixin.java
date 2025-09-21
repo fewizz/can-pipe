@@ -1,7 +1,6 @@
 package fewizz.canpipe.b3d.mixin;
 
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -156,16 +155,16 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
         ")Lcom/mojang/blaze3d/textures/GpuTexture;",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_texImage2D(IIIIIIIILjava/nio/IntBuffer;)V",
+            target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_texImage2D(IIIIIIIILjava/nio/ByteBuffer;)V",
             ordinal = 1
         )
     )
     boolean texImage3DIfLayerGreaterThanOne(
-        int target, int level, int internalFormat, int width, int height, int border, int format, int type, IntBuffer pixels,
+        int target, int level, int internalFormat, int width, int height, int border, int format, int type, ByteBuffer pixels,
         @Local(argsOnly = true, ordinal = 3) int layers
     ) {
         if (layers > 1) {
-            GL33C.glTexImage3D(GL33C.GL_TEXTURE_2D_ARRAY, level, internalFormat, width, height, layers, 0, format, type, (ByteBuffer) null);
+            GL33C.glTexImage3D(GL33C.GL_TEXTURE_2D_ARRAY, level, internalFormat, width, height, layers, 0, format, type, pixels);
             return false;
         }
         return true;

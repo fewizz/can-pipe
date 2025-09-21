@@ -12,13 +12,16 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import blue.endless.jankson.Jankson;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 
 public class CanPipe {
     public static final String MOD_ID = "canpipe";
     public static final Logger LOGGER = LoggerFactory.getLogger("can-pipe");
     public static final Jankson JANKSON = Jankson.builder().build();
     public static final KeyMapping PIPELINES_RELOAD_KEY = new KeyMapping(
-        "can-pipe.key.reloadPipelines", GLFW.GLFW_KEY_UNKNOWN, "can-pipe.key.categories.can-pipe"
+        "can-pipe.key.reloadPipelines",
+        GLFW.GLFW_KEY_UNKNOWN,
+        new KeyMapping.Category(ResourceLocation.parse("canpipe:key.categories.can-pipe"))
     );
 
     public static Path getCompilationErrorsDirPath() {

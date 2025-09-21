@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.entity.layers.EquipmentLayerRenderer;
 @Mixin(EquipmentLayerRenderer.class)
 public class EquipmentLayerRendererMixin {
 
-    @Inject(
+    /*@Inject(
         method = "renderLayers("+
             "Lnet/minecraft/client/resources/model/EquipmentClientInfo$LayerType;"+
             "Lnet/minecraft/resources/ResourceKey;"+
@@ -43,6 +43,6 @@ public class EquipmentLayerRendererMixin {
         if (vertexConsumer instanceof VertexConsumerExtended vce) {
             vce.canpipe_setSharedGlint(false);
         }
-    }
+    }*/
 
 }

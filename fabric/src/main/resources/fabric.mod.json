@@ -26,7 +26,7 @@
 	"accessWidener" : "${mod_id}.accesswidener",
 	"depends": {
 		"fabricloader": ">=0.16.2",
-		"minecraft": "${minecraft_version}",
+		"minecraft": "1.21.9-beta.2",
 		"java": ">=21"
 	}
 }
