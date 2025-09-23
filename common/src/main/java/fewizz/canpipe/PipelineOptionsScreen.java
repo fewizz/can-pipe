@@ -155,7 +155,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     minecraft.font,
                     this.name,
                     (PipelineOptionsList.this.width - this.width) / 2,
-                    this.getContentY() + (height - minecraft.font.lineHeight) / 2 - 5,
+                    this.getY() + (this.getHeight() - minecraft.font.lineHeight) / 2 - 5,
                     0xFFFFFFFF
                 );
             }
@@ -298,13 +298,13 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             ) {
                 this.nameWidget.setPosition(
                     PipelineOptionsList.this.width / 2 - this.nameWidget.getWidth() - 5 + RIGHT_SHIFT,
-                    this.getContentY() + (height - minecraft.font.lineHeight) / 2
+                    this.getY() + (this.getHeight() - minecraft.font.lineHeight) / 2
                 );
                 this.nameWidget.render(guiGraphics, mouseX, mouseY, partialTick);
 
                 this.valueWidget.setPosition(
                     PipelineOptionsList.this.width / 2 + 5 + RIGHT_SHIFT,
-                    this.getContentY() + (height - this.valueWidget.getHeight()) / 2
+                    this.getY() + (this.getHeight() - this.valueWidget.getHeight()) / 2
                 );
                 this.valueWidget.render(guiGraphics, mouseX, mouseY, partialTick);
             }
