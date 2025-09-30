@@ -16,7 +16,6 @@ import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 
-import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.mixininterface.LightTextureExtended;
 import net.minecraft.client.renderer.LightTexture;
 

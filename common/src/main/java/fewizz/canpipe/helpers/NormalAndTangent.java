@@ -3,16 +3,7 @@ package fewizz.canpipe.helpers;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector3f;
 
-public class NormalAndTangent extends Vector3f {
-
-    public float tangentX;
-    public float tangentY;
-    public float tangentZ;
-    public boolean inverseBitangent;
-
-    public NormalAndTangent(Vector3f other) {
-        super(other);
-    }
+public class NormalAndTangent {
 
     /**
      * Taken from

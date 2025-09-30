@@ -86,7 +86,7 @@ processResources {
 
     var expandProps = [
         'version'                      : version,
-        'minecraft_version'            : minecraft_version,
+        'minecraft_version'            : fabric_minecraft_version,
         'mod_name'                     : mod_name,
         'mod_author'                   : mod_author,
         'mod_id'                       : mod_id,
