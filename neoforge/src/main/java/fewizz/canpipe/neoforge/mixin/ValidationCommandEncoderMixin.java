@@ -21,7 +21,6 @@ import net.neoforged.neoforge.client.blaze3d.validation.ValidationGpuTexture;
 @Mixin(ValidationCommandEncoder.class)
 public abstract class ValidationCommandEncoderMixin implements CommandEncoderExtended {
     @Shadow @Final private CommandEncoder realCommandEncoder;
-    @Shadow @Final private GpuDeviceUsageValidator validator;
 
     @Override
     public RenderPass canpipe_createRenderPass(

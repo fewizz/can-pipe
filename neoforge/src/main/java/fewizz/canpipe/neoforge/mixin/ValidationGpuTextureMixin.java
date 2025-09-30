@@ -20,17 +20,17 @@ public abstract class ValidationGpuTextureMixin implements GpuTextureExtended {
 
     @Override
     public void canpipe_setMipmapMode(FilterMode filterMode) {
-        ((GpuTextureExtended) realTexture).canpipe_setMipmapMode(filterMode);
+        ((GpuTextureExtended) this.realTexture).canpipe_setMipmapMode(filterMode);
     }
 
     @Override
     public void canpipe_setAddressModeW(AddressMode addressMode) {
-        ((GpuTextureExtended) realTexture).canpipe_setAddressModeW(addressMode);
+        ((GpuTextureExtended) this.realTexture).canpipe_setAddressModeW(addressMode);
     }
 
     @Override
     public void canpipe_setCompareOp(DepthTestFunction compareOp) {
-        ((GpuTextureExtended) realTexture).canpipe_setCompareOp(compareOp);
+        ((GpuTextureExtended) this.realTexture).canpipe_setCompareOp(compareOp);
     }
 
 }

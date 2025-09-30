@@ -29,7 +29,7 @@ public abstract class ValidationGpuDeviceMixin implements GpuDeviceExtended {
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
         TriConsumer<String, ResourceLocation, String> onCompilationError
     ) {
-        return ((GpuDeviceExtended) realDevice).canpipe_precompilePipeline(
+        return ((GpuDeviceExtended) this.realDevice).canpipe_precompilePipeline(
             pipeline, shaderSource, onCompilationError
         );
     }
@@ -42,7 +42,7 @@ public abstract class ValidationGpuDeviceMixin implements GpuDeviceExtended {
         if (!(gpuTexture instanceof ValidationGpuTexture validationTexture)) {
             throw new IllegalArgumentException();
         }
-        return ((GpuDeviceExtended) realDevice).canpipe_createTextureView(
+        return ((GpuDeviceExtended) this.realDevice).canpipe_createTextureView(
             validationTexture.getRealTexture(), baseMip, levelCount, baseLayer, layerCount
         );
     }

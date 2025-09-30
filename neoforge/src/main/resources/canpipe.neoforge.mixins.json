@@ -8,6 +8,7 @@
     "client": [
         "ValidationCommandEncoderMixin",
         "ValidationGpuDeviceMixin",
-        "ValidationGpuTextureMixin"
+        "ValidationGpuTextureMixin",
+        "ValidationGpuTextureViewMixin"
     ]
 }
