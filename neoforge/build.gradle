@@ -34,7 +34,6 @@ neoForge {
 
 dependencies {
     jarJar implementation("blue.endless:jankson:1.2.3")
-    additionalRuntimeClasspath "blue.endless:jankson:1.2.3"
 }
 
 processResources {
