@@ -145,17 +145,20 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
     )
     int ifColorAttachmentsCountNotEqualsOne(
         GlTexture colorTexture, DirectStateAccess dsa, GpuTexture depthTexture, Operation<Integer> operation,
+        @Local(argsOnly = true, ordinal = 0) GpuTextureView colorTextureView,
         @Local(argsOnly = true, ordinal = 1) GpuTextureView depthTextureView
     ) {
-        if (this.canpipe_colorAttachements == null) {  // Not canpipe_createRenderPass
-            return operation.call(colorTexture, dsa, depthTexture);
-        }
+        // Replacing original `getFbo`, i.e., it won't be called from `createRenderPass`,
+        // only from `canpipe_colorAttachements` and `clearColorAndDepthTextures`
+
+        var colorAttachments =
+            this.canpipe_colorAttachements != null ?
+            this.canpipe_colorAttachements :
+            new GpuTextureView[] {colorTextureView};
 
         Object2IntMap<List<GlTextureView>> fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
 
-        var colorAttachments = this.canpipe_colorAttachements;
-
-        var fboTextureViewsStream = Stream.of(this.canpipe_colorAttachements);
+        var fboTextureViewsStream = Stream.of(colorAttachments);
         if (depthTextureView != null) {
             fboTextureViewsStream = Stream.concat(fboTextureViewsStream, Stream.of(depthTextureView));
         }
