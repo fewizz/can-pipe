@@ -201,13 +201,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 gre.canpipe_getShortenedViewProjectionMatrices()[cascade], camera, toSunDir
             );
 
-            if (cascade == 0) {
-                Profiler.get().push("cullTerrain");
-                /*this.setupRender(new Camera() {{
-                    setPosition(camPos);
-                    setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
-                }}, shadowFrustum, false, false);*/
-            }
+            Profiler.get().push("cullTerrain");
             this.cullTerrain(
                 new Camera() {{
                     setPosition(camPos);
@@ -248,21 +242,19 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                     this.submitEntities(poseStack, levelRenderState, this.submitNodeStorage);
                     this.submitBlockEntities(poseStack, levelRenderState, this.submitNodeStorage);
                     this.featureRenderDispatcher.renderAllFeatures();
-
-                    this.checkPoseStack(poseStack);
                     this.levelRenderState.reset();
+                    this.checkPoseStack(poseStack);
                 }
 
-                /*if (p.shadows.allowParticles()) {
+                if (p.shadows.allowParticles()) {
                     Profiler.get().popPush("extract particles");
                     mc.particleEngine.extract(this.particlesRenderState, shadowFrustum, camera, pt);
 
                     Profiler.get().popPush("render particles");
                     this.particlesRenderState.submit(this.submitNodeStorage, this.levelRenderState.cameraRenderState);
                     this.featureRenderDispatcher.renderAllFeatures();
-
                     this.particlesRenderState.reset();
-                }*/
+                }
 
                 bufferSource.endBatch();
 

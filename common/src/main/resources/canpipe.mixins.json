@@ -20,6 +20,8 @@
     "LiquidBlockRendererMixin",
     "MinecraftMixin",
     "ModelBlockRendererMixin",
+    "ParticleFeatureRendererMixin",
+    "QuadParticleRenderStateMixin",
     "RenderSystemMixin",
     "RenderSystemAccessor",
     "SectionCompilerMixin",

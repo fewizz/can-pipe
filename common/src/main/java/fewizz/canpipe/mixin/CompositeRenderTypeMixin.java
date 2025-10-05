@@ -23,11 +23,9 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.mixininterface.CompositeRenderTypeExtended;
-import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 
 @Mixin(RenderType.CompositeRenderType.class)
@@ -39,13 +37,7 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
     private RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            Minecraft mc = Minecraft.getInstance();
-            if (!((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
-                renderPipeline = p.materialPrograms.getOrDefault(renderPipeline, renderPipeline);
-            }
-            else {
-                renderPipeline = p.shadows.materialPrograms().getOrDefault(renderPipeline, renderPipeline);
-            }
+            renderPipeline = p.replaceRenderPipeline(renderPipeline);
         }
         return renderPipeline;
     }

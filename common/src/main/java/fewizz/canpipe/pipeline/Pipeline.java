@@ -39,6 +39,7 @@ import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -524,6 +525,17 @@ public class Pipeline implements AutoCloseable {
         for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply();
         }
+    }
+
+    public RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
+            renderPipeline = this.materialPrograms.getOrDefault(renderPipeline, renderPipeline);
+        }
+        else {
+            renderPipeline = this.shadows.materialPrograms().getOrDefault(renderPipeline, renderPipeline);
+        }
+        return renderPipeline;
     }
 
     public RenderPass createRenderPass(CommandEncoderExtended commandEncoder, Supplier<String> name, @Nullable Framebuffer framebuffer) {
