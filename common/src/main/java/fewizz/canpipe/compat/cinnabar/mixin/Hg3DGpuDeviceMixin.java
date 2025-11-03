@@ -4,6 +4,7 @@ import java.util.function.BiFunction;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 
 import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -17,6 +18,9 @@ import net.minecraft.resources.ResourceLocation;
 
 @Mixin(Hg3DGpuDevice.class)
 public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
+
+    @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
+    @Unique private int canpipe_pendingTextureViewLayerCount = -1;
 
     @Override
     public CompiledRenderPipeline canpipe_precompilePipeline(
@@ -35,7 +39,14 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
         GpuTexture gpuTexture, int baseMip, int levelCount,
         int baseLayer, int layerCount // added
     ) {
-        return this.createTextureView(gpuTexture, baseMip, levelCount);
+        try {
+            this.canpipe_pendingTextureViewBaseLayer = baseLayer;
+            this.canpipe_pendingTextureViewLayerCount = layerCount;
+            return this.createTextureView(gpuTexture, baseMip, levelCount);
+        } finally {
+            this.canpipe_pendingTextureViewBaseLayer = -1;
+            this.canpipe_pendingTextureViewLayerCount = -1;
+        }
     }
     
 }

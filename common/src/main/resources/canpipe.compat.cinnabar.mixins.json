@@ -7,6 +7,7 @@
     },
     "client": [
         "Hg3DConstMixin",
+        "Hg3DGpuDeviceAccessor",
         "Hg3DGpuDeviceMixin",
         "Hg3DGpuTextureMixin",
         "Hg3DGpuTextureViewMixin"
