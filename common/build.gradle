@@ -13,6 +13,10 @@ repositories {
         name = "ParchmentMC"
         url = "https://maven.parchmentmc.org"
     }
+    maven {
+        name= "RogueLogix"
+        url = "https://maven.logix.dev/snapshots"
+    }
 }
 
 dependencies {
@@ -25,7 +29,7 @@ dependencies {
     compileOnly "blue.endless:jankson:1.2.3"
 
     compileOnly "org.lwjgl:lwjgl-vulkan:3.3.3"  // For Cinnabar
-    compileOnly "graphics.cinnabar:cinnabar-fabric:0.0.7-beta-16-gbadbe65-local"
+    compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
 }
 
 tasks.withType(JavaCompile).configureEach {

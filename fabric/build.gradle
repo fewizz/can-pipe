@@ -14,7 +14,11 @@ repositories {
     }
     maven {
         name = "Terraformers"
-        url = "https://maven.terraformersmc.com/"
+        url = "https://maven.terraformersmc.com"
+    }
+    maven {
+        name= "RogueLogix"
+        url = "https://maven.logix.dev/snapshots"
     }
     exclusiveContent {
         forRepository {
@@ -50,17 +54,12 @@ dependencies {
     modImplementation "blue.endless:jankson:1.2.3"
     include "blue.endless:jankson:1.2.3"
 
-    // modImplementation "graphics.cinnabar:cinnabar-fabric:0.0.7-beta-16-gbadbe65"
-    compileOnly "graphics.cinnabar:cinnabar-fabric:0.0.7-beta-16-gbadbe65-local:dev"
-
-    // modImplementation "com.terraformersmc:modmenu:13.0.2"
-    // modImplementation "maven.modrinth:sodium:mc1.21.5-0.6.13-fabric"
-    // modImplementation fabricApi.module("fabric-block-view-api-v2", fabric_version)
-    // modImplementation fabricApi.module("fabric-rendering-data-attachment-v1", fabric_version)
-    // modImplementation fabricApi.module("fabric-rendering-fluids-v1", fabric_version)
-
-    // modImplementation "maven.modrinth:debug-keybind:15.0.0-fabric"
-    // modImplementation "maven.modrinth:boxlib:7lzlZrX9"
+    if (System.getenv("MESS_WITH_LOCAL_CINNABAR") == "1") {
+        modImplementation "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}-local"
+    }
+    else {
+        compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
+    }
 }
 
 compileJava.source project(":common").sourceSets.main.allSource

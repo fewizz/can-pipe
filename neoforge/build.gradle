@@ -6,7 +6,21 @@ base {
     archivesName = "can-pipe-neoforge-"+minecraft_version
 }
 
+repositories {
+    maven {
+        name= "RogueLogix"
+        url = "https://maven.logix.dev/snapshots"
+    }
+}
+
 compileJava.source project(":common").sourceSets.main.allSource
+
+dependencies {
+    jarJar implementation("blue.endless:jankson:1.2.3")
+
+    compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
+    // compileOnly "graphics.cinnabar:cinnabar-neoforge:${cinnabar_version}"  // HUH?
+}
 
 neoForge {
     version = neoforge_current_version
@@ -30,10 +44,6 @@ neoForge {
             sourceSet sourceSets.main
         }
     }
-}
-
-dependencies {
-    jarJar implementation("blue.endless:jankson:1.2.3")
 }
 
 processResources {
