@@ -6,10 +6,12 @@
         "defaultRequire": 1
     },
     "client": [
+        "Hg3DCommandEncoderMixin",
         "Hg3DConstMixin",
         "Hg3DGpuDeviceAccessor",
         "Hg3DGpuDeviceMixin",
         "Hg3DGpuTextureMixin",
-        "Hg3DGpuTextureViewMixin"
+        "Hg3DGpuTextureViewMixin",
+        "MercuryFramebufferMixin"
     ]
 }

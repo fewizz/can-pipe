@@ -21,6 +21,7 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
 
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
+    @Unique GpuTextureView[] canpipe_pendingColorAttachments = null;
 
     @Override
     public CompiledRenderPipeline canpipe_precompilePipeline(

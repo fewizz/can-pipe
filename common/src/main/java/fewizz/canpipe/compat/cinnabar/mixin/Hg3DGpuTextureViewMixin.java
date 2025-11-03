@@ -1,5 +1,8 @@
 package fewizz.canpipe.compat.cinnabar.mixin;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -66,6 +69,32 @@ public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
             layerCount = layerCountOverride;
         }
         return layerCount;
+    }
+
+    @ModifyArg(
+        method = "getFramebuffer",
+        at = @At(
+            value = "INVOKE",
+            target = "Lgraphics/cinnabar/api/hg/HgFramebuffer$CreateInfo;<init>("+
+                "Lgraphics/cinnabar/api/hg/HgRenderPass;"+
+                "Ljava/util/List;"+
+                "Lgraphics/cinnabar/api/hg/HgImage$View;"+
+            ")V"
+        )
+    )
+    List<HgImage.View> overrideColorAttachments(List<HgImage.View> colorAttachments) {
+        var device = (Hg3DGpuDevice) RenderSystem.getDevice();
+        var colorAttachmentsOverride = ((Hg3DGpuDeviceAccessor) device).get_canpipe_pendingColorAttachments();
+
+        if (colorAttachmentsOverride != null) {
+            colorAttachments = new ArrayList<HgImage.View>();
+
+            for (var a : colorAttachmentsOverride) {
+                colorAttachments.add(((Hg3DGpuTextureView) a).imageView());
+            }
+        }
+
+        return colorAttachments;
     }
 
 }
