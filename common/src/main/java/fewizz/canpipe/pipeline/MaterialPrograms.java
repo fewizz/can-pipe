@@ -115,13 +115,18 @@ public class MaterialPrograms {
         String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, enablePBR);
 
         Function<String, String> postprocess = (String src) -> {
+            // These three ideally shouldn't be in a material shader, but it's still possible
+            src = src.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "const ivec2 frxu_size = ivec2(-1);");
+            src = src.replaceAll("uniform\\s+int\\s+frxu_lod;", "const int frxu_lod = -1;");
+            src = src.replaceAll("uniform\\s+int\\s+frxu_layer;", "const int frxu_layer = -1;");
+
             src = src.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
             src =
                 "\n"+
                 "layout(std140) uniform canpipe_ub_material_program {\n"+
-                "       uniform int frxu_cascade;\n"+
-                "       uniform int canpipe_renderTarget;\n"+
-                "       uniform int canpipe_originType;"+
+                "    uniform int frxu_cascade;\n"+
+                "    uniform int canpipe_renderTarget;\n"+
+                "    uniform int canpipe_originType;\n"+
                 "};\n\n"+
                 src;
             return src;
@@ -134,6 +139,7 @@ public class MaterialPrograms {
                     case ShaderType.VERTEX -> vertexSrc;
                     case ShaderType.FRAGMENT -> fragmentSrc;
                 };
+
                 return Shaders.process(
                     location, src, type, glslVersion, options, appliedOptions,
                     getShaderSource, shadowMapSize, postprocess
