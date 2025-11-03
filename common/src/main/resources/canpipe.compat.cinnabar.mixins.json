@@ -1,0 +1,13 @@
+{
+    "required": true,
+    "compatibilityLevel": "JAVA_21",
+    "package": "fewizz.canpipe.compat.cinnabar.mixin",
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "client": [
+        "Hg3DConstMixin",
+        "Hg3DGpuDeviceMixin",
+        "Hg3DGpuTextureMixin"
+    ]
+}

@@ -8,6 +8,7 @@ loom {
 }
 
 repositories {
+    mavenLocal()
     maven {
         name = "ParchmentMC"
         url = "https://maven.parchmentmc.org"
@@ -22,6 +23,9 @@ dependencies {
     }
     modImplementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
     compileOnly "blue.endless:jankson:1.2.3"
+
+    compileOnly "org.lwjgl:lwjgl-vulkan:3.3.3"  // For Cinnabar
+    compileOnly "graphics.cinnabar:cinnabar-fabric:0.0.7-beta-16-gbadbe65-local"
 }
 
 tasks.withType(JavaCompile).configureEach {
