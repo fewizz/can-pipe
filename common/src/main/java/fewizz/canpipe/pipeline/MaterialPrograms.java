@@ -58,9 +58,6 @@ public class MaterialPrograms {
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
             vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_LIGHTMAP;
         }
-        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
-            vertexFormat = originalRenderPipeline.getVertexFormat();  // leave as is
-        }
         else {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormat().toString());
         }

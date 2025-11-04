@@ -14,7 +14,6 @@ import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import blue.endless.jankson.JsonObject;
@@ -62,7 +61,7 @@ public class Programs {
             .withFragmentShader(fragmentLocation)
             .withDepthWrite(false)
             .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
-            .withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.QUADS);
+            .withVertexFormat(CanPipe.VertexFormats.POSITION_TEX, VertexFormat.Mode.QUADS);
 
         renderPipelineBuilder.withUniform("canpipe_ub_pass", UniformType.UNIFORM_BUFFER);
 

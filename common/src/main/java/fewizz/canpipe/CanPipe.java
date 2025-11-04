@@ -106,6 +106,11 @@ public class CanPipe {
             /* 16 + 2*2 */.add("in_lightmap", VertexFormatElement.UV2)
             .build();
 
+        public static final VertexFormat POSITION_TEX = VertexFormat.builder()
+            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
+            /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
+            .build();
+
     }
 
 }
