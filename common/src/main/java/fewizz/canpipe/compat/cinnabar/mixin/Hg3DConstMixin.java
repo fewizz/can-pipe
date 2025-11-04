@@ -43,14 +43,14 @@ public class Hg3DConstMixin {
             case "RG16_SNORM" -> HgFormat.RG16_SNORM;
             case "RG16_SFLOAT" -> HgFormat.RG32_SFLOAT;  // TODO
             case "RG32_SFLOAT" -> HgFormat.RG32_SFLOAT;
-            case "RGB8_UNORM" -> HgFormat.RGB8_UNORM;
-            case "RGB8_SNORM" -> HgFormat.RGB8_SNORM;
-            case "RGB16_UNORM" -> HgFormat.RGB16_UNORM;
-            case "RGB16_SNORM" -> HgFormat.RGB16_SNORM;
-            case "RGB32_UINT" -> HgFormat.RGB32_UINT;
-            case "RGB16_SFLOAT" -> HgFormat.RGB32_SFLOAT;  // TODO
-            case "RGB32_SFLOAT" -> HgFormat.RGB32_SFLOAT;
-            case "B10G11R11_UFLOAT_PACK32" -> HgFormat.RGB16_UNORM;  // TODO
+            case "RGB8_UNORM" -> HgFormat.RGBA8_UNORM;  // TODO
+            case "RGB8_SNORM" -> HgFormat.RGBA8_SNORM;  // TODO
+            case "RGB16_UNORM" -> HgFormat.RGBA16_UNORM;  // TODO
+            case "RGB16_SNORM" -> HgFormat.RGBA16_SNORM;  // TODO
+            case "RGB32_UINT" -> HgFormat.RGBA32_UINT;  // TODO
+            case "RGB16_SFLOAT" -> HgFormat.RGBA32_SFLOAT;  // TODO
+            case "RGB32_SFLOAT" -> HgFormat.RGBA32_SFLOAT;  // TODO
+            case "B10G11R11_UFLOAT_PACK32" -> HgFormat.RGBA16_UNORM;  // TODO
             case "RGBA8_SNORM" -> HgFormat.RGBA8_SNORM;
             case "R12X4G12X4B12X4A12X4_UNORM_4PACK16" -> HgFormat.RGBA16_UNORM;  // TODO
             case "RGBA16_UNORM" -> HgFormat.RGBA16_UNORM;

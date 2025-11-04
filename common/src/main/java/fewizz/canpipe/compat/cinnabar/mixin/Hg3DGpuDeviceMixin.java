@@ -68,7 +68,6 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
     public HgRenderPass getRenderPass(HgFormat colorFormat, @Nullable HgFormat depthStencilFormat) {
         var colorFormats = new ArrayList<HgFormat>();
         if (this.canpipe_pendingColorAttachments != null) {
-            System.out.println("Overriding color fotmats: "+this.canpipe_pendingColorAttachments.length);
             for (var a : this.canpipe_pendingColorAttachments) {
                 colorFormats.add(((Hg3DGpuTextureView)a).imageView().format());
             }

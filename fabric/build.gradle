@@ -81,8 +81,8 @@ loom {
             programArg "--renderDebugLabels"
             properties([
                 "mixin.debug": "true",
-                // "cinnabar.vulkanValidationLayers": "true",
-                // "cinnabar.debugLogging": "true"
+                "cinnabar.vulkanValidationLayers": "true",
+                "cinnabar.debugLogging": "true"
             ])
         }
     }

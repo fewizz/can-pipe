@@ -169,8 +169,10 @@ public class Framebuffer extends RenderTarget {
                 String textureName = colorAttachmentJson.get(String.class, "image");
                 GpuTexture texture = getOrLoadTexture.apply(textureName).getTexture();
 
+                boolean cubemap = (texture.usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0;
+
                 if (face != -1) {
-                    if ((texture.usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) == 0) {
+                    if (!cubemap) {
                         throw new RuntimeException("Face can be specified only for cube map textures");
                     }
                     baseLayer = baseLayer * 6 + face;
