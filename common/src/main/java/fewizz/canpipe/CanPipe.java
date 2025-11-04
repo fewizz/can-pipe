@@ -100,6 +100,12 @@ public class CanPipe {
             /* 36 + 4*1 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
             .build();
 
+        public static final VertexFormat POSITION_COLOR_LIGHTMAP = VertexFormat.builder()
+            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
+            /* 12 + 4*1 */.add("in_color", VertexFormatElement.COLOR)
+            /* 16 + 2*2 */.add("in_lightmap", VertexFormatElement.UV2)
+            .build();
+
     }
 
 }

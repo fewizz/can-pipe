@@ -56,6 +56,9 @@ public class MaterialPrograms {
             vertexFormat = CanPipe.VertexFormats.PARTICLE;
         }
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
+            vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_LIGHTMAP;
+        }
+        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
             vertexFormat = originalRenderPipeline.getVertexFormat();  // leave as is
         }
         else {

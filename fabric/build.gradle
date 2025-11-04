@@ -74,12 +74,16 @@ loom {
     runs {
         client {
             client()
-            setConfigName 'Fabric'
+            setConfigName "Fabric"
             ideConfigGenerated true
-            runDir '../run'
+            runDir "../run"
             appendProjectPathToConfigName = false
             programArg "--renderDebugLabels"
-            vmArgs "-Dmixin.debug=true"
+            properties([
+                "mixin.debug": "true",
+                "cinnabar.vulkanValidationLayers": "true",
+                "cinnabar.debugLogging": "true"
+            ])
         }
     }
 }
