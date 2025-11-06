@@ -30,11 +30,9 @@ import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.opengl.GlTextureView;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.logging.LogUtils;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
@@ -44,9 +42,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
     @Shadow private boolean inRenderPass;
-    @Shadow @Final private static Logger LOGGER = LogUtils.getLogger();
+    @Shadow @Final private static Logger LOGGER;
     @Shadow @Final private GlDevice device;
-    @Shadow private RenderPipeline lastPipeline;
 
     @Unique private GpuTextureView[] canpipe_colorAttachements = null;
     @Unique private int canpipe_clearBaseLevel = -1;

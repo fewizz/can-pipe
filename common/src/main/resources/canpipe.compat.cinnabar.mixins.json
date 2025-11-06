@@ -12,6 +12,7 @@
         "Hg3DGpuDeviceMixin",
         "Hg3DGpuTextureMixin",
         "Hg3DGpuTextureViewMixin",
-        "MercuryFramebufferMixin"
+        "MercuryFramebufferMixin",
+        "VulkanStartupMixin"
     ]
 }
