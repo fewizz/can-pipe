@@ -2,12 +2,15 @@ package fewizz.canpipe.compat.cinnabar.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 
 import fewizz.canpipe.b3d.GpuTextureExtended;
+import graphics.cinnabar.core.hg3d.Hg3DConst;
 import graphics.cinnabar.core.hg3d.Hg3DGpuTexture;
 
 @Mixin(Hg3DGpuTexture.class)
@@ -31,5 +34,18 @@ public class Hg3DGpuTextureMixin implements GpuTextureExtended {
     public void canpipe_setCompareOp(DepthTestFunction compareOp) {
         this.canpipe_compareOp = compareOp;
     }
-    
+
+    @ModifyArg(
+        method = "sampler",
+        at = @At(
+            value = "INVOKE",
+            target = "Lgraphics/cinnabar/core/hg3d/Hg3DGpuDevice;getSampler(ZZIIIZ)Lgraphics/cinnabar/api/hg/HgSampler;"
+        ),
+        index = 4
+    )
+    int setAddressModeW(int addressModeW) {
+        assert addressModeW == 0;
+        return Hg3DConst.addressMode(this.canpipe_addressModeW != null ? this.canpipe_addressModeW : AddressMode.REPEAT);
+    }
+
 }
