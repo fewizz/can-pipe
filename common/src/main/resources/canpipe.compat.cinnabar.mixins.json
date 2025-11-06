@@ -12,7 +12,10 @@
         "Hg3DGpuDeviceMixin",
         "Hg3DGpuTextureMixin",
         "Hg3DGpuTextureViewMixin",
+        "Hg3DRenderPipelineMixin",
         "MercuryFramebufferMixin",
+        "MercuryGraphicsPipelineMixin",
+        "MercuryShaderSetMixin",
         "VulkanStartupMixin"
     ]
 }

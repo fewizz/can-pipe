@@ -140,7 +140,7 @@ public class Pass extends PassBase {
 
             renderPass.setVertexBuffer(0, vertexBuffer);
             renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
-            renderPass.drawIndexed(0, 0, 6, 0);
+            renderPass.drawIndexed(0, 0, 6, 1);
         }
     }
 
