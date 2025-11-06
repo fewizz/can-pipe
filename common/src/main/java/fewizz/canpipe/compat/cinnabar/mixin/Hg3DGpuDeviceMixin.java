@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,7 +20,9 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.ShaderType;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
@@ -28,6 +31,7 @@ import graphics.cinnabar.api.hg.HgDevice;
 import graphics.cinnabar.api.hg.HgFramebuffer;
 import graphics.cinnabar.api.hg.HgImage;
 import graphics.cinnabar.api.hg.HgRenderPass;
+import graphics.cinnabar.api.hg.HgSampler;
 import graphics.cinnabar.api.hg.enums.HgFormat;
 import graphics.cinnabar.core.hg3d.Hg3DGpuDevice;
 import graphics.cinnabar.core.hg3d.Hg3DRenderPipeline;
@@ -40,9 +44,13 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
     @Shadow @Final private BiFunction<ResourceLocation, ShaderType, String> shaderSourceProvider;
 
     @Shadow Hg3DRenderPipeline getPipeline(RenderPipeline pipeline, BiFunction<ResourceLocation, ShaderType, String> shaderSourceProvider) { return null; };
+    @Shadow HgSampler getSampler(boolean minLinear, boolean magLinear, int addressU, int addressV, int addressW, boolean mip) { return null; }
 
     @Unique private Map<Pair<List<HgFormat>, HgFormat>, HgRenderPass> canpipe_renderPasses = new HashMap<>();
     @Unique private Map<Pair<List<HgImage.View>, HgImage.View>, HgFramebuffer> canpipe_framebuffers = new HashMap<>();
+
+    @Unique private Map<Triple<HgSampler.CreateInfo, FilterMode, DepthTestFunction>, HgSampler> canpipe_samplers = new HashMap<>();
+
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
     @Unique GpuTextureView[] canpipe_pendingColorAttachments = null;
@@ -56,6 +64,25 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
         HgRenderPass newRenderPass = this.hgDevice.createRenderPass(new HgRenderPass.CreateInfo(colorFormats, depthStencilFormat));
         this.canpipe_renderPasses.put(key, newRenderPass);
         return newRenderPass;
+    }
+
+    public HgSampler canpipe_getSampler(
+        boolean minLinear, boolean magLinear, int addressU, int addressV, int addressW, boolean mip,
+        FilterMode mipFilter, DepthTestFunction compareOp
+    ) {
+        var createInfo = new HgSampler.CreateInfo(minLinear, magLinear, addressU, addressV, addressW, mip);
+
+        return this.canpipe_samplers.computeIfAbsent(Triple.of(createInfo, mipFilter, compareOp), k -> {
+            try {
+
+                ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerMipFilter(mipFilter);
+                ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerCompareOp(compareOp);
+                return this.hgDevice.createSampler(new HgSampler.CreateInfo(minLinear, magLinear, addressU, addressV, addressW, mip));
+            } finally {
+                ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerMipFilter(null);
+                ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerCompareOp(null);
+            }
+        });
     }
 
     @Override
@@ -106,5 +133,5 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
     public String fixTextureLabelString(String original, @Local(ordinal = 0) String label) {
         return label;
     }
-    
+
 }
