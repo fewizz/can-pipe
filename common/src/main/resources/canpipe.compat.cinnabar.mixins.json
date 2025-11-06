@@ -15,6 +15,7 @@
         "Hg3DRenderPipelineMixin",
         "MercuryFramebufferMixin",
         "MercuryGraphicsPipelineMixin",
+        "MercurySamplerMixin",
         "MercuryShaderSetMixin",
         "VulkanStartupMixin"
     ]
