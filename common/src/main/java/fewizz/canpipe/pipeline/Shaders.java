@@ -16,8 +16,10 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.common.collect.Iterators;
 import com.mojang.blaze3d.shaders.ShaderType;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
 import net.minecraft.resources.ResourceLocation;
 
@@ -58,6 +60,10 @@ public class Shaders {
             "#version " + version + "\n\n" +
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
             "#define " + type.name() + "_SHADER\n\n";
+
+        if (((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_ndcZZeroToOne()) {
+            header += "#define CANPIPE_NDC_Z_ZERO_TO_ONE\n\n";
+        }
 
         if (shadowMapSize.isPresent()) {
             header +=

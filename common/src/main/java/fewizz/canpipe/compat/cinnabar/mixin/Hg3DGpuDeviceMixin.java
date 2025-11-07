@@ -55,6 +55,9 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
     @Unique GpuTextureView[] canpipe_pendingColorAttachments = null;
 
+    @Override
+    public boolean canpipe_ndcZZeroToOne() { return true; }
+
     public HgRenderPass canpipe_getRenderPass(List<HgFormat> colorFormats, @Nullable HgFormat depthStencilFormat) {
         var key = Pair.of(colorFormats, depthStencilFormat);
         HgRenderPass renderpass = (HgRenderPass)this.canpipe_renderPasses.get(key);

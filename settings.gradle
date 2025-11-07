@@ -18,9 +18,3 @@ rootProject.name = "can-pipe"
 include "common"
 include "fabric"
 include "neoforge"
-
-// if (file("neoforge-cinnabar").exists()) {
-//     include "neoforge-cinnabar"
-// }
-
-// gradle.startParameter.offline=true

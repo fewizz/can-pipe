@@ -24,6 +24,11 @@ public abstract class ValidationGpuDeviceMixin implements GpuDeviceExtended {
     @Shadow @Final protected GpuDevice realDevice;
 
     @Override
+    public boolean canpipe_ndcZZeroToOne() {
+        return ((GpuDeviceExtended) this.realDevice).canpipe_ndcZZeroToOne();
+    }
+
+    @Override
     public CompiledRenderPipeline canpipe_precompilePipeline(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,

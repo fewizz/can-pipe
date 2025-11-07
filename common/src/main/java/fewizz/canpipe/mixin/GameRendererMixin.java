@@ -16,8 +16,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -203,9 +205,8 @@ public class GameRendererMixin implements GameRendererExtended {
                 }
 
                 this.canpipe_shortendedViewProjectionMatrices[cascade] =
-                    this.getProjectionMatrix(
-                        this.minecraft.options.fov().get().floatValue()
-                    ).mul(viewMatrix);
+                    this.getProjectionMatrix(this.minecraft.options.fov().get().floatValue())
+                    .mul(viewMatrix);
 
                 Vector3f min = new Vector3f();
                 Vector3f max = new Vector3f();
@@ -226,7 +227,8 @@ public class GameRendererMixin implements GameRendererExtended {
                     Math.max(min.y, center.y - cascadeRadius),  // bottom
                     Math.min(max.y, center.y + cascadeRadius),  // up
                     0.0F,                       // near
-                   -Math.max(min.z, center.z - cascadeRadius)   // far
+                   -Math.max(min.z, center.z - cascadeRadius),   // far
+                   ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_ndcZZeroToOne()
                 );
             }
         }
