@@ -48,6 +48,14 @@ public class MercurySamplerMixin {
 
     @ModifyArg(
         method = "<init>",
+        at = @At(value = "INVOKE", target = "Lorg/lwjgl/vulkan/VkSamplerCreateInfo;maxLod(F)Lorg/lwjgl/vulkan/VkSamplerCreateInfo;")
+    )
+    float disableMaxLodClamp(float maxLod, @Local MercuryDevice device) {
+        return VK10.VK_LOD_CLAMP_NONE;
+    }
+
+    @ModifyArg(
+        method = "<init>",
         at = @At(value = "INVOKE", target = "Lorg/lwjgl/vulkan/VkSamplerCreateInfo;compareEnable(Z)Lorg/lwjgl/vulkan/VkSamplerCreateInfo;")
     )
     boolean fillCompareEnable(boolean compareEnable, @Local MercuryDevice device) {

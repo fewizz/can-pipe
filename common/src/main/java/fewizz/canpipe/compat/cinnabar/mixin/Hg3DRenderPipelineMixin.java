@@ -30,10 +30,15 @@ public class Hg3DRenderPipelineMixin {
         List<HgGraphicsPipeline.Blend.Attachment> attachments,
         @Local HgGraphicsPipeline.Blend.Attachment attachment
     ) {
-        // assert original.size() == 1 && original.get(0) == attachment
+        assert attachments.size() == 1 && attachments.get(0) == attachment;
+
         attachments = new ArrayList<>();
-        for (int i = 0; i < shaderSet.attachmentCount(); ++i) {
-            attachments.add(attachment);
+        attachments.add(attachment);
+        for (int i = 1; i < shaderSet.attachmentCount(); ++i) {
+            attachments.add(new HgGraphicsPipeline.Blend.Attachment(
+                null,  // equations
+                attachment.writeMask()
+            ));
         }
         return attachments;
     }

@@ -18,6 +18,7 @@
         "MercuryDeviceMixin",
         "MercuryFramebufferMixin",
         "MercuryGraphicsPipelineMixin",
+        "MercuryRenderPassMixin",
         "MercurySamplerMixin",
         "MercuryShaderSetMixin",
         "VulkanStartupMixin"

@@ -12,6 +12,7 @@ import com.mojang.blaze3d.textures.TextureFormat;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -26,14 +27,18 @@ public class Texture extends AbstractTexture {
         this.gpuTextureSupplier = gpuTextureUpdater;
         this.recreateOnResize = recreateOnResize;
         this.texture = this.gpuTextureSupplier.get();
-        this.textureView = RenderSystem.getDevice().createTextureView(this.texture);
+        this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+            this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
+        );
     }
 
     void onWindowSizeChanged() {
         if (this.recreateOnResize) {
             this.close();
             this.texture = this.gpuTextureSupplier.get();
-            this.textureView = RenderSystem.getDevice().createTextureView(this.texture);
+            this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
+            );
         }
     }
 
