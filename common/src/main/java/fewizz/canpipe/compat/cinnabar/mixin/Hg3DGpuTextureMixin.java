@@ -1,5 +1,6 @@
 package fewizz.canpipe.compat.cinnabar.mixin;
 
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,22 +31,22 @@ public abstract class Hg3DGpuTextureMixin extends GpuTexture implements GpuTextu
 
     @Shadow @Final private Hg3DGpuDevice device;
 
-    @Unique protected FilterMode canpipe_mipFilter = null;
-    @Unique protected AddressMode canpipe_addressModeW = null;
-    @Unique protected DepthTestFunction canpipe_compareOp = null;
+    @Unique @Nullable protected FilterMode canpipe_mipFilter = null;
+    @Unique @Nullable protected AddressMode canpipe_addressModeW = null;
+    @Unique @Nullable protected DepthTestFunction canpipe_compareOp = null;
 
     @Override
-    public void canpipe_setMipmapMode(FilterMode filterMode) {
+    public void canpipe_setMipmapMode(@Nullable FilterMode filterMode) {
         this.canpipe_mipFilter = filterMode;
     }
 
     @Override
-    public void canpipe_setAddressModeW(AddressMode addressMode) {
+    public void canpipe_setAddressModeW(@Nullable AddressMode addressMode) {
         this.canpipe_addressModeW = addressMode;
     }
 
     @Override
-    public void canpipe_setCompareOp(DepthTestFunction compareOp) {
+    public void canpipe_setCompareOp(@Nullable DepthTestFunction compareOp) {
         this.canpipe_compareOp = compareOp;
     }
 

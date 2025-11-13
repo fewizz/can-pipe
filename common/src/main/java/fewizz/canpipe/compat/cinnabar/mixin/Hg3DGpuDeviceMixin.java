@@ -32,6 +32,7 @@ import graphics.cinnabar.api.hg.HgFramebuffer;
 import graphics.cinnabar.api.hg.HgImage;
 import graphics.cinnabar.api.hg.HgRenderPass;
 import graphics.cinnabar.api.hg.HgSampler;
+import graphics.cinnabar.api.hg.enums.HgCompareOp;
 import graphics.cinnabar.api.hg.enums.HgFormat;
 import graphics.cinnabar.core.hg3d.Hg3DGpuDevice;
 import graphics.cinnabar.core.hg3d.Hg3DRenderPipeline;
@@ -71,19 +72,27 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
 
     public HgSampler canpipe_getSampler(
         boolean minLinear, boolean magLinear, int addressU, int addressV, int addressW, boolean mip,
-        FilterMode mipFilter, DepthTestFunction compareOp
+        FilterMode mipFilter, @Nullable DepthTestFunction compareOp
     ) {
-        var createInfo = new HgSampler.CreateInfo(minLinear, magLinear, addressU, addressV, addressW, mip);
+        HgCompareOp hgCompareOp = HgCompareOp.ALWAYS;
+        if (compareOp != null) {
+            hgCompareOp = switch (compareOp) {
+                case DepthTestFunction.NO_DEPTH_TEST -> HgCompareOp.ALWAYS;
+                case DepthTestFunction.EQUAL_DEPTH_TEST -> HgCompareOp.EQUAL;
+                case DepthTestFunction.LEQUAL_DEPTH_TEST -> HgCompareOp.LESS_OR_EQUAL;
+                case DepthTestFunction.LESS_DEPTH_TEST -> HgCompareOp.LESS;
+                case DepthTestFunction.GREATER_DEPTH_TEST -> HgCompareOp.GREATER;
+            };
+        }
+
+        var createInfo = new HgSampler.CreateInfo(minLinear, magLinear, addressU, addressV, addressW, mip, hgCompareOp);
 
         return this.canpipe_samplers.computeIfAbsent(Triple.of(createInfo, mipFilter, compareOp), k -> {
             try {
-
                 ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerMipFilter(mipFilter);
-                ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerCompareOp(compareOp);
-                return this.hgDevice.createSampler(new HgSampler.CreateInfo(minLinear, magLinear, addressU, addressV, addressW, mip));
+                return this.hgDevice.createSampler(createInfo);
             } finally {
                 ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerMipFilter(null);
-                ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerCompareOp(null);
             }
         });
     }

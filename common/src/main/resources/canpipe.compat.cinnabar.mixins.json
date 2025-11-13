@@ -13,14 +13,11 @@
         "Hg3DGpuTextureMixin",
         "Hg3DGpuTextureViewMixin",
         "Hg3DRenderPipelineMixin",
-        "MercuryCommandBufferMixin",
         "MercuryDeviceAccessor",
         "MercuryDeviceMixin",
         "MercuryFramebufferMixin",
-        "MercuryGraphicsPipelineMixin",
         "MercuryRenderPassMixin",
         "MercurySamplerMixin",
-        "MercuryShaderSetMixin",
         "VulkanStartupMixin"
     ]
 }
