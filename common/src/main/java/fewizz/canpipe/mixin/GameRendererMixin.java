@@ -227,8 +227,7 @@ public class GameRendererMixin implements GameRendererExtended {
                     Math.max(min.y, center.y - cascadeRadius),  // bottom
                     Math.min(max.y, center.y + cascadeRadius),  // up
                     0.0F,                       // near
-                   -Math.max(min.z, center.z - cascadeRadius),  // far
-                   ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_ndcZZeroToOne()
+                   -Math.max(min.z, center.z - cascadeRadius)   // far
                 );
             }
         }

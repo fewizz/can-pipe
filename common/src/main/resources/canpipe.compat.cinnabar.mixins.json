@@ -13,6 +13,8 @@
         "Hg3DGpuTextureMixin",
         "Hg3DGpuTextureViewMixin",
         "Hg3DRenderPipelineMixin",
+        "MCCachedOrthoProjectionMatrixBufferMixin",
+        "MCGameRendererMixin",
         "MercuryDeviceAccessor",
         "MercuryDeviceMixin",
         "MercuryFramebufferMixin",
