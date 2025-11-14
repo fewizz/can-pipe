@@ -69,7 +69,7 @@ public class Shaders {
                 "   // NDC Z -1 <-> 1 => 0 <-> 1\n"+
                 "   gl_Position.z = (gl_Position.z + gl_Position.w) * 0.5;\n"+
                 "}\n"+
-                "#define main canpipe_main\n";
+                "#define main canpipe_main\n\n";
         }
 
         if (shadowMapSize.isPresent()) {
@@ -85,6 +85,10 @@ public class Shaders {
         if (type == ShaderType.VERTEX && !CONTAINS_UV_IN.test(source)) {
             header += "in vec2 in_uv;\n\n";
         }
+
+        header +=  // LumiLights uses these for variable names
+            "#define sample _sample\n"+
+            "#define sampler _sampler\n\n";
 
         return header + preprocessedSource;
     }
