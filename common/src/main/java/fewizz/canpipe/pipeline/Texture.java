@@ -95,11 +95,11 @@ public class Texture extends AbstractTexture {
 
         FilterMode min = FilterMode.NEAREST;
         FilterMode mag = FilterMode.NEAREST;
-        FilterMode mip = null;
+        boolean linearMip = false;
 
         AddressMode u = AddressMode.REPEAT;
         AddressMode v = AddressMode.REPEAT;
-        AddressMode w = null;
+        AddressMode w = AddressMode.REPEAT;
 
         boolean compare = false;
         DepthTestFunction compareOp = null;
@@ -110,12 +110,15 @@ public class Texture extends AbstractTexture {
 
             if (paramName.equals("TEXTURE_MIN_FILTER")) {
                 switch (paramValue) {
-                    case "NEAREST": { min = FilterMode.NEAREST; mip = null; break; }
-                    case "LINEAR": { min = FilterMode.LINEAR; mip = null; break; }
-                    case "NEAREST_MIPMAP_NEAREST": { min = FilterMode.NEAREST; mip = FilterMode.NEAREST; break; }
-                    case "LINEAR_MIPMAP_NEAREST": { min = FilterMode.LINEAR; mip = FilterMode.NEAREST; break; }
-                    case "NEAREST_MIPMAP_LINEAR": { min = FilterMode.NEAREST; mip = FilterMode.LINEAR; break; }
-                    case "LINEAR_MIPMAP_LINEAR": { min = FilterMode.LINEAR; mip = FilterMode.LINEAR; break; }
+                    case "NEAREST": { min = FilterMode.NEAREST; break; }
+                    case "NEAREST_MIPMAP_NEAREST": { min = FilterMode.NEAREST; break; }
+
+                    case "LINEAR": { min = FilterMode.LINEAR; break; }
+                    case "LINEAR_MIPMAP_NEAREST": { min = FilterMode.LINEAR; break; }
+
+                    case "NEAREST_MIPMAP_LINEAR": { min = FilterMode.NEAREST; linearMip = true; break; }
+                    case "LINEAR_MIPMAP_LINEAR": { min = FilterMode.LINEAR; linearMip = true; break; }
+
                     default: throw new RuntimeException(paramValue);
                 }
             }
@@ -181,7 +184,7 @@ public class Texture extends AbstractTexture {
 
             final FilterMode minFilter = min;
             final FilterMode magFilter = mag;
-            final FilterMode mipFilter = mip;
+            final boolean mip = linearMip;
             final AddressMode addressModeU = u;
             final AddressMode addressModeV = v;
             final AddressMode addressModeW = w;
@@ -210,8 +213,7 @@ public class Texture extends AbstractTexture {
                     newWidth, newHeight, depthOrLayers, maxLod+1
                 );
 
-                texture.setTextureFilter(minFilter, magFilter, false);
-                ((GpuTextureExtended) texture).canpipe_setMipmapMode(mipFilter);
+                texture.setTextureFilter(minFilter, magFilter, mip);
                 texture.setAddressMode(addressModeU, addressModeV);
                 ((GpuTextureExtended) texture).canpipe_setAddressModeW(addressModeW);
                 ((GpuTextureExtended) texture).canpipe_setCompareOp(depthCompareOp);

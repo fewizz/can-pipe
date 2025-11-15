@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,7 +22,6 @@ import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.ShaderType;
-import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
@@ -50,7 +49,7 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
     @Unique private Map<Pair<List<HgFormat>, HgFormat>, HgRenderPass> canpipe_renderPasses = new HashMap<>();
     @Unique private Map<Pair<List<HgImage.View>, HgImage.View>, HgFramebuffer> canpipe_framebuffers = new HashMap<>();
 
-    @Unique private Map<Triple<HgSampler.CreateInfo, FilterMode, DepthTestFunction>, HgSampler> canpipe_samplers = new HashMap<>();
+    @Unique private Map<HgSampler.CreateInfo, HgSampler> canpipe_samplers = new HashMap<>();
 
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
@@ -72,29 +71,19 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
 
     public HgSampler canpipe_getSampler(
         boolean minLinear, boolean magLinear, int addressU, int addressV, int addressW, boolean mip,
-        FilterMode mipFilter, @Nullable DepthTestFunction compareOp
+        @NotNull DepthTestFunction compareOp
     ) {
-        HgCompareOp hgCompareOp = HgCompareOp.ALWAYS;
-        if (compareOp != null) {
-            hgCompareOp = switch (compareOp) {
-                case DepthTestFunction.NO_DEPTH_TEST -> HgCompareOp.ALWAYS;
-                case DepthTestFunction.EQUAL_DEPTH_TEST -> HgCompareOp.EQUAL;
-                case DepthTestFunction.LEQUAL_DEPTH_TEST -> HgCompareOp.LESS_OR_EQUAL;
-                case DepthTestFunction.LESS_DEPTH_TEST -> HgCompareOp.LESS;
-                case DepthTestFunction.GREATER_DEPTH_TEST -> HgCompareOp.GREATER;
-            };
-        }
+        HgCompareOp hgCompareOp = switch (compareOp) {
+            // If specified, VkSamplerCreateInfo.compareEnable will be false, which is... fine?
+            case DepthTestFunction.NO_DEPTH_TEST -> HgCompareOp.ALWAYS;
+            case DepthTestFunction.EQUAL_DEPTH_TEST -> HgCompareOp.EQUAL;
+            case DepthTestFunction.LEQUAL_DEPTH_TEST -> HgCompareOp.LESS_OR_EQUAL;
+            case DepthTestFunction.LESS_DEPTH_TEST -> HgCompareOp.LESS;
+            case DepthTestFunction.GREATER_DEPTH_TEST -> HgCompareOp.GREATER;
+        };
 
         var createInfo = new HgSampler.CreateInfo(minLinear, magLinear, addressU, addressV, addressW, mip, hgCompareOp);
-
-        return this.canpipe_samplers.computeIfAbsent(Triple.of(createInfo, mipFilter, compareOp), k -> {
-            try {
-                ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerMipFilter(mipFilter);
-                return this.hgDevice.createSampler(createInfo);
-            } finally {
-                ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_samplerMipFilter(null);
-            }
-        });
+        return this.canpipe_samplers.computeIfAbsent(createInfo, k -> this.hgDevice.createSampler(createInfo));
     }
 
     @Override

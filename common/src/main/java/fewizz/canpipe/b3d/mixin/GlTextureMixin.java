@@ -1,5 +1,7 @@
 package fewizz.canpipe.b3d.mixin;
 
+import org.jetbrains.annotations.NotNull;
+import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL33C;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
@@ -7,18 +9,19 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 
+import blue.endless.jankson.annotation.Nullable;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 
 @Mixin(GlTexture.class)
@@ -28,19 +31,11 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
 
     @Shadow protected boolean modesDirty;
 
-    @Unique protected FilterMode canpipe_mipFilter = null;
-    @Unique protected AddressMode canpipe_addressModeW = null;
-    @Unique protected DepthTestFunction canpipe_compareOp = null;
+    @Unique @NotNull protected AddressMode canpipe_addressModeW = AddressMode.REPEAT;
+    @Unique @Nullable protected DepthTestFunction canpipe_compareOp = null;
 
     @Override
-    public void canpipe_setMipmapMode(FilterMode filterMode) {
-        this.canpipe_mipFilter = filterMode;
-        this.useMipmaps = filterMode != null;
-        this.modesDirty = true;
-    }
-
-    @Override
-    public void canpipe_setAddressModeW(AddressMode addressMode) {
+    public void canpipe_setAddressModeW(@NotNull AddressMode addressMode) {
         this.canpipe_addressModeW = addressMode;
         this.modesDirty = true;
     }
@@ -51,28 +46,29 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
         this.modesDirty = true;
     }
 
-    @Inject(method = "setUseMipmaps", at = @At("HEAD"))
-    void onSetUseMipmaps(boolean value, CallbackInfo ci) {
-        this.canpipe_mipFilter = value ? FilterMode.LINEAR : null;
-    }
-
-    @ModifyExpressionValue(
+    @ModifyConstant(
         method = "flushModeChanges",
-        at = @At(value = "CONSTANT", args = "intValue=9986")  // GL_NEAREST_MIPMAP_LINEAR
+        constant = @Constant(
+            intValue = GL11C.GL_NEAREST,
+            ordinal = 0  // min filter
+        )
     )
-    private int onMipmapMinNearestFilter(int value) {
-        if (this.canpipe_mipFilter == FilterMode.NEAREST) {
+    private int onMinNearestFilter(int value) {
+        if (this.getMipLevels() > 1) {
             value = GL33C.GL_NEAREST_MIPMAP_NEAREST;
         }
         return value;
     }
 
-    @ModifyExpressionValue(
+    @ModifyConstant(
         method = "flushModeChanges",
-        at = @At(value = "CONSTANT", args = "intValue=9987")  // GL_LINEAR_MIPMAP_LINEAR
+        constant = @Constant(
+            intValue = GL11C.GL_LINEAR,
+            ordinal = 0  // min filter
+        )
     )
-    private int onMipmapMinLinearFilter(int value) {
-        if (this.canpipe_mipFilter == FilterMode.NEAREST) {
+    private int onMinLinearFilter(int value) {
+        if (this.getMipLevels() > 1) {
             value = GL33C.GL_LINEAR_MIPMAP_NEAREST;
         }
         return value;
@@ -83,13 +79,12 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_texParameter(III)V",
-            ordinal = 1
+            ordinal = 1,  // right after setting GL_TEXTURE_WRAP_T
+            shift = Shift.AFTER
         )
     )
-    private void afterSettingVAddressingMode(int target, CallbackInfo ci) {
-        if (this.canpipe_addressModeW != null) {
-            GlStateManager._texParameter(target, GL33C.GL_TEXTURE_WRAP_R, GlConst.toGl(this.canpipe_addressModeW));
-        }
+    private void afterSettingTextureWrapT(int target, CallbackInfo ci) {
+        GlStateManager._texParameter(target, GL33C.GL_TEXTURE_WRAP_R, GlConst.toGl(this.canpipe_addressModeW));
     }
 
     @Inject(

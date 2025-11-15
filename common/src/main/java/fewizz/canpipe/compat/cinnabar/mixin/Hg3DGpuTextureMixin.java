@@ -1,5 +1,6 @@
 package fewizz.canpipe.compat.cinnabar.mixin;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +15,6 @@ import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.TextureFormat;
 
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import graphics.cinnabar.api.hg.HgSampler;
@@ -25,23 +25,15 @@ import graphics.cinnabar.core.hg3d.Hg3DGpuTexture;
 @Mixin(Hg3DGpuTexture.class)
 public abstract class Hg3DGpuTextureMixin extends GpuTexture implements GpuTextureExtended {
 
-    public Hg3DGpuTextureMixin(int i, String string, TextureFormat textureFormat, int j, int k, int l, int m) {
-        super(i, string, textureFormat, j, k, l, m);
-    }
+    public Hg3DGpuTextureMixin() { super(-1, null, null, -1, -1, -1, -1); }
 
     @Shadow @Final private Hg3DGpuDevice device;
 
-    @Unique @Nullable protected FilterMode canpipe_mipFilter = null;
-    @Unique @Nullable protected AddressMode canpipe_addressModeW = null;
+    @Unique @NotNull protected AddressMode canpipe_addressModeW = AddressMode.REPEAT;
     @Unique @Nullable protected DepthTestFunction canpipe_compareOp = null;
 
     @Override
-    public void canpipe_setMipmapMode(@Nullable FilterMode filterMode) {
-        this.canpipe_mipFilter = filterMode;
-    }
-
-    @Override
-    public void canpipe_setAddressModeW(@Nullable AddressMode addressMode) {
+    public void canpipe_setAddressModeW(@NotNull AddressMode addressMode) {
         this.canpipe_addressModeW = addressMode;
     }
 
@@ -65,8 +57,8 @@ public abstract class Hg3DGpuTextureMixin extends GpuTexture implements GpuTextu
 
     @Inject(method = "sampler", at = @At("HEAD"), cancellable = true)
     void getSamplerExteneded(CallbackInfoReturnable<HgSampler> cir) {
-        if (this.canpipe_mipFilter == null && this.canpipe_compareOp == null) {
-            return;  // Run original logic
+        if (this.canpipe_compareOp == null) {
+            return;  // Original path, using precreated samplers
         }
 
         cir.setReturnValue(((Hg3DGpuDeviceAccessor) this.device).canpipe_getSampler(
@@ -76,7 +68,6 @@ public abstract class Hg3DGpuTextureMixin extends GpuTexture implements GpuTextu
             Hg3DConst.addressMode(this.addressModeV),
             Hg3DConst.addressMode(this.canpipe_addressModeW != null ? this.canpipe_addressModeW : AddressMode.REPEAT),
             this.useMipmaps,
-            this.canpipe_mipFilter,  // added
             this.canpipe_compareOp   // added
         ));
     }

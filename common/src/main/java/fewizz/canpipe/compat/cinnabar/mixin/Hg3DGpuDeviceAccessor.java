@@ -4,13 +4,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 import com.mojang.blaze3d.platform.DepthTestFunction;
-import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import graphics.cinnabar.api.hg.HgFramebuffer;
@@ -44,7 +44,7 @@ public interface Hg3DGpuDeviceAccessor {
     @Invoker("canpipe_getSampler")
     HgSampler canpipe_getSampler(
         boolean minLinear, boolean magLinear, int addressU, int addressV, int addressW, boolean mip,
-        FilterMode mipFilter, DepthTestFunction compareOp
+        @NotNull DepthTestFunction compareOp
     );
     
 }
