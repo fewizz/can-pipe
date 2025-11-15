@@ -10,7 +10,7 @@ import graphics.cinnabar.core.mercury.MercuryRenderPass;
 @Mixin(MercuryRenderPass.class)
 public class MercuryRenderPassMixin {
 
-    // Commiting some crimes...
+    // Committing some crimes...
     // TODO: Temporary
     @ModifyConstant(
         method = "<init>",

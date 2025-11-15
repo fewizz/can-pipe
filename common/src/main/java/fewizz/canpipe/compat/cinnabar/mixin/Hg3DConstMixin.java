@@ -49,11 +49,6 @@ public class Hg3DConstMixin {
             case "RG16_SNORM" -> HgFormat.RG16_SNORM;
             case "RG16_SFLOAT" -> HgFormat.RG32_SFLOAT;  // TODO
             case "RG32_SFLOAT" -> HgFormat.RG32_SFLOAT;
-            case "RGB8_UNORM" -> HgFormat.RGBA8_UNORM;    // not RGB8_UNORM
-            case "RGB8_SNORM" -> HgFormat.RGBA8_SNORM;    // not RGB8_SNORM
-            case "RGB16_UNORM" -> HgFormat.RGBA16_UNORM;  // not RGB16_UNORM
-            case "RGB16_SNORM" -> HgFormat.RGBA16_SNORM;  // not RGB16_SNORM
-            case "RGB32_UINT" -> HgFormat.RGBA32_UINT;    // not RGB32_UINT
             case "RGB16_SFLOAT" -> HgFormat.RGBA32_SFLOAT;  // TODO
             case "RGB32_SFLOAT" -> HgFormat.RGBA32_SFLOAT;  // TODO
             case "B10G11R11_UFLOAT_PACK32" -> HgFormat.RGBA16_UNORM;  // TODO

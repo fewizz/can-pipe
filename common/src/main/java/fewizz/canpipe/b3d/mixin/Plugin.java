@@ -95,13 +95,6 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
         add(new TexFormat("RG16_SFLOAT", 1*4, true, false, GL33C.GL_RG16F, GL33C.GL_RED, GL33C.GL_FLOAT));
         add(new TexFormat("RG32_SFLOAT", 1*4, true, false, GL33C.GL_RG32F, GL33C.GL_RED, GL33C.GL_FLOAT));
 
-        add(new TexFormat("RGB8_UNORM", 4*1, true, false, GL33C.GL_RGB8, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGB8_SNORM", 4*1, true, false, GL33C.GL_RGB8_SNORM, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGB16_UNORM", 4*1, true, false, GL33C.GL_RGB16, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGB16_SNORM", 4*1, true, false, GL33C.GL_RGB16_SNORM, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGB32_UINT", 4*1, true, false, GL33C.GL_RGB32UI, GL33C.GL_RGBA_INTEGER, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGB16_SFLOAT", 4*1, true, false, GL33C.GL_RGB16F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGB32_SFLOAT", 4*1, true, false, GL33C.GL_RGB32F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
         add(new TexFormat("B10G11R11_UFLOAT_PACK32", 4*1, true, false, GL33C.GL_R11F_G11F_B10F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
 
         // add(new TexFormat("RGBA8_UNORM", 4*1, true, false, GL33C.GL_RGBA8, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE)); already defined as RGBA8
