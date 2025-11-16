@@ -2,7 +2,6 @@ package fewizz.canpipe.b3d;
 
 import java.util.ServiceLoader;
 
-import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -16,7 +15,7 @@ public abstract class RealGpuDeviceProviderService {
         for (RealGpuDeviceProviderService s : RealGpuDeviceProviderService.loader) {
             return s.realGpuDevice();
         }
-        return (GlDevice) RenderSystem.getDevice();
+        return RenderSystem.getDevice();
     }
 
 }
