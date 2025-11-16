@@ -11,7 +11,7 @@ import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
 
-import fewizz.canpipe.b3d.GLService;
+import fewizz.canpipe.b3d.RealGpuDeviceProviderService;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 
 @Mixin(GlTextureView.class)
@@ -32,7 +32,7 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
 
     @Inject(method = "<init>", at = @At("TAIL"))
     void onInitEnd(CallbackInfo ci) {
-        GlDevice device = GLService.getRealGLDevice();
+        GlDevice device = (GlDevice) RealGpuDeviceProviderService.getRealGpuDevice();
         this.canpipe_baseArrayLayer = ((GlDeviceAccessor) device).get_canpipe_pendingTextureViewBaseLayer();
         this.canpipe_layerCount = ((GlDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount();
     }
@@ -46,7 +46,7 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
         )
     )
     public void afterTextureRemoveViews(CallbackInfo ci) {
-        GlDevice device = GLService.getRealGLDevice();
+        GlDevice device = (GlDevice) RealGpuDeviceProviderService.getRealGpuDevice();
         var fboCache = ((GlDeviceAccessor) device).get_canpipe_framebufferCache();
         fboCache.object2IntEntrySet().removeIf(kv -> {
             var textureViews = kv.getKey();

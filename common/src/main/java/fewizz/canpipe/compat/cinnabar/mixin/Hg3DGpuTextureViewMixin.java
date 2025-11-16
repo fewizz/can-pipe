@@ -6,9 +6,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import fewizz.canpipe.b3d.RealGpuDeviceProviderService;
 import graphics.cinnabar.api.hg.HgImage;
 import graphics.cinnabar.core.hg3d.Hg3DGpuDevice;
 import graphics.cinnabar.core.hg3d.Hg3DGpuTexture;
@@ -43,7 +43,7 @@ public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
     HgImage.View.Type overrideViewType(HgImage.View.Type viewType, @Local Hg3DGpuTexture texture) {
         boolean cubemap = (texture.usage() & Hg3DGpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0;
 
-        var device = (Hg3DGpuDevice) RenderSystem.getDevice();
+        var device = (Hg3DGpuDevice) RealGpuDeviceProviderService.getRealGpuDevice();
         int layerCountOverride = ((Hg3DGpuDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount();
 
         viewType = HgImage.View.Type.TYPE_2D;
@@ -71,7 +71,7 @@ public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
         index = 4
     )
     int overrideBaseLayer(int baseLayer) {
-        var device = (Hg3DGpuDevice) RenderSystem.getDevice();
+        var device = (Hg3DGpuDevice) RealGpuDeviceProviderService.getRealGpuDevice();
         int baseLayerOverride = ((Hg3DGpuDeviceAccessor) device).get_canpipe_pendingTextureViewBaseLayer();
         if (baseLayerOverride != -1) {
             baseLayer = baseLayerOverride;
@@ -92,7 +92,7 @@ public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
         index = 5
     )
     int overrideArrayLayerCount(int layerCount) {
-        var device = (Hg3DGpuDevice) RenderSystem.getDevice();
+        var device = (Hg3DGpuDevice) RealGpuDeviceProviderService.getRealGpuDevice();
         int layerCountOverride = ((Hg3DGpuDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount();
         if (layerCountOverride != -1) {
             layerCount = layerCountOverride;
