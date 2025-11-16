@@ -21,12 +21,8 @@ import net.neoforged.neoforge.client.blaze3d.validation.ValidationGpuTexture;
 
 @Mixin(ValidationGpuDevice.class)
 public abstract class ValidationGpuDeviceMixin implements GpuDeviceExtended {
-    @Shadow @Final protected GpuDevice realDevice;
 
-    @Override
-    public boolean canpipe_ndcZZeroToOne() {
-        return ((GpuDeviceExtended) this.realDevice).canpipe_ndcZZeroToOne();
-    }
+    @Shadow @Final protected GpuDevice realDevice;
 
     @Override
     public CompiledRenderPipeline canpipe_precompilePipeline(

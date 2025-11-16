@@ -9,7 +9,6 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.function.TriConsumer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -53,21 +52,6 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
 
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
-    @Unique GpuTextureView[] canpipe_pendingColorAttachments = null;
-
-    @Override
-    public boolean canpipe_ndcZZeroToOne() { return true; }
-
-    public HgRenderPass canpipe_getRenderPass(List<HgFormat> colorFormats, @Nullable HgFormat depthStencilFormat) {
-        var key = Pair.of(colorFormats, depthStencilFormat);
-        HgRenderPass renderpass = (HgRenderPass)this.canpipe_renderPasses.get(key);
-        if (renderpass != null) {
-            return renderpass;
-        }
-        HgRenderPass newRenderPass = this.hgDevice.createRenderPass(new HgRenderPass.CreateInfo(colorFormats, depthStencilFormat));
-        this.canpipe_renderPasses.put(key, newRenderPass);
-        return newRenderPass;
-    }
 
     public HgSampler canpipe_getSampler(
         boolean minLinear, boolean magLinear, int addressU, int addressV, int addressW, boolean mip,

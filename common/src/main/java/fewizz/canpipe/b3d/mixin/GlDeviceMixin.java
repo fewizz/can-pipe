@@ -43,9 +43,6 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
     @Unique private Object2IntMap<List<GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
 
     @Override
-    public boolean canpipe_ndcZZeroToOne() { return false; }
-
-    @Override
     public CompiledRenderPipeline canpipe_precompilePipeline(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,

@@ -26,6 +26,4 @@ public interface GpuDeviceExtended extends GpuDevice {
         int baseLayer, int layerCount // added
     );
 
-    boolean canpipe_ndcZZeroToOne();
-
 }
