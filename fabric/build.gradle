@@ -54,7 +54,7 @@ dependencies {
     modImplementation "blue.endless:jankson:1.2.3"
     include "blue.endless:jankson:1.2.3"
 
-    if (System.getenv("MESS_WITH_LOCAL_CINNABAR") == "1") {
+    if (System.getenv("WITH_CINNABAR") == "1") {
         modImplementation "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
     }
     else {

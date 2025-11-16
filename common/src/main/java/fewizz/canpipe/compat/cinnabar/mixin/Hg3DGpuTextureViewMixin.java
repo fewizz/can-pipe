@@ -54,7 +54,7 @@ public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
         if (cubemap && (layerCountOverride == -1 || layerCountOverride % 6 == 0)) {
             viewType = HgImage.View.Type.TYPE_CUBE;
         }
-        else if (layerCountOverride == -1 && texture.getDepthOrLayers() > 1) {
+        else if ((layerCountOverride == -1 && texture.getDepthOrLayers() > 1) || layerCountOverride > 1) {
             viewType = HgImage.View.Type.TYPE_2D_ARRAY;
         }
 

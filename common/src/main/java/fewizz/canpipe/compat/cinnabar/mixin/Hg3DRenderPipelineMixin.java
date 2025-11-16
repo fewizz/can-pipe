@@ -43,4 +43,38 @@ public class Hg3DRenderPipelineMixin {
         return attachments;
     }
 
+    @ModifyArg(
+        method = "<init>",
+        at = @At(
+            value = "INVOKE",
+            target = "Lgraphics/cinnabar/api/hg/HgGraphicsPipeline$ShaderSet$CreateInfo;gl("+
+                "Ljava/lang/String;"+
+                "Ljava/lang/String;"+
+            ")Lgraphics/cinnabar/api/hg/HgGraphicsPipeline$ShaderSet$CreateInfo;"
+        ),
+        index = 0
+    )
+    String patchVertexShader(String vertexShader) {
+        vertexShader =
+            "void canpipe_main();\n"+
+            "void main() {\n"+
+            "   canpipe_main();\n"+
+            "   // NDC Z -1 <-> 1 => 0 <-> 1\n"+
+            "   gl_Position.z = (gl_Position.z + gl_Position.w) * 0.5;\n"+
+            "}\n"+
+            "#define main canpipe_main\n\n"+
+            vertexShader;
+
+        // patch Cinnabar's dynamictransforms.glsl
+        vertexShader = vertexShader.replace(
+            "#define main realMain",
+            "#ifdef main\n"+
+            "   #undef main\n"+
+            "#endif\n"+
+            "#define main realMain\n"
+        );
+
+        return vertexShader;
+    }
+
 }
