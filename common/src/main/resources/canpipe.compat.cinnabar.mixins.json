@@ -19,6 +19,7 @@
         "MercuryGraphicsPipelineMixin",
         "MercuryRenderPassMixin",
         "MercurySamplerMixin",
+        "MercuryShaderSetMixin",
         "VulkanStartupMixin"
     ]
 }

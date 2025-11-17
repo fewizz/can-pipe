@@ -33,13 +33,15 @@ public class Hg3DRenderPipelineMixin {
         assert attachments.size() == 1 && attachments.get(0) == attachment;
 
         attachments = new ArrayList<>();
-        attachments.add(attachment);
+        attachments.add(attachment);  // First is untouched, others are disabled
+
         for (int i = 1; i < shaderSet.attachmentCount(); ++i) {
             attachments.add(new HgGraphicsPipeline.Blend.Attachment(
                 null,  // equations
                 attachment.writeMask()
             ));
         }
+
         return attachments;
     }
 
