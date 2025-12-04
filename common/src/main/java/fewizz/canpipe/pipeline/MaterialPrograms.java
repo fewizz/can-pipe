@@ -69,8 +69,8 @@ public class MaterialPrograms {
             );
             renderPipelineBuilder
                 .withLocation(location)
-                .withVertexShader(location.withSuffix(".vsh"))
-                .withFragmentShader(location.withSuffix(".fsh"))
+                .withVertexShader(vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()))
+                .withFragmentShader(fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()))
                 .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
                 .withDepthBias(
                     !shadow ? originalRenderPipeline.getDepthBiasScaleFactor() : shadowsOffsetSlopeFactor,

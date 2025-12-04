@@ -35,6 +35,8 @@ public class Framebuffer extends RenderTarget {
 
     public @Nullable final Double depthTextureClearDepth;
 
+    private boolean destroyed = true;
+
     Framebuffer(
         ResourceLocation pipelineLocation,
         String name,
@@ -68,8 +70,13 @@ public class Framebuffer extends RenderTarget {
 
     @Override
     public void destroyBuffers() {
-        for (var colorTextureView : this.colorTextureViews) {
-            colorTextureView.close();
+        if (destroyed) {
+            return;
+        }
+
+        for (int i = 0; i < this.colorTextures.length; ++i) {
+            this.colorTextureViews[i].close();
+            this.colorTextureViews[i] = null;
         }
 
         if (this.depthTextureView != null) {
@@ -82,35 +89,24 @@ public class Framebuffer extends RenderTarget {
 
         this.colorTextureView = null;
         this.colorTexture = null;
+
+        destroyed = true;
     }
 
     @Override
     public void createBuffers(int width, int height) {
-        this.width = this.height = -1;
-
-        Consumer<GpuTextureView> updateSize = (textureView) -> {
-            int w = textureView.getWidth(0);
-            int h = textureView.getHeight(0);
-
-            if (this.width == -1) {  // first time
-                this.width = w;
-                this.height = h;
-                return;
-            }
-
-            if (w != this.width) {
-                throw new RuntimeException("Expected texture view width="+this.width+", but got width="+w);
-            }
-            if (h != this.height) {
-                throw new RuntimeException("Expected texture view height="+this.height+", but got height="+h);
-            }
-        };
+        if (!destroyed) { throw new RuntimeException(); }
 
         for (int i = 0; i < this.colorTextures.length; ++i) {
             var colorTextureAndView = this.colorAttachmentsSupplier.apply(i);
-            this.colorTextures[i] = colorTextureAndView.getLeft();
-            this.colorTextureViews[i] = colorTextureAndView.getRight();
-            updateSize.accept(this.colorTextureViews[i]);
+            var texture = colorTextureAndView.getLeft();
+            var textureView = colorTextureAndView.getRight();
+
+            if (texture == null) { throw new RuntimeException("Color attachment supplier must not return null for a texture"); }
+            if (textureView == null) { throw new RuntimeException("Color attachment supplier must not return null for a texture view"); }
+
+            this.colorTextures[i] = texture;
+            this.colorTextureViews[i] = textureView;
         }
 
         if (this.colorTextures.length > 0) {
@@ -121,9 +117,35 @@ public class Framebuffer extends RenderTarget {
         var depthTextureAndView = this.depthAttachmentSupplier.get();
         this.depthTexture = depthTextureAndView.getLeft();
         this.depthTextureView = depthTextureAndView.getRight();
-        if (this.depthTextureView != null) {
-            updateSize.accept(this.depthTextureView);
+
+        this.width = this.height = -1;
+
+        Consumer<GpuTextureView> updateAndValidateSize = (textureView) -> {
+            int w = textureView.getWidth(0);
+            int h = textureView.getHeight(0);
+
+            if (this.width == -1) {
+                this.width = w;
+                this.height = h;
+            }
+            else {
+                if (w != this.width) {
+                    throw new RuntimeException("Expected texture view width="+this.width+", but got width="+w);
+                }
+                if (h != this.height) {
+                    throw new RuntimeException("Expected texture view height="+this.height+", but got height="+h);
+                }
+            }
+        };
+
+        for (var textureView : this.colorTextureViews) {
+            updateAndValidateSize.accept(textureView);
         }
+        if (this.depthTextureView != null) {
+            updateAndValidateSize.accept(this.depthTextureView);
+        }
+
+        destroyed = false;
     }
 
     static Framebuffer load(

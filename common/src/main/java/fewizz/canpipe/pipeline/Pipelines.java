@@ -40,11 +40,9 @@ final public class Pipelines implements PreparableReloadListener {
         PreparableReloadListener.PreparationBarrier preparationBarrier,
         Executor applyExecutor
     ) {
-        return CompletableFuture.supplyAsync(
-            Pipelines::readRawPipelines, loadExecutor
-        ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
-            Pipelines::loadRawPipelines, applyExecutor
-        );
+        return CompletableFuture.supplyAsync(Pipelines::readRawPipelines, loadExecutor)
+            .thenCompose(preparationBarrier::wait)
+            .thenAcceptAsync(Pipelines::loadRawPipelines, applyExecutor);
     }
 
     public static final Map<ResourceLocation, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
@@ -152,6 +150,7 @@ final public class Pipelines implements PreparableReloadListener {
         Minecraft mc = Minecraft.getInstance();
 
         mc.mainRenderTarget.destroyBuffers();
+
         mc.mainRenderTarget =
             loadedPipeline != null ?
             loadedPipeline.defaultFramebuffer :
