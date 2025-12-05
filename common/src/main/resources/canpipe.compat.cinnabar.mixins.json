@@ -12,6 +12,7 @@
         "Hg3DGpuDeviceMixin",
         "Hg3DGpuTextureMixin",
         "Hg3DGpuTextureViewMixin",
+        "Hg3DRenderPassMixin",
         "Hg3DRenderPipelineAccessor",
         "Hg3DRenderPipelineMixin",
         "MCCachedOrthoProjectionMatrixBufferMixin",

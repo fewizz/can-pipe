@@ -39,8 +39,8 @@ public abstract class Hg3DCommandEncoderMixin implements CommandEncoderExtended 
         GpuTextureView[] colorAttachments,
         @Nullable GpuTextureView depthAttachment
     ) {
-        var renderPasses = ((Hg3DGpuDeviceAccessor) this.device).get_canpipe_renderPasses();
-        var framebuffers = ((Hg3DGpuDeviceAccessor) this.device).get_canpipe_framebuffers();
+        var canpipe_renderPasses = ((Hg3DGpuDeviceAccessor) this.device).get_canpipe_renderPasses();
+        var canpipe_framebuffers = ((Hg3DGpuDeviceAccessor) this.device).get_canpipe_framebuffers();
 
         var colorFormats = Arrays.stream(colorAttachments).map(a -> Hg3DConst.format(a.texture().getFormat())).toList();
         var imageViews = Arrays.stream(colorAttachments).map(a -> ((Hg3DGpuTextureView) a).imageView()).toList();
@@ -48,7 +48,7 @@ public abstract class Hg3DCommandEncoderMixin implements CommandEncoderExtended 
         var depthFormat = depthAttachment != null ? Hg3DConst.format(depthAttachment.texture().getFormat()) : null;
         var depthView = depthAttachment != null ? ((Hg3DGpuTextureView) depthAttachment).imageView() : null;
 
-        HgRenderPass hgRenderPass = renderPasses.computeIfAbsent(
+        HgRenderPass hgRenderPass = canpipe_renderPasses.computeIfAbsent(
             Pair.of(colorFormats, depthFormat),
             k -> {
                 var createInfo = new HgRenderPass.CreateInfo(colorFormats, depthFormat);
@@ -56,7 +56,7 @@ public abstract class Hg3DCommandEncoderMixin implements CommandEncoderExtended 
             }
         );
 
-        var framebuffer = framebuffers.computeIfAbsent(
+        var framebuffer = canpipe_framebuffers.computeIfAbsent(
             Pair.of(imageViews, depthView),
             k -> {
                 var createInfo = new HgFramebuffer.CreateInfo(hgRenderPass, imageViews, depthView);

@@ -27,7 +27,7 @@ public class MercuryShaderSetMixin {
             shift = Shift.BEFORE
         )
     )
-    int onSetAttachemntCount(
+    int onSetAttachmentCount(
         int attachmentCount,
         @Local(ordinal = 0) SpvcReflectedResource.Buffer fraAttachments,
         @Local(name = "spvcFraCompiler") long spvcFraCompiler
