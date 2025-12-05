@@ -228,7 +228,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 Profiler.get().popPush("render sections");
                 ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
                 chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE);
-                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT);
+                // chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT);
 
                 MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 

@@ -4,7 +4,6 @@ import java.util.function.BiFunction;
 
 import org.apache.commons.lang3.function.TriConsumer;
 
-import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.GpuDevice;
@@ -15,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public interface GpuDeviceExtended extends GpuDevice {
 
-    CompiledRenderPipeline canpipe_precompilePipeline(
+    void canpipe_precompilePipelineShaderModules(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
         TriConsumer<String, ResourceLocation, String> onCompilationError

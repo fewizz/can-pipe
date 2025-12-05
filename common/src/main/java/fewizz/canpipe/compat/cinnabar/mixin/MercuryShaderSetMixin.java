@@ -9,7 +9,10 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.shaders.ShaderType;
 
+import graphics.cinnabar.api.hg.HgGraphicsPipeline;
+import graphics.cinnabar.core.mercury.MercuryDevice;
 import graphics.cinnabar.core.mercury.MercuryShaderSet;
 
 @Mixin(MercuryShaderSet.class)
@@ -47,6 +50,43 @@ public class MercuryShaderSetMixin {
         }
 
         return attachmentCount;
+    }
+
+    @ModifyExpressionValue(
+        method = "<init>",
+        at = @At(
+            value = "INVOKE",
+            target = "Lorg/lwjgl/util/shaderc/Shaderc;shaderc_result_get_error_message(J)Ljava/lang/String;",
+            ordinal = 0
+        )
+    )
+    String vertexShaderCompilationErrorLog(
+        String errorlog, @Local MercuryDevice device, @Local HgGraphicsPipeline.ShaderSet.CreateInfo createInfo
+    ) {
+        // I know that it is wrong to access HG3DGpuDevice from here, but how else could I pass this log?
+        var callback = ((MercuryDeviceAccessor) device).get_canpipe_onCompilationError();
+        if (callback != null) {
+            callback.accept(errorlog, ShaderType.VERTEX, createInfo.vertexStage().right().get().vertex());
+        }
+        return errorlog;
+    }
+
+    @ModifyExpressionValue(
+        method = "<init>",
+        at = @At(
+            value = "INVOKE",
+            target = "Lorg/lwjgl/util/shaderc/Shaderc;shaderc_result_get_error_message(J)Ljava/lang/String;",
+            ordinal = 1
+        )
+    )
+    String fragmentShaderCompilationErrorLog(
+        String errorlog, @Local MercuryDevice device, @Local HgGraphicsPipeline.ShaderSet.CreateInfo createInfo
+    ) {
+        var callback = ((MercuryDeviceAccessor) device).get_canpipe_onCompilationError();
+        if (callback != null) {
+            callback.accept(errorlog, ShaderType.FRAGMENT, createInfo.fragmentStage().fragment());
+        }
+        return errorlog;
     }
 
 }

@@ -97,7 +97,7 @@ public class Programs {
             return src;
         };
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipeline(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
             pipeline,
             (ResourceLocation location, ShaderType type) -> {
                 String src = getShaderSource.apply(location).get();

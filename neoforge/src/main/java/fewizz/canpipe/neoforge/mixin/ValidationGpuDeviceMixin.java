@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.GpuDevice;
@@ -25,12 +24,12 @@ public abstract class ValidationGpuDeviceMixin implements GpuDeviceExtended {
     @Shadow @Final protected GpuDevice realDevice;
 
     @Override
-    public CompiledRenderPipeline canpipe_precompilePipeline(
+    public void canpipe_precompilePipelineShaderModules(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
         TriConsumer<String, ResourceLocation, String> onCompilationError
     ) {
-        return ((GpuDeviceExtended) this.realDevice).canpipe_precompilePipeline(
+        ((GpuDeviceExtended) this.realDevice).canpipe_precompilePipelineShaderModules(
             pipeline, shaderSource, onCompilationError
         );
     }

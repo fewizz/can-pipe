@@ -7,6 +7,7 @@ import java.util.function.BiFunction;
 import org.apache.commons.lang3.function.TriConsumer;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,7 +21,6 @@ import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
-import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.GpuTexture;
@@ -29,10 +29,13 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.ResourceLocation;
 
 @Mixin(GlDevice.class)
 public abstract class GlDeviceMixin implements GpuDeviceExtended {
+
+    @Shadow abstract protected GlShaderModule getOrCompileShader(ResourceLocation shader, ShaderType type, ShaderDefines defines, BiFunction<ResourceLocation, ShaderType, String> shaderSource);
 
     @Unique private TriConsumer<String, ResourceLocation, String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
@@ -43,14 +46,15 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
     @Unique private Object2IntMap<List<GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
 
     @Override
-    public CompiledRenderPipeline canpipe_precompilePipeline(
+    public void canpipe_precompilePipelineShaderModules(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
         TriConsumer<String, ResourceLocation, String> onCompilationError
     ) {
         try {
             this.canpipe_onCompilationError = onCompilationError;
-            return this.precompilePipeline(pipeline, shaderSource);
+            this.getOrCompileShader(pipeline.getVertexShader(), ShaderType.VERTEX, pipeline.getShaderDefines(), shaderSource);
+            this.getOrCompileShader(pipeline.getFragmentShader(), ShaderType.FRAGMENT, pipeline.getShaderDefines(), shaderSource);
         } finally {
             this.canpipe_onCompilationError = null;
             this.canpipe_compilationLog = null;

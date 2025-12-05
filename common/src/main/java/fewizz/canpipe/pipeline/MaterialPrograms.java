@@ -132,7 +132,7 @@ public class MaterialPrograms {
             return src;
         };
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipeline(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
             renderPipeline,
             (ResourceLocation location, ShaderType type) -> {
                 String src = switch (type) {

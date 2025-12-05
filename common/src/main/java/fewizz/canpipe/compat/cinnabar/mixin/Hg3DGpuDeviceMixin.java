@@ -19,7 +19,6 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.pipeline.CompiledRenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -73,13 +72,24 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
     }
 
     @Override
-    public CompiledRenderPipeline canpipe_precompilePipeline(
+    public void canpipe_precompilePipelineShaderModules(
         RenderPipeline pipeline,
         BiFunction<ResourceLocation, ShaderType, String> shaderSource,
         TriConsumer<String, ResourceLocation, String> onCompilationError
     ) {
         // not `this.precompilePipeline()`, I don't want to create a graphics pipeline
-        return this.getPipeline(pipeline, shaderSource == null ? this.shaderSourceProvider : shaderSource);
+        try {
+            ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_onCompilationError((error, shaderType, src) -> {
+                onCompilationError.accept(  // convert shader type to shader location
+                    error,
+                    shaderType == ShaderType.VERTEX ? pipeline.getVertexShader() : pipeline.getFragmentShader(),
+                    src
+                );
+            });
+            this.getPipeline(pipeline, shaderSource == null ? this.shaderSourceProvider : shaderSource);
+        } finally {
+            ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_onCompilationError(null);
+        }
     }
 
     @Override
