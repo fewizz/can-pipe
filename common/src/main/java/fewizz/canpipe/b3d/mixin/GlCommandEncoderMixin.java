@@ -41,9 +41,11 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 @Mixin(GlCommandEncoder.class)
 public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
 
-    @Shadow private boolean inRenderPass;
+    @Shadow @Final private int readFbo;
+    @Shadow @Final private int drawFbo;
     @Shadow @Final private static Logger LOGGER;
     @Shadow @Final private GlDevice device;
+    @Shadow private boolean inRenderPass;
 
     @Unique private GpuTextureView[] canpipe_colorAttachements = null;
     @Unique private int canpipe_clearBaseLevel = -1;
@@ -238,6 +240,20 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
             this.canpipe_clearBaseLayer = -1;
             this.canpipe_clearLayerCount = -1;
         }
+    }
+
+    @Override
+    public void canpipe_blitImage(GpuTexture srcTexture, GpuTexture dstTexture) {
+        GlStateManager._glBindFramebuffer(GL33C.GL_READ_FRAMEBUFFER, this.readFbo);
+        GlStateManager._glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, this.drawFbo);
+
+        GlStateManager._glFramebufferTexture2D(GL33C.GL_READ_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0, GL33C.GL_TEXTURE_2D, ((GlTexture) srcTexture).glId(), 0);
+        GlStateManager._glFramebufferTexture2D(GL33C.GL_DRAW_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0, GL33C.GL_TEXTURE_2D, ((GlTexture) dstTexture).glId(), 0);
+
+        GL33C.glBlitFramebuffer(0, 0, srcTexture.getWidth(0), srcTexture.getHeight(0), 0, 0, dstTexture.getWidth(0), dstTexture.getHeight(0), GL33C.GL_COLOR_BUFFER_BIT, GL33C.GL_NEAREST);
+
+        GlStateManager._glBindFramebuffer(GL33C.GL_READ_FRAMEBUFFER, 0);
+        GlStateManager._glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
     }
 
     @WrapOperation(

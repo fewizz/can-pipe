@@ -80,30 +80,30 @@ public class Plugin implements IMixinConfigPlugin, Opcodes {
     private static final List<TexFormat> ADDITIONAL_TEXTURE_FORMATS = new ArrayList<>() {{
         // put("DEPTH_COMPONENT32", new TexFormat(1*4, false, true, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_FLOAT));  // already defined as DEPTH32
 
-        // add(new TexFormat("RED8", 1*4, true, false, GL_RED8, GL_RED, GL_FLOAT));  // already defined
+        // add(new TexFormat("RED8", 1*1, true, false, GL_RED8, GL_RED, GL_FLOAT));  // already defined
         add(new TexFormat("R8_UNORM", 1*1, true, false, GL33C.GL_R8, GL33C.GL_RED, GL33C.GL_UNSIGNED_BYTE));
         add(new TexFormat("R8_SNORM", 1*1, true, false, GL33C.GL_R8_SNORM, GL33C.GL_RED, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("R16_UNORM", 1*1, true, false, GL33C.GL_R16, GL33C.GL_RED, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("R16_SNORM", 1*1, true, false, GL33C.GL_R16_SNORM, GL33C.GL_RED, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("R16_SFLOAT", 1*4, true, false, GL33C.GL_R16F, GL33C.GL_RED, GL33C.GL_FLOAT));
+        add(new TexFormat("R16_UNORM", 1*2, true, false, GL33C.GL_R16, GL33C.GL_RED, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("R16_SNORM", 1*2, true, false, GL33C.GL_R16_SNORM, GL33C.GL_RED, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("R16_SFLOAT", 1*2, true, false, GL33C.GL_R16F, GL33C.GL_RED, GL33C.GL_FLOAT));
         add(new TexFormat("R32_SFLOAT", 1*4, true, false, GL33C.GL_R32F, GL33C.GL_RED, GL33C.GL_FLOAT));
 
-        add(new TexFormat("RG8_UNORM", 4*1, true, false, GL33C.GL_RG8, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RG8_SNORM", 4*1, true, false, GL33C.GL_RG8_SNORM, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RG16_UNORM", 4*1, true, false, GL33C.GL_RG16, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RG16_SNORM", 4*1, true, false, GL33C.GL_RG16_SNORM, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RG16_SFLOAT", 1*4, true, false, GL33C.GL_RG16F, GL33C.GL_RED, GL33C.GL_FLOAT));
-        add(new TexFormat("RG32_SFLOAT", 1*4, true, false, GL33C.GL_RG32F, GL33C.GL_RED, GL33C.GL_FLOAT));
+        add(new TexFormat("RG8_UNORM", 2*1, true, false, GL33C.GL_RG8, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RG8_SNORM", 2*1, true, false, GL33C.GL_RG8_SNORM, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RG16_UNORM", 2*2, true, false, GL33C.GL_RG16, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RG16_SNORM", 2*2, true, false, GL33C.GL_RG16_SNORM, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RG16_SFLOAT", 2*2, true, false, GL33C.GL_RG16F, GL33C.GL_RED, GL33C.GL_FLOAT));
+        add(new TexFormat("RG32_SFLOAT", 2*4, true, false, GL33C.GL_RG32F, GL33C.GL_RED, GL33C.GL_FLOAT));
 
-        add(new TexFormat("B10G11R11_UFLOAT_PACK32", 4*1, true, false, GL33C.GL_R11F_G11F_B10F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("B10G11R11_UFLOAT_PACK32", 4, true, false, GL33C.GL_R11F_G11F_B10F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
 
         // add(new TexFormat("RGBA8_UNORM", 4*1, true, false, GL33C.GL_RGBA8, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE)); already defined as RGBA8
         add(new TexFormat("RGBA8_SNORM", 4*1, true, false, GL33C.GL_RGBA8_SNORM, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("R12X4G12X4B12X4A12X4_UNORM_4PACK16", 4*1, true, false, GL33C.GL_RGBA12, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGBA16_UNORM", 4*1, true, false, GL33C.GL_RGBA16, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGBA32_UINT", 4*1, true, false, GL33C.GL_RGBA32UI, GL33C.GL_RGBA_INTEGER, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGBA16_SFLOAT", 4*1, true, false, GL33C.GL_RGBA16F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
-        add(new TexFormat("RGBA32_SFLOAT", 4*1, true, false, GL33C.GL_RGBA32F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("R12X4G12X4B12X4A12X4_UNORM_4PACK16", 12*4/8, true, false, GL33C.GL_RGBA12, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGBA16_UNORM", 4*2, true, false, GL33C.GL_RGBA16, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGBA32_UINT", 4*3, true, false, GL33C.GL_RGBA32UI, GL33C.GL_RGBA_INTEGER, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGBA16_SFLOAT", 4*2, true, false, GL33C.GL_RGBA16F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
+        add(new TexFormat("RGBA32_SFLOAT", 4*4, true, false, GL33C.GL_RGBA32F, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE));
     }};
 
     @Override

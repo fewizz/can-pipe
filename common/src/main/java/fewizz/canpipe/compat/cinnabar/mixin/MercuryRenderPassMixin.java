@@ -34,12 +34,12 @@ public abstract class MercuryRenderPassMixin implements HgRenderPassExtended {
     @Nullable private HgFormat canpipe_depthStencilFormat;
 
     @Override
-    public List<HgFormat> getColorFormats() {
+    public List<HgFormat> canpipe_getColorFormats() {
         return this.canpipe_colorFormats;
     }
 
     @Override
-    public HgFormat getDepthStencilFormat() {
+    public HgFormat canpipe_getDepthStencilFormat() {
         return this.canpipe_depthStencilFormat;
     }
 

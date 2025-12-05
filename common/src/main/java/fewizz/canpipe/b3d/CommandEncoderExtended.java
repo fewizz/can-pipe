@@ -25,4 +25,9 @@ public interface CommandEncoderExtended extends CommandEncoder {
         int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount  // added
     );
 
+    void canpipe_blitImage(
+        GpuTexture srcTexture,
+        GpuTexture dstTexture
+    );
+
 }

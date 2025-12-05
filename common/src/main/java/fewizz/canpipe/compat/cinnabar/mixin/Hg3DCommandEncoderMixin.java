@@ -14,6 +14,7 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.compat.cinnabar.HgCommandBufferExtended;
 import graphics.cinnabar.api.hg.HgCommandBuffer;
 import graphics.cinnabar.api.hg.HgFramebuffer;
 import graphics.cinnabar.api.hg.HgImage;
@@ -114,5 +115,17 @@ public abstract class Hg3DCommandEncoderMixin implements CommandEncoderExtended 
             color
         );
     }
-    
+
+    @Override
+    public void canpipe_blitImage(
+        GpuTexture srcTexture,
+        GpuTexture dstTexture
+    ) {
+        HgCommandBuffer cb = this.mainCommandBuffer();
+        ((HgCommandBufferExtended) cb).canpipe_blitImage(
+            ((Hg3DGpuTexture) srcTexture).image(),
+            ((Hg3DGpuTexture) dstTexture).image()
+        );
+    }
+
 }

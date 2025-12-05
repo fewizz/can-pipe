@@ -22,6 +22,7 @@ import net.neoforged.neoforge.client.blaze3d.validation.ValidationRenderPass;
 
 @Mixin(ValidationCommandEncoder.class)
 public abstract class ValidationCommandEncoderMixin implements CommandEncoderExtended {
+
     @Shadow @Final private CommandEncoder realCommandEncoder;
     @Shadow @Final private GpuDeviceUsageValidator validator;
 
@@ -69,6 +70,19 @@ public abstract class ValidationCommandEncoderMixin implements CommandEncoderExt
         }
         ((CommandEncoderExtended) this.realCommandEncoder).canpipe_clearColorTexture(
             validationTexture.getRealTexture(), color, baseMipLevel, levelCount, baseArrayLayer, layerCount
+        );
+    }
+
+    @Override
+    public void canpipe_blitImage(GpuTexture srcTexture, GpuTexture dstTexture) {
+        if (!(srcTexture instanceof ValidationGpuTexture srcValidationTexture)) {
+            throw new IllegalArgumentException();
+        }
+        if (!(dstTexture instanceof ValidationGpuTexture dstValidationTexture)) {
+            throw new IllegalArgumentException();
+        }
+        ((CommandEncoderExtended) this.realCommandEncoder).canpipe_blitImage(
+            srcValidationTexture.getRealTexture(), dstValidationTexture.getRealTexture()
         );
     }
 

@@ -41,19 +41,22 @@ public class Hg3DRenderPassMixin {
         int sourceSetAttachmentsCount = ((Hg3DRenderPipelineAccessor) this.boundPipeline).get_shaderSet().attachmentCount();
         int renderPassAttachmentCount = renderPass.colorAttachmentCount();
 
-        if (renderPassAttachmentCount >= sourceSetAttachmentsCount) {
+        if (
+            renderPassAttachmentCount == sourceSetAttachmentsCount ||
+            renderPassAttachmentCount > sourceSetAttachmentsCount  // sure?
+        ) {
             // perfect, do nothing
             this.canpipe_renderPass = null;
         }
         else if (renderPassAttachmentCount < sourceSetAttachmentsCount) {
-            List<HgFormat> colorFormats = new ArrayList<>(((HgRenderPassExtended) renderPass).getColorFormats());
+            List<HgFormat> colorFormats = new ArrayList<>(((HgRenderPassExtended) renderPass).canpipe_getColorFormats());
 
             // null == VK_ATTACHMENT_UNUSED
             for (int i = colorFormats.size(); i < sourceSetAttachmentsCount; ++i) {
                 colorFormats.add(null);
             }
 
-            HgFormat depthStencilFormat = ((HgRenderPassExtended) renderPass).getDepthStencilFormat();
+            HgFormat depthStencilFormat = ((HgRenderPassExtended) renderPass).canpipe_getDepthStencilFormat();
 
             var canpipe_renderPasses = ((Hg3DGpuDeviceAccessor) this.boundPipeline.device()).get_canpipe_renderPasses();
 
@@ -67,9 +70,6 @@ public class Hg3DRenderPassMixin {
 
             renderPass = this.canpipe_renderPass;
         }
-        /*else {
-            throw new RuntimeException("Render pipeline uses only "+sourceSetAttachmentsCount+" color attachments, but "+renderPassAttachmentCount+" were provided");
-        }*/
 
         return renderPass;
     }

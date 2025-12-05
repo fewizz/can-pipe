@@ -10,7 +10,7 @@ public interface HgRenderPassExtended extends HgRenderPass {
 
     // Needed to recreate render passes, look at Hg3DRenderPassMixin
 
-    List<HgFormat> getColorFormats();
-    @Nullable HgFormat getDepthStencilFormat();
+    List<HgFormat> canpipe_getColorFormats();
+    @Nullable HgFormat canpipe_getDepthStencilFormat();
 
 }
