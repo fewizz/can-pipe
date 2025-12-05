@@ -148,20 +148,28 @@ public class GameRendererMixin implements GameRendererExtended {
             var shadowRotationMatrix = new Matrix3f(Uniforms.FRX_SHADOW_VIEW_MATRIX);
             var inverseShadowViewMatrix = new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
 
-            for (int cascade = 0; cascade < p.shadows.cascadeRadii().size()+1; ++cascade) {
+            final float maxCascadeRadius = this.renderDistance + 48;
+
+            float prevCascadeRadius = -1.0F;
+
+            // from smallest to biggest
+            for (int cascade = p.shadows.cascadeRadii().size(); cascade >= 0; --cascade) {
                 float cascadeRadius;
                 Vector3f center;
 
-                if (cascade == 0) {
-                    // TODO we can do better
-                    cascadeRadius = this.renderDistance + 48.0F;
-                    center = new Vector3f(0.0F, 0.0F, 0.0F);
+                if (cascade == 0) {  // biggest, radius depends on render distance
+                    cascadeRadius = maxCascadeRadius;
                 }
                 else {
                     cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
-                    center = new Vector3f(mainCamera.getLookVector()).mul(cascadeRadius);
                 }
 
+                if (cascadeRadius <= prevCascadeRadius) {
+                    cascadeRadius = 0.0F;  // Prev cascade was bigger, disabling current cascade
+                }
+                prevCascadeRadius = Math.max(cascadeRadius, prevCascadeRadius);
+
+                center = new Vector3f(mainCamera.getLookVector()).mul(cascadeRadius);
                 center.mulProject(Uniforms.FRX_SHADOW_VIEW_MATRIX);
 
                 float depthTextureSize = (float) p.shadows.framebuffers().get(0).getDepthTexture().getWidth(0);

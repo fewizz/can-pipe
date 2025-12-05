@@ -186,7 +186,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
 
         for (int cascade = 0; cascade < p.shadows.cascadeRadii().size()+1; ++cascade) {
-            Profiler.get().popPush("cascade " +cascade);
+            if (Uniforms.CANPIPE_SHADOW_CENTER[cascade].w == 0.0F) {  // cascade radius is 0, i.e. it is disabled
+                continue;
+            }
+
+            Profiler.get().popPush("cascade " + cascade);
 
             Uniforms.FRXU_CASCADE.set(cascade);
 
