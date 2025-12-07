@@ -1,15 +1,15 @@
 layout(std140) uniform frx_ub_player {
-    uniform float frx_effectModifier;
-    uniform float canpipe_darknessFactor;
-    uniform vec3 frx_eyePos;
-    uniform vec2 frx_eyeBrightness;
-    uniform vec2 frx_smoothedEyeBrightness;
-    uniform vec4 frx_heldLight;
-    uniform float frx_heldLightInnerRadius;
-    uniform float frx_heldLightOuterRadius;
-    uniform float frx_playerMood;
-    uniform int canpipe_playerFlags;
-    uniform ivec2 canpipe_effectsFlags;
+    float frx_effectModifier;
+    float canpipe_darknessFactor;
+    vec3 frx_eyePos;
+    vec2 frx_eyeBrightness;
+    vec2 frx_smoothedEyeBrightness;
+    vec4 frx_heldLight;
+    float frx_heldLightInnerRadius;
+    float frx_heldLightOuterRadius;
+    float frx_playerMood;
+    int canpipe_playerFlags;
+    ivec2 canpipe_effectsFlags;
 };
 
 #define frx_darknessEffectFactor canpipe_darknessFactor  // because Lumi checks for macro definition

@@ -74,10 +74,10 @@ public class Programs {
             src = src.replaceAll("uniform\\s+mat4\\s+frxu_frameProjectionMatrix;", "// uniform mat4 frxu_frameProjectionMatrix;");
             src =
                 "layout(std140) uniform canpipe_ub_pass {\n"+
-                "    uniform ivec2 frxu_size;\n"+
-                "    uniform int frxu_lod;\n"+
-                "    uniform int frxu_layer;\n"+
-                "    uniform mat4 frxu_frameProjectionMatrix;\n"+
+                "    ivec2 frxu_size;\n"+
+                "    int frxu_lod;\n"+
+                "    int frxu_layer;\n"+
+                "    mat4 frxu_frameProjectionMatrix;\n"+
                 "};\n\n"+
                 src;
             return src;

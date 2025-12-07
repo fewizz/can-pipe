@@ -126,13 +126,13 @@ public class MaterialPrograms {
             src =
                 "\n"+
                 "layout(std140) uniform frxu_ub_cascade {\n"+
-                "    uniform int frxu_cascade;\n"+
+                "    int frxu_cascade;\n"+
                 "};\n\n"+
                 "layout(std140) uniform canpipe_ub_render_target {\n"+
-                "    uniform int canpipe_renderTarget;\n"+
+                "    int canpipe_renderTarget;\n"+
                 "};\n\n"+
                 "layout(std140) uniform canpipe_ub_origin_type {\n"+
-                "    uniform int canpipe_originType;\n"+
+                "    int canpipe_originType;\n"+
                 "};\n\n"+
                 src;
             return src;

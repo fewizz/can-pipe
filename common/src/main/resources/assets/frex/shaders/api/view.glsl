@@ -2,34 +2,34 @@
 #include minecraft:shaders/include/projection.glsl
 
 layout(std140) uniform frx_ub_view {
-    // uniform mat4 frx_viewMatrix;  provided by DynamicTransforms
-    uniform mat4 frx_inverseViewMatrix;
-    uniform mat4 frx_lastViewMatrix;
+    // mat4 frx_viewMatrix;  provided by DynamicTransforms
+    mat4 frx_inverseViewMatrix;
+    mat4 frx_lastViewMatrix;
 
-    // uniform mat4 frx_projectionMatrix;  provided by mc_projectionMatrix
-    uniform mat4 frx_inverseProjectionMatrix;
-    uniform mat4 frx_lastProjectionMatrix;
+    // mat4 frx_projectionMatrix;  provided by mc_projectionMatrix
+    mat4 frx_inverseProjectionMatrix;
+    mat4 frx_lastProjectionMatrix;
 
-    uniform mat4 frx_shadowViewMatrix;
-    uniform mat4 frx_inverseShadowViewMatrix;
+    mat4 frx_shadowViewMatrix;
+    mat4 frx_inverseShadowViewMatrix;
 
     // chunk block pos when frx_modelOriginRegion is true, camera pos when frx_modelOriginCamera is true, vec3(0.0) otherwise
-    uniform vec4 frx_modelToWorld;
-    // uniform vec4 frx_modelToCamera; provided by DynamicTransforms
+    vec4 frx_modelToWorld;
+    // vec4 frx_modelToCamera; provided by DynamicTransforms
 
-    uniform vec4 canpipe_shadowCenter_0;
-    uniform vec4 canpipe_shadowCenter_1;
-    uniform vec4 canpipe_shadowCenter_2;
-    uniform vec4 canpipe_shadowCenter_3;
+    vec4 canpipe_shadowCenter_0;
+    vec4 canpipe_shadowCenter_1;
+    vec4 canpipe_shadowCenter_2;
+    vec4 canpipe_shadowCenter_3;
 
-    uniform vec2 canpipe_screenSize;  // aka ScreenSize
-    uniform float frx_viewBrightness;
-    uniform float frx_viewDistance;
-    uniform int canpipe_viewFlags;
+    vec2 canpipe_screenSize;  // aka ScreenSize
+    float frx_viewBrightness;
+    float frx_viewDistance;
+    int canpipe_viewFlags;
 
-    uniform vec3 frx_cameraView;
-    uniform vec3 frx_cameraPos;
-    uniform vec3 frx_lastCameraPos;
+    vec3 frx_cameraView;
+    vec3 frx_cameraPos;
+    vec3 frx_lastCameraPos;
 };
 
 #ifdef CANPIPE_MATERIAL_SHADER

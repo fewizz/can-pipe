@@ -3,20 +3,20 @@
 // world.getTimeOfDay() - used for sun location calculations; [0.0-1.0]; for vanilla overworld: 0.0 - noon, 0.5 - midnight, https://www.desmos.com/calculator/6haoppz00u
 
 layout(std140) uniform frx_ub_world {
-    uniform int canpipe_renderFrames;
-    uniform int canpipe_worldFlags;
-    uniform float canpipe_fixedOrDayTime;  // (dimensionType.fixedTime() or world.getDayTime() % 24000) / 24000.0; [0.0-1.0]; 13.0/24.0 - night, 23.0/24.0 - sunrise
-    uniform float frx_renderSeconds;
-    uniform float frx_worldDay;   // (world.getDayTime() / 24000) % 2147483647L (why float?)
-    uniform float frx_worldTime;  // (world.getDayTime() % 24000) / 24000.0; [0.0-1.0]
-    uniform float frx_moonSize;
-    uniform float frx_skyAngleRadians;  // world.getTimeOfDay() * 2PI for vanilla
-    uniform float frx_skyFlashStrength;
-    uniform float frx_ambientIntensity;
-    uniform vec4 frx_emissiveColor;
-    uniform vec4 canpipe_weatherGradients;
-    uniform vec3 frx_skyLightVector;  // points to the sun or moon
-    uniform vec3 canpipe_sunriseOrSunsetColor;  // vec3(1.0) if unavailable
+    int canpipe_renderFrames;
+    int canpipe_worldFlags;
+    float canpipe_fixedOrDayTime;  // (dimensionType.fixedTime() or world.getDayTime() % 24000) / 24000.0; [0.0-1.0]; 13.0/24.0 - night, 23.0/24.0 - sunrise
+    float frx_renderSeconds;
+    float frx_worldDay;   // (world.getDayTime() / 24000) % 2147483647L (why float?)
+    float frx_worldTime;  // (world.getDayTime() % 24000) / 24000.0; [0.0-1.0]
+    float frx_moonSize;
+    float frx_skyAngleRadians;  // world.getTimeOfDay() * 2PI for vanilla
+    float frx_skyFlashStrength;
+    float frx_ambientIntensity;
+    vec4 frx_emissiveColor;
+    vec4 canpipe_weatherGradients;
+    vec3 frx_skyLightVector;  // points to the sun or moon
+    vec3 canpipe_sunriseOrSunsetColor;  // vec3(1.0) if unavailable
 };
 
 const vec3 frx_vanillaClearColor = vec3(0.0);  // TODO
