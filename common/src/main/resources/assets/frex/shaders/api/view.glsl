@@ -33,7 +33,7 @@ layout(std140) uniform frx_ub_view {
 };
 
 #ifdef CANPIPE_MATERIAL_SHADER
-    // uniform int canpipe_originType;  // defined in canpipe_ub_material_program instead
+    // uniform int canpipe_originType;  // defined by canpipe_ub_origin_type
 #else
     const int canpipe_originType = 2;  // always 2 (screen) for passes
 #endif

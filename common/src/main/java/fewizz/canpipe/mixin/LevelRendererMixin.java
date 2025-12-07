@@ -23,15 +23,14 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
-import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
@@ -186,7 +185,18 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         mc.options.entityShadows().set(false);
 
         PoseStack poseStack = new PoseStack();
+
         CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+
+        GpuTexture shadowTexture = p.shadows.framebuffers().get(0).getDepthTexture();
+        commandEncoder.canpipe_clearDepthTexture(
+            shadowTexture,
+            1.0,
+            0,  // base mip level
+            shadowTexture.getMipLevels(),
+            0,  // base array layer
+            shadowTexture.getDepthOrLayers()
+        );
 
         for (this.canpipe_shadowCascade = 0; this.canpipe_shadowCascade < p.shadows.cascadeRadii().size()+1; ++this.canpipe_shadowCascade) {
             if (Uniforms.CANPIPE_SHADOW_CENTER[this.canpipe_shadowCascade].w == 0.0F) {  // cascade radius is 0, i.e. it is disabled
@@ -213,16 +223,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
 
             try {
-                Framebuffer shadowFramebuffer = p.shadows.framebuffers().get(this.canpipe_shadowCascade);
-                mc.mainRenderTarget = shadowFramebuffer;
-                commandEncoder.canpipe_clearDepthTexture(
-                    shadowFramebuffer.getDepthTexture(),
-                    shadowFramebuffer.depthTextureClearDepth,
-                    shadowFramebuffer.getDepthTextureView().baseMipLevel(),
-                    shadowFramebuffer.getDepthTextureView().mipLevels(),
-                    ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
-                    ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_layerCount()
-                );
+                mc.mainRenderTarget = p.shadows.framebuffers().get(this.canpipe_shadowCascade);
 
                 Profiler.get().popPush("render sections");
                 ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);

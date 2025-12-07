@@ -89,7 +89,7 @@ public class Pass extends PassBase {
     }
 
     @Override
-    public void apply() {
+    public void apply(CommandEncoderExtended commandEncoder) {
         Minecraft mc = Minecraft.getInstance();
 
         int w = this.extent.x;
@@ -125,8 +125,6 @@ public class Pass extends PassBase {
             ((GameRendererExtended)mc.gameRenderer).canpipe_worldViewMatrix(),
             new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f(), 0.0F
         );
-
-        var commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
 
         try (
             RenderPass renderPass = commandEncoder.canpipe_createRenderPass(
@@ -223,8 +221,7 @@ public class Pass extends PassBase {
         }
 
         @Override
-        public void apply() {
-            var commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+        public void apply(CommandEncoderExtended commandEncoder) {
             for (int i = 0; i < this.framebuffer.colorTextureViews.length; ++i) {
                 commandEncoder.canpipe_clearColorTexture(
                     this.framebuffer.colorTextures[i],

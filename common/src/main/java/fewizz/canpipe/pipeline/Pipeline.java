@@ -20,9 +20,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.lwjgl.system.MemoryStack;
 
-import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -480,30 +478,34 @@ public class Pipeline implements AutoCloseable {
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(0);  // camera
 
+        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+
         if (this.runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
-                pass.apply();
+                pass.apply(commandEncoder);
             }
             this.runInitPasses = false;
         }
 
         if (this.runResizePasses) {
             for (PassBase pass : this.onResizePasses) {
-                pass.apply();
+                pass.apply(commandEncoder);
             }
             this.runResizePasses = false;
         }
 
         for (PassBase pass : this.beforeWorldRenderPasses) {
-            pass.apply();
+            pass.apply(commandEncoder);
         }
 
         Minecraft.getInstance().mainRenderTarget = this.solidFramebuffer;
     }
 
     public void onAfterWorldRender() {
+        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+
         for (PassBase pass : this.fabulousPasses) {
-            pass.apply();
+            pass.apply(commandEncoder);
         }
 
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
@@ -515,8 +517,10 @@ public class Pipeline implements AutoCloseable {
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(2);  // screen
 
+        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+
         for (PassBase pass : this.afterRenderHandPasses) {
-            pass.apply();
+            pass.apply(commandEncoder);
         }
     }
 
