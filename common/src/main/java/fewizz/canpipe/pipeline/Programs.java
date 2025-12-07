@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -19,24 +18,11 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.UniformBufferStruct;
-import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
-import fewizz.canpipe.UniformBufferStruct.IntUniform;
-import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import net.minecraft.resources.ResourceLocation;
 
 
 public class Programs {
-
-    static final UniformBufferStruct PASS = new UniformBufferStruct();
-    static final IVec2Uniform FRX_SIZE = PASS.add(new IVec2Uniform());
-    static final IntUniform FRX_LOD = PASS.add(new IntUniform());
-    static final IntUniform FRX_LAYER = PASS.add(new IntUniform());
-    static final Mat4Uniform FRX_FRAME_PROJECTION_MATRIX = PASS.add(new Mat4Uniform());
-    static final GpuBuffer PASS_UBO = RenderSystem.getDevice().createBuffer(
-        () -> "can-pipe view UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, PASS.size()
-    );
 
     private Programs() {}
 

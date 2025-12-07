@@ -457,6 +457,12 @@ public class Pipeline implements AutoCloseable {
 
     @Override
     public void close() {
+        this.onInitPasses.forEach(p -> p.close());
+        this.onResizePasses.forEach(p -> p.close());
+        this.beforeWorldRenderPasses.forEach(p -> p.close());
+        this.fabulousPasses.forEach(p -> p.close());
+        this.afterRenderHandPasses.forEach(p -> p.close());
+
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
     }

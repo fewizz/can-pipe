@@ -12,6 +12,7 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -22,6 +23,10 @@ import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.UniformBufferStruct;
+import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
+import fewizz.canpipe.UniformBufferStruct.IntUniform;
+import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
@@ -39,8 +44,13 @@ public class Pass extends PassBase {
     // and that's ok if program doesn't actually uses them
     final List<AbstractTexture> textureViews;
     final Vector2i extent;
-    final int lod;
-    final int layer;
+
+    final UniformBufferStruct pass = new UniformBufferStruct();
+    final IVec2Uniform frx_size = pass.add(new IVec2Uniform());
+    final IntUniform frx_lod = pass.add(new IntUniform());
+    final IntUniform frx_layer = pass.add(new IntUniform());
+    final Mat4Uniform frx_frame_projection_matrix = pass.add(new Mat4Uniform());
+    final GpuBuffer passUbo;
 
     private Pass(
         String name, Framebuffer framebuffer, RenderPipeline renderPipeline,
@@ -49,7 +59,10 @@ public class Pass extends PassBase {
     ) {
         super(name);
         this.textureViews = new ArrayList<>();
-    
+        this.passUbo = RenderSystem.getDevice().createBuffer(
+            () -> "can-pipe \""+this.name+"\" pass UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, pass.size()
+        );
+
         var samplers = renderPipeline.getSamplers();
         if (samplers.size() > samplerTextures.size()) {
             CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+name+"\"");
@@ -72,8 +85,10 @@ public class Pass extends PassBase {
         this.framebuffer = framebuffer;
         this.renderPipeline = renderPipeline;
         this.extent = extent;
-        this.lod = lod;
-        this.layer = layer;
+
+        this.frx_lod.set(lod);
+        this.frx_layer.set(layer);
+        this.frx_size.set(-1);
     }
 
     @Override
@@ -86,22 +101,24 @@ public class Pass extends PassBase {
         if (w == 0) w = mc.getMainRenderTarget().width;
         if (h == 0) h = mc.getMainRenderTarget().height;
 
-        w >>= this.lod;
-        h >>= this.lod;
+        w >>= this.frx_lod.get();
+        h >>= this.frx_lod.get();
 
         var autoStorageIndexBuffer = RenderSystem.getSequentialBuffer(Mode.QUADS);
         var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
         var vertexBuffer = RenderSystemAccessor.canpipe_getQuadBuffer();
 
-        Programs.FRX_SIZE.set((int) w, (int) h);
-        Programs.FRX_LOD.set(lod);
-        Programs.FRX_LAYER.set(layer);
-        Programs.FRX_FRAME_PROJECTION_MATRIX.setOrtho2D(0, w, 0, h);
+        var commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
 
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, Programs.PASS.size());
-            Programs.PASS.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Programs.PASS_UBO.slice(), builder.get());
+        if (this.frx_size.x != w || this.frx_size.y != h) {
+            this.frx_size.set(w, h);
+            this.frx_frame_projection_matrix.setOrtho2D(0, w, 0, h);
+
+            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                var builder = Std140Builder.onStack(memoryStack, this.pass.size());
+                this.pass.writeTo(builder);
+                commandEncoder.writeToBuffer(this.passUbo.slice(), builder.get());
+            }
         }
 
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
@@ -109,10 +126,8 @@ public class Pass extends PassBase {
             new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f(), 0.0F
         );
 
-        var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-
         try (
-            RenderPass renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(
+            RenderPass renderPass = commandEncoder.canpipe_createRenderPass(
                 () -> "can-pipe pass \""+this.name+"\"",
                 this.framebuffer.colorTextureViews,
                 this.framebuffer.getDepthTextureView()
@@ -130,7 +145,7 @@ public class Pass extends PassBase {
             RenderSystem.bindDefaultUniforms(renderPass);
             renderPass.setUniform("DynamicTransforms", dynamicTransforms);
 
-            renderPass.setUniform("canpipe_ub_pass", Programs.PASS_UBO);
+            renderPass.setUniform("canpipe_ub_pass", this.passUbo);
 
             renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
             renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
@@ -143,6 +158,11 @@ public class Pass extends PassBase {
             renderPass.drawIndexed(0, 0, 6, 1);
         }
     }
+
+    @Override
+    public void close() {
+        this.passUbo.close();
+    };
 
     static Optional<PassBase> load(
         JsonObject json,
@@ -225,6 +245,9 @@ public class Pass extends PassBase {
             }
         }
 
-    };
+        @Override
+        public void close() {}
+
+    }
 
 }
