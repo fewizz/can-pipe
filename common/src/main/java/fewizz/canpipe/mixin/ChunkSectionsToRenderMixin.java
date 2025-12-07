@@ -5,7 +5,6 @@ import java.util.OptionalInt;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,18 +13,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
@@ -38,14 +36,8 @@ public class ChunkSectionsToRenderMixin {
         at = @At("HEAD")
     )
     void preRenderGroup(CallbackInfo ci) {
-        if (Uniforms.CANPIPE_ORIGIN_TYPE.get() == 1) { return; }
-        Uniforms.CANPIPE_ORIGIN_TYPE.set(1);  // region
-
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
-            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-        }
+        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
+        lre.canpipe_setOriginType(1);  // region
     }
 
     @Inject(
@@ -53,14 +45,8 @@ public class ChunkSectionsToRenderMixin {
         at = @At("RETURN")
     )
     void postRenderGroup(CallbackInfo ci) {
-        if (Uniforms.CANPIPE_ORIGIN_TYPE.get() == 0) { return; }
-        Uniforms.CANPIPE_ORIGIN_TYPE.set(0);  // camera
-
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
-            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-        }
+        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
+        lre.canpipe_setOriginType(0);  // camera
     }
 
     @WrapOperation(

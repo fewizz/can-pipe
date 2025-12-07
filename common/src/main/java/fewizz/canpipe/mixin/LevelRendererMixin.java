@@ -5,7 +5,6 @@ import org.joml.Matrix4fStack;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,7 +18,6 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
@@ -78,6 +76,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
 
     @Unique volatile private boolean canpipe_isRenderingShadows = false;
+    @Unique private int canpipe_shadowCascade = 0;
+    @Unique private int canpipe_originType = 0;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
     @Unique private float canpipe_eyeSkyLight = 0.0F;
     @Unique private float canpipe_smoothedEyeBlockLight = 0.0F;
@@ -86,12 +86,15 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Unique private float canpipe_smoothedThunderGradient = 0.0F;
 
     @Override public boolean canpipe_getIsRenderingShadows() { return this.canpipe_isRenderingShadows; }
+    @Override public int canpipe_getShadowCascade() { return this.canpipe_shadowCascade; }
     @Override public float canpipe_getEyeBlockLight() { return this.canpipe_eyeBlockLight; }
     @Override public float canpipe_getEyeSkyLight() { return this.canpipe_eyeSkyLight; }
     @Override public float canpipe_getSmoothedEyeBlockLight() { return this.canpipe_smoothedEyeBlockLight; }
     @Override public float canpipe_getSmoothedEyeSkyLight() { return this.canpipe_smoothedEyeSkyLight; }
     @Override public float canpipe_getSmoothedRainGradient() { return this.canpipe_smoothedRainGradient; }
     @Override public float canpipe_getSmoothedThunderGradient() { return this.canpipe_smoothedThunderGradient; }
+    @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
+    @Override public void canpipe_setOriginType(int originType) { this.canpipe_originType = originType; }
 
     @Inject(
         method = "renderLevel",
@@ -185,24 +188,16 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         PoseStack poseStack = new PoseStack();
         CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
 
-        for (int cascade = 0; cascade < p.shadows.cascadeRadii().size()+1; ++cascade) {
-            if (Uniforms.CANPIPE_SHADOW_CENTER[cascade].w == 0.0F) {  // cascade radius is 0, i.e. it is disabled
+        for (this.canpipe_shadowCascade = 0; this.canpipe_shadowCascade < p.shadows.cascadeRadii().size()+1; ++this.canpipe_shadowCascade) {
+            if (Uniforms.CANPIPE_SHADOW_CENTER[this.canpipe_shadowCascade].w == 0.0F) {  // cascade radius is 0, i.e. it is disabled
                 continue;
             }
 
-            Profiler.get().popPush("cascade " + cascade);
-
-            Uniforms.FRXU_CASCADE.set(cascade);
-
-            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-                var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM.size());
-                Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-                commandEncoder.writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-            }
+            Profiler.get().popPush("cascade " + this.canpipe_shadowCascade);
 
             Frustum shadowFrustum = new ShadowFrustum(
-                Uniforms.FRX_SHADOW_VIEW_MATRIX, gre.canpipe_getShadowProjectionMatrices()[cascade],
-                gre.canpipe_getShortenedViewProjectionMatrices()[cascade], camera, toSunDir
+                Uniforms.FRX_SHADOW_VIEW_MATRIX, gre.canpipe_getShadowProjectionMatrices()[this.canpipe_shadowCascade],
+                gre.canpipe_getShortenedViewProjectionMatrices()[this.canpipe_shadowCascade], camera, toSunDir
             );
 
             Profiler.get().push("cullTerrain");
@@ -218,7 +213,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
 
             try {
-                Framebuffer shadowFramebuffer = p.shadows.framebuffers().get(cascade);
+                Framebuffer shadowFramebuffer = p.shadows.framebuffers().get(this.canpipe_shadowCascade);
                 mc.mainRenderTarget = shadowFramebuffer;
                 commandEncoder.canpipe_clearDepthTexture(
                     shadowFramebuffer.getDepthTexture(),
@@ -269,13 +264,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             Profiler.get().pop();
         }
 
-        Uniforms.FRXU_CASCADE.set(0);
-
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM.size());
-            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-            commandEncoder.writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-        }
+        this.canpipe_shadowCascade = 0;
 
         modelViewMatrixStack.popMatrix();
 

@@ -50,7 +50,7 @@ public class Pass extends PassBase {
     final IntUniform frx_lod = pass.add(new IntUniform());
     final IntUniform frx_layer = pass.add(new IntUniform());
     final Mat4Uniform frx_frame_projection_matrix = pass.add(new Mat4Uniform());
-    final GpuBuffer passUbo;
+    private GpuBuffer passUbo = null;
 
     private Pass(
         String name, Framebuffer framebuffer, RenderPipeline renderPipeline,
@@ -59,9 +59,6 @@ public class Pass extends PassBase {
     ) {
         super(name);
         this.textureViews = new ArrayList<>();
-        this.passUbo = RenderSystem.getDevice().createBuffer(
-            () -> "can-pipe \""+this.name+"\" pass UBO", GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, pass.size()
-        );
 
         var samplers = renderPipeline.getSamplers();
         if (samplers.size() > samplerTextures.size()) {
@@ -108,16 +105,19 @@ public class Pass extends PassBase {
         var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
         var vertexBuffer = RenderSystemAccessor.canpipe_getQuadBuffer();
 
-        var commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
-
         if (this.frx_size.x != w || this.frx_size.y != h) {
             this.frx_size.set(w, h);
             this.frx_frame_projection_matrix.setOrtho2D(0, w, 0, h);
 
+            if (this.passUbo != null) { this.passUbo.close(); }
+
             try (MemoryStack memoryStack = MemoryStack.stackPush()) {
                 var builder = Std140Builder.onStack(memoryStack, this.pass.size());
                 this.pass.writeTo(builder);
-                commandEncoder.writeToBuffer(this.passUbo.slice(), builder.get());
+                /*commandEncoder.writeToBuffer(this.passUbo.slice(), builder.get());*/
+                this.passUbo = RenderSystem.getDevice().createBuffer(
+                    () -> "can-pipe \""+this.name+"\" pass UBO", GpuBuffer.USAGE_UNIFORM, builder.get()
+                );
             }
         }
 
@@ -125,6 +125,8 @@ public class Pass extends PassBase {
             ((GameRendererExtended)mc.gameRenderer).canpipe_worldViewMatrix(),
             new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f(), 0.0F
         );
+
+        var commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
 
         try (
             RenderPass renderPass = commandEncoder.canpipe_createRenderPass(

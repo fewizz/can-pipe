@@ -39,6 +39,7 @@ import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
@@ -475,13 +476,9 @@ public class Pipeline implements AutoCloseable {
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
         Uniforms.updateFREXUniforms(view, projection);
-        Uniforms.CANPIPE_ORIGIN_TYPE.set(0);  // camera
 
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
-            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-        }
+        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
+        lre.canpipe_setOriginType(0);  // camera
 
         if (this.runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
@@ -509,24 +506,14 @@ public class Pipeline implements AutoCloseable {
             pass.apply();
         }
 
-        Uniforms.CANPIPE_ORIGIN_TYPE.set(3);  // hands
-
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
-            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-        }
+        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
+        lre.canpipe_setOriginType(3);  // hands
     }
 
     public void onAfterRenderHand() {
         Minecraft.getInstance().mainRenderTarget = this.defaultFramebuffer;
-        Uniforms.CANPIPE_ORIGIN_TYPE.set(2);  // screen
-
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
-            Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-        }
+        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
+        lre.canpipe_setOriginType(2);  // screen
 
         for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply();
@@ -555,14 +542,11 @@ public class Pipeline implements AutoCloseable {
         if (framebuffer == this.particlesFramebuffer) {
             newTarget = 3;
         }
-        if (Uniforms.CANPIPE_RENDER_TARGET.get() != newTarget) {
-            Uniforms.CANPIPE_RENDER_TARGET.set(newTarget);  // translucent render target
-            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-                var builder = Std140Builder.onStack(memoryStack, Uniforms.MATERIAL_PROGRAM_UBO.size());
-                Uniforms.MATERIAL_PROGRAM.writeTo(builder);
-                commandEncoder.writeToBuffer(Uniforms.MATERIAL_PROGRAM_UBO.slice(), builder.get());
-            }
-        }
+
+        GameRendererExtended gre = (GameRendererExtended) Minecraft.getInstance().gameRenderer;
+        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
+
+        gre.canpipe_setRenderTarget(newTarget);
 
         RenderPass renderPass;
         // For example, when rendering gui items
@@ -578,7 +562,10 @@ public class Pipeline implements AutoCloseable {
         renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
         renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
         renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
-        renderPass.setUniform("canpipe_ub_material_program", Uniforms.MATERIAL_PROGRAM_UBO);
+
+        renderPass.setUniform("frxu_ub_cascade", Uniforms.FRXU_CASCADES_UBO.slice(lre.canpipe_getShadowCascade() * Integer.BYTES, Integer.BYTES));
+        renderPass.setUniform("canpipe_ub_render_target", Uniforms.CANPIPE_RENDER_TARGETS_UBO.slice(gre.canpipe_getRenderTarget() * Integer.BYTES, Integer.BYTES));
+        renderPass.setUniform("canpipe_ub_origin_type", Uniforms.CANPIPE_ORIGIN_TYPES_UBO.slice(lre.canpipe_getOriginType() * Integer.BYTES, Integer.BYTES));
 
         var sampler0 = RenderSystem.getShaderTexture(0);
         if (sampler0 != null) {

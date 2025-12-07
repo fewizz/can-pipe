@@ -6,6 +6,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
@@ -44,14 +45,24 @@ import net.minecraft.world.phys.Vec3;
 
 public class Uniforms {
 
-    public static final UniformBufferStruct MATERIAL_PROGRAM = new UniformBufferStruct();
-    public static final IntUniform FRXU_CASCADE = MATERIAL_PROGRAM.add(new IntUniform());
-    public static final IntUniform CANPIPE_RENDER_TARGET = MATERIAL_PROGRAM.add(new IntUniform());
-    public static final IntUniform CANPIPE_ORIGIN_TYPE = MATERIAL_PROGRAM.add(new IntUniform());
-    public static final GpuBuffer MATERIAL_PROGRAM_UBO = RenderSystem.getDevice().createBuffer(
-        () -> "can-pipe material-program UBO",
-        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
-        MATERIAL_PROGRAM.size()
+    // This is kinda stupid, they have same data
+    // Anyway...
+    public static final GpuBuffer FRXU_CASCADES_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe frxu_cascade UBO",
+        GpuBuffer.USAGE_UNIFORM,
+        MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(4).put(0, new int[] {0, 1, 2, 3}))
+    );
+
+    public static final GpuBuffer CANPIPE_RENDER_TARGETS_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe canpipe_renderTarget UBO",
+        GpuBuffer.USAGE_UNIFORM,
+        MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(4).put(0, new int[] {0, 1, 2, 3}))
+    );
+
+    public static final GpuBuffer CANPIPE_ORIGIN_TYPES_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe canpipe_originType UBO",
+        GpuBuffer.USAGE_UNIFORM,
+        MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(4).put(0, new int[] {0, 1, 2, 3}))
     );
 
     // accessibility

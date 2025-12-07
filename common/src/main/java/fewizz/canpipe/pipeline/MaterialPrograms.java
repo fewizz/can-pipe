@@ -87,7 +87,9 @@ public class MaterialPrograms {
             renderPipelineBuilder.withBlend(originalRenderPipeline.getBlendFunction().get());
         }
 
-        renderPipelineBuilder.withUniform("canpipe_ub_material_program", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("canpipe_ub_origin_type", UniformType.UNIFORM_BUFFER);
 
         renderPipelineBuilder.withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER);
@@ -123,9 +125,13 @@ public class MaterialPrograms {
             src = src.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
             src =
                 "\n"+
-                "layout(std140) uniform canpipe_ub_material_program {\n"+
+                "layout(std140) uniform frxu_ub_cascade {\n"+
                 "    uniform int frxu_cascade;\n"+
+                "};\n\n"+
+                "layout(std140) uniform canpipe_ub_render_target {\n"+
                 "    uniform int canpipe_renderTarget;\n"+
+                "};\n\n"+
+                "layout(std140) uniform canpipe_ub_origin_type {\n"+
                 "    uniform int canpipe_originType;\n"+
                 "};\n\n"+
                 src;

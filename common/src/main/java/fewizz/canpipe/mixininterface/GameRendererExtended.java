@@ -16,4 +16,7 @@ public interface GameRendererExtended {
 
     public FogRenderer canpipe_getFogRenderer();
 
+    public int canpipe_getRenderTarget();
+    public void canpipe_setRenderTarget(int renderTarget);
+
 }

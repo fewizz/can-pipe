@@ -39,6 +39,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow public Matrix4f getProjectionMatrix(float fov) { return null; }
 
     @Unique private long canpipe_renderStartNano = -1;
+    @Unique private int canpipe_renderTarget = -1;
     @Unique private Matrix4f[] canpipe_shadowProjectionMatrices = null;
     @Unique private Matrix4f[] canpipe_shortendedViewProjectionMatrices = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
@@ -77,8 +78,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
         this.canpipe_worldViewMatrix = null;
         this.canpipe_worldProjectionMatrix = null;
-
-        Uniforms.CANPIPE_RENDER_TARGET.set(-1);
+        this.canpipe_renderTarget = -1;
     }
 
     @Inject(method = "resize", at = @At("HEAD"))
@@ -329,6 +329,16 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override
     public Matrix4f canpipe_worldProjectionMatrix() {
         return this.canpipe_worldProjectionMatrix;
+    }
+
+    @Override
+    public int canpipe_getRenderTarget() {
+        return this.canpipe_renderTarget;
+    }
+
+    @Override
+    public void canpipe_setRenderTarget(int renderTarget) {
+        this.canpipe_renderTarget = renderTarget;
     }
 
 }
