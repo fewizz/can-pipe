@@ -114,7 +114,6 @@ public class Pass extends PassBase {
             try (MemoryStack memoryStack = MemoryStack.stackPush()) {
                 var builder = Std140Builder.onStack(memoryStack, this.pass.size());
                 this.pass.writeTo(builder);
-                /*commandEncoder.writeToBuffer(this.passUbo.slice(), builder.get());*/
                 this.passUbo = RenderSystem.getDevice().createBuffer(
                     () -> "can-pipe \""+this.name+"\" pass UBO", GpuBuffer.USAGE_UNIFORM, builder.get()
                 );
@@ -149,6 +148,7 @@ public class Pass extends PassBase {
 
             renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
             renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
+            renderPass.setUniform("frx_ub_shadow", Uniforms.SHADOW_UBO);
             renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
             renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
             renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
@@ -161,7 +161,9 @@ public class Pass extends PassBase {
 
     @Override
     public void close() {
-        this.passUbo.close();
+        if (this.passUbo != null) {
+            this.passUbo.close();
+        }
     };
 
     static Optional<PassBase> load(

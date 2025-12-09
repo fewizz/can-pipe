@@ -93,6 +93,7 @@ public class MaterialPrograms {
 
         renderPipelineBuilder.withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("frx_ub_shadow", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);

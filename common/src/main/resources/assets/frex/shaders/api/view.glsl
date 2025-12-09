@@ -10,17 +10,9 @@ layout(std140) uniform frx_ub_view {
     mat4 frx_inverseProjectionMatrix;
     mat4 frx_lastProjectionMatrix;
 
-    mat4 frx_shadowViewMatrix;
-    mat4 frx_inverseShadowViewMatrix;
-
     // chunk block pos when frx_modelOriginRegion is true, camera pos when frx_modelOriginCamera is true, vec3(0.0) otherwise
     vec4 frx_modelToWorld;
     // vec4 frx_modelToCamera; provided by DynamicTransforms
-
-    vec4 canpipe_shadowCenter_0;
-    vec4 canpipe_shadowCenter_1;
-    vec4 canpipe_shadowCenter_2;
-    vec4 canpipe_shadowCenter_3;
 
     vec2 canpipe_screenSize;  // aka ScreenSize
     float frx_viewBrightness;
@@ -30,6 +22,12 @@ layout(std140) uniform frx_ub_view {
     vec3 frx_cameraView;
     vec3 frx_cameraPos;
     vec3 frx_lastCameraPos;
+};
+
+layout(std140) uniform frx_ub_shadow {
+    mat4 frx_shadowViewMatrix;
+    mat4 frx_inverseShadowViewMatrix;
+    vec4[4] canpipe_shadowCenters;
 };
 
 #ifdef CANPIPE_MATERIAL_SHADER
@@ -60,10 +58,7 @@ const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
 #define frx_lastViewProjectionMatrix (frx_lastProjectionMatrix*frx_lastViewMatrix)
 
 vec4 frx_shadowCenter(int index) {
-    if (index == 0) { return canpipe_shadowCenter_0; }
-    if (index == 1) { return canpipe_shadowCenter_1; }
-    if (index == 2) { return canpipe_shadowCenter_2; }
-    return canpipe_shadowCenter_3;
+    return canpipe_shadowCenters[index];
 }
 
 mat4 frx_shadowProjectionMatrix(int index) {

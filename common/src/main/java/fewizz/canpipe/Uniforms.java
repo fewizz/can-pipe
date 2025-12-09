@@ -87,15 +87,7 @@ public class Uniforms {
     public static final Mat4Uniform FRX_LAST_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
     public static final Mat4Uniform FRX_INVERSE_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
     public static final Mat4Uniform FRX_LAST_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
-    public static final Mat4Uniform FRX_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
-    public static final Mat4Uniform FRX_INVERSE_SHADOW_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Vec4Uniform FRX_MODEL_TO_WORLD = VIEW.add(new Vec4Uniform());
-    public static final Vec4Uniform[] CANPIPE_SHADOW_CENTER = new Vec4Uniform[] {
-        VIEW.add(new Vec4Uniform()),
-        VIEW.add(new Vec4Uniform()),
-        VIEW.add(new Vec4Uniform()),
-        VIEW.add(new Vec4Uniform())
-    };
     private static final Vec2Uniform CANPIPE_SCREEN_SIZE = VIEW.add(new Vec2Uniform());
     private static final FloatUniform FRX_VIEW_BRIGHTNESS = VIEW.add(new FloatUniform());
     private static final FloatUniform FRX_VIEW_DISTANCE = VIEW.add(new FloatUniform());
@@ -107,6 +99,21 @@ public class Uniforms {
         () -> "can-pipe view UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         VIEW.size()
+    );
+
+    private static final UniformBufferStruct SHADOW = new UniformBufferStruct();
+    public static final Mat4Uniform FRX_SHADOW_VIEW_MATRIX = SHADOW.add(new Mat4Uniform());
+    public static final Mat4Uniform FRX_INVERSE_SHADOW_VIEW_MATRIX = SHADOW.add(new Mat4Uniform());
+    public static final Vec4Uniform[] CANPIPE_SHADOW_CENTERS = new Vec4Uniform[] {
+        SHADOW.add(new Vec4Uniform()),
+        SHADOW.add(new Vec4Uniform()),
+        SHADOW.add(new Vec4Uniform()),
+        SHADOW.add(new Vec4Uniform())
+    };
+    public static final GpuBuffer SHADOW_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe shadow UBO",
+        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
+        SHADOW.size()
     );
 
     // player
@@ -231,6 +238,13 @@ public class Uniforms {
             var builder = Std140Builder.onStack(memoryStack, VIEW.size());
             VIEW.writeTo(builder);
             RenderSystem.getDevice().createCommandEncoder().writeToBuffer(VIEW_UBO.slice(), builder.get());
+        }
+
+        // view.glsl / shadow
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var builder = Std140Builder.onStack(memoryStack, SHADOW.size());
+            SHADOW.writeTo(builder);
+            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(SHADOW_UBO.slice(), builder.get());
         }
 
         // player.glsl

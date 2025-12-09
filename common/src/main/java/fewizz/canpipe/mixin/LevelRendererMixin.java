@@ -199,10 +199,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         );
 
         for (this.canpipe_shadowCascade = 0; this.canpipe_shadowCascade < p.shadows.cascadeRadii().size()+1; ++this.canpipe_shadowCascade) {
-            if (Uniforms.CANPIPE_SHADOW_CENTER[this.canpipe_shadowCascade].w == 0.0F) {  // cascade radius is 0, i.e. it is disabled
-                continue;
-            }
-
             Profiler.get().popPush("cascade " + this.canpipe_shadowCascade);
 
             Frustum shadowFrustum = new ShadowFrustum(

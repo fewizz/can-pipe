@@ -71,10 +71,10 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_shadowInnerOffsets = new Vector3f[] {
             new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()
         };
-        Uniforms.CANPIPE_SHADOW_CENTER[0].set(0.0);
-        Uniforms.CANPIPE_SHADOW_CENTER[1].set(0.0);
-        Uniforms.CANPIPE_SHADOW_CENTER[2].set(0.0);
-        Uniforms.CANPIPE_SHADOW_CENTER[3].set(0.0);
+        Uniforms.CANPIPE_SHADOW_CENTERS[0].set(0.0);
+        Uniforms.CANPIPE_SHADOW_CENTERS[1].set(0.0);
+        Uniforms.CANPIPE_SHADOW_CENTERS[2].set(0.0);
+        Uniforms.CANPIPE_SHADOW_CENTERS[3].set(0.0);
 
         this.canpipe_worldViewMatrix = null;
         this.canpipe_worldProjectionMatrix = null;
@@ -164,9 +164,6 @@ public class GameRendererMixin implements GameRendererExtended {
                     cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
                 }
 
-                if (cascadeRadius <= prevCascadeRadius) {
-                    cascadeRadius = 0.0F;  // Prev cascade was bigger, disabling current cascade
-                }
                 prevCascadeRadius = Math.max(cascadeRadius, prevCascadeRadius);
 
                 center = new Vector3f(mainCamera.getLookVector()).mul(cascadeRadius);
@@ -186,7 +183,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 center.y -= (center.y % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].y * metersPerPixel;
                 center.z -= (center.z % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].z * metersPerPixel;
 
-                Uniforms.CANPIPE_SHADOW_CENTER[cascade].set(center.x, center.y, center.z, cascadeRadius);
+                Uniforms.CANPIPE_SHADOW_CENTERS[cascade].set(center.x, center.y, center.z, cascadeRadius);
 
                 // sometimes cascade is out of frustum bounds
                 // we don't want to render chunks and entiteis more than needed, right?
