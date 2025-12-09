@@ -71,6 +71,7 @@ public class CanPipe {
             /* 40 + 1*2 */.add("in_materialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             /* 42 + 1*1 */.add("in_ao", CanPipe.VertexFormatElements.AO)
             /* 43 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+            /* 44 + 4 */  .padding(4)
             .build();
 
         public static final VertexFormat NEW_ENTITY = VertexFormat.builder()
@@ -85,6 +86,7 @@ public class CanPipe {
             /* 36 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             /* 40 + 1*4 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
+            /* 44 + 4 */  .padding(4)
             .build();
 
         public static final VertexFormat PARTICLE = VertexFormat.builder()
@@ -98,6 +100,7 @@ public class CanPipe {
             /* 32 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             /* 36 + 4*1 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
+            /* 40 + 8 */  .padding(8)
             .build();
 
         public static final VertexFormat POSITION_COLOR_LIGHTMAP = VertexFormat.builder()
