@@ -22,14 +22,13 @@ import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 
 import blue.endless.jankson.annotation.Nullable;
-import fewizz.canpipe.b3d.GpuTextureExtended;
 
 @Mixin(GlTexture.class)
-public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExtended {
+public abstract class GlTextureMixin extends GpuTexture {
 
     public GlTextureMixin() { super(0, null, null, 0, 0, 0, 0); }
 
-    @Shadow protected boolean modesDirty;
+    /*@Shadow protected boolean modesDirty;
 
     @Unique @NotNull protected AddressMode canpipe_addressModeW = AddressMode.REPEAT;
     @Unique @Nullable protected DepthTestFunction canpipe_compareOp = null;
@@ -104,6 +103,6 @@ public abstract class GlTextureMixin extends GpuTexture implements GpuTextureExt
         else {
             GlStateManager._texParameter(target, GL33C.GL_TEXTURE_COMPARE_MODE, GL33C.GL_NONE);
         }
-    }
+    }*/
 
 }
