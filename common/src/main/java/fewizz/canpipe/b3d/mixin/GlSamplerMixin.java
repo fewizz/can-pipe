@@ -2,7 +2,6 @@ package fewizz.canpipe.b3d.mixin;
 
 import java.util.OptionalDouble;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL33C;
@@ -32,6 +31,7 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
 
     @Unique protected AddressMode canpipe_addressModeW;
     @Unique @Nullable protected DepthTestFunction canpipe_compareOp = null;
+    @Unique protected boolean canpipe_linearMipmap;
 
     @Inject(
         method = "<init>",
@@ -40,6 +40,7 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
     void onInitEnd(CallbackInfo ci) {
         var device = ((GlDeviceAccessor) RenderSystem.getDevice());
         this.canpipe_addressModeW = device.get_canpipe_addressModeW();
+        this.canpipe_linearMipmap = device.get_canpipe_linearMipmap() != null ? device.get_canpipe_linearMipmap() : true;
         if (this.canpipe_addressModeW == null) {
             this.canpipe_addressModeW = AddressMode.REPEAT;
         }
@@ -58,28 +59,22 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
 
     @ModifyConstant(
         method = "<init>",
-        constant = @Constant(
-            intValue = GL11C.GL_NEAREST,
-            ordinal = 0  // min filter
-        )
+        constant = @Constant(intValue = GL11C.GL_NEAREST_MIPMAP_LINEAR)
     )
     private int onMinNearestFilter(int value) {
-        if (this.maxLod.orElse(0.0) > 0.5) {
-            // value = GL33C.GL_NEAREST_MIPMAP_NEAREST;
+        if (!this.canpipe_linearMipmap) {
+            value = GL33C.GL_NEAREST_MIPMAP_NEAREST;
         }
         return value;
     }
 
     @ModifyConstant(
         method = "<init>",
-        constant = @Constant(
-            intValue = GL11C.GL_LINEAR,
-            ordinal = 0  // min filter
-        )
+        constant = @Constant(intValue = GL11C.GL_LINEAR_MIPMAP_LINEAR)
     )
     private int onMinLinearFilter(int value) {
-        if (this.maxLod.orElse(0.0) > 0.5) {
-            // value = GL33C.GL_LINEAR_MIPMAP_NEAREST;
+        if (!this.canpipe_linearMipmap) {
+            value = GL33C.GL_LINEAR_MIPMAP_NEAREST;
         }
         return value;
     }

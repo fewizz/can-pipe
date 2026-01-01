@@ -23,26 +23,30 @@ import net.minecraft.resources.Identifier;
 
 
 public class Texture extends AbstractTexture {
-    private final Supplier<Pair<GpuTexture, GpuSampler>> gpuTextureSupplier;
+    private final Supplier<GpuTexture> gpuTextureSupplier;
     private final boolean recreateOnResize;
 
-    private Texture(String name, boolean recreateOnResize, Supplier<Pair<GpuTexture, GpuSampler>> gpuTextureUpdater) {
+    private Texture(String name, GpuSampler sampler, boolean recreateOnResize, Supplier<GpuTexture> gpuTextureUpdater) {
         this.gpuTextureSupplier = gpuTextureUpdater;
         this.recreateOnResize = recreateOnResize;
-        var textureAndSampler = this.gpuTextureSupplier.get();
-        this.texture = textureAndSampler.getLeft();
-        this.sampler = textureAndSampler.getRight();
+        this.sampler = sampler;
+        this.texture = this.gpuTextureSupplier.get();
         this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
             this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
         );
     }
 
+    @Override
+    public void close() {
+        super.close();
+        this.sampler.close();  // We don't cache extended samplers
+    }
+
     void onWindowSizeChanged() {
         if (this.recreateOnResize) {
-            this.close();
-            var textureAndSampler = this.gpuTextureSupplier.get();
-            this.texture = textureAndSampler.getLeft();
-            this.sampler = textureAndSampler.getRight();
+            this.texture.close();
+            this.textureView.close();
+            this.texture = this.gpuTextureSupplier.get();
             this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                 this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
             );
@@ -187,44 +191,32 @@ public class Texture extends AbstractTexture {
                 CanPipe.LOGGER.warn("Texture \""+name+"\" type is TEXTURE_2D_ARRAY, but depth="+depth);
             }
 
-            boolean cubeMapCompatible = targetStr.equals("TEXTURE_CUBE_MAP");
+            GpuSampler sampler = (GpuSampler) ((GpuDeviceExtended) RenderSystem.getDevice()).canpie_createSampler(
+                v, u, min, mag, 1, OptionalDouble.of(maxLod),
+                w, compare ? compareOp : null, linearMip
+            );
 
-            final FilterMode minFilter = min;
-            final FilterMode magFilter = mag;
-            final boolean mip = linearMip;
-            final AddressMode addressModeU = u;
-            final AddressMode addressModeV = v;
-            final AddressMode addressModeW = w;
-            final DepthTestFunction depthCompareOp = compare ? compareOp : null;
+            int usage = GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING;
+            int depthOrLayers = depth;
+
+            if (targetStr.equals("TEXTURE_CUBE_MAP")) {
+                usage |= GpuTexture.USAGE_CUBEMAP_COMPATIBLE;
+                depthOrLayers *= 6;
+            }
+
+            int finalUsage = usage;
+            int finalDepthOrLayer = depthOrLayers;
 
             boolean recreateOnResize = width == 0 || height == 0;
 
-            return new Texture(name, recreateOnResize, () -> {
+            return new Texture(name, sampler, recreateOnResize, () -> {
                 int newWidth = width; int newHeight = height;
 
                 var window = Minecraft.getInstance().getWindow();
                 if (newWidth <= 0) { newWidth = window.getWidth(); }
                 if (newHeight <= 0) { newHeight = window.getHeight(); }
 
-                int usage = GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING;
-                int depthOrLayers = depth;
-
-                if (cubeMapCompatible) {
-                    usage |= GpuTexture.USAGE_CUBEMAP_COMPATIBLE;
-                    depthOrLayers *= 6;
-                }
-
-                GpuTexture texture = RenderSystem.getDevice().createTexture(
-                    name, usage,
-                    textureFormat,
-                    newWidth, newHeight, depthOrLayers, maxLod+1
-                );
-
-                GpuSampler sampler = (GpuSampler) ((GpuDeviceExtended) RenderSystem.getDevice()).canpie_createSampler(
-                    addressModeV, addressModeU, addressModeW, minFilter, magFilter, depthCompareOp, 1, OptionalDouble.of(maxLod)
-                );
-
-                return Pair.of(texture, sampler);
+                return RenderSystem.getDevice().createTexture(name, finalUsage, textureFormat, newWidth, newHeight, finalDepthOrLayer, maxLod+1);
             });
         } catch (Exception e) {
             throw new RuntimeException("Couldn't create texture \""+name+"\"", e);

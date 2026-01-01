@@ -74,21 +74,12 @@ vec4 frx_shadowCenter(int index) {
 mat4 frx_shadowProjectionMatrix(int index) {
     vec4 center = frx_shadowCenter(index);
     float radius = center.w;
-    #ifdef CANPIPE_NDC_Z_ZERO_TO_ONE
-        return transpose(mat4(
-            1.0/radius, 0.0,         0.0,                      -center.x/radius,
-            0.0,        1.0/radius,  0.0,                      -center.y/radius,
-            0.0,        0.0,        -1.0/(-center.z + radius),  0.0,
-            0.0,        0.0,         0.0,                       1.0
-        ));
-    #else
-        return transpose(mat4(
-            1.0/radius, 0.0,         0.0,                      -center.x/radius,
-            0.0,        1.0/radius,  0.0,                      -center.y/radius,
-            0.0,        0.0,        -2.0/(-center.z + radius), -1.0,
-            0.0,        0.0,         0.0,                       1.0
-        ));
-    #endif
+    return transpose(mat4(
+        1.0/radius, 0.0,         0.0,                      -center.x/radius,
+        0.0,        1.0/radius,  0.0,                      -center.y/radius,
+        0.0,        0.0,        -2.0/(-center.z + radius), -1.0,
+        0.0,        0.0,         0.0,                       1.0
+    ));
 }
 
 #define frx_shadowViewProjectionMatrix(index) (frx_shadowProjectionMatrix(index)*frx_shadowViewMatrix)

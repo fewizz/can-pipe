@@ -44,27 +44,33 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
 
     @Unique private TriConsumer<String, Identifier, String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
+
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
+
     @Unique private AddressMode canpipe_addressModeW = null;
     @Unique private DepthTestFunction canpipe_compareOp = null;
+    @Unique private Boolean canpipe_linearMipmap = null;
 
     /** Color textures + depth texture at the end (nullable) **/
     @Unique private Object2IntMap<List<GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
 
     @Override
     public GpuSamplerExteneded canpie_createSampler(
-		AddressMode u, AddressMode v, AddressMode w,
-        FilterMode min, FilterMode mag, DepthTestFunction compareOp,
-        int maxAnisotropy, OptionalDouble maxLod
-	) {
+        AddressMode u, AddressMode v,
+        FilterMode min, FilterMode mag,
+        int maxAnisotropy, OptionalDouble maxLod,
+        AddressMode w, DepthTestFunction compareOp, boolean linearMipmap
+    ) {
         try {
             this.canpipe_addressModeW = w;
             this.canpipe_compareOp = compareOp;
+            this.canpipe_linearMipmap = linearMipmap;
             return (GpuSamplerExteneded) this.createSampler(u, v, min, mag, maxAnisotropy, maxLod);
         } finally {
             this.canpipe_addressModeW = null;
             this.canpipe_compareOp = null;
+            this.canpipe_linearMipmap = null;
         }
     }
 

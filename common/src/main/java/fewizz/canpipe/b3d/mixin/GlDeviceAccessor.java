@@ -15,19 +15,16 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 @Mixin(value = GlDevice.class, priority = 1001)
 public interface GlDeviceAccessor {
 
-    @Accessor("canpipe_framebufferCache")
-    Object2IntMap<List<GlTextureView>> get_canpipe_framebufferCache();
+    @Accessor("canpipe_framebufferCache") Object2IntMap<List<GlTextureView>> get_canpipe_framebufferCache();
 
-    @Accessor("canpipe_pendingTextureViewBaseLayer")
-    int get_canpipe_pendingTextureViewBaseLayer();
+    @Accessor("canpipe_pendingTextureViewBaseLayer") int get_canpipe_pendingTextureViewBaseLayer();
 
-    @Accessor("canpipe_pendingTextureViewLayerCount")
-    int get_canpipe_pendingTextureViewLayerCount();
+    @Accessor("canpipe_pendingTextureViewLayerCount") int get_canpipe_pendingTextureViewLayerCount();
 
-    @Accessor("canpipe_addressModeW")
-    AddressMode get_canpipe_addressModeW();
+    @Accessor("canpipe_addressModeW") AddressMode get_canpipe_addressModeW();
 
-    @Accessor("canpipe_compareOp")
-    DepthTestFunction get_canpipe_compareOp();
+    @Accessor("canpipe_compareOp") DepthTestFunction get_canpipe_compareOp();
+
+    @Accessor("canpipe_linearMipmap") Boolean get_canpipe_linearMipmap();
 
 }
