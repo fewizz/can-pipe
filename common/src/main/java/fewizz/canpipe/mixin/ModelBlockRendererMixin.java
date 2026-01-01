@@ -40,7 +40,7 @@ public class ModelBlockRendererMixin {
             target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData("+
                 "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
                 "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-                "[FFFFF[IIZ"+
+                "[FFFFF[II"+
             ")V"
         )
     )
@@ -70,7 +70,7 @@ public class ModelBlockRendererMixin {
             target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;putBulkData("+
                 "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
                 "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-                "[FFFFF[IIZ"+
+                "[FFFFF[II"+
             ")V",
             shift = Shift.AFTER
         )

@@ -43,8 +43,7 @@ public class Pass extends PassBase {
     final RenderPipeline renderPipeline;
     // Textures (specified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually uses them
-    final List<AbstractTexture> textureViews;
-    final List<GpuSampler> samplers;
+    final List<AbstractTexture> textures;
     final Vector2i extent;
 
     final UniformBufferStruct pass = new UniformBufferStruct();
@@ -60,8 +59,7 @@ public class Pass extends PassBase {
         Vector2i extent, int lod, int layer
     ) {
         super(name);
-        this.textureViews = new ArrayList<>();
-        this.samplers = new ArrayList<>();
+        this.textures = new ArrayList<>();
 
         var samplers = renderPipeline.getSamplers();
         if (samplers.size() > samplerTextures.size()) {
@@ -79,7 +77,7 @@ public class Pass extends PassBase {
                     Identifier.withDefaultNamespace("textures/item/barrier.png")
                 );
             });
-            this.textureViews.add(samplerTexture);
+            this.textures.add(samplerTexture);
         }
 
         this.framebuffer = framebuffer;
@@ -140,10 +138,10 @@ public class Pass extends PassBase {
             renderPass.setPipeline(this.renderPipeline);
 
             var samplers = this.renderPipeline.getSamplers();
-            for (int i = 0; i < Math.min(samplers.size(), this.textureViews.size()); ++i) {
+            for (int i = 0; i < Math.min(samplers.size(), this.textures.size()); ++i) {
                 String sampler = samplers.get(i);
-                var samplerTexture = this.textureViews.get(i);
-                renderPass.bindTexture(sampler, samplerTexture.getTextureView(), this.samplers.get(i));
+                var samplerTexture = this.textures.get(i);
+                renderPass.bindTexture(sampler, samplerTexture.getTextureView(), this.textures.get(i).getSampler());
             }
 
             RenderSystem.bindDefaultUniforms(renderPass);

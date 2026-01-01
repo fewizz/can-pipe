@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 @Mixin(ItemBlockRenderTypes.class)
 public class ItemBlockRenderTypesMixin {
 
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = "getRenderType(Lnet/minecraft/world/item/ItemStack;)Lnet/minecraft/client/renderer/RenderType;",
         at = @At(
             value = "INVOKE",
@@ -25,6 +25,6 @@ public class ItemBlockRenderTypesMixin {
             renderType = Sheets.cutoutBlockSheet();
         }
         return renderType;
-    }
+    }*/ // TODO
 
 }

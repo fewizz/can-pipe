@@ -139,12 +139,11 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
         ")Lcom/mojang/blaze3d/systems/RenderPass;",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/GlTexture;getFbo(Lcom/mojang/blaze3d/opengl/DirectStateAccess;Lcom/mojang/blaze3d/textures/GpuTexture;)I"
+            target = "Lcom/mojang/blaze3d/opengl/GlTextureView;getFbo(Lcom/mojang/blaze3d/opengl/DirectStateAccess;Lcom/mojang/blaze3d/textures/GpuTexture;)I"
         )
     )
     int ifColorAttachmentsCountNotEqualsOne(
-        GlTexture colorTexture, DirectStateAccess dsa, GpuTexture depthTexture, Operation<Integer> operation,
-        @Local(argsOnly = true, ordinal = 0) GpuTextureView colorTextureView,
+        GlTextureView colorTextureView, DirectStateAccess dsa, GpuTexture depthTexture, Operation<Integer> operation,
         @Local(argsOnly = true, ordinal = 1) GpuTextureView depthTextureView
     ) {
         // Replacing original `getFbo`, i.e., it won't be called from `createRenderPass`,

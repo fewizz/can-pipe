@@ -16,7 +16,6 @@ import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
-import fewizz.canpipe.b3d.GpuTextureExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
@@ -225,8 +224,8 @@ public class Texture extends AbstractTexture {
 
                 // texture.setTextureFilter(minFilter, magFilter, mip);
                 // texture.setAddressMode(addressModeU, addressModeV);
-                ((GpuTextureExtended) texture).canpipe_setAddressModeW(addressModeW);
-                ((GpuTextureExtended) texture).canpipe_setCompareOp(depthCompareOp);
+                // ((GpuTextureExtended) texture).canpipe_setAddressModeW(addressModeW);
+                // ((GpuTextureExtended) texture).canpipe_setCompareOp(depthCompareOp);
                 return Pair.of(texture, sampler);
             });
         } catch (Exception e) {

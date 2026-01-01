@@ -38,7 +38,7 @@ public class CanPipe {
 
         public static final VertexFormatElement
             MATERIAL_FLAGS = VertexFormatElement.register(
-                6, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.UV, 1
+                7, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.UV, 1
             ),  // UV, because it uses vertexAttrib *I* Pointer in this case
             SPRITE_INDEX = VertexFormatElement.register(
                 8, 0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.UV, 1
@@ -50,7 +50,7 @@ public class CanPipe {
                 10, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.NORMAL, 4
             ),
             AO = VertexFormatElement.register(
-                7, 0, VertexFormatElement.Type.UBYTE, VertexFormatElement.Usage.COLOR, 1
+                11, 0, VertexFormatElement.Type.UBYTE, VertexFormatElement.Usage.COLOR, 1
             );
 
     }
