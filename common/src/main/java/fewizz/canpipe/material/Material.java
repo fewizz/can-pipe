@@ -9,12 +9,12 @@ import org.jetbrains.annotations.Nullable;
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public class Material {
 
-    public final ResourceLocation location;
+    public final Identifier location;
     @Nullable public final String vertexShaderSource;
     @Nullable public final String fragmentShaderSource;
     @Nullable public final String depthVertexShaderSource;
@@ -24,7 +24,7 @@ public class Material {
 
     Material(
         ResourceManager manager,
-        ResourceLocation location,
+        Identifier location,
         JsonObject materialJson
     ) throws FileNotFoundException, IOException {
         this.location = location;
@@ -36,28 +36,28 @@ public class Material {
 
         String vertexShaderSource = materialJson.get(String.class, "vertexSource");
         if (vertexShaderSource != null) {
-            var loc = ResourceLocation.parse(vertexShaderSource);
+            var loc = Identifier.parse(vertexShaderSource);
             var resource = manager.getResource(loc);
             vertexShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
 
         String fragmentShaderSource = materialJson.get(String.class, "fragmentSource");
         if (fragmentShaderSource != null) {
-            var loc = ResourceLocation.parse(fragmentShaderSource);
+            var loc = Identifier.parse(fragmentShaderSource);
             var resource = manager.getResource(loc);
             fragmentShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
 
         String depthVertexShaderSource = materialJson.get(String.class, "depthVertexSource");
         if (depthVertexShaderSource != null) {
-            var loc = ResourceLocation.parse(depthVertexShaderSource);
+            var loc = Identifier.parse(depthVertexShaderSource);
             var resource = manager.getResource(loc);
             depthVertexShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
 
         String depthFragmentShaderSource = materialJson.get(String.class, "depthFragmentSource");
         if (depthFragmentShaderSource != null) {
-            var loc = ResourceLocation.parse(depthFragmentShaderSource);
+            var loc = Identifier.parse(depthFragmentShaderSource);
             var resource = manager.getResource(loc);
             depthFragmentShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }

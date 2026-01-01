@@ -21,14 +21,14 @@ import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 @Mixin(TextureAtlas.class)
 public class TextureAtlasMixin implements TextureAtlasExtended {
 
-    @Shadow @Final private ResourceLocation location;
-    @Shadow private Map<ResourceLocation, TextureAtlasSprite> texturesByName;
+    @Shadow @Final private Identifier location;
+    @Shadow private Map<Identifier, TextureAtlasSprite> texturesByName;
     @Shadow private int width;
     @Shadow private int height;
 
@@ -82,7 +82,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
     }
 
     @Override
-    public Map<ResourceLocation, TextureAtlasSprite> canpipe_getSprites() {
+    public Map<Identifier, TextureAtlasSprite> canpipe_getSprites() {
         return texturesByName;
     }
 

@@ -26,9 +26,8 @@ import fewizz.canpipe.mixininterface.CompositeRenderTypeExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.renderer.RenderType;
 
-@Mixin(RenderType.CompositeRenderType.class)
+// @Mixin(RenderType.CompositeRenderType.class)
 public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
 
     @Shadow @Final private RenderPipeline renderPipeline;

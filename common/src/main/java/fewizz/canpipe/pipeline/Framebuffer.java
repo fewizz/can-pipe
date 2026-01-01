@@ -20,7 +20,7 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class Framebuffer extends RenderTarget {
 
@@ -38,7 +38,7 @@ public class Framebuffer extends RenderTarget {
     private boolean destroyed = true;
 
     Framebuffer(
-        ResourceLocation pipelineLocation,
+        Identifier pipelineLocation,
         String name,
         IntFunction<Pair<GpuTexture, GpuTextureView>> colorTextureSupplier,
         int[] colorClearColors,
@@ -150,7 +150,7 @@ public class Framebuffer extends RenderTarget {
 
     static Framebuffer load(
         JsonObject framebufferJson,
-        ResourceLocation pipelineLocation,
+        Identifier pipelineLocation,
         Function<String, Texture> getOrLoadTexture
     ) {
         String name = framebufferJson.get(String.class, "name");

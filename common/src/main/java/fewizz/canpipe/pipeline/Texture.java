@@ -2,10 +2,13 @@ package fewizz.canpipe.pipeline;
 
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.TextureFormat;
 
@@ -16,17 +19,19 @@ import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 
 public class Texture extends AbstractTexture {
-    private final Supplier<GpuTexture> gpuTextureSupplier;
+    private final Supplier<Pair<GpuTexture, GpuSampler>> gpuTextureSupplier;
     private final boolean recreateOnResize;
 
-    private Texture(String name, boolean recreateOnResize, Supplier<GpuTexture> gpuTextureUpdater) {
+    private Texture(String name, boolean recreateOnResize, Supplier<Pair<GpuTexture, GpuSampler>> gpuTextureUpdater) {
         this.gpuTextureSupplier = gpuTextureUpdater;
         this.recreateOnResize = recreateOnResize;
-        this.texture = this.gpuTextureSupplier.get();
+        var textureAndSampler = this.gpuTextureSupplier.get();
+        this.texture = textureAndSampler.getLeft();
+        this.sampler = textureAndSampler.getRight();
         this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
             this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
         );
@@ -35,14 +40,16 @@ public class Texture extends AbstractTexture {
     void onWindowSizeChanged() {
         if (this.recreateOnResize) {
             this.close();
-            this.texture = this.gpuTextureSupplier.get();
+            var textureAndSampler = this.gpuTextureSupplier.get();
+            this.texture = textureAndSampler.getLeft();
+            this.sampler = textureAndSampler.getRight();
             this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                 this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
             );
         }
     }
 
-    static Texture load(JsonObject json, ResourceLocation pipelineLocation) {
+    static Texture load(JsonObject json, Identifier pipelineLocation) {
         String name = json.get(String.class, "name");
 
         int maxLod = json.getInt("lod", 0);
@@ -213,11 +220,14 @@ public class Texture extends AbstractTexture {
                     newWidth, newHeight, depthOrLayers, maxLod+1
                 );
 
-                texture.setTextureFilter(minFilter, magFilter, mip);
-                texture.setAddressMode(addressModeU, addressModeV);
+                // TODO
+                var sampler = RenderSystem.getSamplerCache().getSampler(addressModeU, addressModeV, minFilter, magFilter, mip);
+
+                // texture.setTextureFilter(minFilter, magFilter, mip);
+                // texture.setAddressMode(addressModeU, addressModeV);
                 ((GpuTextureExtended) texture).canpipe_setAddressModeW(addressModeW);
                 ((GpuTextureExtended) texture).canpipe_setCompareOp(depthCompareOp);
-                return texture;
+                return Pair.of(texture, sampler);
             });
         } catch (Exception e) {
             throw new RuntimeException("Couldn't create texture \""+name+"\"", e);

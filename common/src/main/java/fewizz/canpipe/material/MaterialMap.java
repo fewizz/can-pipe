@@ -7,17 +7,17 @@ import org.jetbrains.annotations.Nullable;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class MaterialMap {
 
     @Nullable public final Material defaultMaterial;
-    public final Map<ResourceLocation, Material> spriteMap = new HashMap<>();
+    public final Map<Identifier, Material> spriteMap = new HashMap<>();
 
     MaterialMap(JsonObject json) {
         String defaultMaterialStr = json.get(String.class, "defaultMaterial");
         if (defaultMaterialStr != null) {
-            ResourceLocation materialLocation = ResourceLocation.parse(defaultMaterialStr);
+            Identifier materialLocation = Identifier.parse(defaultMaterialStr);
             this.defaultMaterial = Materials.get(materialLocation);
         }
         else {
@@ -30,8 +30,8 @@ public class MaterialMap {
             String spriteLocationStr = spriteMapObject.get(String.class, "sprite");
             String materialLocationStr = spriteMapObject.get(String.class, "material");
             this.spriteMap.put(
-                ResourceLocation.parse(spriteLocationStr),
-                Materials.get(ResourceLocation.parse(materialLocationStr))
+                Identifier.parse(spriteLocationStr),
+                Materials.get(Identifier.parse(materialLocationStr))
             );
         }
     }

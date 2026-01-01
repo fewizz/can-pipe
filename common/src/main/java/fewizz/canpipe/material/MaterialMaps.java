@@ -10,7 +10,7 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.block.Block;
@@ -43,7 +43,7 @@ final public class MaterialMaps implements PreparableReloadListener {
             () -> {
                 return sharedState.resourceManager().listResources(
                     "materialmaps",
-                    (ResourceLocation rl) -> {
+                    (Identifier rl) -> {
                         String pathStr = rl.getPath();
                         return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
                     }
@@ -51,12 +51,12 @@ final public class MaterialMaps implements PreparableReloadListener {
             },
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
-            (Map<ResourceLocation, Resource> materialMapsJson) -> {
+            (Map<Identifier, Resource> materialMapsJson) -> {
                 this.fluids.clear();
                 this.blocks.clear();
 
                 for (var e : materialMapsJson.entrySet()) {
-                    ResourceLocation location = e.getKey();
+                    Identifier location = e.getKey();
                     String path = location.getPath();
                     path = path.substring("materialmaps/".length());
 

@@ -19,7 +19,7 @@ import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 
 public class Programs {
@@ -28,18 +28,18 @@ public class Programs {
 
     static RenderPipeline load(
         JsonObject json,
-        ResourceLocation pipelineLocation,
-        Function<ResourceLocation, Optional<String>> getShaderSource,
+        Identifier pipelineLocation,
+        Function<Identifier, Optional<String>> getShaderSource,
         int glslVersion,
-        Map<ResourceLocation, Option> options,
+        Map<Identifier, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         Optional<Integer> shadowMapSize
     ) {
         List<String> samplers = JanksonUtils.listOfStrings(json, "samplers");
 
         var name = json.get(String.class, "name");
-        var vertexLocation = ResourceLocation.parse(json.get(String.class, "vertexSource"));
-        var fragmentLocation = ResourceLocation.parse(json.get(String.class, "fragmentSource"));
+        var vertexLocation = Identifier.parse(json.get(String.class, "vertexSource"));
+        var fragmentLocation = Identifier.parse(json.get(String.class, "fragmentSource"));
 
         var renderPipelineBuilder = RenderPipeline.builder()
             .withLocation(pipelineLocation.withSuffix("-"+name))
@@ -86,14 +86,14 @@ public class Programs {
 
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
             pipeline,
-            (ResourceLocation location, ShaderType type) -> {
+            (Identifier location, ShaderType type) -> {
                 String src = getShaderSource.apply(location).get();
                 return Shaders.process(
                     location, src, type, glslVersion, options, appliedOptions,
                     getShaderSource, shadowMapSize, postprocess
                 );
             },
-            (String log, ResourceLocation location, String src) -> {
+            (String log, Identifier location, String src) -> {
                 Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
                 try {
                     Files.createDirectories(compilationErrorsPath);

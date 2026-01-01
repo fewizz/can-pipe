@@ -6,15 +6,15 @@ import java.util.Objects;
 
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class Option {
-    public final ResourceLocation includeToken;
+    public final Identifier includeToken;
     public final String categoryKey;
     public final Map<String, Option.Element<?>> elements;
 
     Option(
-        ResourceLocation includeToken,
+        Identifier includeToken,
         String categoryKey,
         Map<String, Option.Element<?>> elements
     ) {

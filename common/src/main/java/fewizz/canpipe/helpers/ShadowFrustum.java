@@ -27,7 +27,7 @@ public class ShadowFrustum extends Frustum {
         Matrix4f shortendedViewProjectionMatrix, Camera camera,Vector3f toSunDir
     ) {
         super(shadowViewMatrix, shadowProjectionView);
-        this.prepare(camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
+        this.prepare(camera.position().x, camera.position().y, camera.position().z);
         this.camera = camera;
         this.toSunDir = toSunDir;
         for (int i = 0; i < 6; ++i) {
@@ -55,9 +55,9 @@ public class ShadowFrustum extends Frustum {
                         .set(aabb.getXsize(), aabb.getYsize(), aabb.getZsize())
                         .mul(x, y, z)
                         .add(
-                            (float) (aabb.minX - this.camera.getPosition().x),
-                            (float) (aabb.minY - this.camera.getPosition().y),
-                            (float) (aabb.minZ - this.camera.getPosition().z)
+                            (float) (aabb.minX - this.camera.position().x),
+                            (float) (aabb.minY - this.camera.position().y),
+                            (float) (aabb.minZ - this.camera.position().z)
                         );
                 }
             }
@@ -130,12 +130,12 @@ public class ShadowFrustum extends Frustum {
         };
 
         return
-            anyForEachFrustumCorner.apply(c -> c.x > aabb.minX - this.camera.getPosition().x) &&
-            anyForEachFrustumCorner.apply(c -> c.y > aabb.minY - this.camera.getPosition().y) &&
-            anyForEachFrustumCorner.apply(c -> c.z > aabb.minZ - this.camera.getPosition().z) &&
-            anyForEachFrustumCorner.apply(c -> c.x < aabb.maxX - this.camera.getPosition().x) &&
-            anyForEachFrustumCorner.apply(c -> c.y < aabb.maxY - this.camera.getPosition().y) &&
-            anyForEachFrustumCorner.apply(c -> c.z < aabb.maxZ - this.camera.getPosition().z);
+            anyForEachFrustumCorner.apply(c -> c.x > aabb.minX - this.camera.position().x) &&
+            anyForEachFrustumCorner.apply(c -> c.y > aabb.minY - this.camera.position().y) &&
+            anyForEachFrustumCorner.apply(c -> c.z > aabb.minZ - this.camera.position().z) &&
+            anyForEachFrustumCorner.apply(c -> c.x < aabb.maxX - this.camera.position().x) &&
+            anyForEachFrustumCorner.apply(c -> c.y < aabb.maxY - this.camera.position().y) &&
+            anyForEachFrustumCorner.apply(c -> c.z < aabb.maxZ - this.camera.position().z);
     }
 
 }

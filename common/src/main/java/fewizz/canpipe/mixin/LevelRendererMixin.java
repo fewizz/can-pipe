@@ -23,6 +23,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -163,7 +164,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Vector3f toSunDir = p.getSunOrMoonDir(mc.level, new Vector3f(), pt);
         Vector3f fromSunDir = toSunDir.negate(new Vector3f());
 
-        var camPos = camera.getPosition();
+        var camPos = camera.position();
         var sunPosOffset = new Vec3(toSunDir.mul(renderDistance + 48, new Vector3f()));
         var sunPos = camPos.add(sunPosOffset);
 
@@ -174,7 +175,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 (float) Math.toDegrees(Math.atan2(-fromSunDir.y, Math.sqrt(fromSunDir.x*fromSunDir.x + fromSunDir.z*fromSunDir.z)))
             );
             ((CameraAccessor)(Object) this).canpipe_setDetached(true);
-            ((CameraAccessor)(Object) this).canpipe_setEntity(camera.getEntity());
+            ((CameraAccessor)(Object) this).canpipe_setEntity(camera.entity());
         }};
 
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
@@ -210,7 +211,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.cullTerrain(
                 new Camera() {{
                     setPosition(camPos);
-                    setRotation(shadowCamera.getYRot(), shadowCamera.getXRot());
+                    setRotation(shadowCamera.yRot(), shadowCamera.xRot());
                 }},
                 shadowFrustum,
                 false
@@ -223,7 +224,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
                 Profiler.get().popPush("render sections");
                 ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
-                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE);
+                chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
                 // chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT);
 
                 MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();

@@ -13,7 +13,7 @@ import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 
@@ -22,14 +22,14 @@ final public class Materials implements PreparableReloadListener {
     public static final Materials INSTANCE = new Materials();
     private Materials() {}
 
-    public final Map<ResourceLocation, Material> materials = new HashMap<>();
+    public final Map<Identifier, Material> materials = new HashMap<>();
     public final Object2IntMap<Material> id = new Object2IntOpenHashMap<>();
 
     public static int id(Material material) {
         return INSTANCE.id.getInt(material);
     }
 
-    public static Material get(ResourceLocation location) {
+    public static Material get(Identifier location) {
         return INSTANCE.materials.get(location);
     }
 
@@ -47,7 +47,7 @@ final public class Materials implements PreparableReloadListener {
         return CompletableFuture.supplyAsync(() -> {
                 return sharedState.resourceManager().listResources(
                     "materials",
-                    (ResourceLocation rl) -> {
+                    (Identifier rl) -> {
                         String pathStr = rl.getPath();
                         return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
                     }
@@ -55,15 +55,15 @@ final public class Materials implements PreparableReloadListener {
             },
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
-            (Map<ResourceLocation, Resource> materialsJson) -> {
+            (Map<Identifier, Resource> materialsJson) -> {
                 this.materials.clear();
                 this.id.clear();
 
                 int id = 0;
                 for (var e : materialsJson.entrySet()) {
                     try {
-                        ResourceLocation fullLocation = e.getKey();
-                        ResourceLocation location = fullLocation.withPath(
+                        Identifier fullLocation = e.getKey();
+                        Identifier location = fullLocation.withPath(
                             fullLocation.getPath().substring("materials/".length())
                             .replace(".json", "").replace(".json5", "")
                         );

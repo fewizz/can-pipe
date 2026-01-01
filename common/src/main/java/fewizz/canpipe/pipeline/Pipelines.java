@@ -25,7 +25,7 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 
 final public class Pipelines implements PreparableReloadListener {
@@ -45,7 +45,7 @@ final public class Pipelines implements PreparableReloadListener {
             .thenAcceptAsync(Pipelines::loadRawPipelines, applyExecutor);
     }
 
-    public static final Map<ResourceLocation, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
+    public static final Map<Identifier, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
 
     private static volatile @Nullable PipelineRaw currentRaw = null;
     private static volatile @Nullable Throwable loadingError = null;
@@ -173,12 +173,12 @@ final public class Pipelines implements PreparableReloadListener {
         }
     }
 
-    public static Map<ResourceLocation, PipelineRaw> readRawPipelines() {
-        Map<ResourceLocation, PipelineRaw> rawPipelines = new LinkedHashMap<>();
+    public static Map<Identifier, PipelineRaw> readRawPipelines() {
+        Map<Identifier, PipelineRaw> rawPipelines = new LinkedHashMap<>();
         Minecraft mc = Minecraft.getInstance();
         mc.getResourceManager().listResources(
             "pipelines",
-            (ResourceLocation pipelineLocation) -> {
+            (Identifier pipelineLocation) -> {
                 String pathStr = pipelineLocation.getPath();
                 return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
             }
@@ -193,7 +193,7 @@ final public class Pipelines implements PreparableReloadListener {
         return rawPipelines;
     }
 
-    public static void loadRawPipelines(Map<ResourceLocation, PipelineRaw> rawPipelines) {
+    public static void loadRawPipelines(Map<Identifier, PipelineRaw> rawPipelines) {
         RAW_PIPELINES.clear();
         RAW_PIPELINES.putAll(rawPipelines);
         PipelineRaw selected = null;
@@ -204,7 +204,7 @@ final public class Pipelines implements PreparableReloadListener {
                 );
                 String currentLocationStr = readOptions.get(String.class, "current");
                 if (currentLocationStr != null) {
-                    selected = RAW_PIPELINES.get(ResourceLocation.parse(currentLocationStr));
+                    selected = RAW_PIPELINES.get(Identifier.parse(currentLocationStr));
                 }
             } catch (IOException | SyntaxError e) {
                 e.printStackTrace();

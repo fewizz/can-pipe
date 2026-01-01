@@ -123,7 +123,7 @@ public class GameRendererMixin implements GameRendererExtended {
         Uniforms.CANPIPE_RENDER_FRAMES.add(1);
         Uniforms.FRX_RENDER_SECONDS.set((float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0));
 
-        Uniforms.FRX_CAMERA_POS.set(this.mainCamera.getPosition().toVector3f());
+        Uniforms.FRX_CAMERA_POS.set(this.mainCamera.position().toVector3f());
 
         if (Uniforms.FRX_LAST_VIEW_MATRIX.get(0, 0) == Float.NEGATIVE_INFINITY) {
             Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
@@ -166,7 +166,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
                 prevCascadeRadius = Math.max(cascadeRadius, prevCascadeRadius);
 
-                center = new Vector3f(mainCamera.getLookVector()).mul(cascadeRadius);
+                center = new Vector3f(mainCamera.forwardVector()).mul(cascadeRadius);
                 center.mulProject(Uniforms.FRX_SHADOW_VIEW_MATRIX);
 
                 float depthTextureSize = (float) p.shadows.framebuffers().get(0).getDepthTexture().getWidth(0);
@@ -292,7 +292,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
         Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
         Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
-        Uniforms.FRX_LAST_CAMERA_POS.set(this.mainCamera.getPosition().toVector3f());
+        Uniforms.FRX_LAST_CAMERA_POS.set(this.mainCamera.position().toVector3f());
     }
 
     @WrapMethod(method = "getDepthFar")

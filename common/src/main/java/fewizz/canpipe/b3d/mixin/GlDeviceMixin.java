@@ -22,6 +22,7 @@ import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
@@ -30,14 +31,14 @@ import fewizz.canpipe.b3d.GpuDeviceExtended;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.renderer.ShaderDefines;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 @Mixin(GlDevice.class)
 public abstract class GlDeviceMixin implements GpuDeviceExtended {
 
-    @Shadow abstract protected GlShaderModule getOrCompileShader(ResourceLocation shader, ShaderType type, ShaderDefines defines, BiFunction<ResourceLocation, ShaderType, String> shaderSource);
+    @Shadow abstract protected GlShaderModule getOrCompileShader(Identifier shader, ShaderType type, ShaderDefines defines, ShaderSource shaderSource);
 
-    @Unique private TriConsumer<String, ResourceLocation, String> canpipe_onCompilationError = null;
+    @Unique private TriConsumer<String, Identifier, String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
@@ -48,8 +49,8 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
     @Override
     public void canpipe_precompilePipelineShaderModules(
         RenderPipeline pipeline,
-        BiFunction<ResourceLocation, ShaderType, String> shaderSource,
-        TriConsumer<String, ResourceLocation, String> onCompilationError
+        ShaderSource shaderSource,
+        TriConsumer<String, Identifier, String> onCompilationError
     ) {
         try {
             this.canpipe_onCompilationError = onCompilationError;

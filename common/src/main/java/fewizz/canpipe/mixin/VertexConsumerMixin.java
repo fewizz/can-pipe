@@ -21,7 +21,7 @@ public interface VertexConsumerMixin {
         method = "putBulkData("+
             "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
             "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-            "[FFFFF[IIZ"+
+            "[FFFFF[II"+
         ")V",
         at = @At("HEAD")
     )
@@ -38,7 +38,7 @@ public interface VertexConsumerMixin {
         method = "putBulkData("+
             "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
             "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-            "[FFFFF[IIZ"+
+            "[FFFFF[II"+
         ")V",
         at = @At("RETURN")
     )
@@ -55,7 +55,7 @@ public interface VertexConsumerMixin {
         method = "putBulkData("+
             "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
             "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-            "[FFFFF[IIZ"+
+            "[FFFFF[II"+
         ")V",
         at = @At(value = "HEAD"),
         ordinal = 0,
@@ -72,14 +72,14 @@ public interface VertexConsumerMixin {
         method = "putBulkData("+
             "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
             "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-            "[FFFFF[IIZ"+
+            "[FFFFF[II"+
         ")V",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V", shift = Shift.AFTER)
     )
     default void setAO(
         CallbackInfo ci,
         @Local(ordinal = 0, argsOnly = true) float[] ao,
-        @Local(ordinal = 5) int vertexIndex
+        @Local(ordinal = 2) int vertexIndex
     ) {
         if (
             this instanceof VertexConsumerExtended vce &&

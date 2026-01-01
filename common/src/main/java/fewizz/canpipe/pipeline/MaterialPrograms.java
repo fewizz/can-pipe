@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.jspecify.annotations.NonNull;
+
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
@@ -24,7 +26,7 @@ import fewizz.canpipe.material.Materials;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class MaterialPrograms {
 
@@ -36,12 +38,12 @@ public class MaterialPrograms {
         boolean enablePBR,
         boolean shadow,
         Optional<Integer> shadowMapSize,
-        ResourceLocation vertexShaderLocation,
-        ResourceLocation fragmentShaderLocation,
-        Map<ResourceLocation, Option> options,
+        Identifier vertexShaderLocation,
+        Identifier fragmentShaderLocation,
+        Map<Identifier, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
         List<String> samplers,
-        Function<ResourceLocation, Optional<String>> getShaderSource,
+        Function<Identifier, Optional<String>> getShaderSource,
         float shadowsOffsetSlopeFactor,
         float shadowsOffsetBiasUnits
     ) {
@@ -64,7 +66,7 @@ public class MaterialPrograms {
 
         var renderPipelineBuilder = RenderPipeline.builder();
         {
-            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(
+            Identifier location = Identifier.fromNamespaceAndPath(
                 "canpipe", (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
             );
             renderPipelineBuilder
@@ -141,7 +143,7 @@ public class MaterialPrograms {
 
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
             renderPipeline,
-            (ResourceLocation location, ShaderType type) -> {
+            (Identifier location, ShaderType type) -> {
                 String src = switch (type) {
                     case ShaderType.VERTEX -> vertexSrc;
                     case ShaderType.FRAGMENT -> fragmentSrc;
@@ -152,7 +154,7 @@ public class MaterialPrograms {
                     getShaderSource, shadowMapSize, postprocess
                 );
             },
-            (String log, ResourceLocation location, String src) -> {
+            (String log, Identifier location, String src) -> {
                 Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
                 try {
                     Files.createDirectories(compilationErrorsPath);
@@ -171,8 +173,8 @@ public class MaterialPrograms {
     }
 
     private static String getVertexSrc(
-        ResourceLocation vertexShaderLocation,
-        Function<ResourceLocation, Optional<String>> getShaderSource,
+        Identifier vertexShaderLocation,
+        Function<Identifier, Optional<String>> getShaderSource,
         VertexFormat vertexFormat,
         RenderPipeline originalRenderPipeline,
         boolean shadow
@@ -314,8 +316,8 @@ public class MaterialPrograms {
     }
 
     private static String getFragmentSrc(
-        ResourceLocation fragmentShaderLocation,
-        Function<ResourceLocation, Optional<String>> getShaderSource,
+        Identifier fragmentShaderLocation,
+        Function<Identifier, Optional<String>> getShaderSource,
         VertexFormat vertexFormat,
         RenderPipeline originalRenderPipeline,
         boolean shadow,
@@ -346,9 +348,7 @@ public class MaterialPrograms {
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
             originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
-            originalRenderPipeline == RenderPipelines.LINE_STRIP ||
 
-            originalRenderPipeline == RenderPipelines.CUTOUT ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
@@ -358,14 +358,10 @@ public class MaterialPrograms {
             originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||
-            originalRenderPipeline == RenderPipelines.TRIPWIRE ||
             originalRenderPipeline == RenderPipelines.BREEZE_WIND ||
             originalRenderPipeline == RenderPipelines.ENERGY_SWIRL
         ) {
             alphaCutout = 0.1F;
-        }
-        else if (originalRenderPipeline == RenderPipelines.CUTOUT_MIPPED) {
-            alphaCutout = 0.5F;
         }
         else {
             alphaCutout = 0.0F;

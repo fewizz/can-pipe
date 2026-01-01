@@ -34,7 +34,7 @@ import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class PipelineOptionsScreen extends OptionsSubScreen {
 
@@ -125,7 +125,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             if (this.scrollbarVisible()) {
                 guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
-                    ResourceLocation.withDefaultNamespace("widget/scroller"),
+                    Identifier.withDefaultNamespace("widget/scroller"),
                     this.scrollBarX(),
                     this.scrollBarY(),
                     6,
@@ -264,11 +264,13 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     };
                 }
                 else if (e instanceof Option.EnumElement enumElement) {
-                    this.valueWidget = CycleButton.builder((String s) -> Component.literal(
-                        (s.substring(0, 1).toUpperCase() + s.substring(1)).replace("_", " ")
-                    ))
+                    this.valueWidget = CycleButton.builder(
+                        (String s) -> Component.literal(
+                            (s.substring(0, 1).toUpperCase() + s.substring(1)).replace("_", " ")
+                        ),
+                        enumElement.defaultValue
+                    )
                         .withValues(enumElement.choices)
-                        .withInitialValue(appliedValue != null ? (String) appliedValue : enumElement.defaultValue)
                         .displayOnlyValue()
                         .create(
                             0, 0,

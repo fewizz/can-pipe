@@ -61,7 +61,7 @@ public abstract class Hg3DGpuTextureMixin extends GpuTexture implements GpuTextu
             return;  // Original path, using precreated samplers
         }
 
-        cir.setReturnValue(((Hg3DGpuDeviceAccessor) this.device).canpipe_getSampler(
+        /*cir.setReturnValue(((Hg3DGpuDeviceAccessor) this.device).canpipe_getSampler(
             this.minFilter == FilterMode.LINEAR,
             this.magFilter == FilterMode.LINEAR,
             Hg3DConst.addressMode(this.addressModeU),
@@ -69,7 +69,7 @@ public abstract class Hg3DGpuTextureMixin extends GpuTexture implements GpuTextu
             Hg3DConst.addressMode(this.canpipe_addressModeW != null ? this.canpipe_addressModeW : AddressMode.REPEAT),
             this.useMipmaps,
             this.canpipe_compareOp   // added
-        ));
+        ));*/
     }
 
 }

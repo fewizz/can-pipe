@@ -31,7 +31,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
@@ -173,7 +173,7 @@ public class Uniforms {
         GameRendererExtended gre = (GameRendererExtended) mc.gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
         Camera camera = mc.gameRenderer.getMainCamera();
-        var cameraPos = camera.getPosition();
+        var cameraPos = camera.position();
         float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         Vec3 eyePosition = new Vec3(
             Mth.lerp(pt, mc.player.xo, mc.player.getX()),
@@ -202,14 +202,14 @@ public class Uniforms {
         // view.glsl
         FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
         FRX_CAMERA_VIEW.set(
-            Vec3.directionFromRotation(camera.getXRot(), camera.getYRot()).toVector3f()
+            Vec3.directionFromRotation(camera.xRot(), camera.yRot()).toVector3f()
         );
         FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
         FRX_VIEW_BRIGHTNESS.set(mc.options.gamma().get().floatValue());
         {
             int result = 0;
 
-            BlockPos cameraBlockPos = BlockPos.containing(camera.getPosition());
+            BlockPos cameraBlockPos = BlockPos.containing(camera.position());
             Iterable<TagKey<Fluid>> fluidTags = () -> {
                 return mc.level.getFluidState(cameraBlockPos).getTags().iterator();
             };
@@ -270,7 +270,7 @@ public class Uniforms {
             Item item = mc.player.getMainHandItem().getItem();
             if (item == Items.AIR) item = mc.player.getOffhandItem().getItem();
             if (item == Items.AIR) return null;
-            ResourceLocation itemLocation = BuiltInRegistries.ITEM.getKey(item);
+            Identifier itemLocation = BuiltInRegistries.ITEM.getKey(item);
             if (itemLocation == null) return null;
             return Lights.get(itemLocation);
         }).get();
@@ -362,33 +362,33 @@ public class Uniforms {
 
         // world
         {
-            long ticks = mc.level.dimensionType().fixedTime().orElse(mc.level.getDayTime());
+            long ticks = 0; // mc.level.dimensionType().fixedTime().orElse(mc.level.getDayTime()); TODO
             CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         }
         FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F);
         FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
-        FRX_MOON_SIZE.set(mc.level.getMoonBrightness());
+        // FRX_MOON_SIZE.set(mc.level.getMoonBrightness()); TODO
         FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f(), pt));
-        FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(pt));
+        // FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(pt)); TODO
         {
-            var timeOfDay = mc.level.getTimeOfDay(pt);
+            var timeOfDay = 0; // mc.level.getTimeOfDa(pt); TODO
             var result = new Vector3f(1.0F);
             if (
                 mc.level.dimensionType().hasSkyLight()
-                && mc.level.effects().isSunriseOrSunset(timeOfDay)
+                // && mc.level.effects().isSunriseOrSunset(timeOfDay) TODO
             ) {
-                int color = mc.level.effects().getSunriseOrSunsetColor(timeOfDay);
+                int color = 0xFFFFFF; // mc.level.effects().getSunriseOrSunsetColor(timeOfDay); TODO
                 result.set((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
                 result.div(255.0F);
             }
             CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
         }
         {
-            float skyFlashStrength = Math.max(0.0F, mc.level.getSkyFlashTime()-pt);
+            float skyFlashStrength = 0.0F; // Math.max(0.0F, mc.level.getSkyFlashTime()-pt); TODO
             FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);
         }
         // Not sure why partial tick is 1.0 (LightTexture.updateLigthTexture)
-        FRX_AMBIENT_INTENSITY.set(mc.level.getSkyDarken(1.0F));
+        // FRX_AMBIENT_INTENSITY.set(mc.level.getSkyDarken(1.0F)); TODO
         {
             Vector4f emissiveColor = (
                 (LightTextureExtended) mc.gameRenderer.lightTexture()
@@ -400,7 +400,7 @@ public class Uniforms {
             value |= (mc.level.dimensionType().hasSkyLight() ? 1 : 0)    << 0;
             value |= (mc.level.isRaining() ? 1 : 0)                      << 1;
             value |= (mc.level.isThundering() ? 1 : 0)                   << 2;
-            value |= (mc.level.effects().constantAmbientLight() ? 1 : 0) << 3;
+            // value |= (mc.level.effects().constantAmbientLight() ? 1 : 0) << 3;  TODO
 
             int dimension = 3;
             if (mc.level.dimension() == Level.OVERWORLD) {
@@ -434,7 +434,6 @@ public class Uniforms {
             gre.canpipe_getFogRenderer().setupFog(
                 mc.gameRenderer.getMainCamera(),
                 mc.options.getEffectiveRenderDistance(),
-                false,
                 mc.getDeltaTracker(),
                 mc.gameRenderer.getDarkenWorldAmount(pt),
                 mc.level

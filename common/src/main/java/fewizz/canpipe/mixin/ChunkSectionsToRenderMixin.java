@@ -88,7 +88,7 @@ public class ChunkSectionsToRenderMixin {
         )
     )
     void bindSpritesExtentsBeforeDrawing(CallbackInfo ci, @Local RenderPass renderPass, @Local ChunkSectionLayer chunkSectionLayer) {
-        Pipeline.bindSpritesExtentsSampler(renderPass, chunkSectionLayer.textureView());
+        // TODO Pipeline.bindSpritesExtentsSampler(renderPass, chunkSectionLayer.textureView());
     }
 
 }

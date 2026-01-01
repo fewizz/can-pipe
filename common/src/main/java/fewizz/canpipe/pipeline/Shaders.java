@@ -19,7 +19,7 @@ import com.mojang.blaze3d.shaders.ShaderType;
 
 import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class Shaders {
 
@@ -41,10 +41,10 @@ public class Shaders {
     );
 
     static String process(
-        ResourceLocation location, String source, ShaderType type, int version,
-        Map<ResourceLocation, Option> options,
+        Identifier location, String source, ShaderType type, int version,
+        Map<Identifier, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
-        Function<ResourceLocation, Optional<String>> getShaderSource,
+        Function<Identifier, Optional<String>> getShaderSource,
         Optional<Integer> shadowMapSize,
         Function<String, String> postProcess
     ) {
@@ -92,12 +92,12 @@ public class Shaders {
 
     private static String processIncludesAndDefinitions(
         String source,
-        ResourceLocation sourceLocation,
-        Map<ResourceLocation, Option> options,
+        Identifier sourceLocation,
+        Map<Identifier, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
-        Function<ResourceLocation, Optional<String>> getShaderSource
+        Function<Identifier, Optional<String>> getShaderSource
     ) {
-        Set<ResourceLocation> preprocessed = new HashSet<>();
+        Set<Identifier> preprocessed = new HashSet<>();
         Set<String> definedDefinitions = new HashSet<>();
 
         StringBuilder result = new StringBuilder();
@@ -176,11 +176,11 @@ public class Shaders {
 
     private static Iterator<String>
     includePreprocessedLinesIterator(
-        String source, ResourceLocation sourceLocation,
-        Set<ResourceLocation> preprocessed,
-        Map<ResourceLocation, Option> options,
+        String source, Identifier sourceLocation,
+        Set<Identifier> preprocessed,
+        Map<Identifier, Option> options,
         Map<Option.Element<?>, Object> appliedOptions,
-        Function<ResourceLocation, Optional<String>> getShaderSource
+        Function<Identifier, Optional<String>> getShaderSource
     ) {
         var linesIter = linesIterator(source.lines().iterator());
 
@@ -226,7 +226,7 @@ public class Shaders {
                     return;
                 }
 
-                var location = ResourceLocation.parse(includeMatcher.group(1));
+                var location = Identifier.parse(includeMatcher.group(1));
 
                 if (preprocessed.contains(location)) {
                     this.prepareInnerIter();

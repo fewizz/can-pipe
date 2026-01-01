@@ -12,7 +12,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import blue.endless.jankson.Jankson;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class CanPipe {
     public static final String MOD_ID = "canpipe";
@@ -21,7 +21,7 @@ public class CanPipe {
     public static final KeyMapping PIPELINES_RELOAD_KEY = new KeyMapping(
         "can-pipe.key.reloadPipelines",
         GLFW.GLFW_KEY_UNKNOWN,
-        new KeyMapping.Category(ResourceLocation.parse("canpipe:key.categories.can-pipe"))
+        new KeyMapping.Category(Identifier.parse("canpipe:key.categories.can-pipe"))
     );
 
     public static Path getCompilationErrorsDirPath() {

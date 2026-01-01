@@ -12,8 +12,8 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 @Mixin(ItemRenderer.class)
 public class ItemRendererMixin {

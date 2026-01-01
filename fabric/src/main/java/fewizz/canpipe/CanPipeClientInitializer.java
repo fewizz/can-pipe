@@ -7,7 +7,7 @@ import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 
 public class CanPipeClientInitializer implements ClientModInitializer {
@@ -16,16 +16,16 @@ public class CanPipeClientInitializer implements ClientModInitializer {
     public void onInitializeClient() {
         var clientResourcesLoader = ResourceLoader.get(PackType.CLIENT_RESOURCES);
 
-        var materials = ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "materials");
+        var materials = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "materials");
         clientResourcesLoader.registerReloader(materials,Materials.INSTANCE);
 
-        var materialMaps = ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "material-maps");
+        var materialMaps = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "material-maps");
         clientResourcesLoader.registerReloader(materialMaps, MaterialMaps.INSTANCE);
 
-        var lights = ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "lights");
+        var lights = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "lights");
         clientResourcesLoader.registerReloader(lights, Lights.INSTANCE);
 
-        var pipelines = ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "pipelines");
+        var pipelines = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "pipelines");
         clientResourcesLoader.registerReloader(pipelines, Pipelines.INSTANCE);
 
         clientResourcesLoader.addReloaderOrdering(materials, materialMaps);

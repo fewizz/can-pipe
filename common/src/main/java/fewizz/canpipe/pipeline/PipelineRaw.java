@@ -17,16 +17,16 @@ import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public class PipelineRaw {
-    @NotNull public final ResourceLocation location;
+    @NotNull public final Identifier location;
     @NotNull public final String nameKey;
-    @NotNull public final Map<ResourceLocation, Option> options;
+    @NotNull public final Map<Identifier, Option> options;
     @NotNull private final JsonObject json;
 
-    PipelineRaw(ResourceLocation location, String nameKey, Map<ResourceLocation, Option> options, JsonObject json) {
+    PipelineRaw(Identifier location, String nameKey, Map<Identifier, Option> options, JsonObject json) {
         this.location = location;
         this.nameKey = nameKey;
         this.options = Collections.unmodifiableMap(options);
@@ -35,7 +35,7 @@ public class PipelineRaw {
 
     static PipelineRaw load(
         JsonObject pipelineJson,
-        ResourceLocation pipelineLocation,
+        Identifier pipelineLocation,
         ResourceManager resourceManager
     ) throws IOException, SyntaxError {
         Map<String, JsonObject> includes = new HashMap<>();
@@ -48,7 +48,7 @@ public class PipelineRaw {
             for (var path : JanksonUtils.listOfStrings(object, "include")) {
                 JsonObject toInclude = includes.getOrDefault(path, null);
                 if (toInclude == null) {
-                    toInclude = CanPipe.JANKSON.load(manager.open(ResourceLocation.parse(path)));
+                    toInclude = CanPipe.JANKSON.load(manager.open(Identifier.parse(path)));
                     doProcess(toInclude, includes, manager);
                     includes.put(path, toInclude);
                 }
@@ -57,10 +57,10 @@ public class PipelineRaw {
         }};
         ProcessIncludes.doProcess(pipelineJson, includes, resourceManager);
 
-        Map<ResourceLocation, Option> options = new LinkedHashMap<>();
+        Map<Identifier, Option> options = new LinkedHashMap<>();
 
         for (var optionsA : JanksonUtils.listOfObjects(pipelineJson, "options")) {
-            ResourceLocation includeToken = ResourceLocation.parse(optionsA.get(String.class, "includeToken"));
+            Identifier includeToken = Identifier.parse(optionsA.get(String.class, "includeToken"));
             var elementsO = optionsA.getObject("elements");
             if (elementsO == null) {  // compat
                 elementsO = optionsA.getObject("options");

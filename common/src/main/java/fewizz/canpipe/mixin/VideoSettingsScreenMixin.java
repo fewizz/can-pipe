@@ -18,6 +18,7 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.OptionInstance;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.Tooltip;
@@ -76,6 +77,11 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             @Override
             public void setX(int x) {
                 super.setX(x + 130);
+            }
+
+            @Override
+            protected void renderContents(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+                
             };
         };
 

@@ -24,6 +24,7 @@ import org.joml.Vector3f;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
@@ -46,7 +47,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
 
@@ -63,7 +64,7 @@ public class Pipeline implements AutoCloseable {
         boolean allowParticles  // isn't used in canvas
     ) {}
 
-    public final ResourceLocation location;
+    public final Identifier location;
     public final Map<Option.Element<?>, Object> appliedOptions;
 
     public final float defaultZenithAngle;
@@ -196,9 +197,9 @@ public class Pipeline implements AutoCloseable {
             AbstractTexture texture = null;
             if (name.contains(":")) {
                 var mc = Minecraft.getInstance();
-                var rl = ResourceLocation.parse(name);
+                var rl = Identifier.parse(name);
                 // compat, was changed in resource pack format v13
-                if (rl.equals(ResourceLocation.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
+                if (rl.equals(Identifier.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
                     rl = ItemRenderer.ENCHANTED_GLINT_ITEM;
                 }
                 texture = mc.getTextureManager().getTexture(rl);
@@ -251,9 +252,9 @@ public class Pipeline implements AutoCloseable {
         this.weatherFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "weather"));
         this.cloudsFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "clouds"));
 
-        Map<ResourceLocation, String> shaderSourceCache = new HashMap<>();
+        Map<Identifier, String> shaderSourceCache = new HashMap<>();
 
-        Function<ResourceLocation, Optional<String>> getShaderSource = (ResourceLocation location) -> {
+        Function<Identifier, Optional<String>> getShaderSource = (Identifier location) -> {
             String source = shaderSourceCache.computeIfAbsent(location, (loc) -> {
                 try {
                     Minecraft mc = Minecraft.getInstance();
@@ -274,11 +275,13 @@ public class Pipeline implements AutoCloseable {
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
 
         var renderPipelines = new RenderPipeline[] {
-            RenderPipelines.SOLID,
-            RenderPipelines.CUTOUT_MIPPED,
-            RenderPipelines.CUTOUT,
-            RenderPipelines.TRANSLUCENT,
-            RenderPipelines.TRIPWIRE,
+            RenderPipelines.SOLID_BLOCK,
+            RenderPipelines.SOLID_TERRAIN,
+            RenderPipelines.CUTOUT_BLOCK,
+            RenderPipelines.CUTOUT_TERRAIN,
+            RenderPipelines.TRANSLUCENT_TERRAIN,
+            RenderPipelines.TRIPWIRE_BLOCK,
+            RenderPipelines.TRIPWIRE_TERRAIN,
             RenderPipelines.TRANSLUCENT_MOVING_BLOCK,
 
             RenderPipelines.ARMOR_CUTOUT_NO_CULL,
@@ -320,8 +323,8 @@ public class Pipeline implements AutoCloseable {
 
         JsonObject materailProgram = pipelineJson.getObject("materialProgram");
 
-        var materialVertexShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "vertexSource"));
-        var materialFragmentShaderLocation = ResourceLocation.parse(materailProgram.get(String.class, "fragmentSource"));
+        var materialVertexShaderLocation = Identifier.parse(materailProgram.get(String.class, "vertexSource"));
+        var materialFragmentShaderLocation = Identifier.parse(materailProgram.get(String.class, "fragmentSource"));
 
         List<String> samplers = new ArrayList<>(JanksonUtils.listOfStrings(materailProgram, "samplers"));
         if (shadowFramebuffer != null) {
@@ -387,8 +390,8 @@ public class Pipeline implements AutoCloseable {
                 this.framebuffers.put(fb.name, fb);
             }
 
-            var vertexShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "vertexSource"));
-            var fragmentShaderLocation = ResourceLocation.parse(shadowsJson.get(String.class, "fragmentSource"));
+            var vertexShaderLocation = Identifier.parse(shadowsJson.get(String.class, "vertexSource"));
+            var fragmentShaderLocation = Identifier.parse(shadowsJson.get(String.class, "fragmentSource"));
             var materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
                 renderPipeline -> renderPipeline,
                 renderPipeline -> MaterialPrograms.load(
@@ -572,15 +575,15 @@ public class Pipeline implements AutoCloseable {
         renderPass.setUniform("canpipe_ub_render_target", Uniforms.CANPIPE_RENDER_TARGETS_UBO.slice(gre.canpipe_getRenderTarget() * Integer.BYTES, Integer.BYTES));
         renderPass.setUniform("canpipe_ub_origin_type", Uniforms.CANPIPE_ORIGIN_TYPES_UBO.slice(lre.canpipe_getOriginType() * Integer.BYTES, Integer.BYTES));
 
-        var sampler0 = RenderSystem.getShaderTexture(0);
-        if (sampler0 != null) {
-            bindSpritesExtentsSampler(renderPass, sampler0);
-        }
+        // var sampler0 = RenderSystem.getShaderTexture(0);
+        // if (sampler0 != null) {
+        //    bindSpritesExtentsSampler(renderPass, sampler0);
+        //}
 
-        renderPass.bindSampler("Sampler2", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView());
+        renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 
         for (var e : this.materialProgramSamplerTextures.entrySet()) {
-            renderPass.bindSampler(e.getKey(), e.getValue().getTextureView());
+            renderPass.bindTexture(e.getKey(), e.getValue().getTextureView(), e.getValue().getSampler());
         }
 
         return renderPass;
@@ -606,8 +609,8 @@ public class Pipeline implements AutoCloseable {
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {
         // 0.0 - noon, 0.5 - midnight
-        float hourAngle = level.getSunAngle(partialTicks);
-        long ticks = (level.dimensionType().fixedTime().orElse(level.getDayTime())) % 24000L;
+        float hourAngle = 0.0F; // TODO level.getSunAngle(partialTicks);
+        long ticks = 0; // TODO (level.dimensionType().fixedTime().orElse(level.getDayTime())) % 24000L;
 
         result.set(
             (float) (-Math.sin(hourAngle)),

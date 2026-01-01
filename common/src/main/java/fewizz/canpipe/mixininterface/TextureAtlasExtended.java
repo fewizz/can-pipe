@@ -5,11 +5,11 @@ import java.util.Map;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public interface TextureAtlasExtended {
 
     GpuBuffer canpipe_getSpritesExtentsBuffer();
-    Map<ResourceLocation, TextureAtlasSprite> canpipe_getSprites();
+    Map<Identifier, TextureAtlasSprite> canpipe_getSprites();
 
 }

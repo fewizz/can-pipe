@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
@@ -35,15 +36,15 @@ import graphics.cinnabar.api.hg.enums.HgCompareOp;
 import graphics.cinnabar.api.hg.enums.HgFormat;
 import graphics.cinnabar.core.hg3d.Hg3DGpuDevice;
 import graphics.cinnabar.core.hg3d.Hg3DRenderPipeline;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 @Mixin(Hg3DGpuDevice.class)
 public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
 
     @Shadow @Final private HgDevice hgDevice;
-    @Shadow @Final private BiFunction<ResourceLocation, ShaderType, String> shaderSourceProvider;
+    @Shadow @Final private BiFunction<Identifier, ShaderType, String> shaderSourceProvider;
 
-    @Shadow Hg3DRenderPipeline getPipeline(RenderPipeline pipeline, BiFunction<ResourceLocation, ShaderType, String> shaderSourceProvider) { return null; };
+    @Shadow Hg3DRenderPipeline getPipeline(RenderPipeline pipeline, BiFunction<Identifier, ShaderType, String> shaderSourceProvider) { return null; };
     @Shadow HgSampler getSampler(boolean minLinear, boolean magLinear, int addressU, int addressV, int addressW, boolean mip) { return null; }
 
     @Unique private Map<Pair<List<HgFormat>, HgFormat>, HgRenderPass> canpipe_renderPasses = new HashMap<>();
@@ -74,8 +75,8 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
     @Override
     public void canpipe_precompilePipelineShaderModules(
         RenderPipeline pipeline,
-        BiFunction<ResourceLocation, ShaderType, String> shaderSource,
-        TriConsumer<String, ResourceLocation, String> onCompilationError
+        ShaderSource shaderSource,
+        TriConsumer<String, Identifier, String> onCompilationError
     ) {
         // not `this.precompilePipeline()`, I don't want to create a graphics pipeline
         try {
@@ -86,7 +87,7 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
                     src
                 );
             });
-            this.getPipeline(pipeline, shaderSource == null ? this.shaderSourceProvider : shaderSource);
+            this.getPipeline(pipeline, /*shaderSource == null ? this.shaderSourceProvider : shaderSource*/ null);
         } finally {
             ((MercuryDeviceAccessor) this.hgDevice).set_canpipe_onCompilationError(null);
         }

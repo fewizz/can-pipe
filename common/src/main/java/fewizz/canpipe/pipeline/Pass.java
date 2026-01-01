@@ -18,6 +18,7 @@ import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import blue.endless.jankson.JsonObject;
@@ -34,7 +35,7 @@ import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class Pass extends PassBase {
 
@@ -43,6 +44,7 @@ public class Pass extends PassBase {
     // Textures (specified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually uses them
     final List<AbstractTexture> textureViews;
+    final List<GpuSampler> samplers;
     final Vector2i extent;
 
     final UniformBufferStruct pass = new UniformBufferStruct();
@@ -59,6 +61,7 @@ public class Pass extends PassBase {
     ) {
         super(name);
         this.textureViews = new ArrayList<>();
+        this.samplers = new ArrayList<>();
 
         var samplers = renderPipeline.getSamplers();
         if (samplers.size() > samplerTextures.size()) {
@@ -73,7 +76,7 @@ public class Pass extends PassBase {
                 CanPipe.LOGGER.warn("Couldn't find texture for sampler \""+sampler +"\", \"barrier\" texture will be used instead");
                 Minecraft mc = Minecraft.getInstance();
                 return mc.getTextureManager().getTexture(
-                    ResourceLocation.withDefaultNamespace("textures/item/barrier.png")
+                    Identifier.withDefaultNamespace("textures/item/barrier.png")
                 );
             });
             this.textureViews.add(samplerTexture);
@@ -122,7 +125,9 @@ public class Pass extends PassBase {
 
         GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
             ((GameRendererExtended)mc.gameRenderer).canpipe_worldViewMatrix(),
-            new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f(), 0.0F
+            new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
+            new Vector3f(),
+            new Matrix4f()
         );
 
         try (
@@ -138,7 +143,7 @@ public class Pass extends PassBase {
             for (int i = 0; i < Math.min(samplers.size(), this.textureViews.size()); ++i) {
                 String sampler = samplers.get(i);
                 var samplerTexture = this.textureViews.get(i);
-                renderPass.bindSampler(sampler, samplerTexture.getTextureView());
+                renderPass.bindTexture(sampler, samplerTexture.getTextureView(), this.samplers.get(i));
             }
 
             RenderSystem.bindDefaultUniforms(renderPass);
