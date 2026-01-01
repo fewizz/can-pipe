@@ -23,6 +23,7 @@
     "QuadParticleRenderStateMixin",
     "RenderSystemMixin",
     "RenderSystemAccessor",
+    "RenderTypeMixin",
     "ScreenshotMixin",
     "SectionCompilerMixin",
     "TextureAtlasMixin",

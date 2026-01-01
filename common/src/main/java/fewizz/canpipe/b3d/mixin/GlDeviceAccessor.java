@@ -7,6 +7,8 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlTextureView;
+import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.textures.AddressMode;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
@@ -21,5 +23,11 @@ public interface GlDeviceAccessor {
 
     @Accessor("canpipe_pendingTextureViewLayerCount")
     int get_canpipe_pendingTextureViewLayerCount();
+
+    @Accessor("canpipe_addressModeW")
+    AddressMode get_canpipe_addressModeW();
+
+    @Accessor("canpipe_compareOp")
+    DepthTestFunction get_canpipe_compareOp();
 
 }

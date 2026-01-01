@@ -12,6 +12,7 @@
         "GlConstSwitchMetaMixin",
         "GlDeviceAccessor",
         "GlDeviceMixin",
+        "GlSamplerMixin",
         "GlStateManagerAccessor",
         "GlStateManagerMixin",
         "GlTextureMixin",

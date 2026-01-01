@@ -100,7 +100,15 @@ public class MaterialPrograms {
         renderPipelineBuilder.withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
 
-        renderPipelineBuilder.withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER);
+        boolean terrain = originalRenderPipeline.getUniforms().stream().anyMatch(u -> u.name().equals("ChunkSection"));
+
+        if (terrain) {
+            System.out.println("TERRAIN!!!!");
+            renderPipelineBuilder.withUniform("ChunkSection", UniformType.UNIFORM_BUFFER);
+        }
+        else {
+            renderPipelineBuilder.withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER);
+        }
         renderPipelineBuilder.withUniform("Projection", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("Fog", UniformType.UNIFORM_BUFFER);
 
@@ -116,8 +124,8 @@ public class MaterialPrograms {
 
         var renderPipeline = renderPipelineBuilder.build();
 
-        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow);
-        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, enablePBR);
+        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, terrain);
+        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, terrain, enablePBR);
 
         Function<String, String> postprocess = (String src) -> {
             // These three ideally shouldn't be in a material shader, but it's still possible
@@ -177,7 +185,8 @@ public class MaterialPrograms {
         Function<Identifier, Optional<String>> getShaderSource,
         VertexFormat vertexFormat,
         RenderPipeline originalRenderPipeline,
-        boolean shadow
+        boolean shadow,
+        boolean terrain
     ) {
         String vertexSrcOriginal = getShaderSource.apply(vertexShaderLocation).get();
 
@@ -202,6 +211,9 @@ public class MaterialPrograms {
         var vertexSrcBuilder = new StringBuilder();
 
         vertexSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
+        if (terrain) {
+            vertexSrcBuilder.append("#define CANPIPE_TERRAIN\n");
+        }
         if (shadow) {
             vertexSrcBuilder.append("#define DEPTH_PASS\n");
         }
@@ -321,6 +333,7 @@ public class MaterialPrograms {
         VertexFormat vertexFormat,
         RenderPipeline originalRenderPipeline,
         boolean shadow,
+        boolean terrain,
         boolean enablePBR
     ) {
         String fragmentSrcOriginal = getShaderSource.apply(fragmentShaderLocation).get();
@@ -348,6 +361,8 @@ public class MaterialPrograms {
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
             originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
+            originalRenderPipeline == RenderPipelines.LINES ||
+            originalRenderPipeline == RenderPipelines.LINES_TRANSLUCENT ||
 
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
@@ -363,6 +378,12 @@ public class MaterialPrograms {
         ) {
             alphaCutout = 0.1F;
         }
+        else if (
+            originalRenderPipeline == RenderPipelines.CUTOUT_BLOCK ||
+            originalRenderPipeline == RenderPipelines.CUTOUT_TERRAIN
+        ) {
+            alphaCutout = 0.5F;
+        }
         else {
             alphaCutout = 0.0F;
         }
@@ -376,6 +397,9 @@ public class MaterialPrograms {
 
         fragmentSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
         fragmentSrcBuilder.append("#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n");
+        if (terrain) {
+            fragmentSrcBuilder.append("#define CANPIPE_TERRAIN\n");
+        }
         if (shadow) {
             fragmentSrcBuilder.append("#define DEPTH_PASS\n");
         }
@@ -408,11 +432,94 @@ public class MaterialPrograms {
         fragmentSrcBuilder.append(
         """
 
+        #ifdef CANPIPE_TERRAIN
+            vec4 sampleNearest(sampler2D sampler, vec2 uv, vec2 pixelSize, vec2 du, vec2 dv, vec2 texelScreenSize) {
+                // Convert our UV back up to texel coordinates and find out how far over we are from the center of each pixel
+                vec2 uvTexelCoords = uv / pixelSize;
+                vec2 texelCenter = round(uvTexelCoords) - 0.5f;
+                vec2 texelOffset = uvTexelCoords - texelCenter;
+
+                // Move our offset closer to the texel center based on texel size on screen
+                texelOffset = (texelOffset - 0.5f) * pixelSize / texelScreenSize + 0.5f;
+                texelOffset = clamp(texelOffset, 0.0f, 1.0f);
+
+                uv = (texelCenter + texelOffset) * pixelSize;
+                return textureGrad(sampler, uv, du, dv);
+            }
+
+            vec4 sampleNearest(sampler2D source, vec2 uv, vec2 pixelSize) {
+                vec2 du = dFdx(uv);
+                vec2 dv = dFdy(uv);
+                vec2 texelScreenSize = sqrt(du * du + dv * dv);
+                return sampleNearest(source, uv, pixelSize, du, dv, texelScreenSize);
+            }
+
+            // Rotated Grid Super-Sampling
+            vec4 sampleRGSS(sampler2D source, vec2 uv, vec2 pixelSize) {
+                vec2 du = dFdx(uv);
+                vec2 dv = dFdy(uv);
+
+                vec2 texelScreenSize = sqrt(du * du + dv * dv);
+                float maxTexelSize = max(texelScreenSize.x, texelScreenSize.y);
+
+                float minPixelSize = min(pixelSize.x, pixelSize.y);
+
+                float transitionStart = minPixelSize * 1.0;
+                float transitionEnd = minPixelSize * 2.0;
+                float blendFactor = smoothstep(transitionStart, transitionEnd, maxTexelSize);
+
+                float duLength = length(du);
+                float dvLength = length(dv);
+                float minDerivative = min(duLength, dvLength);
+                float maxDerivative = max(duLength, dvLength);
+
+                float effectiveDerivative = sqrt(minDerivative * maxDerivative);
+
+                float mipLevelExact = max(0.0, log2(effectiveDerivative / minPixelSize));
+
+                float mipLevelLow = floor(mipLevelExact);
+                float mipLevelHigh = mipLevelLow + 1.0;
+                float mipBlend = fract(mipLevelExact);
+
+                const vec2 offsets[4] = vec2[](
+                vec2(0.125, 0.375),
+                vec2(-0.125, -0.375),
+                vec2(0.375, -0.125),
+                vec2(-0.375, 0.125)
+                );
+
+                vec4 rgssColorLow = vec4(0.0);
+                vec4 rgssColorHigh = vec4(0.0);
+                for (int i = 0; i < 4; ++i) {
+                    vec2 sampleUV = uv + offsets[i] * pixelSize;
+                    rgssColorLow += textureLod(source, sampleUV, mipLevelLow);
+                    rgssColorHigh += textureLod(source, sampleUV, mipLevelHigh);
+                }
+                rgssColorLow *= 0.25;
+                rgssColorHigh *= 0.25;
+
+                vec4 rgssColor = mix(rgssColorLow, rgssColorHigh, mipBlend);
+
+                vec4 nearestColor = sampleNearest(source, uv, pixelSize, du, dv, texelScreenSize);
+
+                return mix(nearestColor, rgssColor, blendFactor);
+            }
+        #endif
+
         void main() {
-            #if defined CANPIPE_HAS_TEXTURE_POS
-                frx_sampleColor = texture(frxs_baseColor, frx_texcoord, frx_matUnmipped * -4.0);
+            #ifdef CANPIPE_TERRAIN
+                if (UseRgss == 1) {
+                    frx_sampleColor = sampleRGSS(Sampler0, frx_texcoord, 1.0f / TextureSize);
+                }
+                else {
+                    frx_sampleColor = sampleNearest(Sampler0, frx_texcoord, 1.0f / TextureSize);
+                }
             #else
-                frx_sampleColor = vec4(1.0);
+                #if defined CANPIPE_HAS_TEXTURE_POS
+                    frx_sampleColor = texture(frxs_baseColor, frx_texcoord, frx_matUnmipped * -4.0);
+                #else
+                    frx_sampleColor = vec4(1.0);
+                #endif
             #endif
 
             frx_fragEmissive = frx_matEmissive;
@@ -425,6 +532,9 @@ public class MaterialPrograms {
             #endif
 
             frx_fragColor = frx_sampleColor * frx_vertexColor;
+            #ifdef CANPIPE_TERRAIN
+                frx_fragColor = mix(vec4(vec3(1.0), ChunkVisibility), frx_fragColor, ChunkVisibility);
+            #endif
 
             if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) {
                 discard;

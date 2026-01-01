@@ -2,7 +2,7 @@ package fewizz.canpipe.b3d.mixin;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.OptionalDouble;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.lwjgl.opengl.GL33C;
@@ -22,12 +22,16 @@ import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuSamplerExteneded;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.renderer.ShaderDefines;
@@ -42,9 +46,27 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
     @Unique private String canpipe_compilationLog = null;
     @Unique private int canpipe_pendingTextureViewBaseLayer = -1;
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
+    @Unique private AddressMode canpipe_addressModeW = null;
+    @Unique private DepthTestFunction canpipe_compareOp = null;
 
     /** Color textures + depth texture at the end (nullable) **/
     @Unique private Object2IntMap<List<GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
+
+    @Override
+    public GpuSamplerExteneded canpie_createSampler(
+		AddressMode u, AddressMode v, AddressMode w,
+        FilterMode min, FilterMode mag, DepthTestFunction compareOp,
+        int maxAnisotropy, OptionalDouble maxLod
+	) {
+        try {
+            this.canpipe_addressModeW = w;
+            this.canpipe_compareOp = compareOp;
+            return (GpuSamplerExteneded) this.createSampler(u, v, min, mag, maxAnisotropy, maxLod);
+        } finally {
+            this.canpipe_addressModeW = null;
+            this.canpipe_compareOp = null;
+        }
+    }
 
     @Override
     public void canpipe_precompilePipelineShaderModules(

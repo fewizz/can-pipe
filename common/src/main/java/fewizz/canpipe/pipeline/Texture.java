@@ -1,5 +1,6 @@
 package fewizz.canpipe.pipeline;
 
+import java.util.OptionalDouble;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -219,13 +220,10 @@ public class Texture extends AbstractTexture {
                     newWidth, newHeight, depthOrLayers, maxLod+1
                 );
 
-                // TODO
-                var sampler = RenderSystem.getSamplerCache().getSampler(addressModeU, addressModeV, minFilter, magFilter, mip);
+                GpuSampler sampler = (GpuSampler) ((GpuDeviceExtended) RenderSystem.getDevice()).canpie_createSampler(
+                    addressModeV, addressModeU, addressModeW, minFilter, magFilter, depthCompareOp, 1, OptionalDouble.of(maxLod)
+                );
 
-                // texture.setTextureFilter(minFilter, magFilter, mip);
-                // texture.setAddressMode(addressModeU, addressModeV);
-                // ((GpuTextureExtended) texture).canpipe_setAddressModeW(addressModeW);
-                // ((GpuTextureExtended) texture).canpipe_setCompareOp(depthCompareOp);
                 return Pair.of(texture, sampler);
             });
         } catch (Exception e) {

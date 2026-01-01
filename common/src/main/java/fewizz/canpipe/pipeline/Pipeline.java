@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -91,11 +92,11 @@ public class Pipeline implements AutoCloseable {
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
     public final List<PassBase>
-        onInitPasses,
-        beforeWorldRenderPasses,
-        fabulousPasses,
-        afterRenderHandPasses,
-        onResizePasses;
+        onInitPasses = new ArrayList<>(),
+        beforeWorldRenderPasses = new ArrayList<>(),
+        fabulousPasses = new ArrayList<>(),
+        afterRenderHandPasses = new ArrayList<>(),
+        onResizePasses = new ArrayList<>();
     private boolean runInitPasses = true;
     private boolean runResizePasses = true;
 
@@ -296,8 +297,6 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE,
             RenderPipelines.ENTITY_SMOOTH_CUTOUT,
             RenderPipelines.ENTITY_NO_OUTLINE,
-            // RenderPipelines.BREEZE_WIND,
-            // RenderPipelines.ENERGY_SWIRL,
             RenderPipelines.EYES,
             RenderPipelines.ENTITY_DECAL,
             RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL,
@@ -363,12 +362,9 @@ public class Pipeline implements AutoCloseable {
             int layerCount = ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_layerCount();
             var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
             for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
-                // final Framebuffer fb = shadowFramebuffer;
                 final int cascade = i;
                 GpuTexture shadowMapTexture = shadowFramebuffer.getDepthTexture();
                 GpuTextureView shadowMapTextureView = shadowFramebuffer.getDepthTextureView();
-                // String shadowMapTextureName = shadowFramebuffer.getDepthTexture().getLabel();
-                // Texture shadowMapTexture = getOrLoadTexture.apply(shadowMapTextureName);
                 Framebuffer fb = new Framebuffer(
                     location,
                     shadowFramebuffer.name+"_"+(cascade+1),
@@ -431,9 +427,8 @@ public class Pipeline implements AutoCloseable {
         };
 
         // passes
-        Function<String, List<PassBase>> loadPasses = (name) -> {
+        BiConsumer<String, List<PassBase>> loadPasses = (name, passes) -> {
             JsonObject passesJson = pipelineJson.getObject(name);
-            List<PassBase> result = new ArrayList<>();
             if (passesJson != null) {
                 for (var passJson : JanksonUtils.listOfObjects(passesJson, "passes")) {
                     Pass.load(
@@ -441,17 +436,16 @@ public class Pipeline implements AutoCloseable {
                         getOrLoadOptionalFramebuffer,
                         getOrLoadProgram,
                         getOrLoadPipelineOrResourcepackTexture
-                    ).ifPresent(pass -> result.add(pass));
+                    ).ifPresent(pass -> passes.add(pass));
                 }
             }
-            return Collections.unmodifiableList(result);
         };
 
-        this.onInitPasses = loadPasses.apply("onInit");
-        this.onResizePasses = loadPasses.apply("onResize");
-        this.beforeWorldRenderPasses = loadPasses.apply("beforeWorldRender");
-        this.fabulousPasses = loadPasses.apply("fabulous");
-        this.afterRenderHandPasses = loadPasses.apply("afterRenderHand");
+        loadPasses.accept("onInit", this.onInitPasses);
+        loadPasses.accept("onResize", this.onResizePasses);
+        loadPasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
+        loadPasses.accept("fabulous", this.fabulousPasses);
+        loadPasses.accept("afterRenderHand", this.afterRenderHandPasses);
     } catch (Exception e) {
         this.close();
         throw e;
@@ -583,7 +577,8 @@ public class Pipeline implements AutoCloseable {
         renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 
         for (var e : this.materialProgramSamplerTextures.entrySet()) {
-            renderPass.bindTexture(e.getKey(), e.getValue().getTextureView(), e.getValue().getSampler());
+            AbstractTexture texture = e.getValue();
+            renderPass.bindTexture(e.getKey(), texture.getTextureView(), texture.getSampler());
         }
 
         return renderPass;

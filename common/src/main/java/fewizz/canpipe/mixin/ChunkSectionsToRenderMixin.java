@@ -5,6 +5,7 @@ import java.util.OptionalInt;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -30,6 +31,8 @@ import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 
 @Mixin(ChunkSectionsToRender.class)
 public class ChunkSectionsToRenderMixin {
+
+    @Final GpuTextureView textureView;
 
     @Inject(
         method = "renderGroup",
@@ -88,7 +91,7 @@ public class ChunkSectionsToRenderMixin {
         )
     )
     void bindSpritesExtentsBeforeDrawing(CallbackInfo ci, @Local RenderPass renderPass, @Local ChunkSectionLayer chunkSectionLayer) {
-        // TODO Pipeline.bindSpritesExtentsSampler(renderPass, chunkSectionLayer.textureView());
+        Pipeline.bindSpritesExtentsSampler(renderPass, this.textureView);
     }
 
 }

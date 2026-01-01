@@ -22,15 +22,16 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.mixininterface.CompositeRenderTypeExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
-// @Mixin(RenderType.CompositeRenderType.class)
-public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
+@Mixin(RenderType.class)
+public class RenderTypeMixin {
 
-    @Shadow @Final private RenderPipeline renderPipeline;
+    @Shadow @Final private RenderSetup state;
 
     @Unique
     private RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline) {
@@ -42,21 +43,16 @@ public class CompositeRenderTypeMixin implements CompositeRenderTypeExtended {
     }
 
     @ModifyExpressionValue(
-        method = {"format", "mode", "draw"},
+        method = {"format", "mode", "pipeline", "draw"},
         at = @At(
             value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/RenderType$CompositeRenderType;"+
-                "renderPipeline:"+
+            target = "Lnet/minecraft/client/renderer/rendertype/RenderSetup;"+
+                "pipeline:"+
                 "Lcom/mojang/blaze3d/pipeline/RenderPipeline;"
         )
     )
     RenderPipeline replaceRenderPipeline(RenderPipeline original) {
         return this.getReplacedRenderPipeline(original);
-    }
-
-    @Override
-    public RenderPipeline canpipe_getRenderPipeline() {
-        return this.getReplacedRenderPipeline(this.renderPipeline);
     }
 
     @WrapOperation(

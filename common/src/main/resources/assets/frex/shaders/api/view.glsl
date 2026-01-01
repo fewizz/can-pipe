@@ -1,8 +1,14 @@
-#include minecraft:shaders/include/dynamictransforms.glsl
+#ifdef CANPIPE_TERRAIN
+    #include minecraft:shaders/include/chunksection.glsl
+    #include minecraft:shaders/include/globals.glsl
+#else
+    #include minecraft:shaders/include/dynamictransforms.glsl
+#endif
+
 #include minecraft:shaders/include/projection.glsl
 
 layout(std140) uniform frx_ub_view {
-    // mat4 frx_viewMatrix;  provided by DynamicTransforms
+    // mat4 frx_viewMatrix;  provided by DynamicTransforms and ChunkSection
     mat4 frx_inverseViewMatrix;
     mat4 frx_lastViewMatrix;
 
@@ -42,7 +48,11 @@ const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
 
 #define frx_viewMatrix ModelViewMat
 #define frx_projectionMatrix ProjMat
-#define frx_modelToCamera vec4(ModelOffset, 0.0)
+#ifdef CANPIPE_TERRAIN
+    #define frx_modelToCamera vec4((ChunkPosition - CameraBlockPos) + CameraOffset, 0.0)
+#else
+    #define frx_modelToCamera vec4(ModelOffset, 0.0)
+#endif
 
 #define frx_modelOriginCamera (canpipe_originType == 0)
 #define frx_modelOriginRegion (canpipe_originType == 1)

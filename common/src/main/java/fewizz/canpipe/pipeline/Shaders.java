@@ -48,12 +48,12 @@ public class Shaders {
         Optional<Integer> shadowMapSize,
         Function<String, String> postProcess
     ) {
-        if (type == ShaderType.VERTEX) {
+        /*if (type == ShaderType.VERTEX) {
             // Cinnabar adds `arrayIndex` attrib in dynamictransforms.glsl
             // But sometimes this header is included only in a fragment shader,
             // and Cinnabar can't find corresponding attrib in a vertex shader
             source = "#include minecraft:shaders/include/dynamictransforms.glsl\n"+source;
-        }
+        }*/
 
         String preprocessedSource = processIncludesAndDefinitions(
             source, location, options, appliedOptions, getShaderSource
