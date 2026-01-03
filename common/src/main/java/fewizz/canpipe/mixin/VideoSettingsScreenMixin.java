@@ -18,7 +18,6 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.OptionInstance;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.Tooltip;
@@ -41,9 +40,9 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             Pipelines.getCurrentRaw() != null &&
             Pipelines.getLoadingError() == null;
 
-        pipelineButtonRef.getValue().setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showSettings ? 30 : 0));
-        pipelineButtonRef.getValue().setValue(Optional.ofNullable(Pipelines.getCurrentRaw()));
-        settingsButtonRef.getValue().visible = showSettings;
+        pipelineButtonRef.get().setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showSettings ? 30 : 0));
+        pipelineButtonRef.get().setValue(Optional.ofNullable(Pipelines.getCurrentRaw()));
+        settingsButtonRef.get().visible = showSettings;
     }
 
     @SuppressWarnings("unchecked")
@@ -57,7 +56,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         )
     )
     private void addPipelineOptions(CallbackInfo ci) {
-        var settingsButton = new Button(
+        var settingsButton = new Button.Plain(
             0, 0,
             20, 20,
             Component.literal("S"),
@@ -78,11 +77,6 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             public void setX(int x) {
                 super.setX(x + 130);
             }
-
-            @Override
-            protected void renderContents(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-                
-            };
         };
 
         var pipelineButton = (CycleButton<Optional<PipelineRaw>>) new OptionInstance<Optional<PipelineRaw>>(
