@@ -119,7 +119,6 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_worldViewMatrix = new Matrix4f(viewMatrix);
         this.canpipe_worldProjectionMatrix = new Matrix4f(projectionMatrix);
 
-        float pt = deltaTracker.getGameTimeDeltaPartialTick(false);
         Uniforms.CANPIPE_RENDER_FRAMES.add(1);
         Uniforms.FRX_RENDER_SECONDS.set((float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0));
 
@@ -132,7 +131,7 @@ public class GameRendererMixin implements GameRendererExtended {
         }
 
         if (p.shadows != null) {
-            Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f(), pt);
+            Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
             Vector3f sunPosOffset = toSunDir.mul(this.renderDistance + 48, new Vector3f());
 
             Uniforms.FRX_SHADOW_VIEW_MATRIX.setLookAt(

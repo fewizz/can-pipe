@@ -28,10 +28,14 @@ const vec3 frx_vanillaClearColor = vec3(0.0);  // TODO
 
 #define frx_skyLightAtmosphericColor canpipe_sunriseOrSunsetColor
 
-#define frx_skyLightTransitionFactor min(1.0, min( \
-    abs(canpipe_fixedOrDayTime*24.0-13.0), \
-    abs(canpipe_fixedOrDayTime*24.0-23.0) \
-))  /* https://www.desmos.com/calculator/a6ouxizdbp */
+#define frx_skyLightTransitionFactor ( \
+    frx_worldHasSkylight == 1 ? \
+    min(1.0, min( /* https://www.desmos.com/calculator/a6ouxizdbp */  \
+        abs(canpipe_fixedOrDayTime*24.0-13.0), \
+        abs(canpipe_fixedOrDayTime*24.0-23.0) \
+    )) : \
+    1.0 \
+)
 
 #define frx_rainGradient            (canpipe_weatherGradients.x)
 #define frx_thunderGradient         (canpipe_weatherGradients.y)

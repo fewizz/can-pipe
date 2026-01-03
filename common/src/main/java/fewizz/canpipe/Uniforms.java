@@ -31,15 +31,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.worldgen.DimensionTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.DimensionType.CardinalLightType;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
 
@@ -362,33 +367,28 @@ public class Uniforms {
 
         // world
         {
-            long ticks = 0; // mc.level.dimensionType().fixedTime().orElse(mc.level.getDayTime()); TODO
+            long ticks = Pipeline.getFixedTimeOrDayTime(mc.level);
             CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         }
         FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F);
         FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
-        // FRX_MOON_SIZE.set(mc.level.getMoonBrightness()); TODO
-        FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f(), pt));
-        // FRX_SKY_ANGLE_RADIANS.set(mc.level.getSunAngle(pt)); TODO
+        FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.getLevelRenderState().skyRenderState.moonPhase.index()]);
+        FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
+        FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.getLevelRenderState().skyRenderState.sunAngle);
         {
-            var timeOfDay = 0; // mc.level.getTimeOfDa(pt); TODO
-            var result = new Vector3f(1.0F);
-            if (
-                mc.level.dimensionType().hasSkyLight()
-                // && mc.level.effects().isSunriseOrSunset(timeOfDay) TODO
-            ) {
-                int color = 0xFFFFFF; // mc.level.effects().getSunriseOrSunsetColor(timeOfDay); TODO
+            var result = new Vector3f(0.0F);
+            int color = mc.gameRenderer.getLevelRenderState().skyRenderState.sunriseAndSunsetColor;
+            if (mc.level.dimensionType().hasSkyLight()) {
                 result.set((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
                 result.div(255.0F);
             }
             CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
         }
         {
-            float skyFlashStrength = 0.0F; // Math.max(0.0F, mc.level.getSkyFlashTime()-pt); TODO
+            float skyFlashStrength = mc.gameRenderer.getLevelRenderState().skyRenderState.endFlashIntensity;
             FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);
         }
-        // Not sure why partial tick is 1.0 (LightTexture.updateLigthTexture)
-        // FRX_AMBIENT_INTENSITY.set(mc.level.getSkyDarken(1.0F)); TODO
+        FRX_AMBIENT_INTENSITY.set(camera.attributeProbe().getValue(EnvironmentAttributes.SKY_LIGHT_FACTOR, pt));
         {
             Vector4f emissiveColor = (
                 (LightTextureExtended) mc.gameRenderer.lightTexture()
@@ -397,10 +397,10 @@ public class Uniforms {
         }
         {
             int value = 0;
-            value |= (mc.level.dimensionType().hasSkyLight() ? 1 : 0)    << 0;
-            value |= (mc.level.isRaining() ? 1 : 0)                      << 1;
-            value |= (mc.level.isThundering() ? 1 : 0)                   << 2;
-            // value |= (mc.level.effects().constantAmbientLight() ? 1 : 0) << 3;  TODO
+            value |= (mc.level.dimensionType().hasSkyLight() ? 1 : 0) << 0;
+            value |= (mc.level.isRaining() ? 1 : 0)                   << 1;
+            value |= (mc.level.isThundering() ? 1 : 0)                << 2;
+            value |= (mc.level.dimensionType().cardinalLightType() == CardinalLightType.NETHER ? 1 : 0)  << 3;
 
             int dimension = 3;
             if (mc.level.dimension() == Level.OVERWORLD) {

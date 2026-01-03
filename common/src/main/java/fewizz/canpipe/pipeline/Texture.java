@@ -3,8 +3,6 @@ package fewizz.canpipe.pipeline;
 import java.util.OptionalDouble;
 import java.util.function.Supplier;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;

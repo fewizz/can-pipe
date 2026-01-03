@@ -50,6 +50,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 
 
 public class Pipeline implements AutoCloseable {
@@ -589,23 +590,38 @@ public class Pipeline implements AutoCloseable {
         MutableObject<TextureAtlas> atlas = new MutableObject<>();
 
         mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
-            if (atlas.getValue() == null && possibleAtlas.getTexture() == sampler0.texture()) {
+            if (atlas.get() == null && possibleAtlas.getTexture() == sampler0.texture()) {
                 atlas.setValue(possibleAtlas);
             }
         });
-        if (atlas.getValue() == null) {  // we just need to bind something
+        if (atlas.get() == null) {  // we just need to bind something
             atlas.setValue(mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS));
         }
         renderPass.setUniform(
             "canpipe_spritesExtents",
-            ((TextureAtlasExtended) atlas.getValue()).canpipe_getSpritesExtentsBuffer()
+            ((TextureAtlasExtended) atlas.get()).canpipe_getSpritesExtentsBuffer()
         );
     }
 
-    public Vector3f getSunOrMoonDir(Level level, Vector3f result, float partialTicks) {
+    public static long getFixedTimeOrDayTime(Level level) {
+        if (!level.dimensionType().hasFixedTime()) {
+            return level.getDayTime();
+        }
+        
+        // Fixed time is not specified since MC 1.21.11
+        if (level.dimensionTypeRegistration() == BuiltinDimensionTypes.NETHER) {
+            return 18000;
+        }
+        if (level.dimensionTypeRegistration() == BuiltinDimensionTypes.END) {
+            return 6000;
+        }
+        return 0;
+    }
+
+    public Vector3f getSunOrMoonDir(Level level, Vector3f result) {
         // 0.0 - noon, 0.5 - midnight
-        float hourAngle = 0.0F; // TODO level.getSunAngle(partialTicks);
-        long ticks = 0; // TODO (level.dimensionType().fixedTime().orElse(level.getDayTime())) % 24000L;
+        float hourAngle = Minecraft.getInstance().gameRenderer.getLevelRenderState().skyRenderState.sunAngle;
+        long ticks = Pipeline.getFixedTimeOrDayTime(level) % 24000L;
 
         result.set(
             (float) (-Math.sin(hourAngle)),
