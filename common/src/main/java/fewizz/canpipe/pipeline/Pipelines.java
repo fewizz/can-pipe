@@ -170,6 +170,7 @@ final public class Pipelines implements PreparableReloadListener {
 
         if ((prevPipeline != null) != (loadedPipeline != null)) {
             mc.levelRenderer.allChanged();
+            mc.levelRenderer.resetSampler();
         }
     }
 

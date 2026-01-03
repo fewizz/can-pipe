@@ -208,13 +208,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                         Minecraft mc = Minecraft.getInstance();
                         MutableObject<TextureAtlas> atlas = new MutableObject<>();
                         mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
-                            if (atlas.getValue() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
+                            if (atlas.get() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
                                 atlas.setValue(possibleAtlas);
                             }
                         });
 
                         for (var kv : this.materialMap.spriteMap.entrySet()) {
-                            if (atlas.getValue().getSprite(kv.getKey()) == sprite) {
+                            if (atlas.get().getSprite(kv.getKey()) == sprite) {
                                 material = kv.getValue();
                             }
                         }

@@ -1,5 +1,7 @@
 package fewizz.canpipe.mixin;
 
+import java.util.OptionalDouble;
+
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Matrix4fc;
@@ -22,8 +24,11 @@ import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.resource.RenderTargetDescriptor;
+import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -327,6 +332,28 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     private boolean addPlayerWhenCollectingVisibleEntities(boolean original) {
         return this.canpipe_isRenderingShadows ? true : original;
+    }
+
+    @WrapOperation(
+        method = "method_62214",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/systems/GpuDevice;createSampler("+
+                "Lcom/mojang/blaze3d/textures/AddressMode;"+
+                "Lcom/mojang/blaze3d/textures/AddressMode;"+
+                "Lcom/mojang/blaze3d/textures/FilterMode;"+
+                "Lcom/mojang/blaze3d/textures/FilterMode;"+
+                "I"+
+                "Ljava/util/OptionalDouble;"+
+            ")Lcom/mojang/blaze3d/textures/GpuSampler;"
+        )
+    )
+    GpuSampler onCreateSampler(GpuDevice device, AddressMode u, AddressMode v, FilterMode min, FilterMode mag, int maxAnisotropy, OptionalDouble maxLod, Operation<GpuSampler> operation) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            return operation.call(device, u, v, FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
+        }
+        return operation.call(device, u, v, min, mag, maxAnisotropy, maxLod);
     }
 
 }

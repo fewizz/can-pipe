@@ -1,14 +1,8 @@
 package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-
-import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.rendertype.RenderType;
 
 @Mixin(ItemBlockRenderTypes.class)
 public class ItemBlockRenderTypesMixin {
