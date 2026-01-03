@@ -15,7 +15,6 @@
         "GlSamplerMixin",
         "GlStateManagerAccessor",
         "GlStateManagerMixin",
-        "GlTextureMixin",
         "GlTextureViewMixin",
         "TextureFormatMixin"
     ]
