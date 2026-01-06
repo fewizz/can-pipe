@@ -199,12 +199,23 @@ public class Pipeline implements AutoCloseable {
             AbstractTexture texture = null;
             if (name.contains(":")) {
                 var mc = Minecraft.getInstance();
-                var rl = Identifier.parse(name);
+                var id = Identifier.parse(name);
+
                 // compat, was changed in resource pack format v13
-                if (rl.equals(Identifier.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
-                    rl = ItemRenderer.ENCHANTED_GLINT_ITEM;
+                if (id.equals(Identifier.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
+                    id = ItemRenderer.ENCHANTED_GLINT_ITEM;
                 }
-                texture = mc.getTextureManager().getTexture(rl);
+                // was changed in MC 1.21.11
+                if (id.equals(Identifier.withDefaultNamespace("textures/environment/sun.png"))) {
+                    // Note, not through celestial atlas
+                    id = Identifier.withDefaultNamespace("textures/environment/celestial/sun.png");
+                }
+                if (id.equals(Identifier.withDefaultNamespace("textures/environment/moon_phases.png"))) {
+                    texture = new MoonPhasesTexture();
+                }
+                if (texture == null) {
+                    texture = mc.getTextureManager().getTexture(id);
+                }
             }
             else {
                 texture = getOrLoadOptionalTexture.apply(name).orElse(null);
