@@ -17,7 +17,7 @@ import net.minecraft.resources.Identifier;
 
 public interface GpuDeviceExtended extends GpuDevice {
 
-    GpuSamplerExteneded canpie_createSampler(
+    GpuSamplerExteneded canpipe_createSampler(
         AddressMode u, AddressMode v, FilterMode min, FilterMode mag, int maxAnisotropy, OptionalDouble maxLod,
         AddressMode w, DepthTestFunction compareOp, boolean linearMipmap  // added
     );

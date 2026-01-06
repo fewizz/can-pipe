@@ -335,7 +335,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @WrapOperation(
-        method = "method_62214",
+        method = {
+            "method_62214",  // Fabric
+            "lambda$addMainPass$1"  // NeoForge
+        },
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/systems/GpuDevice;createSampler("+

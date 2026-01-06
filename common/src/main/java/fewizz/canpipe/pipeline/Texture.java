@@ -189,7 +189,7 @@ public class Texture extends AbstractTexture {
                 CanPipe.LOGGER.warn("Texture \""+name+"\" type is TEXTURE_2D_ARRAY, but depth="+depth);
             }
 
-            GpuSampler sampler = (GpuSampler) ((GpuDeviceExtended) RenderSystem.getDevice()).canpie_createSampler(
+            GpuSampler sampler = (GpuSampler) ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createSampler(
                 v, u, min, mag, 1, OptionalDouble.of(maxLod),
                 w, compare ? compareOp : null, linearMip
             );

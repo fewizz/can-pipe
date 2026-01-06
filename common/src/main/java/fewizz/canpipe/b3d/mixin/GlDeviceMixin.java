@@ -56,7 +56,7 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
     @Unique private Object2IntMap<List<GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
 
     @Override
-    public GpuSamplerExteneded canpie_createSampler(
+    public GpuSamplerExteneded canpipe_createSampler(
         AddressMode u, AddressMode v,
         FilterMode min, FilterMode mag,
         int maxAnisotropy, OptionalDouble maxLod,

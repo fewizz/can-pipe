@@ -18,10 +18,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlSampler;
 import com.mojang.blaze3d.platform.DepthTestFunction;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 
 import fewizz.canpipe.b3d.GpuSamplerExteneded;
+import fewizz.canpipe.b3d.RealGpuDeviceProviderService;
 
 @Mixin(GlSampler.class)
 public abstract class GlSamplerMixin implements GpuSamplerExteneded {
@@ -38,7 +38,7 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
         at = @At("TAIL")
     )
     void onInitEnd(CallbackInfo ci) {
-        var device = ((GlDeviceAccessor) RenderSystem.getDevice());
+        var device = (GlDeviceAccessor) RealGpuDeviceProviderService.getRealGpuDevice();
         this.canpipe_addressModeW = device.get_canpipe_addressModeW();
         this.canpipe_linearMipmap = device.get_canpipe_linearMipmap() != null ? device.get_canpipe_linearMipmap() : true;
         if (this.canpipe_addressModeW == null) {

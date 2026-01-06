@@ -5,7 +5,7 @@ import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -22,10 +22,10 @@ public class CanPipeMod {
     }
 
     public static void registerReloadListeners(AddClientReloadListenersEvent event) {
-        event.addListener(ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "materials"), Materials.INSTANCE);
-        event.addListener(ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "material-maps"), MaterialMaps.INSTANCE);
-        event.addListener(ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "lights"), Lights.INSTANCE);
-        event.addListener(ResourceLocation.fromNamespaceAndPath(CanPipe.MOD_ID, "pipelines"), Pipelines.INSTANCE);
+        event.addListener(Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "materials"), Materials.INSTANCE);
+        event.addListener(Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "material-maps"), MaterialMaps.INSTANCE);
+        event.addListener(Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "lights"), Lights.INSTANCE);
+        event.addListener(Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "pipelines"), Pipelines.INSTANCE);
     }
 
     public static void registerBindings(RegisterKeyMappingsEvent event) {
