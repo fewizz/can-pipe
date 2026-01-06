@@ -12,7 +12,6 @@
     "ChunkSectionLayerMixin",
     "ChunkSectionsToRenderMixin",
     "GameRendererMixin",
-    "ItemBlockRenderTypesMixin",
     "ItemRendererMixin",
     "LevelRendererMixin",
     "LightTextureMixin",

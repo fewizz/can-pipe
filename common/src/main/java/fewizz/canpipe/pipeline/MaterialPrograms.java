@@ -441,10 +441,6 @@ public class MaterialPrograms {
             frx_fragEnableAo = frx_matDisableAo == 0;
             frx_fragEnableDiffuse = frx_matDisableDiffuse == 0;
 
-            #if defined PBR_ENABLED
-                // TODO?
-            #endif
-
             frx_fragColor = frx_sampleColor * frx_vertexColor;
             #ifdef CANPIPE_TERRAIN
                 frx_fragColor = mix(vec4(vec3(1.0), ChunkVisibility), frx_fragColor, ChunkVisibility);

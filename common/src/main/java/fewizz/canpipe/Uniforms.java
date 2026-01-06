@@ -437,7 +437,7 @@ public class Uniforms {
                 mc.level
             )
         );
-        FRX_FOG_ENABLED.set(1);  // TODO?
+        FRX_FOG_ENABLED.set(1);
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
             var builder = Std140Builder.onStack(memoryStack, FOG.size());
