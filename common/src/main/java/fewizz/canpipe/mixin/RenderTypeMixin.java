@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin;
 
+import java.util.Map.Entry;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
@@ -10,6 +11,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -77,6 +80,28 @@ public class RenderTypeMixin {
             return Pipelines.getCurrent().createRenderPass((CommandEncoderExtended) instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);
+    }
+
+    @Inject(
+        method = "draw",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/systems/RenderPass;bindTexture("+
+                "Ljava/lang/String;"+
+                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+                "Lcom/mojang/blaze3d/textures/GpuSampler;"+
+            ")V"
+        )
+    )
+    void bindSpritesExtentsBeforeRender(
+        CallbackInfo ci,
+        @Local Entry<String, RenderSetup.TextureAndSampler> entry,
+        @Local RenderPass renderPass
+    ) {
+        if (entry.getKey().equals("Sampler0")) {
+            Pipeline.bindSpritesExtentsSampler(renderPass, entry.getValue().textureView());
+        }
+
     }
 
 }
