@@ -45,49 +45,64 @@ public class ShadowFrustum extends Frustum {
         if (!super.isVisible(aabb)) {
             return false;
         }
-        return this.check(aabb);
+        return this.check(
+            (float) (aabb.minX - this.camera.position().x),
+            (float) (aabb.minY - this.camera.position().y),
+            (float) (aabb.minZ - this.camera.position().z),
+            (float) (aabb.maxX - this.camera.position().x),
+            (float) (aabb.maxY - this.camera.position().y),
+            (float) (aabb.maxZ - this.camera.position().z)
+        );
     }
 
     @Override
-    public int cubeInFrustum(BoundingBox boundingBox) {  // Used mostly by SectionOcclusionGraph.addSectionsInFrustum
+    public int cubeInFrustum(BoundingBox bb) {  // Used mostly by SectionOcclusionGraph.addSectionsInFrustum
         /*int result = super.cubeInFrustum(boundingBox);
         if (!(result == FrustumIntersection.INSIDE || result == FrustumIntersection.INTERSECT)) {
             return result;
         }*/
-        return this.check(AABB.of(boundingBox)) ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
+        boolean result = this.check(
+            (float) (bb.minX() - this.camera.position().x),
+            (float) (bb.minY() - this.camera.position().y),
+            (float) (bb.minZ() - this.camera.position().z),
+            (float) (bb.maxX() + 1 - this.camera.position().x),
+            (float) (bb.maxY() + 1 - this.camera.position().y),
+            (float) (bb.maxZ() + 1 - this.camera.position().z)
+        );
+        return result ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
     }
 
-    private boolean check(AABB aabb) {
-        // also check that AABB is in projection from sun to view frustum
+    final private boolean check(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+        float xSize = (maxX - minX);
+        float ySize = (maxY - minY);
+        float zSize = (maxZ - minZ);
+
         Vector3f[] aabbCorners = new Vector3f[8];
         for (int x = 0; x <= 1; ++x) {
             for (int y = 0; y <= 1; ++y) {
                 for (int z = 0; z <= 1; ++z) {
                     aabbCorners[x + y*2 + z*4] =
                         new Vector3f()
-                        .set(aabb.getXsize(), aabb.getYsize(), aabb.getZsize())
+                        .set(xSize, ySize, zSize)
                         .mul(x, y, z)
-                        .add(
-                            (float) (aabb.minX - this.camera.position().x),
-                            (float) (aabb.minY - this.camera.position().y),
-                            (float) (aabb.minZ - this.camera.position().z)
-                        );
+                        .add(minX, minY, minZ);
                 }
             }
         }
 
         return (
-            checkFrustumSide(aabb, aabbCorners, PLANE_NX, CORNER_NXNYPZ, CORNER_NXPYPZ, CORNER_NXPYNZ, CORNER_NXNYNZ) ||
-            checkFrustumSide(aabb, aabbCorners, PLANE_PX, CORNER_PXNYNZ, CORNER_PXPYNZ, CORNER_PXPYPZ, CORNER_PXNYPZ) ||
-            checkFrustumSide(aabb, aabbCorners, PLANE_NY, CORNER_PXNYNZ, CORNER_PXNYPZ, CORNER_NXNYPZ, CORNER_NXNYNZ) ||
-            checkFrustumSide(aabb, aabbCorners, PLANE_PY, CORNER_PXPYPZ, CORNER_PXPYNZ, CORNER_NXPYNZ, CORNER_NXPYPZ) ||
-            checkFrustumSide(aabb, aabbCorners, PLANE_NZ, CORNER_PXNYNZ, CORNER_NXNYNZ, CORNER_NXPYNZ, CORNER_PXPYNZ) ||
-            checkFrustumSide(aabb, aabbCorners, PLANE_PZ, CORNER_PXNYPZ, CORNER_PXPYPZ, CORNER_NXPYPZ, CORNER_NXNYPZ)
+            checkFrustumSide(minX, minY, minZ, maxX, maxY, maxZ, aabbCorners, PLANE_NX, CORNER_NXNYPZ, CORNER_NXPYPZ, CORNER_NXPYNZ, CORNER_NXNYNZ) ||
+            checkFrustumSide(minX, minY, minZ, maxX, maxY, maxZ, aabbCorners, PLANE_PX, CORNER_PXNYNZ, CORNER_PXPYNZ, CORNER_PXPYPZ, CORNER_PXNYPZ) ||
+            checkFrustumSide(minX, minY, minZ, maxX, maxY, maxZ, aabbCorners, PLANE_NY, CORNER_PXNYNZ, CORNER_PXNYPZ, CORNER_NXNYPZ, CORNER_NXNYNZ) ||
+            checkFrustumSide(minX, minY, minZ, maxX, maxY, maxZ, aabbCorners, PLANE_PY, CORNER_PXPYPZ, CORNER_PXPYNZ, CORNER_NXPYNZ, CORNER_NXPYPZ) ||
+            checkFrustumSide(minX, minY, minZ, maxX, maxY, maxZ, aabbCorners, PLANE_NZ, CORNER_PXNYNZ, CORNER_NXNYNZ, CORNER_NXPYNZ, CORNER_PXPYNZ) ||
+            checkFrustumSide(minX, minY, minZ, maxX, maxY, maxZ, aabbCorners, PLANE_PZ, CORNER_PXNYPZ, CORNER_PXPYPZ, CORNER_NXPYPZ, CORNER_NXNYPZ)
         );
     }
 
-    private boolean checkFrustumSide(
-        AABB aabb, Vector3f[] aabbCorners, int planeIdx, int corner0, int corner1, int corner2, int corner3
+    final private boolean checkFrustumSide(
+        float minX, float minY, float minZ, float maxX, float maxY, float maxZ,
+        Vector3f[] aabbCorners, int planeIdx, int corner0, int corner1, int corner2, int corner3
     ) {
         var plane = this.mPlanes[planeIdx];
 
@@ -123,7 +138,7 @@ public class ShadowFrustum extends Frustum {
         };
 
         for (int k = 0; k < 4; ++k) {
-            int v = (k+1)%4;
+            int v = (k+1) % 4;
             var normal = new Vector3f(frustumCorners[k]).sub(frustumCorners[v]).cross(this.toSunDir).normalize();
 
             if (!isInside.apply(frustumCorners[k], normal)) {
@@ -143,12 +158,12 @@ public class ShadowFrustum extends Frustum {
         };
 
         return
-            anyForEachFrustumCorner.apply(c -> c.x > aabb.minX - this.camera.position().x) &&
-            anyForEachFrustumCorner.apply(c -> c.y > aabb.minY - this.camera.position().y) &&
-            anyForEachFrustumCorner.apply(c -> c.z > aabb.minZ - this.camera.position().z) &&
-            anyForEachFrustumCorner.apply(c -> c.x < aabb.maxX - this.camera.position().x) &&
-            anyForEachFrustumCorner.apply(c -> c.y < aabb.maxY - this.camera.position().y) &&
-            anyForEachFrustumCorner.apply(c -> c.z < aabb.maxZ - this.camera.position().z);
+            anyForEachFrustumCorner.apply(c -> c.x > minX) &&
+            anyForEachFrustumCorner.apply(c -> c.y > minY) &&
+            anyForEachFrustumCorner.apply(c -> c.z > minZ) &&
+            anyForEachFrustumCorner.apply(c -> c.x < maxX) &&
+            anyForEachFrustumCorner.apply(c -> c.y < maxY) &&
+            anyForEachFrustumCorner.apply(c -> c.z < maxZ);
     }
 
 }
