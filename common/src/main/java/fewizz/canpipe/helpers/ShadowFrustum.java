@@ -1,15 +1,28 @@
 package fewizz.canpipe.helpers;
 
+import static org.joml.Matrix4fc.CORNER_NXNYNZ;
+import static org.joml.Matrix4fc.CORNER_NXNYPZ;
+import static org.joml.Matrix4fc.CORNER_NXPYNZ;
+import static org.joml.Matrix4fc.CORNER_NXPYPZ;
+import static org.joml.Matrix4fc.CORNER_PXNYNZ;
+import static org.joml.Matrix4fc.CORNER_PXNYPZ;
+import static org.joml.Matrix4fc.CORNER_PXPYNZ;
+import static org.joml.Matrix4fc.CORNER_PXPYPZ;
+import static org.joml.Matrix4fc.PLANE_NX;
+import static org.joml.Matrix4fc.PLANE_NY;
+import static org.joml.Matrix4fc.PLANE_NZ;
+import static org.joml.Matrix4fc.PLANE_PX;
+import static org.joml.Matrix4fc.PLANE_PY;
+import static org.joml.Matrix4fc.PLANE_PZ;
+
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
-import static org.joml.Matrix4fc.*;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
@@ -18,27 +31,37 @@ import net.minecraft.world.phys.AABB;
 // Inspired by https://iquilezles.org/articles/frustumcorrect/
 public class ShadowFrustum extends Frustum {
 
-    private final Camera camera;
-    private final Vector4f[] mPlanes = new Vector4f[6];
+    record Plane(
+        Vector3f normal,
+        float d
+    ) {}
+
     private final Vector3f[] mCorners = new Vector3f[8];
     private final Vector3f toSunDir;
+
+    private final Plane[] primaryPlanes = new Plane[6];
 
     // Still has some false positives, but it is good enough
     public ShadowFrustum(
         Matrix4f shadowViewMatrix, Matrix4f shadowProjectionView,
-        Matrix4f shortendedViewProjectionMatrix, Camera camera,Vector3f toSunDir
+        Matrix4f shortendedViewProjectionMatrix, Vector3f toSunDir
     ) {
         super(shadowViewMatrix, shadowProjectionView);
-        this.prepare(camera.position().x, camera.position().y, camera.position().z);
-        this.camera = camera;
+
         this.toSunDir = toSunDir;
         for (int i = 0; i < 6; ++i) {
-            this.mPlanes[i] = shortendedViewProjectionMatrix.frustumPlane(i, new Vector4f());
+            var plane = shortendedViewProjectionMatrix.frustumPlane(i, new Vector4f());;
+            this.primaryPlanes[i] = new Plane(
+                plane.xyz(new Vector3f()),
+                plane.w
+            );
         }
         for (int i = 0; i < 8; ++i) {
             this.mCorners[i] = shortendedViewProjectionMatrix.frustumCorner(i, new Vector3f());
         }
     }
+
+    
 
     @Override
     public boolean isVisible(AABB aabb) {  // Used mostly by LevelRenderer.extractVisibleEntities
@@ -46,12 +69,12 @@ public class ShadowFrustum extends Frustum {
             return false;
         }
         return this.check(
-            (float) (aabb.minX - this.camera.position().x),
-            (float) (aabb.minY - this.camera.position().y),
-            (float) (aabb.minZ - this.camera.position().z),
-            (float) (aabb.maxX - this.camera.position().x),
-            (float) (aabb.maxY - this.camera.position().y),
-            (float) (aabb.maxZ - this.camera.position().z)
+            (float) (aabb.minX - this.getCamX()),
+            (float) (aabb.minY - this.getCamY()),
+            (float) (aabb.minZ - this.getCamZ()),
+            (float) (aabb.maxX - this.getCamX()),
+            (float) (aabb.maxY - this.getCamY()),
+            (float) (aabb.maxZ - this.getCamZ())
         );
     }
 
@@ -62,12 +85,12 @@ public class ShadowFrustum extends Frustum {
             return result;
         }*/
         boolean result = this.check(
-            (float) (bb.minX() - this.camera.position().x),
-            (float) (bb.minY() - this.camera.position().y),
-            (float) (bb.minZ() - this.camera.position().z),
-            (float) (bb.maxX() + 1 - this.camera.position().x),
-            (float) (bb.maxY() + 1 - this.camera.position().y),
-            (float) (bb.maxZ() + 1 - this.camera.position().z)
+            (float) (bb.minX() - this.getCamX()),
+            (float) (bb.minY() - this.getCamY()),
+            (float) (bb.minZ() - this.getCamZ()),
+            (float) (bb.maxX() + 1 - this.getCamX()),
+            (float) (bb.maxY() + 1 - this.getCamY()),
+            (float) (bb.maxZ() + 1 - this.getCamZ())
         );
         return result ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
     }
@@ -104,9 +127,9 @@ public class ShadowFrustum extends Frustum {
         float minX, float minY, float minZ, float maxX, float maxY, float maxZ,
         Vector3f[] aabbCorners, int planeIdx, int corner0, int corner1, int corner2, int corner3
     ) {
-        var plane = this.mPlanes[planeIdx];
+        Plane plane = this.primaryPlanes[planeIdx];
 
-        if (plane.xyz(new Vector3f()).dot(this.toSunDir) < 0.0F) {
+        if (plane.normal.dot(this.toSunDir) < 0.0F) {
             return false;
         }
 
@@ -119,10 +142,7 @@ public class ShadowFrustum extends Frustum {
             return false;
         };
 
-        if (!isInside.apply(
-            plane.xyz(new Vector3f()).mul(-plane.w),
-            plane.xyz(new Vector3f())
-        )) {
+        if (!isInside.apply(new Vector3f(plane.normal).mul(-plane.d), plane.normal)) {
             return false;
         }
 
@@ -138,7 +158,7 @@ public class ShadowFrustum extends Frustum {
         };
 
         for (int k = 0; k < 4; ++k) {
-            int v = (k+1) % 4;
+            int v = (k + 1) % 4;
             var normal = new Vector3f(frustumCorners[k]).sub(frustumCorners[v]).cross(this.toSunDir).normalize();
 
             if (!isInside.apply(frustumCorners[k], normal)) {
@@ -146,9 +166,7 @@ public class ShadowFrustum extends Frustum {
             }
         }
         
-        Function<Function<Vector3f, Boolean>, Boolean> anyForEachFrustumCorner = (
-            Function<Vector3f, Boolean> exp
-        ) -> {
+        Function<Function<Vector3f, Boolean>, Boolean> anyForEachFrustumCorner = (Function<Vector3f, Boolean> exp) -> {
             for (var frustumCorner : frustumCorners) {
                 if (exp.apply(frustumCorner)) {
                     return true;
