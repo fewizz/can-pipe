@@ -61,7 +61,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.phys.Vec3;
+
 
 @Mixin(value = LevelRenderer.class, priority = 1001)
 public abstract class LevelRendererMixin implements LevelRendererExtended {
@@ -170,23 +170,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Profiler.get().push("preparations");
 
         GameRendererExtended gre = ((GameRendererExtended) mc.gameRenderer);
-        float renderDistance = mc.gameRenderer.getRenderDistance();
         Vector3f toSunDir = p.getSunOrMoonDir(mc.level, new Vector3f());
-        Vector3f fromSunDir = toSunDir.negate(new Vector3f());
 
         var camPos = camera.position();
-        var sunPosOffset = new Vec3(toSunDir.mul(renderDistance + 48, new Vector3f()));
-        var sunPos = camPos.add(sunPosOffset);
-
-        /*Camera shadowCamera = new Camera() {{
-            setPosition(sunPos);
-            setRotation(
-                (float) Math.toDegrees(Math.atan2(-fromSunDir.x, fromSunDir.z)),
-                (float) Math.toDegrees(Math.atan2(-fromSunDir.y, Math.sqrt(fromSunDir.x*fromSunDir.x + fromSunDir.z*fromSunDir.z)))
-            );
-            ((CameraAccessor)(Object) this).canpipe_setDetached(true);
-            ((CameraAccessor)(Object) this).canpipe_setEntity(camera.entity());
-        }};*/
 
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
         modelViewMatrixStack.pushMatrix();

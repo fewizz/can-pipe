@@ -126,6 +126,7 @@ public class ShadowFrustum extends Frustum {
             (float) (bb.maxY() + 1 - this.getCamY()),
             (float) (bb.maxZ() + 1 - this.getCamZ())
         );
+        // Can't (?) use FrustumIntersection.INSIDE, for faster occlusion graph traversal
         return result ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
     }
 
@@ -175,6 +176,8 @@ public class ShadowFrustum extends Frustum {
             return false;
         };
 
+        // It is possible for AABB to be "inside" of all planes, but still not inside frustum projection
+        // This avoids most (not all) such false positives
         return
             anyForEachFrustumCorner.apply(c -> c.x > minX) &&
             anyForEachFrustumCorner.apply(c -> c.y > minY) &&
