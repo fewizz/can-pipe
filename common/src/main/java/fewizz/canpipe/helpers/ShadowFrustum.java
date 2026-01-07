@@ -11,7 +11,6 @@ import static org.joml.Matrix4fc.CORNER_PXPYPZ;
 
 import java.util.ArrayList;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
@@ -32,8 +31,7 @@ public class ShadowFrustum extends Frustum {
     ) {}
 
     record ProjectedFrustum(
-        Plane primarePlane,
-        Plane[] sidePlanes,
+        Plane[] planes,
         Vector3f[] corners
     ) {}
 
@@ -46,12 +44,12 @@ public class ShadowFrustum extends Frustum {
     ) {
         super(shadowViewMatrix, shadowProjectionView);
 
-        var mCorners = new Vector3f[8];
-        for (int i = 0; i < 8; ++i) {
-            mCorners[i] = shortendedViewProjectionMatrix.frustumCorner(i, new Vector3f());
+        var corners = new Vector3f[8];
+        for (int cornerIdx = 0; cornerIdx < 8; ++cornerIdx) {
+            corners[cornerIdx] = shortendedViewProjectionMatrix.frustumCorner(cornerIdx, new Vector3f());
         }
 
-        int[][] planesCornersIds = new int[][] {
+        int[][] planesCornersIndices = new int[][] {
             new int[] {CORNER_NXNYPZ, CORNER_NXPYPZ, CORNER_NXPYNZ, CORNER_NXNYNZ},
             new int[] {CORNER_PXNYNZ, CORNER_PXPYNZ, CORNER_PXPYPZ, CORNER_PXNYPZ},
             new int[] {CORNER_PXNYNZ, CORNER_PXNYPZ, CORNER_NXNYPZ, CORNER_NXNYNZ},
@@ -60,8 +58,8 @@ public class ShadowFrustum extends Frustum {
             new int[] {CORNER_PXNYPZ, CORNER_PXPYPZ, CORNER_NXPYPZ, CORNER_NXNYPZ},
         };
 
-        for (int i = 0; i < 6; ++i) {
-            var plane = shortendedViewProjectionMatrix.frustumPlane(i, new Vector4f());
+        for (int planeIdx = 0; planeIdx < 6; ++planeIdx) {
+            var plane = shortendedViewProjectionMatrix.frustumPlane(planeIdx, new Vector4f());
             var primaryPlane = new Plane(
                 plane.xyz(new Vector3f()).mul(-plane.w),
                 plane.xyz(new Vector3f())
@@ -71,35 +69,33 @@ public class ShadowFrustum extends Frustum {
                 continue;
             }
 
-            var cornersIds = planesCornersIds[i];
+            var cornersIndices = planesCornersIndices[planeIdx];
 
             var frustumCorners = new Vector3f[] {
-                mCorners[cornersIds[0]],
-                mCorners[cornersIds[1]],
-                mCorners[cornersIds[2]],
-                mCorners[cornersIds[3]],
-                new Vector3f(toSunDir).mul(10000.0F).add(mCorners[cornersIds[0]]),
-                new Vector3f(toSunDir).mul(10000.0F).add(mCorners[cornersIds[1]]),
-                new Vector3f(toSunDir).mul(10000.0F).add(mCorners[cornersIds[2]]),
-                new Vector3f(toSunDir).mul(10000.0F).add(mCorners[cornersIds[3]])
+                corners[cornersIndices[0]],
+                corners[cornersIndices[1]],
+                corners[cornersIndices[2]],
+                corners[cornersIndices[3]],
+                new Vector3f(toSunDir).mul(10000.0F).add(corners[cornersIndices[0]]),
+                new Vector3f(toSunDir).mul(10000.0F).add(corners[cornersIndices[1]]),
+                new Vector3f(toSunDir).mul(10000.0F).add(corners[cornersIndices[2]]),
+                new Vector3f(toSunDir).mul(10000.0F).add(corners[cornersIndices[3]])
             };
 
-            var sidePlanes = new Plane[4];
+            var planes = new Plane[5];  // 1 primary + 4 side planes
+            planes[0] = primaryPlane;
+
             for (int a = 0; a < 4; ++a) {
                 int b = (a + 1) % 4;
                 var normal = new Vector3f(frustumCorners[a]).sub(frustumCorners[b]).cross(toSunDir).normalize();
-                sidePlanes[a] = new Plane(frustumCorners[a], normal);
+                planes[a + 1] = new Plane(frustumCorners[a], normal);
             }
 
-            var projectedFrustum = new ProjectedFrustum(
-                primaryPlane, sidePlanes, frustumCorners
-            );
+            var projectedFrustum = new ProjectedFrustum(planes, frustumCorners);
 
             this.projectedFrustums.add(projectedFrustum);
         }
     }
-
-    
 
     @Override
     public boolean isVisible(AABB aabb) {  // Used mostly by LevelRenderer.extractVisibleEntities
@@ -165,22 +161,27 @@ public class ShadowFrustum extends Frustum {
             return false;
         };
 
-        if (!isInside.apply(projectedFrustum.primarePlane)) {
-            return false;
-        }
-        for (Plane sidePlane : projectedFrustum.sidePlanes) {
+
+        for (Plane sidePlane : projectedFrustum.planes) {
             if (!isInside.apply(sidePlane)) {
                 return false;
             }
         }
 
+        Function<Function<Vector3f, Boolean>, Boolean> anyForEachFrustumCorner = (Function<Vector3f, Boolean> exp) -> {
+            for (var frustumCorner : projectedFrustum.corners) {
+                if (exp.apply(frustumCorner)) { return true; }
+            }
+            return false;
+        };
+
         return
-            Stream.of(projectedFrustum.corners).anyMatch(c -> c.x > minX) &&
-            Stream.of(projectedFrustum.corners).anyMatch(c -> c.y > minY) &&
-            Stream.of(projectedFrustum.corners).anyMatch(c -> c.z > minZ) &&
-            Stream.of(projectedFrustum.corners).anyMatch(c -> c.x < maxX) &&
-            Stream.of(projectedFrustum.corners).anyMatch(c -> c.y < maxY) &&
-            Stream.of(projectedFrustum.corners).anyMatch(c -> c.z < maxZ);
+            anyForEachFrustumCorner.apply(c -> c.x > minX) &&
+            anyForEachFrustumCorner.apply(c -> c.y > minY) &&
+            anyForEachFrustumCorner.apply(c -> c.z > minZ) &&
+            anyForEachFrustumCorner.apply(c -> c.x < maxX) &&
+            anyForEachFrustumCorner.apply(c -> c.y < maxY) &&
+            anyForEachFrustumCorner.apply(c -> c.z < maxZ);
     }
 
 }
