@@ -39,6 +39,7 @@ import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -51,6 +52,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
+import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.state.LevelRenderState;
@@ -79,6 +81,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow private void extractVisibleBlockEntities(Camera camera, float f, LevelRenderState levelRenderState) {}
     @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeStorage submitNodeStorage) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
+    @Shadow private void applyFrustum(Frustum frustum) {}
 
     @Unique volatile private boolean canpipe_isRenderingShadows = false;
     @Unique private int canpipe_shadowCascade = 0;
@@ -89,6 +92,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Unique private float canpipe_smoothedEyeSkyLight = 0.0F;
     @Unique private float canpipe_smoothedRainGradient = 0.0F;
     @Unique private float canpipe_smoothedThunderGradient = 0.0F;
+    @Unique @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_visibleSections = new ObjectArrayList<>(10000);
+	@Unique @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSections = new ObjectArrayList<>(50);
 
     @Override public boolean canpipe_getIsRenderingShadows() { return this.canpipe_isRenderingShadows; }
     @Override public int canpipe_getShadowCascade() { return this.canpipe_shadowCascade; }
@@ -173,7 +178,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         var sunPosOffset = new Vec3(toSunDir.mul(renderDistance + 48, new Vector3f()));
         var sunPos = camPos.add(sunPosOffset);
 
-        Camera shadowCamera = new Camera() {{
+        /*Camera shadowCamera = new Camera() {{
             setPosition(sunPos);
             setRotation(
                 (float) Math.toDegrees(Math.atan2(-fromSunDir.x, fromSunDir.z)),
@@ -181,7 +186,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             );
             ((CameraAccessor)(Object) this).canpipe_setDetached(true);
             ((CameraAccessor)(Object) this).canpipe_setEntity(camera.entity());
-        }};
+        }};*/
 
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
         modelViewMatrixStack.pushMatrix();
@@ -213,14 +218,15 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             );
 
             Profiler.get().push("cullTerrain");
-            this.cullTerrain(
+            /*this.cullTerrain(
                 new Camera() {{
                     setPosition(camPos);
                     setRotation(shadowCamera.yRot(), shadowCamera.xRot());
                 }},
                 shadowFrustum,
                 false
-            );
+            );*/
+            applyFrustum(shadowFrustum);
 
             RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
 
@@ -230,7 +236,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 Profiler.get().popPush("render sections");
                 ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
                 chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
-                // chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT);
 
                 MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 
@@ -357,6 +362,36 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return operation.call(device, u, v, FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
         }
         return operation.call(device, u, v, min, mag, maxAnisotropy, maxLod);
+    }
+
+    @ModifyExpressionValue(
+        method = {"clearVisibleSections", "applyFrustum", "prepareChunkRenders"},
+        at = @At(
+            value= "FIELD",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;visibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;"
+        ),
+        require = 3
+    )
+    ObjectArrayList<SectionRenderDispatcher.RenderSection> replaceVisibleSections(ObjectArrayList<SectionRenderDispatcher.RenderSection> original) {
+        if (((LevelRendererExtended) this).canpipe_getIsRenderingShadows()) {
+            return this.canpipe_visibleSections;
+        }
+        return original;
+    }
+
+    @ModifyExpressionValue(
+        method = {"clearVisibleSections", "applyFrustum"},
+        at = @At(
+            value= "FIELD",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;nearbyVisibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;"
+        ),
+        require = 2
+    )
+    ObjectArrayList<SectionRenderDispatcher.RenderSection> replaceNearbyVisibleSections(ObjectArrayList<SectionRenderDispatcher.RenderSection> original) {
+        if (((LevelRendererExtended) this).canpipe_getIsRenderingShadows()) {
+            return this.canpipe_nearbyVisibleSections;
+        }
+        return original;
     }
 
 }

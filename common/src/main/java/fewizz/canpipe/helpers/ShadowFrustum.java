@@ -3,6 +3,7 @@ package fewizz.canpipe.helpers;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import static org.joml.Matrix4fc.*;
 import org.joml.Vector3f;
@@ -10,6 +11,7 @@ import org.joml.Vector4f;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
 
 
@@ -39,12 +41,23 @@ public class ShadowFrustum extends Frustum {
     }
 
     @Override
-    public boolean isVisible(AABB aabb) {
-        // check if in shadow frustum
+    public boolean isVisible(AABB aabb) {  // Used mostly by LevelRenderer.extractVisibleEntities
         if (!super.isVisible(aabb)) {
             return false;
         }
+        return this.check(aabb);
+    }
 
+    @Override
+    public int cubeInFrustum(BoundingBox boundingBox) {  // Used mostly by SectionOcclusionGraph.addSectionsInFrustum
+        /*int result = super.cubeInFrustum(boundingBox);
+        if (!(result == FrustumIntersection.INSIDE || result == FrustumIntersection.INTERSECT)) {
+            return result;
+        }*/
+        return this.check(AABB.of(boundingBox)) ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
+    }
+
+    private boolean check(AABB aabb) {
         // also check that AABB is in projection from sun to view frustum
         Vector3f[] aabbCorners = new Vector3f[8];
         for (int x = 0; x <= 1; ++x) {
