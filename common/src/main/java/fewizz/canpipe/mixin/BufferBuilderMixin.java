@@ -199,53 +199,45 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             }
         }
 
-        if (materialIndexPtr != -1 || materialFlagsPtr != -1) {
+        if (materialIndexPtr != -1) {
             Material material = null;
 
-            if (materialIndexPtr != -1) {
-                if (this.materialMap != null) {
-                    if (this.materialMap.spriteMap != null && sprite != null) {
-                        Minecraft mc = Minecraft.getInstance();
-                        MutableObject<TextureAtlas> atlas = new MutableObject<>();
-                        mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
-                            if (atlas.get() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
-                                atlas.setValue(possibleAtlas);
-                            }
-                        });
+            if (this.materialMap != null) {
+                if (this.materialMap.spriteMap != null && sprite != null) {
+                    Minecraft mc = Minecraft.getInstance();
+                    MutableObject<TextureAtlas> atlas = new MutableObject<>();
+                    mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
+                        if (atlas.get() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
+                            atlas.setValue(possibleAtlas);
+                        }
+                    });
 
-                        for (var kv : this.materialMap.spriteMap.entrySet()) {
-                            if (atlas.get().getSprite(kv.getKey()) == sprite) {
-                                material = kv.getValue();
-                            }
+                    for (var kv : this.materialMap.spriteMap.entrySet()) {
+                        if (atlas.get().getSprite(kv.getKey()) == sprite) {
+                            material = kv.getValue();
                         }
                     }
-                    if (material == null) {
-                        material = materialMap.defaultMaterial;
-                    }
                 }
-
-                int index = material != null ? Materials.id(material) : -1;
-                for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
-                    MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) index);
+                if (material == null) {
+                    material = materialMap.defaultMaterial;
                 }
             }
 
-            if (materialFlagsPtr != -1) {
-                if (material != null) {
-                    if (material.disableAO) {
-                        this.materialFlags |= 1 << 1;
-                    }
-                    if (material.disableDiffuse) {
-                        this.materialFlags |= 1 << 2;
-                    }
-                }
-                else {
-                    this.materialFlags &= ~(1 << 1);
-                    this.materialFlags &= ~(1 << 2);
-                }
-                for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
-                    MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, this.materialFlags);
-                }
+            int materialIndex = material != null ? Materials.id(material) : -1;
+
+            if (materialFlagsPtr == -1) {
+                throw new RuntimeException("in_materialIndex should be enabled with in_materialFlags");
+            }
+
+            if (material != null && material.disableAO) { this.materialFlags |= 1 << 1; }
+            else  { this.materialFlags &= ~(1 << 1); }
+
+            if (material != null && material.disableDiffuse) { this.materialFlags |= 1 << 2; }
+            else  { this.materialFlags &= ~(1 << 2); }
+
+            for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
+                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) materialIndex);
+                MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, this.materialFlags);
             }
         }
     }

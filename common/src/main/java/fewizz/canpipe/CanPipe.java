@@ -82,7 +82,7 @@ public class CanPipe {
             /* 28 + 2*2 */.add("in_lightmap", VertexFormatElement.UV2)
             /* 32 + 3*1 */.add("in_normal", VertexFormatElement.NORMAL)
 
-            /* 35 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+            /* 35 + 1*1 */.padding(1)  // .add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
             /* 36 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             /* 40 + 1*4 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
@@ -96,7 +96,7 @@ public class CanPipe {
             /* 24 + 2*2 */.add("in_lightmap", VertexFormatElement.UV2)
 
             /* 28 + 3*1 */.add("in_normal", VertexFormatElement.NORMAL)
-            /* 31 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+            /* 31 + 1*1 */.padding(1)  // .add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
             /* 32 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
             // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             /* 36 + 4*1 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
