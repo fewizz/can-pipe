@@ -35,7 +35,7 @@ public class ShadowFrustum extends Frustum {
     ) {}
 
     private final Plane[] planes;
-    private final Vector3f[] corners;
+    private final Vector3f[] corners;  // aka vertices
 
     // Still has some false positives, but it is good enough
     public ShadowFrustum(
@@ -49,7 +49,7 @@ public class ShadowFrustum extends Frustum {
             frustumCorners[cornerIdx] = shortendedViewProjectionMatrix.frustumCorner(cornerIdx, new Vector3f());
         }
 
-        Set<IntIntPair> twoCornerIndicesToPlainIndex = new HashSet<>();
+        Set<IntIntPair> edgeCornerIndices = new HashSet<>();
 
         int[][] planesCornersIndices = new int[][] {
             new int[] {CORNER_NXNYPZ, CORNER_NXPYPZ, CORNER_NXPYNZ, CORNER_NXNYNZ},  // PLANE_NX
@@ -61,7 +61,7 @@ public class ShadowFrustum extends Frustum {
         };
 
         List<Plane> planes = new ArrayList<>();
-        Set<Vector3f> corners = new HashSet<>();
+        Set<Vector3f> corners = new HashSet<>();  // Btw It's possible to deduplicate them without using Set, but I'm too stupid for that
 
         for (int planeIdx = 0; planeIdx < 6; ++planeIdx) {
             var plane = shortendedViewProjectionMatrix.frustumPlane(planeIdx, new Vector4f());
@@ -83,28 +83,33 @@ public class ShadowFrustum extends Frustum {
                 int aIdx = cornersIndices[a];
                 int bIdx = cornersIndices[b];
 
-                corners.add(frustumCorners[aIdx]);
-                corners.add(frustumCorners[bIdx]);
-
                 var k = IntIntPair.of(aIdx, bIdx);
                 var kReverse = IntIntPair.of(bIdx, aIdx);
 
-                if (!twoCornerIndicesToPlainIndex.remove(kReverse)) {
-                    twoCornerIndicesToPlainIndex.add(k);
+                // If edge is shared by two planes,
+                // then side plane won't be created for it
+                if (!edgeCornerIndices.remove(kReverse)) {
+                    edgeCornerIndices.add(k);
+                    corners.add(frustumCorners[aIdx]);
+                    corners.add(frustumCorners[bIdx]);
                 }
             }
         }
 
-        for (var e : twoCornerIndicesToPlainIndex) {
-            var aIdx = e.firstInt();
-            var bIdx = e.secondInt();
+        for (var e : edgeCornerIndices) {
+            var cornerA = frustumCorners[e.firstInt()];
+            var cornerB = frustumCorners[e.secondInt()];
 
-            var normal = new Vector3f(frustumCorners[aIdx]).sub(frustumCorners[bIdx]).cross(toSunDir).normalize();
-            planes.add(new Plane(frustumCorners[aIdx], normal));
+            var normal = new Vector3f(cornerA).sub(cornerB).cross(toSunDir).normalize();
+            var sidePlane = new Plane(cornerA, normal);
+            planes.add(sidePlane);
 
-            corners.add(new Vector3f(toSunDir).mul(10000.0F).add(frustumCorners[aIdx]));
-            corners.add(new Vector3f(toSunDir).mul(10000.0F).add(frustumCorners[bIdx]));
+            // corners.add(new Vector3f(toSunDir).mul(10000.0F).add(a));  Replaced with single corner below
+            // corners.add(new Vector3f(toSunDir).mul(10000.0F).add(b));
         }
+
+        // Close enough?
+        corners.add(new Vector3f(toSunDir).mul(10000.0F));
 
         this.planes = planes.toArray(new Plane[]{});
         this.corners = corners.toArray(new Vector3f[]{});
@@ -172,8 +177,8 @@ public class ShadowFrustum extends Frustum {
         }
 
         Function<Function<Vector3f, Boolean>, Boolean> anyForEachFrustumCorner = (Function<Vector3f, Boolean> exp) -> {
-            for (var frustumCorner : this.corners) {
-                if (exp.apply(frustumCorner)) { return true; }
+            for (var corner : this.corners) {
+                if (exp.apply(corner)) { return true; }
             }
             return false;
         };
