@@ -442,9 +442,6 @@ public class MaterialPrograms {
             frx_fragEnableDiffuse = frx_matDisableDiffuse == 0;
 
             frx_fragColor = frx_sampleColor * frx_vertexColor;
-            #ifdef CANPIPE_TERRAIN
-                frx_fragColor = mix(vec4(vec3(1.0), ChunkVisibility), frx_fragColor, ChunkVisibility);
-            #endif
 
             if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) {
                 discard;

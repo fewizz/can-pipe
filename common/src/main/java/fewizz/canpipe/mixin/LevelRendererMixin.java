@@ -172,8 +172,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         GameRendererExtended gre = ((GameRendererExtended) mc.gameRenderer);
         Vector3f toSunDir = p.getSunOrMoonDir(mc.level, new Vector3f());
 
-        var camPos = camera.position();
-
         Matrix4fStack modelViewMatrixStack = RenderSystem.getModelViewStack();
         modelViewMatrixStack.pushMatrix();
         modelViewMatrixStack.mul(viewMatrix);
@@ -204,15 +202,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             );
             shadowFrustum.prepare(camera.position().x, camera.position().y, camera.position().z);
 
-            Profiler.get().push("cullTerrain");
-            /*this.cullTerrain(
-                new Camera() {{
-                    setPosition(camPos);
-                    setRotation(shadowCamera.yRot(), shadowCamera.xRot());
-                }},
-                shadowFrustum,
-                false
-            );*/
+            Profiler.get().push("apply frustum");
             applyFrustum(shadowFrustum);
 
             RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
@@ -221,10 +211,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 mc.mainRenderTarget = p.shadows.framebuffers().get(this.canpipe_shadowCascade);
 
                 Profiler.get().popPush("render sections");
-                ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camPos.x, camPos.y, camPos.z);
+                ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camera.position().x, camera.position().y, camera.position().z);
                 chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
-
-                MultiBufferSource.BufferSource bufferSource = this.renderBuffers.bufferSource();
 
                 if (p.shadows.allowEntities()) {
                     Profiler.get().popPush("extract entities");
@@ -232,11 +220,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                     this.extractVisibleBlockEntities(camera, pt, this.levelRenderState);
 
                     Profiler.get().popPush("render entities");
-
                     this.submitEntities(poseStack, levelRenderState, this.submitNodeStorage);
                     this.submitBlockEntities(poseStack, levelRenderState, this.submitNodeStorage);
                     this.featureRenderDispatcher.renderAllFeatures();
-                    this.levelRenderState.reset();
                     this.checkPoseStack(poseStack);
                 }
 
@@ -250,13 +236,16 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                     this.particlesRenderState.reset();
                 }
 
-                bufferSource.endBatch();
+                Profiler.get().popPush("end batch");
+                this.renderBuffers.bufferSource().endBatch();
+                this.renderBuffers.crumblingBufferSource().endBatch();
 
             } finally {
                 mc.mainRenderTarget = originalMainRenderTarget;
             }
 
             Profiler.get().pop();
+            this.levelRenderState.reset();
         }
 
         this.canpipe_shadowCascade = 0;

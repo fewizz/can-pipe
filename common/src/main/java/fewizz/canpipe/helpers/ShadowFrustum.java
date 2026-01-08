@@ -29,10 +29,32 @@ import net.minecraft.world.phys.AABB;
 // Inspired by https://iquilezles.org/articles/frustumcorrect/
 public class ShadowFrustum extends Frustum {
 
-    record Plane(
-        Vector3f position,
-        Vector3f normal
-    ) {}
+    private record Plane(
+        Vector3f position,  // Some position on the plane, not necessary normal * -d
+        Vector3f normal,
+        float positionDotNormal
+    ) {
+
+        private Plane(Vector3f position, Vector3f normal) {
+            this(
+                position,
+                normal,
+                position.dot(normal)
+            );
+        }
+
+        private boolean pointIsInside(float x, float y, float z) {
+            // return new Vector3f(x, y, z).sub(this.position).dot(this.normal) >= 0.0F;
+            return Math.fma(  // Same as above
+                x, this.normal.x,
+                Math.fma(
+                    y, this.normal.y,
+                    z * this.normal.z
+                )
+            ) >= this.positionDotNormal;
+        }
+
+    }
 
     private final Plane[] planes;
     private final Vector3f[] corners;  // aka vertices
@@ -116,6 +138,21 @@ public class ShadowFrustum extends Frustum {
     }
 
     @Override
+    public boolean pointInFrustum(double x, double y, double z) {  // Used mostly by QuadParticleGroup.extractRenderState
+        float xf = (float) (x - this.getCamX());
+        float yf = (float) (y - this.getCamY());
+        float zf = (float) (z - this.getCamZ());
+
+        for (Plane plane : this.planes) {
+            if (!plane.pointIsInside(xf, yf, zf)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
     public boolean isVisible(AABB aabb) {  // Used mostly by LevelRenderer.extractVisibleEntities
         /*if (!super.isVisible(aabb)) {
             return false;
@@ -144,7 +181,7 @@ public class ShadowFrustum extends Frustum {
             (float) (bb.maxY() + 1 - this.getCamY()),
             (float) (bb.maxZ() + 1 - this.getCamZ())
         );
-        // Can't (?) use FrustumIntersection.INSIDE, for faster occlusion graph traversal
+        // Can't (?) use FrustumIntersection.INSIDE for faster occlusion graph traversal
         return result ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
     }
 
@@ -155,13 +192,11 @@ public class ShadowFrustum extends Frustum {
             for (int x = 0; x <= 1; ++x) {
                 for (int y = 0; y <= 1; ++y) {
                     for (int z = 0; z <= 1; ++z) {
-                        var aabbCorner = new Vector3f(
+                        if (plane.pointIsInside(
                             x == 0 ? minX : maxX,
                             y == 0 ? minY : maxY,
                             z == 0 ? minZ : maxZ
-                        );
-
-                        if (aabbCorner.sub(plane.position).dot(plane.normal) >= 0.0F) {
+                        )) {
                             return true;
                         }
                     }
