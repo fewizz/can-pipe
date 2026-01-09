@@ -1,4 +1,4 @@
-package fewizz.canpipe.indigo.mixin;
+package fewizz.canpipe.compat.indigo.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
-import fewizz.canpipe.indigo.QuadViewExtended;
+import fewizz.canpipe.compat.indigo.QuadViewExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.QuadViewImpl;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;

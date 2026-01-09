@@ -1,4 +1,4 @@
-package fewizz.canpipe.indigo.mixin;
+package fewizz.canpipe.compat.indigo.mixin;
 
 import java.util.Arrays;
 
@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import fewizz.canpipe.indigo.MutableQuadViewExtended;
+import fewizz.canpipe.compat.indigo.MutableQuadViewExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.minecraft.client.renderer.block.model.BakedQuad;

@@ -1,4 +1,4 @@
-package fewizz.canpipe.indigo;
+package fewizz.canpipe.compat.indigo;
 
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadView;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;

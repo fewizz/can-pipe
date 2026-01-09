@@ -1,4 +1,4 @@
-package fewizz.canpipe.indigo.mixin;
+package fewizz.canpipe.compat.indigo.mixin;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,7 +13,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.indigo.MutableQuadViewExtended;
+import fewizz.canpipe.compat.indigo.MutableQuadViewExtended;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;

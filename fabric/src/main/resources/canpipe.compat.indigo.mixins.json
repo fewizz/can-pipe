@@ -1,7 +1,7 @@
 {
 	"required": false,
 	"compatibilityLevel": "JAVA_21",
-	"package": "fewizz.canpipe.indigo.mixin",
+	"package": "fewizz.canpipe.compat.indigo.mixin",
 	"injectors": {
 		"defaultRequire": 1
 	},
