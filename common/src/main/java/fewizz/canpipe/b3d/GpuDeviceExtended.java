@@ -3,6 +3,7 @@ package fewizz.canpipe.b3d;
 import java.util.OptionalDouble;
 
 import org.apache.commons.lang3.function.TriConsumer;
+import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
@@ -19,7 +20,7 @@ public interface GpuDeviceExtended extends GpuDevice {
 
     GpuSamplerExteneded canpipe_createSampler(
         AddressMode u, AddressMode v, FilterMode min, FilterMode mag, int maxAnisotropy, OptionalDouble maxLod,
-        AddressMode w, DepthTestFunction compareOp, boolean linearMipmap  // added
+        AddressMode w, @Nullable DepthTestFunction compareOp, boolean linearMipmap  // added
     );
 
     void canpipe_precompilePipelineShaderModules(

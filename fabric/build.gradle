@@ -55,6 +55,13 @@ dependencies {
 
     modImplementation "blue.endless:jankson:1.2.3"
     include "blue.endless:jankson:1.2.3"
+
+    if (System.getenv("WITH_CINNABAR") == "1") {
+        modImplementation "graphics.cinnabar:cinnabar-fabric:${cinnabar_implementation_version}"
+    }
+    else {
+        compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_compile_only_version}"
+    }
 }
 
 compileJava.source project(":common").sourceSets.main.allSource
@@ -76,7 +83,7 @@ loom {
             programArg "--renderDebugLabels"
             properties([
                 "mixin.debug": "true",
-                // "cinnabar.vulkanValidationLayers": "true",
+                "cinnabar.vulkanValidationLayers": "true",
                 // "cinnabar.debugLogging": "true"
             ])
         }

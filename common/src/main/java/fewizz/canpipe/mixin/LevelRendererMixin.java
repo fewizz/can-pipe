@@ -45,7 +45,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeCollector;

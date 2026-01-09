@@ -1,0 +1,30 @@
+{
+    "required": true,
+    "compatibilityLevel": "JAVA_21",
+    "package": "fewizz.canpipe.compat.cinnabar.mixin",
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "client": [
+        "Hg3DCommandEncoderMixin",
+        "Hg3DConstMixin",
+        "Hg3DGpuDeviceAccessor",
+        "Hg3DGpuDeviceMixin",
+        "Hg3DGpuSamplerMixin",
+        "Hg3DGpuTextureViewMixin",
+        "Hg3DRenderPassMixin",
+        "Hg3DRenderPipelineAccessor",
+        "Hg3DRenderPipelineMixin",
+        "MCCachedOrthoProjectionMatrixBufferMixin",
+        "MCGameRendererMixin",
+        "MercuryCommandBufferMixin",
+        "MercuryDeviceAccessor",
+        "MercuryDeviceMixin",
+        "MercuryFramebufferMixin",
+        "MercuryGraphicsPipelineMixin",
+        "MercuryRenderPassMixin",
+        "MercurySamplerMixin",
+        "MercuryShaderSetMixin",
+        "VulkanStartupMixin"
+    ]
+}

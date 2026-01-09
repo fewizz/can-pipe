@@ -7,7 +7,7 @@ import com.mojang.blaze3d.textures.AddressMode;
 
 public interface GpuSamplerExteneded {
 
-    abstract AddressMode canpipe_getAddressModeW();
-    @Nullable abstract DepthTestFunction canpipe_getCompareOp();
+    AddressMode canpipe_getAddressModeW();
+    @Nullable DepthTestFunction canpipe_getCompareOp();
 
 }

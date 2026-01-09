@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.OptionalDouble;
 
 import org.apache.commons.lang3.function.TriConsumer;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -60,7 +61,7 @@ public abstract class GlDeviceMixin implements GpuDeviceExtended {
         AddressMode u, AddressMode v,
         FilterMode min, FilterMode mag,
         int maxAnisotropy, OptionalDouble maxLod,
-        AddressMode w, DepthTestFunction compareOp, boolean linearMipmap
+        AddressMode w, @Nullable DepthTestFunction compareOp, boolean linearMipmap
     ) {
         try {
             this.canpipe_addressModeW = w;

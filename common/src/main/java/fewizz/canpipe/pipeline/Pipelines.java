@@ -135,6 +135,10 @@ final public class Pipelines implements PreparableReloadListener {
         Pipeline loadedPipeline = null;
 
         if (raw != null) {
+            // Flushes main command buffer for Cinnabar, does nothing for GL backend
+            // Main command buffer could already be created at this point, because of texture loading
+            RenderSystem.getDevice().createCommandEncoder().createFence().close();
+
             RenderSystem.getDevice().clearPipelineCache();
 
             try {
@@ -211,6 +215,7 @@ final public class Pipelines implements PreparableReloadListener {
                 e.printStackTrace();
             }
         }
+
         loadAndSetPipeline(selected, Map.of());
     }
 
