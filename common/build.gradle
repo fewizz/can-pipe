@@ -29,7 +29,7 @@ dependencies {
     compileOnly "blue.endless:jankson:1.2.3"
 
     compileOnly "org.lwjgl:lwjgl-vulkan:3.3.3"  // For Cinnabar
-    compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_compile_only_version}"
+    modCompileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
 }
 
 tasks.withType(JavaCompile).configureEach {

@@ -22,7 +22,8 @@
 		"${mod_id}.mixins.json",
 		"${mod_id}.b3d.mixins.json",
 		"${mod_id}.indigo.mixins.json",
-		"${mod_id}.compat.cinnabar.mixins.json"
+		"${mod_id}.compat.cinnabar.mixins.json",
+		"${mod_id}.compat.cinnabar.fabric.mixins.json"
 	],
 	"accessWidener" : "${mod_id}.accesswidener",
 	"depends": {
