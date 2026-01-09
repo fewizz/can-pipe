@@ -80,9 +80,10 @@ public class Shaders {
             header += "in vec2 in_uv;\n\n";
         }
 
-        header +=  // LumiLights uses these for variable names
-            "#define sample _sample\n"+
-            "#define sampler _sampler\n\n";
+        // header +=  // LumiLights uses these for variable names
+        //     "#define sample _sample\n"+
+        //     "#define sampler _sampler\n\n";
+        // Handled in Hg3DRenderPipelineMixin
 
         header +=  // for ecos
             "#define texture2D texture\n\n";

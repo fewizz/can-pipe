@@ -7,7 +7,11 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import graphics.cinnabar.api.hg.HgGraphicsPipeline;
@@ -45,7 +49,7 @@ public class Hg3DRenderPipelineMixin {
         return attachments;
     }
 
-    @ModifyArg(
+    @ModifyArgs(
         method = "<init>",
         at = @At(
             value = "INVOKE",
@@ -53,11 +57,16 @@ public class Hg3DRenderPipelineMixin {
                 "Ljava/lang/String;"+
                 "Ljava/lang/String;"+
             ")Lgraphics/cinnabar/api/hg/HgGraphicsPipeline$ShaderSet$CreateInfo;"
-        ),
-        index = 0
+        )
     )
-    String patchVertexShader(String vertexShader) {
+    void patchShaders(Args args) {
+        String vertexShader = args.get(0);
+        String fragmentShader = args.get(1);
+
         vertexShader =
+            "#define sample _sample\n"+  // `sampler` is reserved word
+            "#define sampler _sampler\n\n"+
+
             "void canpipe_main();\n"+
             "void main() {\n"+
             "   canpipe_main();\n"+
@@ -67,16 +76,27 @@ public class Hg3DRenderPipelineMixin {
             "#define main canpipe_main\n\n"+
             vertexShader;
 
-        // patch Cinnabar's dynamictransforms.glsl
-        vertexShader = vertexShader.replace(
-            "#define main realMain",
-            "#ifdef main\n"+
-            "   #undef main\n"+
-            "#endif\n"+
-            "#define main realMain\n"
-        );
+        fragmentShader =
+            "#define sample _sample\n"+
+            "#define sampler _sampler\n\n"+
+            fragmentShader;
 
-        return vertexShader;
+        args.set(0, vertexShader);
+        args.set(1, fragmentShader);
+    }
+
+    @WrapOperation(  // Handled other way, above
+        method = "<init>",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/lang/String;replace(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Ljava/lang/String;"
+        )
+    )
+    String disableSamplerRemplacement(String instance, CharSequence target, CharSequence replacement, Operation<String> operation) {
+        if (target.equals("sampler2D sampler") || target.equals("return textureGrad(sampler, uv, du, dv);")) {
+            return instance;
+        }
+        return operation.call(instance, target, replacement);
     }
 
 }
