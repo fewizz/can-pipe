@@ -184,7 +184,7 @@ public class ShadowFrustum extends Frustum {
     final private boolean check(
         float minX, float minY, float minZ, float maxX, float maxY, float maxZ
     ) {
-        if (!(
+        if (!(  // Takes care of some false positives
             maxX >= projectedFrustumMin.x && minX <= projectedFrustumMax.x &&
             maxY >= projectedFrustumMin.y && minY <= projectedFrustumMax.y &&
             maxZ >= projectedFrustumMin.z && minZ <= projectedFrustumMax.z
@@ -193,15 +193,11 @@ public class ShadowFrustum extends Frustum {
         }
 
         for (Plane plane : this.planes) {
-            if (!(
-                plane.pointIsInside(minX, minY, minZ) ||
-                plane.pointIsInside(minX, minY, maxZ) ||
-                plane.pointIsInside(minX, maxY, minZ) ||
-                plane.pointIsInside(minX, maxY, maxZ) ||
-                plane.pointIsInside(maxX, minY, minZ) ||
-                plane.pointIsInside(maxX, minY, maxZ) ||
-                plane.pointIsInside(maxX, maxY, minZ) ||
-                plane.pointIsInside(maxX, maxY, maxZ)
+            // Check if farthest AABB point is still in "inner" side of plane
+            if (!plane.pointIsInside(
+                plane.normal.x > 0 ? maxX : minX,
+                plane.normal.y > 0 ? maxY : minY,
+                plane.normal.z > 0 ? maxZ : minZ
             )) {
                 return false;
             }
