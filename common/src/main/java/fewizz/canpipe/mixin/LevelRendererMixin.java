@@ -202,6 +202,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             shadowFrustum.prepare(camera.position().x, camera.position().y, camera.position().z);
 
             Profiler.get().push("apply frustum");
+
             applyFrustum(shadowFrustum);
 
             RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
@@ -214,15 +215,23 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
 
                 if (p.shadows.allowEntities()) {
-                    Profiler.get().popPush("extract entities");
+                    Profiler.get().popPush("entities");
+                    Profiler.get().push("extract entities");
                     this.extractVisibleEntities(camera, shadowFrustum, deltaTracker, this.levelRenderState);
+
+                    Profiler.get().popPush("extract block entities");
                     this.extractVisibleBlockEntities(camera, pt, this.levelRenderState);
 
-                    Profiler.get().popPush("render entities");
+                    Profiler.get().popPush("submit entities");
                     this.submitEntities(poseStack, levelRenderState, this.submitNodeStorage);
+
+                    Profiler.get().popPush("submit block entities");
                     this.submitBlockEntities(poseStack, levelRenderState, this.submitNodeStorage);
+
+                    Profiler.get().popPush("render");
                     this.featureRenderDispatcher.renderAllFeatures();
                     this.checkPoseStack(poseStack);
+                    Profiler.get().pop();
                 }
 
                 if (p.shadows.allowParticles()) {

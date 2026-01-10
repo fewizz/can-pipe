@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
@@ -30,17 +29,13 @@ import net.minecraft.world.phys.AABB;
 public class ShadowFrustum extends Frustum {
 
     private record Plane(
-        Vector3f position,  // Some position on the plane, not necessary normal * -d
+        // Vector3f position,
         Vector3f normal,
-        float positionDotNormal
+        float positionDotNormal  // Some position on the plane, not necessary normal * -d
     ) {
 
         private Plane(Vector3f position, Vector3f normal) {
-            this(
-                position,
-                normal,
-                position.dot(normal)
-            );
+            this(normal, position.dot(normal));
         }
 
         private boolean pointIsInside(float x, float y, float z) {
@@ -57,7 +52,10 @@ public class ShadowFrustum extends Frustum {
     }
 
     private final Plane[] planes;
-    private final Vector3f[] corners;  // aka vertices
+
+    // Projected frustum AABB
+    private final Vector3f projectedFrustumMin = new Vector3f();
+    private final Vector3f projectedFrustumMax = new Vector3f();
 
     // Still has some false positives, but it is good enough
     public ShadowFrustum(
@@ -134,7 +132,14 @@ public class ShadowFrustum extends Frustum {
         corners.add(new Vector3f(toSunDir).mul(10000.0F));
 
         this.planes = planes.toArray(new Plane[]{});
-        this.corners = corners.toArray(new Vector3f[]{});
+
+        this.projectedFrustumMin.set(Float.MAX_VALUE);
+        this.projectedFrustumMax.set(Float.MIN_VALUE);
+
+        for (var c : corners) {
+            this.projectedFrustumMin.min(c);
+            this.projectedFrustumMax.max(c);
+        }
     }
 
     @Override
@@ -154,9 +159,6 @@ public class ShadowFrustum extends Frustum {
 
     @Override
     public boolean isVisible(AABB aabb) {  // Used mostly by LevelRenderer.extractVisibleEntities
-        /*if (!super.isVisible(aabb)) {
-            return false;
-        }*/
         return this.check(
             (float) (aabb.minX - this.getCamX()),
             (float) (aabb.minY - this.getCamY()),
@@ -169,64 +171,43 @@ public class ShadowFrustum extends Frustum {
 
     @Override
     public int cubeInFrustum(BoundingBox bb) {  // Used mostly by SectionOcclusionGraph.addSectionsInFrustum
-        /*int result = super.cubeInFrustum(boundingBox);
-        if (!(result == FrustumIntersection.INSIDE || result == FrustumIntersection.INTERSECT)) {
-            return result;
-        }*/
-        boolean result = this.check(
+        return this.check(  // Can't (?) use FrustumIntersection.INSIDE for faster occlusion graph traversal
             (float) (bb.minX() - this.getCamX()),
             (float) (bb.minY() - this.getCamY()),
             (float) (bb.minZ() - this.getCamZ()),
             (float) (bb.maxX() + 1 - this.getCamX()),
             (float) (bb.maxY() + 1 - this.getCamY()),
             (float) (bb.maxZ() + 1 - this.getCamZ())
-        );
-        // Can't (?) use FrustumIntersection.INSIDE for faster occlusion graph traversal
-        return result ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
+        ) ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
     }
 
     final private boolean check(
         float minX, float minY, float minZ, float maxX, float maxY, float maxZ
     ) {
-        Function<Plane, Boolean> isInside = (Plane plane) -> {
-            for (int x = 0; x <= 1; ++x) {
-                for (int y = 0; y <= 1; ++y) {
-                    for (int z = 0; z <= 1; ++z) {
-                        if (plane.pointIsInside(
-                            x == 0 ? minX : maxX,
-                            y == 0 ? minY : maxY,
-                            z == 0 ? minZ : maxZ
-                        )) {
-                            return true;
-                        }
-                    }
-                }
-            }
+        if (!(
+            maxX >= projectedFrustumMin.x && minX <= projectedFrustumMax.x &&
+            maxY >= projectedFrustumMin.y && minY <= projectedFrustumMax.y &&
+            maxZ >= projectedFrustumMin.z && minZ <= projectedFrustumMax.z
+        )) {
             return false;
-        };
+        }
 
-        for (Plane sidePlane : this.planes) {
-            if (!isInside.apply(sidePlane)) {
+        for (Plane plane : this.planes) {
+            if (!(
+                plane.pointIsInside(minX, minY, minZ) ||
+                plane.pointIsInside(minX, minY, maxZ) ||
+                plane.pointIsInside(minX, maxY, minZ) ||
+                plane.pointIsInside(minX, maxY, maxZ) ||
+                plane.pointIsInside(maxX, minY, minZ) ||
+                plane.pointIsInside(maxX, minY, maxZ) ||
+                plane.pointIsInside(maxX, maxY, minZ) ||
+                plane.pointIsInside(maxX, maxY, maxZ)
+            )) {
                 return false;
             }
         }
 
-        Function<Function<Vector3f, Boolean>, Boolean> anyForEachFrustumCorner = (Function<Vector3f, Boolean> exp) -> {
-            for (var corner : this.corners) {
-                if (exp.apply(corner)) { return true; }
-            }
-            return false;
-        };
-
-        // It is possible for AABB to be "inside" of all planes, but still not inside frustum projection
-        // This avoids most (not all) such false positives
-        return
-            anyForEachFrustumCorner.apply(c -> c.x > minX) &&
-            anyForEachFrustumCorner.apply(c -> c.y > minY) &&
-            anyForEachFrustumCorner.apply(c -> c.z > minZ) &&
-            anyForEachFrustumCorner.apply(c -> c.x < maxX) &&
-            anyForEachFrustumCorner.apply(c -> c.y < maxY) &&
-            anyForEachFrustumCorner.apply(c -> c.z < maxZ);
+        return true;
     }
 
 }
