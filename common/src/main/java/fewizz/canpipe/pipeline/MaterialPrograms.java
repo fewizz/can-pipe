@@ -21,8 +21,6 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
@@ -187,23 +185,34 @@ public class MaterialPrograms {
     ) {
         String vertexSrcOriginal = getShaderSource.apply(vertexShaderLocation).get();
 
-        String materialsVertexSrc = "";
-        IntList usedMaterialIDs = new IntArrayList();
-        for (Material m : Materials.allCopy()) {
-            String src = shadow ? m.depthVertexShaderSource : m.vertexShaderSource;
-            if (src == null) {
-                continue;
-            }
-            int id = Materials.id(m);
-            src = src.replace("frx_materialVertex", "_material_"+id);
-            materialsVertexSrc += src + "\n\n";
-            usedMaterialIDs.add(id);
-        }
-
         boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
         boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
         boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
         boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
+
+        StringBuilder materialsFunctionsSrc = new StringBuilder();
+        StringBuilder materialsSwitchSrc = new StringBuilder();
+
+        if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
+            materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
+
+            for (Material m : Materials.allCopy()) {
+                String src = shadow ? m.depthVertexShaderSource : m.vertexShaderSource;
+                if (src == null) {
+                    continue;
+                }
+                int id = Materials.id(m);
+                src = src.replace("frx_materialFragment", "_material_"+id);
+
+                String materialFunctionName = "_material_"+id;
+
+                materialsSwitchSrc.append("        case "+id+": "+materialFunctionName+"(); break;\n");
+                materialsFunctionsSrc.append(src.replace("frx_materialVertex", materialFunctionName) + "\n\n");
+            }
+
+            materialsSwitchSrc.append("        default: break;\n");
+            materialsSwitchSrc.append("    }\n");
+        }
 
         var vertexSrcBuilder = new StringBuilder();
 
@@ -219,6 +228,7 @@ public class MaterialPrograms {
         }
         vertexSrcBuilder.append("\n");
         vertexSrcBuilder.append("#include frex:shaders/api/view.glsl\n");
+        vertexSrcBuilder.append("#include frex:shaders/api/world.glsl\n");
         vertexSrcBuilder.append("\n");
         vertexSrcBuilder.append("in vec3 in_vertex;  // Position\n");
         vertexSrcBuilder.append("in vec4 in_color;  // Color\n");
@@ -268,7 +278,7 @@ public class MaterialPrograms {
 
         """
         );
-        vertexSrcBuilder.append(materialsVertexSrc);
+        vertexSrcBuilder.append(materialsFunctionsSrc);
         vertexSrcBuilder.append(vertexSrcOriginal);
         vertexSrcBuilder.append(
         """
@@ -304,17 +314,10 @@ public class MaterialPrograms {
             if (frx_isGui && !frx_isHand) {
                 frx_vertexNormal.y *= -1.0;  // compat
             }
-
-            switch (in_materialIndex) {
-        """
-        );
-        usedMaterialIDs.intStream().forEach(id ->
-            vertexSrcBuilder.append("        case "+id+": _material_"+id+"(); break;\n")
-        );
+        """);
+        vertexSrcBuilder.append(materialsSwitchSrc);
         vertexSrcBuilder.append(
         """
-                default: break;
-            }
 
             frx_pipelineVertex();
         }
@@ -335,17 +338,28 @@ public class MaterialPrograms {
     ) {
         String fragmentSrcOriginal = getShaderSource.apply(fragmentShaderLocation).get();
 
-        String materialsFragmentSrc = "";
-        IntList usedMaterialIDs = new IntArrayList();
-        for (Material m : Materials.allCopy()) {
-            String src = shadow ? m.depthFragmentShaderSource : m.fragmentShaderSource;
-            if (src == null) {
-                continue;
+        StringBuilder materialsFunctionsSrc = new StringBuilder();
+        StringBuilder materialsSwitchSrc = new StringBuilder();
+
+        if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
+            materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
+
+            for (Material m : Materials.allCopy()) {
+                String src = shadow ? m.depthFragmentShaderSource : m.fragmentShaderSource;
+                if (src == null) {
+                    continue;
+                }
+                int id = Materials.id(m);
+                src = src.replace("frx_materialFragment", "_material_"+id);
+
+                String materialFunctionName = "_material_"+id;
+
+                materialsSwitchSrc.append("        case "+id+": "+materialFunctionName+"(); break;\n");
+                materialsFunctionsSrc.append(src.replace("frx_materialFragment", materialFunctionName) + "\n\n");
             }
-            int id = Materials.id(m);
-            src = src.replace("frx_materialFragment", "_material_"+id);
-            materialsFragmentSrc += src + "\n\n";
-            usedMaterialIDs.add(id);
+
+            materialsSwitchSrc.append("        default: break;\n");
+            materialsSwitchSrc.append("    }\n");
         }
 
         float alphaCutout;
@@ -424,7 +438,7 @@ public class MaterialPrograms {
         #include frex:shaders/api/view.glsl
 
         """);
-        fragmentSrcBuilder.append(materialsFragmentSrc);
+        fragmentSrcBuilder.append(materialsFunctionsSrc);
         fragmentSrcBuilder.append(fragmentSrcOriginal);
         fragmentSrcBuilder.append(
         """
@@ -446,18 +460,10 @@ public class MaterialPrograms {
             if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) {
                 discard;
             }
-
-            switch (canpipe_materialIndex) {
-        """
-        );
-        usedMaterialIDs.intStream().forEach(id ->
-            fragmentSrcBuilder.append("        case "+id+": _material_"+id+"(); break;\n")
-        );
+        """);
+        fragmentSrcBuilder.append(materialsSwitchSrc);
         fragmentSrcBuilder.append(
         """
-                default: break;
-            }
-
             frx_pipelineFragment();
         }
         """);
