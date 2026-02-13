@@ -14,9 +14,9 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -55,17 +55,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private Supplier<TextureAtlasSprite> spriteSupplier = null;
     @Unique private boolean recomputeNormal = false;
 
-    @ModifyExpressionValue(
-        method = "endLastVertex",
-        at = @At(
-            value = "FIELD",  // after checking that this.vertices != 0
-            target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;elementsToFill:I",
-            ordinal = 0
-        )
-    )
-    private int endLastVertex(int elementsToFill) {
-        if (elementsToFill == 0) {
-            return 0;
+    @Inject(method = "endLastVertex", at = @At("HEAD"))
+    private void endLastVertex(CallbackInfo ci) {
+        if (this.vertices == 0) {
+            return;
         }
 
         long normalPtr = this.beginElement(VertexFormatElement.NORMAL);
@@ -79,8 +72,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         this.canpipe_setAO(1.0F);
 
         boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
-        if (!lastVertex || !(normalPtr != -1 || tangentPtr != -1)) {
-            return this.elementsToFill;
+        if (!lastVertex || (normalPtr == -1 && tangentPtr == -1)) {
+            return;
         }
 
         long posPtr = this.vertexPointer + this.offsetsByElement[VertexFormatElement.POSITION.id()];
@@ -166,7 +159,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             }
         }
 
-        return this.elementsToFill;
+        return;
     }
 
     @Inject(

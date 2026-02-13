@@ -34,9 +34,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.helpers.PerVertexFormatBufferSource;
 import fewizz.canpipe.helpers.ShadowFrustum;
+import fewizz.canpipe.mixininterface.FeatureRenderDispatcherExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
+import fewizz.canpipe.mixininterface.RenderBuffersExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -92,7 +95,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Unique private float canpipe_smoothedRainGradient = 0.0F;
     @Unique private float canpipe_smoothedThunderGradient = 0.0F;
     @Unique @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_visibleSections = new ObjectArrayList<>(10000);
-	@Unique @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSections = new ObjectArrayList<>(50);
+    @Unique @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSections = new ObjectArrayList<>(50);
+    @Unique @Final private PerVertexFormatBufferSource perVertexFormetBufferSource = new PerVertexFormatBufferSource();
 
     @Override public boolean canpipe_getIsRenderingShadows() { return this.canpipe_isRenderingShadows; }
     @Override public int canpipe_getShadowCascade() { return this.canpipe_shadowCascade; }
@@ -214,6 +218,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camera.position().x, camera.position().y, camera.position().z);
                 chunkSectionsToRender.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
 
+                ((RenderBuffersExtended) this.renderBuffers).canpipe_setBufferSourceOverride(this.perVertexFormetBufferSource);
+                ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(perVertexFormetBufferSource);
+
                 if (p.shadows.allowEntities()) {
                     Profiler.get().popPush("entities");
                     Profiler.get().push("extract entities");
@@ -232,6 +239,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                     this.featureRenderDispatcher.renderAllFeatures();
                     this.checkPoseStack(poseStack);
                     Profiler.get().pop();
+                    this.renderBuffers.bufferSource().endBatch();
                 }
 
                 if (p.shadows.allowParticles()) {
@@ -242,14 +250,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                     this.particlesRenderState.submit(this.submitNodeStorage, this.levelRenderState.cameraRenderState);
                     this.featureRenderDispatcher.renderAllFeatures();
                     this.particlesRenderState.reset();
+                    this.renderBuffers.bufferSource().endBatch();
                 }
-
-                Profiler.get().popPush("end batch");
-                this.renderBuffers.bufferSource().endBatch();
-                this.renderBuffers.crumblingBufferSource().endBatch();
 
             } finally {
                 mc.mainRenderTarget = originalMainRenderTarget;
+                ((RenderBuffersExtended) this.renderBuffers).canpipe_setBufferSourceOverride(null);
+                ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(null);
             }
 
             Profiler.get().pop();
