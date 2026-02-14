@@ -17,6 +17,8 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -58,50 +60,65 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Unique @Final private int canpipe_aoOffset;
     @Unique @Final private int canpipe_uv0Offset;
+    @Unique @Final private int canpipe_positionOffset;
     @Unique @Final private int canpipe_spriteIndexOffset;
     @Unique @Final private int canpipe_materialIndexOffset;
     @Unique @Final private int canpipe_materialFlagsOffset;
     @Unique @Final private int canpipe_normalOffset;
     @Unique @Final private int canpipe_tangentOffset;
 
+    @Override public VertexFormat canpipe_getVertexFormat() { return this.format; }
+
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
         this.canpipe_aoOffset = this.format.getOffset(CanPipe.VertexFormatElements.AO);
         this.canpipe_uv0Offset = this.format.getOffset(VertexFormatElement.UV0);
+        this.canpipe_positionOffset = this.format.getOffset(VertexFormatElement.POSITION);  // Should be 0
         this.canpipe_spriteIndexOffset = this.format.getOffset(CanPipe.VertexFormatElements.SPRITE_INDEX);
         this.canpipe_materialIndexOffset = this.format.getOffset(CanPipe.VertexFormatElements.MATERIAL_INDEX);
         this.canpipe_materialFlagsOffset = this.format.getOffset(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
         this.canpipe_normalOffset = this.format.getOffset(VertexFormatElement.NORMAL);
         this.canpipe_tangentOffset = this.format.getOffset(CanPipe.VertexFormatElements.TANGENT);
+
+        if (this.canpipe_materialIndexOffset == -1 && this.canpipe_materialFlagsOffset != -1) {
+            throw new RuntimeException("in_materialIndex should be enabled with in_materialFlags");
+        }
+
+        if (this.canpipe_normalOffset == -1 && this.canpipe_tangentOffset != -1) {
+            throw new RuntimeException("in_tangent should be enabled with in_tangent");
+        }
     }
 
-    private void canpipe_setNormalAndTangent(long normalPtr, long tangentPtr) {
+    private void canpipe_setNormalAndTangent(long normalPtr, float normalX, float normalY, float normalZ, long tangentPtr) {
         if (normalPtr == -1 && tangentPtr == -1) { return; }
-
-        long posPtr = this.vertexPointer + this.offsetsByElement[VertexFormatElement.POSITION.id()];
 
         int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
 
         float
-            x0 = this.canpipe_getPos(posPtr, offsetToFirstVertex+0, 0),
-            y0 = this.canpipe_getPos(posPtr, offsetToFirstVertex+0, 1),
-            z0 = this.canpipe_getPos(posPtr, offsetToFirstVertex+0, 2),
-            x1 = this.canpipe_getPos(posPtr, offsetToFirstVertex+1, 0),
-            y1 = this.canpipe_getPos(posPtr, offsetToFirstVertex+1, 1),
-            z1 = this.canpipe_getPos(posPtr, offsetToFirstVertex+1, 2),
-            x2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 0),
-            y2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 1),
-            z2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 2);
+            x0 = this.canpipe_getPosX(offsetToFirstVertex+0),
+            y0 = this.canpipe_getPosY(offsetToFirstVertex+0),
+            z0 = this.canpipe_getPosZ(offsetToFirstVertex+0),
+            x1 = this.canpipe_getPosX(offsetToFirstVertex+1),
+            y1 = this.canpipe_getPosY(offsetToFirstVertex+1),
+            z1 = this.canpipe_getPosZ(offsetToFirstVertex+1),
+            x2 = this.canpipe_getPosX(offsetToFirstVertex+2),
+            y2 = this.canpipe_getPosY(offsetToFirstVertex+2),
+            z2 = this.canpipe_getPosZ(offsetToFirstVertex+2);
 
-        Vector3f normal0 = NormalAndTangent.computeNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+        Vector3f normal0;
 
-        if (normalPtr != -1) {
+        if (normalPtr == -1) {
+            normal0 = new Vector3f(normalX, normalY, normalZ);
+        }
+        else {
+            normal0 = NormalAndTangent.computeNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
+
             float x3 = 0, y3 = 0, z3 = 0;
 
             if (this.mode.primitiveLength == 4) {
-                x3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 0);
-                y3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 1);
-                z3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 2);
+                x3 = this.canpipe_getPosX(offsetToFirstVertex+3);
+                y3 = this.canpipe_getPosY(offsetToFirstVertex+3);
+                z3 = this.canpipe_getPosZ(offsetToFirstVertex+3);
             }
 
             if (
@@ -206,10 +223,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
             int materialIndex = material != null ? Materials.id(material) : -1;
 
-            if (materialFlagsPtr == -1) {
-                throw new RuntimeException("in_materialIndex should be enabled with in_materialFlags");
-            }
-
             if (material != null && material.disableAO) { this.canpipe_materialFlags |= 1 << 1; }
             else  { this.canpipe_materialFlags &= ~(1 << 1); }
 
@@ -255,7 +268,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
 
         if (lastVertex) {
-            canpipe_setNormalAndTangent(normalPtr, tangentPtr);
+            canpipe_setNormalAndTangent(normalPtr, -1, -1, -1, tangentPtr);
         }
     }
 
@@ -281,13 +294,14 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Inject(method = "addVertex(FFFIFFIIFFF)V", at = @At("RETURN"))
-    private void onAddVertexBulk(CallbackInfo ci) {
+    private void onAddVertexBulk(
+        CallbackInfo ci, @Local(name="normalX") float normalX, @Local(name="normalY") float normalY, @Local(name="normalZ") float normalZ
+    ) {
         if (!this.fastFormat) { return; }  // Because I don't know how to Mixin
 
         if (this.canpipe_aoOffset != -1) {
-            var ptr = this.vertexPointer + this.canpipe_aoOffset;
             float ao = this.canpipe_aoPending != null ? this.canpipe_aoPending : 1.0F;
-            MemoryUtil.memPutByte(ptr, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
+            MemoryUtil.memPutByte(this.vertexPointer + this.canpipe_aoOffset, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
             this.canpipe_aoPending = null;
         }
 
@@ -301,16 +315,28 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
             this.canpipe_setNormalAndTangent(
                 this.canpipe_recomputeNormal && this.canpipe_normalOffset != 1 ? this.vertexPointer + this.canpipe_normalOffset : -1,
+                normalX, normalY, normalZ,
                 this.canpipe_tangentOffset != -1 ? this.vertexPointer + this.canpipe_tangentOffset : -1
             );
         }
     }
 
-    @Inject(method = "setNormal", at = @At("HEAD"), cancellable = true)
-    private void onSetNormal(CallbackInfoReturnable<VertexConsumer> cir) {
-        if (this.canpipe_recomputeNormal) {
-            cir.setReturnValue(this);
+    @ModifyExpressionValue(
+        method = "setNormal",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;beginElement(Lcom/mojang/blaze3d/vertex/VertexFormatElement;)J"
+        )
+    )
+    private long onSetNormal(long normalPtr, float normalX, float normalY, float normalZ) {
+        boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
+
+        if (lastVertex) {
+            long tangentPtr = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
+            canpipe_setNormalAndTangent(this.canpipe_recomputeNormal ? normalPtr : -1, normalX, normalY, normalZ, tangentPtr);
         }
+
+        return this.canpipe_recomputeNormal ? -1 : normalPtr;
     }
 
     @Override
@@ -339,26 +365,24 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         this.canpipe_recomputeNormal = recompute;
     }
 
-    @Override
-    public float canpipe_getU(int vertexOffset) {
-        long ptr = this.vertexPointer + this.canpipe_uv0Offset;
-        return MemoryUtil.memGetFloat(ptr + vertexOffset*this.vertexSize + 0*Float.BYTES);
+    @Override public float canpipe_getU(int vertexOffset) {
+        return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_uv0Offset + vertexOffset*this.vertexSize + 0*Float.BYTES);
     }
 
-    @Override
-    public float canpipe_getV(int vertexOffset) {
-        long ptr = this.vertexPointer + this.canpipe_uv0Offset;
-        return MemoryUtil.memGetFloat(ptr + vertexOffset*this.vertexSize + 1*Float.BYTES);
+    @Override public float canpipe_getV(int vertexOffset) {
+        return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_uv0Offset + vertexOffset*this.vertexSize + 1*Float.BYTES);
     }
 
-    @Unique
-    private final float canpipe_getPos(long posPtr, int vertexOffset, int element) {
-        return MemoryUtil.memGetFloat(posPtr + (vertexOffset*this.vertexSize + element*Float.BYTES));
+    private final float canpipe_getPosX(int vertexOffset) {
+        return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_positionOffset + vertexOffset*this.vertexSize + 0*Float.BYTES);
     }
 
-    @Override
-    public VertexFormat canpipe_getVertexFormat() {
-        return this.format;
+    private final float canpipe_getPosY(int vertexOffset) {
+        return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_positionOffset + vertexOffset*this.vertexSize + 1*Float.BYTES);
+    }
+
+    private final float canpipe_getPosZ(int vertexOffset) {
+        return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_positionOffset + vertexOffset*this.vertexSize + 2*Float.BYTES);
     }
 
 }
