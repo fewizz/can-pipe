@@ -54,7 +54,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private byte canpipe_materialFlags = 0;
     @Unique private Supplier<TextureAtlasSprite> canpipe_spriteSupplier = null;
     @Unique private boolean canpipe_recomputeNormal = false;
+    @Unique private Float canpipe_aoPending;
 
+    @Unique @Final private int canpipe_aoOffset;
     @Unique @Final private int canpipe_spriteIndexOffset;
     @Unique @Final private int canpipe_materialIndexOffset;
     @Unique @Final private int canpipe_materialFlagsOffset;
@@ -63,6 +65,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
+        this.canpipe_aoOffset = this.format.getOffset(CanPipe.VertexFormatElements.AO);
         this.canpipe_spriteIndexOffset = this.format.getOffset(CanPipe.VertexFormatElements.SPRITE_INDEX);
         this.canpipe_materialIndexOffset = this.format.getOffset(CanPipe.VertexFormatElements.MATERIAL_INDEX);
         this.canpipe_materialFlagsOffset = this.format.getOffset(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
@@ -70,7 +73,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         this.canpipe_tangentOffset = this.format.getOffset(CanPipe.VertexFormatElements.TANGENT);
     }
 
-    @Unique
     private void canpipe_setNormalAndTangent(long normalPtr, long tangentPtr) {
         if (normalPtr == -1 && tangentPtr == -1) { return; }
 
@@ -163,7 +165,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
     }
 
-    @Unique
     private void canpipe_setSpriteAndMaterial(long spriteIndexPtr, long materialIndexPtr, long materialFlagsPtr) {
         if (spriteIndexPtr == -1 && materialFlagsPtr == -1 && materialFlagsPtr == -1) { return; }
 
@@ -231,14 +232,21 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         return value || this.format == CanPipe.VertexFormats.BLOCK;
     }
 
+    @Inject(method = "addVertex(FFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;", at = @At("RETURN"))
+    private void onAddVertex(CallbackInfoReturnable<VertexConsumer> cir) {
+        var ptr = this.beginElement(CanPipe.VertexFormatElements.AO);
+        if (ptr != -1) {
+            float ao = this.canpipe_aoPending != null ? this.canpipe_aoPending : 1.0F;
+            MemoryUtil.memPutByte(this.vertexPointer + this.canpipe_aoOffset, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
+            this.canpipe_aoPending = null;
+        }
+    }
+
     @Inject(method = "endLastVertex", at = @At("HEAD"))
     private void endLastVertex(CallbackInfo ci) {
         if (this.vertices == 0) {
             return;
         }
-
-        long aoPtr = this.beginElement(CanPipe.VertexFormatElements.AO);
-        if (aoPtr != -1) { this.canpipe_putAO(aoPtr, 1.0F); }
 
         long normalPtr = this.beginElement(VertexFormatElement.NORMAL);
         long tangentPtr = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
@@ -275,9 +283,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     private void onAddVertexBulk(CallbackInfo ci) {
         if (!this.fastFormat) { return; }  // Because I don't know how to Mixin
 
-        int aoOffset = this.format.getOffset(CanPipe.VertexFormatElements.AO);
-        if (aoOffset != -1) {
-            this.canpipe_putAO(this.vertexPointer + aoOffset, 1.0F);
+        if (this.canpipe_aoOffset != -1) {
+            var ptr = this.vertexPointer + this.canpipe_aoOffset;
+            float ao = this.canpipe_aoPending != null ? this.canpipe_aoPending : 1.0F;
+            MemoryUtil.memPutByte(ptr, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
+            this.canpipe_aoPending = null;
         }
 
         boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
@@ -303,21 +313,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
-    public void canpipe_setAO(float ao) {
-        long ptr = this.beginElement(CanPipe.VertexFormatElements.AO);
-        if (ptr != -1) {
-            this.canpipe_putAO(ptr, ao);
-        }
-        if (this.fastFormat) {
-            int aoOffset = this.format.getOffset(CanPipe.VertexFormatElements.AO);
-            if (aoOffset != -1) {
-                this.canpipe_putAO(this.vertexPointer + aoOffset, ao);
-            }
-        }
-    }
-
-    private void canpipe_putAO(long ptr, float ao) {
-        MemoryUtil.memPutByte(ptr, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
+    public void canpipe_setPendingAO(float ao) {
+        this.canpipe_aoPending = ao;
     }
 
     @Override

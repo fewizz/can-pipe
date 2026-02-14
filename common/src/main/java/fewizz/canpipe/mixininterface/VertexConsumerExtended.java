@@ -12,7 +12,7 @@ public interface VertexConsumerExtended extends VertexConsumer {
 
     VertexFormat canpipe_getVertexFormat();
     float canpipe_getUV(int vertexOffset, int element);
-    void canpipe_setAO(float ao);
+    void canpipe_setPendingAO(float ao);  // Will be applied on next `addVertex`
     void canpipe_recomputeNormal(boolean recompute);
     void canpipe_setSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier);
     void canpipe_setSharedMaterialMap(MaterialMap materialMap);

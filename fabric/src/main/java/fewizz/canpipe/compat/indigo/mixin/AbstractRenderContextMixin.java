@@ -67,8 +67,7 @@ public class AbstractRenderContextMixin {
         ")V",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V",
-            shift = Shift.AFTER
+            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V"
         ),
         locals = LocalCapture.CAPTURE_FAILHARD
     )
@@ -83,7 +82,7 @@ public class AbstractRenderContextMixin {
             quad instanceof MutableQuadViewExtended q
         ) {
             if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)) {
-                vce.canpipe_setAO(q.canpipe_getAO(quadVertexIndex));
+                vce.canpipe_setPendingAO(q.canpipe_getAO(quadVertexIndex));
             }
         }
     }

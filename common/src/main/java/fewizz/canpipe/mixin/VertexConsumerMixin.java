@@ -2,7 +2,6 @@ package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -74,7 +73,7 @@ public interface VertexConsumerMixin {
             "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
             "[FFFFF[II"+
         ")V",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V", shift = Shift.AFTER)
+        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V")
     )
     default void setAO(
         CallbackInfo ci,
@@ -85,7 +84,7 @@ public interface VertexConsumerMixin {
             this instanceof VertexConsumerExtended vce &&
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)
         ) {
-            vce.canpipe_setAO(ao[vertexIndex + 4]);  // because of the change above
+            vce.canpipe_setPendingAO(ao[vertexIndex + 4]);  // because of the change above
         }
     }
 
