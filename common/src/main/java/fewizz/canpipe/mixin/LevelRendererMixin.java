@@ -239,19 +239,27 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                     Profiler.get().popPush("render");
                     this.featureRenderDispatcher.renderAllFeatures();
                     this.checkPoseStack(poseStack);
-                    Profiler.get().pop();
+
+                    Profiler.get().popPush("end batch");
                     this.renderBuffers.bufferSource().endBatch();
+                    Profiler.get().pop();
                 }
 
                 if (p.shadows.allowParticles()) {
-                    Profiler.get().popPush("extract particles");
+                    Profiler.get().popPush("particles");
+                    Profiler.get().push("extract");
                     mc.particleEngine.extract(this.particlesRenderState, shadowFrustum, camera, pt);
 
-                    Profiler.get().popPush("render particles");
+                    Profiler.get().popPush("submit particles");
                     this.particlesRenderState.submit(this.submitNodeStorage, this.levelRenderState.cameraRenderState);
+
+                    Profiler.get().popPush("render");
                     this.featureRenderDispatcher.renderAllFeatures();
                     this.particlesRenderState.reset();
+
+                    Profiler.get().popPush("end batch");
                     this.renderBuffers.bufferSource().endBatch();
+                    Profiler.get().pop();
                 }
 
             } finally {
