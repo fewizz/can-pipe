@@ -43,10 +43,17 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
         private RenderType lastRenderType = null;
         private BufferBuilder lastBufferBuilder = null;
 
-        private final ByteBufferBuilder vertexByteBufferBuilder = new ByteBufferBuilder(768 * 1024);
-        private List<SliceInfo> vertexBufferSlices = new ArrayList<>();
+        private final ByteBufferBuilder vertexByteBufferBuilder;
+        private final long begin;
+
+        private final List<SliceInfo> vertexBufferSlices = new ArrayList<>();
 
         private int vertices = 0;
+
+        private VertexFormatBufferSource() {
+            this.vertexByteBufferBuilder = new ByteBufferBuilder(768 * 1024);
+            this.begin = this.vertexByteBufferBuilder.reserve(0);
+        }
 
         private BufferBuilder getBuffer(RenderType renderType) {
             if (this.lastRenderType != renderType) {
@@ -120,9 +127,8 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
 
             var lastElement = bufferSource.vertexBufferSlices.getLast();
 
-            var verticesBegin = bufferSource.vertexByteBufferBuilder.pointer;
-            var verticesCapacity = bufferSource.vertices * lastElement.renderType.format().getVertexSize();
-            GpuBuffer vertexBuffer = lastElement.renderType.format().uploadImmediateVertexBuffer(MemoryUtil.memByteBuffer(verticesBegin, verticesCapacity));
+            int capacity = (int) Math.subtractExact(bufferSource.vertexByteBufferBuilder.reserve(0), bufferSource.begin);
+            GpuBuffer vertexBuffer = lastElement.renderType.format().uploadImmediateVertexBuffer(MemoryUtil.memByteBuffer(bufferSource.begin, capacity));
 
             RenderPass renderPass = null;
             RenderTarget renderTarget = null;
