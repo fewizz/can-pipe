@@ -50,32 +50,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow private long beginElement(VertexFormatElement vertexFormatElement) { return -1; }
     @Shadow private static byte normalIntValue(float f) { return 0; }
 
-    @Unique private MaterialMap materialMap = null;
-    @Unique private byte materialFlags = 0;
-    @Unique private Supplier<TextureAtlasSprite> spriteSupplier = null;
-    @Unique private boolean recomputeNormal = false;
+    @Unique private MaterialMap canpipe_materialMap = null;
+    @Unique private byte canpipe_materialFlags = 0;
+    @Unique private Supplier<TextureAtlasSprite> canpipe_spriteSupplier = null;
+    @Unique private boolean canpipe_recomputeNormal = false;
 
-    @Inject(method = "endLastVertex", at = @At("HEAD"))
-    private void endLastVertex(CallbackInfo ci) {
-        if (this.vertices == 0) {
-            return;
-        }
-
-        long normalPtr = this.beginElement(VertexFormatElement.NORMAL);
-        long tangentPtr = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
-        /*long materialFlagsPtr = this.beginElement(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
-
-        if (materialFlagsPtr != -1) {
-            MemoryUtil.memPutByte(materialFlagsPtr, this.materialFlags);
-        }*/
-
-        this.canpipe_setAO(1.0F);
-
-        boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
-        if (!lastVertex || (normalPtr == -1 && tangentPtr == -1)) {
-            return;
-        }
-
+    @Unique
+    private void canpipe_setNormalAndTangent(long normalPtr, long tangentPtr) {
         long posPtr = this.vertexPointer + this.offsetsByElement[VertexFormatElement.POSITION.id()];
 
         int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
@@ -89,14 +70,19 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             z1 = this.canpipe_getPos(posPtr, offsetToFirstVertex+1, 2),
             x2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 0),
             y2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 1),
-            z2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 2),
-            x3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 0),
-            y3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 1),
-            z3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 2);
+            z2 = this.canpipe_getPos(posPtr, offsetToFirstVertex+2, 2);
 
         Vector3f normal0 = NormalAndTangent.computeNormal(x0, y0, z0, x1, y1, z1, x2, y2, z2);
 
         if (normalPtr != -1) {
+            float x3 = 0, y3 = 0, z3 = 0;
+
+            if (this.mode.primitiveLength == 4) {
+                x3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 0);
+                y3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 1);
+                z3 = this.canpipe_getPos(posPtr, offsetToFirstVertex+3, 2);
+            }
+
             if (
                 this.mode.primitiveLength == 4 &&
                 // not coplanar
@@ -158,8 +144,80 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+3, normalIntValue(inverseBitangent ? -1.0F : 1.0F));
             }
         }
+    }
 
-        return;
+    @Unique
+    private void canpipe_setSpriteAndMaterial(long spriteIndexPtr, long materialIndexPtr, long materialFlagsPtr) {
+        int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
+
+        TextureAtlasSprite sprite = this.canpipe_spriteSupplier != null ? this.canpipe_spriteSupplier.get() : null;
+
+        if (spriteIndexPtr != -1) {
+            int index = sprite != null ? ((TextureAtlasSpriteExtended) sprite).getIndex() : -1;
+            for (int i = offsetToFirstVertex; i <= 0; ++i) {
+                MemoryUtil.memPutInt(spriteIndexPtr + i*this.vertexSize, index);
+            }
+        }
+
+        if (materialIndexPtr != -1) {
+            Material material = null;
+
+            if (this.canpipe_materialMap != null) {
+                if (this.canpipe_materialMap.spriteMap != null && sprite != null) {
+                    Minecraft mc = Minecraft.getInstance();
+                    MutableObject<TextureAtlas> atlas = new MutableObject<>();
+                    mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
+                        if (atlas.get() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
+                            atlas.setValue(possibleAtlas);
+                        }
+                    });
+
+                    for (var kv : this.canpipe_materialMap.spriteMap.entrySet()) {
+                        if (atlas.get().getSprite(kv.getKey()) == sprite) {
+                            material = kv.getValue();
+                        }
+                    }
+                }
+                if (material == null) {
+                    material = canpipe_materialMap.defaultMaterial;
+                }
+            }
+
+            int materialIndex = material != null ? Materials.id(material) : -1;
+
+            if (materialFlagsPtr == -1) {
+                throw new RuntimeException("in_materialIndex should be enabled with in_materialFlags");
+            }
+
+            if (material != null && material.disableAO) { this.canpipe_materialFlags |= 1 << 1; }
+            else  { this.canpipe_materialFlags &= ~(1 << 1); }
+
+            if (material != null && material.disableDiffuse) { this.canpipe_materialFlags |= 1 << 2; }
+            else  { this.canpipe_materialFlags &= ~(1 << 2); }
+
+            for (int i = offsetToFirstVertex; i <= 0; ++i) {
+                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) materialIndex);
+                MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, this.canpipe_materialFlags);
+            }
+        }
+    }
+
+    @Inject(method = "endLastVertex", at = @At("HEAD"))
+    private void endLastVertex(CallbackInfo ci) {
+        if (this.vertices == 0) {
+            return;
+        }
+
+        this.canpipe_setAO(1.0F);
+
+        boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
+
+        long normalPtr = this.beginElement(VertexFormatElement.NORMAL);
+        long tangentPtr = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
+
+        if (lastVertex && (normalPtr != -1 || tangentPtr == -1)) {
+            canpipe_setNormalAndTangent(normalPtr, tangentPtr);
+        }
     }
 
     @Inject(
@@ -179,59 +237,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         boolean lastVertex = (this.vertices % this.mode.primitiveLength) == 0;
 
-        if (!lastVertex || (spriteIndexPtr == -1 && materialIndexPtr == -1 && materialFlagsPtr == -1)) {
-            return;
-        }
-
-        TextureAtlasSprite sprite = lastVertex && this.spriteSupplier != null ? this.spriteSupplier.get() : null;
-
-        if (spriteIndexPtr != -1) {
-            int index = sprite != null ? ((TextureAtlasSpriteExtended) sprite).getIndex() : -1;
-            for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
-                MemoryUtil.memPutInt(spriteIndexPtr + i*this.vertexSize, index);
-            }
-        }
-
-        if (materialIndexPtr != -1) {
-            Material material = null;
-
-            if (this.materialMap != null) {
-                if (this.materialMap.spriteMap != null && sprite != null) {
-                    Minecraft mc = Minecraft.getInstance();
-                    MutableObject<TextureAtlas> atlas = new MutableObject<>();
-                    mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
-                        if (atlas.get() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
-                            atlas.setValue(possibleAtlas);
-                        }
-                    });
-
-                    for (var kv : this.materialMap.spriteMap.entrySet()) {
-                        if (atlas.get().getSprite(kv.getKey()) == sprite) {
-                            material = kv.getValue();
-                        }
-                    }
-                }
-                if (material == null) {
-                    material = materialMap.defaultMaterial;
-                }
-            }
-
-            int materialIndex = material != null ? Materials.id(material) : -1;
-
-            if (materialFlagsPtr == -1) {
-                throw new RuntimeException("in_materialIndex should be enabled with in_materialFlags");
-            }
-
-            if (material != null && material.disableAO) { this.materialFlags |= 1 << 1; }
-            else  { this.materialFlags &= ~(1 << 1); }
-
-            if (material != null && material.disableDiffuse) { this.materialFlags |= 1 << 2; }
-            else  { this.materialFlags &= ~(1 << 2); }
-
-            for (int i = -(this.mode.primitiveLength - 1); i <= 0; ++i) {
-                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) materialIndex);
-                MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, this.materialFlags);
-            }
+        if (lastVertex && (spriteIndexPtr != -1 || materialIndexPtr != -1 || materialFlagsPtr != -1)) {
+            canpipe_setSpriteAndMaterial(spriteIndexPtr, materialIndexPtr, materialFlagsPtr);
         }
     }
 
@@ -241,38 +248,38 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         cancellable = true
     )
     private void onSetNormal(CallbackInfoReturnable<VertexConsumer> cir) {
-        if (this.recomputeNormal) {
+        if (this.canpipe_recomputeNormal) {
             cir.setReturnValue(this);
         }
     }
 
     @Override
     public void canpipe_setAO(float ao) {
-        long l = this.beginElement(CanPipe.VertexFormatElements.AO);
-        if (l != -1) {
-            MemoryUtil.memPutByte(l, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
+        long ptr = this.beginElement(CanPipe.VertexFormatElements.AO);
+        if (ptr != -1) {
+            MemoryUtil.memPutByte(ptr, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
         }
     }
 
     @Override
     public void canpipe_setSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier) {
-        this.spriteSupplier = spriteSupplier;
+        this.canpipe_spriteSupplier = spriteSupplier;
     }
 
     @Override
     public void canpipe_setSharedMaterialMap(MaterialMap materialmap) {
-        this.materialMap = materialmap;
+        this.canpipe_materialMap = materialmap;
     }
 
     @Override
     public void canpipe_setSharedGlint(boolean glint) {
-        if (glint) { this.materialFlags |=   1 << 0;  }
-        else       { this.materialFlags &= ~(1 << 0); }
+        if (glint) { this.canpipe_materialFlags |=   1 << 0;  }
+        else       { this.canpipe_materialFlags &= ~(1 << 0); }
     }
 
     @Override
     public void canpipe_recomputeNormal(boolean recompute) {
-        this.recomputeNormal = recompute;
+        this.canpipe_recomputeNormal = recompute;
     }
 
     @Override
