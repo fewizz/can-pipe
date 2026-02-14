@@ -27,6 +27,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.IndexType;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.mixin.RenderSetupAccessor;
 import fewizz.canpipe.mixin.RenderTypeAccessor;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
@@ -136,16 +137,19 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
 
             try {
                 for (var s : bufferSource.vertexBufferSlices) {
-                    s.renderType.state.getTextures();  // preload textures before creating renderpass
+                    RenderSetup renderSetup = ((RenderTypeAccessor) s.renderType).canpipe_getState();
+                    renderSetup.getTextures();  // preload textures before creating renderpass
                 }
 
                 for (var s : bufferSource.vertexBufferSlices) {
+                    RenderSetup renderSetup = ((RenderTypeAccessor) s.renderType).canpipe_getState();
+                    var newRenderTarget = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getOutputTarget().getRenderTarget();
 
-                    if (renderTarget != s.renderType.state.outputTarget.getRenderTarget()) {
+                    if (renderTarget != newRenderTarget) {
                         if (renderPass != null) {
                             renderPass.close();
                         }
-                        renderTarget = s.renderType.state.outputTarget.getRenderTarget();
+                        renderTarget = newRenderTarget;
                         renderPass = pipeline.createRenderPass(
                             (CommandEncoderExtended) commandEncoder,
                             () -> "can-pipe immediate for \""+((RenderTypeAccessor) s.renderType).canpipe_getName()+"\"-like rendertype",
@@ -166,7 +170,7 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
                         renderPipeline = s.renderType.pipeline();
                     }
 
-                    var textures = s.renderType.state.getTextures();
+                    var textures = renderSetup.getTextures();
                     for (Entry<String, RenderSetup.TextureAndSampler> entry : textures.entrySet()) {
                         renderPass.bindTexture(
                             (String) entry.getKey(),

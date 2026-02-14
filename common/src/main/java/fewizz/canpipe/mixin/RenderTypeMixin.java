@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -36,8 +35,7 @@ public class RenderTypeMixin {
 
     @Shadow @Final private RenderSetup state;
 
-    @Unique
-    private RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline) {
+    private RenderPipeline canpipe_getReplacedRenderPipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             renderPipeline = p.replaceRenderPipeline(renderPipeline);
@@ -55,7 +53,7 @@ public class RenderTypeMixin {
         )
     )
     RenderPipeline replaceRenderPipeline(RenderPipeline original) {
-        return this.getReplacedRenderPipeline(original);
+        return this.canpipe_getReplacedRenderPipeline(original);
     }
 
     @WrapOperation(

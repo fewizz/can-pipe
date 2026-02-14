@@ -5,6 +5,3 @@ accessible  class   com/mojang/blaze3d/opengl/GlDevice$ShaderCompilationKey
 
 accessible  field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
 mutable     field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
-
-accessible  field   net/minecraft/client/renderer/rendertype/RenderType  state  Lnet/minecraft/client/renderer/rendertype/RenderSetup;
-accessible  field   net/minecraft/client/renderer/rendertype/RenderSetup  outputTarget  Lnet/minecraft/client/renderer/rendertype/OutputTarget;
