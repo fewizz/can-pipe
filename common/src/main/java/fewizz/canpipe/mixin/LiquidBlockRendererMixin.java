@@ -43,14 +43,14 @@ public class LiquidBlockRendererMixin {
 
             // TODO. Disgusting. Can't think of other universal way for finding sprite
             vce.canpipe_setSpriteSupplier(() -> {
-                float u0 = vce.canpipe_getUV(0, 0);
-                float v0 = vce.canpipe_getUV(0, 1);
+                float u0 = vce.canpipe_getU(0);
+                float v0 = vce.canpipe_getV(0);
 
-                float u1 = vce.canpipe_getUV(-1, 0);
-                float v1 = vce.canpipe_getUV(-1, 1);
+                float u1 = vce.canpipe_getU(-1);
+                float v1 = vce.canpipe_getV(-1);
 
-                float u2 = vce.canpipe_getUV(-2, 0);
-                float v2 = vce.canpipe_getUV(-2, 1);
+                float u2 = vce.canpipe_getU(-2);
+                float v2 = vce.canpipe_getV(-2);
 
                 for (var sprite : sprites.values()) {
                     if (
@@ -68,7 +68,7 @@ public class LiquidBlockRendererMixin {
             MaterialMap materialMap = MaterialMaps.getForFluid(fs.getType());
             vce.canpipe_setSharedMaterialMap(materialMap);
 
-            vce.canpipe_recomputeNormal(true);
+            vce.canpipe_recomputeNormals(true);
         }
     }
 
@@ -83,7 +83,7 @@ public class LiquidBlockRendererMixin {
         if (vc instanceof VertexConsumerExtended vce) {
             vce.canpipe_setSpriteSupplier(null);
             vce.canpipe_setSharedMaterialMap(null);
-            vce.canpipe_recomputeNormal(false);
+            vce.canpipe_recomputeNormals(false);
         }
     }
 

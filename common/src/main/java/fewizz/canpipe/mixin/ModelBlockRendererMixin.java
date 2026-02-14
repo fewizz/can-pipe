@@ -51,7 +51,7 @@ public class ModelBlockRendererMixin {
     ) {
         if (Pipelines.getCurrent() != null) {
             VertexConsumerExtended vce = ((VertexConsumerExtended) vc);
-            vce.canpipe_recomputeNormal(true);
+            vce.canpipe_recomputeNormals(true);
 
             if (
                 bs != null &&
@@ -82,7 +82,7 @@ public class ModelBlockRendererMixin {
     ) {
         if (Pipelines.getCurrent() != null) {
             VertexConsumerExtended vce = ((VertexConsumerExtended) vc);
-            vce.canpipe_recomputeNormal(false);
+            vce.canpipe_recomputeNormals(false);
 
             if (
                 bs != null &&

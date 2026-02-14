@@ -57,6 +57,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private Float canpipe_aoPending;
 
     @Unique @Final private int canpipe_aoOffset;
+    @Unique @Final private int canpipe_uv0Offset;
     @Unique @Final private int canpipe_spriteIndexOffset;
     @Unique @Final private int canpipe_materialIndexOffset;
     @Unique @Final private int canpipe_materialFlagsOffset;
@@ -66,6 +67,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
         this.canpipe_aoOffset = this.format.getOffset(CanPipe.VertexFormatElements.AO);
+        this.canpipe_uv0Offset = this.format.getOffset(VertexFormatElement.UV0);
         this.canpipe_spriteIndexOffset = this.format.getOffset(CanPipe.VertexFormatElements.SPRITE_INDEX);
         this.canpipe_materialIndexOffset = this.format.getOffset(CanPipe.VertexFormatElements.MATERIAL_INDEX);
         this.canpipe_materialFlagsOffset = this.format.getOffset(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
@@ -140,14 +142,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
 
         if (tangentPtr != -1) {
-            long uvPtr = this.vertexPointer + this.offsetsByElement[VertexFormatElement.UV0.id()];
             float
-                u0 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+0, 0),
-                v0 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+0, 1),
-                u1 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+1, 0),
-                v1 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+1, 1),
-                u2 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+2, 0),
-                v2 = this.canpipe_getUV(uvPtr, offsetToFirstVertex+2, 1);
+                u0 = this.canpipe_getU(offsetToFirstVertex+0),
+                v0 = this.canpipe_getV(offsetToFirstVertex+0),
+                u1 = this.canpipe_getU(offsetToFirstVertex+1),
+                v1 = this.canpipe_getV(offsetToFirstVertex+1),
+                u2 = this.canpipe_getU(offsetToFirstVertex+2),
+                v2 = this.canpipe_getV(offsetToFirstVertex+2);
             Pair<Vector3f, Boolean> tangentPair = NormalAndTangent.computeTangent(
                 normal0,
                 x0, y0, z0, u0, v0,
@@ -334,19 +335,20 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
-    public void canpipe_recomputeNormal(boolean recompute) {
+    public void canpipe_recomputeNormals(boolean recompute) {
         this.canpipe_recomputeNormal = recompute;
     }
 
-    @Unique
-    private final float canpipe_getUV(long uvPtr, int vertexOffset, int element) {
-        return MemoryUtil.memGetFloat(uvPtr + (vertexOffset*this.vertexSize + element*Float.BYTES));
+    @Override
+    public float canpipe_getU(int vertexOffset) {
+        long ptr = this.vertexPointer + this.canpipe_uv0Offset;
+        return MemoryUtil.memGetFloat(ptr + vertexOffset*this.vertexSize + 0*Float.BYTES);
     }
 
     @Override
-    public float canpipe_getUV(int vertexOffset, int element) {
-        long uvPtr = this.vertexPointer + this.offsetsByElement[VertexFormatElement.UV0.id()];
-        return this.canpipe_getUV(uvPtr, vertexOffset, element);
+    public float canpipe_getV(int vertexOffset) {
+        long ptr = this.vertexPointer + this.canpipe_uv0Offset;
+        return MemoryUtil.memGetFloat(ptr + vertexOffset*this.vertexSize + 1*Float.BYTES);
     }
 
     @Unique
