@@ -14,7 +14,6 @@ import java.util.concurrent.Executor;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.mojang.blaze3d.pipeline.MainTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonNull;
@@ -24,6 +23,7 @@ import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
+import fewizz.canpipe.mixininterface.MinecraftExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -153,12 +153,11 @@ final public class Pipelines implements PreparableReloadListener {
         // "set" part
         Minecraft mc = Minecraft.getInstance();
 
-        mc.mainRenderTarget.destroyBuffers();
+        // mc.getMainRenderTarget().destroyBuffers();
 
-        mc.mainRenderTarget =
-            loadedPipeline != null ?
-            loadedPipeline.defaultFramebuffer :
-            new MainTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight());
+        ((MinecraftExtended) mc).canpipe_setMainRenderTargetOverride(
+            loadedPipeline != null ? loadedPipeline.defaultFramebuffer : null
+        );
 
         Pipeline prevPipeline = Pipelines.current;
 

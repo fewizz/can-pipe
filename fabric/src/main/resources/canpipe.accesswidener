@@ -2,6 +2,3 @@ accessWidener v2 named
 
 accessible  class   com/mojang/blaze3d/opengl/GlStateManager$TextureState
 accessible  class   com/mojang/blaze3d/opengl/GlDevice$ShaderCompilationKey
-
-accessible  field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;
-mutable     field   net/minecraft/client/Minecraft  mainRenderTarget  Lcom/mojang/blaze3d/pipeline/RenderTarget;

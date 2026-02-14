@@ -41,6 +41,7 @@ import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
+import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -507,7 +508,7 @@ public class Pipeline implements AutoCloseable {
             pass.apply(commandEncoder);
         }
 
-        Minecraft.getInstance().mainRenderTarget = this.solidFramebuffer;
+        ((MinecraftExtended) Minecraft.getInstance()).canpipe_setMainRenderTargetOverride(this.solidFramebuffer);
     }
 
     public void onAfterWorldRender() {
@@ -522,7 +523,7 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onAfterRenderHand() {
-        Minecraft.getInstance().mainRenderTarget = this.defaultFramebuffer;
+        ((MinecraftExtended) Minecraft.getInstance()).canpipe_setMainRenderTargetOverride(this.defaultFramebuffer);
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(2);  // screen
 

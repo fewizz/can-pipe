@@ -39,6 +39,7 @@ import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.FeatureRenderDispatcherExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
+import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.mixininterface.RenderBuffersExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -209,10 +210,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             applyFrustum(shadowFrustum);
 
-            RenderTarget originalMainRenderTarget = mc.mainRenderTarget;
+            RenderTarget originalMainRenderTarget = mc.getMainRenderTarget();
 
             try {
-                mc.mainRenderTarget = p.shadows.framebuffers().get(this.canpipe_shadowCascade);
+                ((MinecraftExtended) mc).canpipe_setMainRenderTargetOverride(p.shadows.framebuffers().get(this.canpipe_shadowCascade));
 
                 Profiler.get().popPush("render sections");
                 ChunkSectionsToRender chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, camera.position().x, camera.position().y, camera.position().z);
@@ -254,7 +255,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 }
 
             } finally {
-                mc.mainRenderTarget = originalMainRenderTarget;
+                ((MinecraftExtended) mc).canpipe_setMainRenderTargetOverride(originalMainRenderTarget);
                 ((RenderBuffersExtended) this.renderBuffers).canpipe_setBufferSourceOverride(null);
                 ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(null);
             }
