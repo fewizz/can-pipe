@@ -27,6 +27,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.IndexType;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.mixin.ByteBufferBuilderAccessor;
 import fewizz.canpipe.mixin.RenderSetupAccessor;
 import fewizz.canpipe.mixin.RenderTypeAccessor;
 import fewizz.canpipe.pipeline.Framebuffer;
@@ -45,7 +46,6 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
         private BufferBuilder lastBufferBuilder = null;
 
         private final ByteBufferBuilder vertexByteBufferBuilder;
-        private final long begin;
 
         private final List<SliceInfo> vertexBufferSlices = new ArrayList<>();
 
@@ -53,7 +53,6 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
 
         private VertexFormatBufferSource() {
             this.vertexByteBufferBuilder = new ByteBufferBuilder(768 * 1024);
-            this.begin = this.vertexByteBufferBuilder.reserve(0);
         }
 
         private BufferBuilder getBuffer(RenderType renderType) {
@@ -128,8 +127,9 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
 
             var lastElement = bufferSource.vertexBufferSlices.getLast();
 
-            int capacity = (int) Math.subtractExact(bufferSource.vertexByteBufferBuilder.reserve(0), bufferSource.begin);
-            GpuBuffer vertexBuffer = lastElement.renderType.format().uploadImmediateVertexBuffer(MemoryUtil.memByteBuffer(bufferSource.begin, capacity));
+            var begin = ((ByteBufferBuilderAccessor) bufferSource.vertexByteBufferBuilder).canpipe_getPointer();
+            int capacity = (int) Math.subtractExact(bufferSource.vertexByteBufferBuilder.reserve(0), begin);
+            GpuBuffer vertexBuffer = lastElement.renderType.format().uploadImmediateVertexBuffer(MemoryUtil.memByteBuffer(begin, capacity));
 
             RenderPass renderPass = null;
             RenderTarget renderTarget = null;

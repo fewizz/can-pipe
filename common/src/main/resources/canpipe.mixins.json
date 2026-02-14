@@ -8,6 +8,7 @@
   "client": [
     "BlockRenderDispatcherMixin",
     "BufferBuilderMixin",
+    "ByteBufferBuilderAccessor",
     "CameraAccessor",
     "ChunkSectionLayerMixin",
     "ChunkSectionsToRenderMixin",
