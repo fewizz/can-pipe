@@ -1,6 +1,5 @@
 package fewizz.canpipe.mixin;
 
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -26,7 +25,6 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.helpers.NormalAndTangent;
-import fewizz.canpipe.helpers.TangentSetter;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.Materials;
@@ -341,20 +339,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Override
     public void canpipe_recomputeNormal(boolean recompute) {
         this.canpipe_recomputeNormal = recompute;
-    }
-
-    @Override
-    public void canpipe_setTangent(Consumer<TangentSetter> tangentSetterConsumer) {
-        long ptr = this.beginElement(CanPipe.VertexFormatElements.TANGENT);
-        if (ptr == -1) {
-            return;
-        }
-        tangentSetterConsumer.accept((float x, float y, float z, boolean inverseBitangent) -> {
-            MemoryUtil.memPutByte(ptr+0, normalIntValue(x));
-            MemoryUtil.memPutByte(ptr+1, normalIntValue(y));
-            MemoryUtil.memPutByte(ptr+2, normalIntValue(z));
-            MemoryUtil.memPutByte(ptr+3, normalIntValue(inverseBitangent ? -1.0F : 1.0F));
-        });
     }
 
     @Unique
