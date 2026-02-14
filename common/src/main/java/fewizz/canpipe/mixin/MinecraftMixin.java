@@ -1,6 +1,7 @@
 package fewizz.canpipe.mixin;
 
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -21,9 +22,11 @@ import net.minecraft.client.gui.screens.Screen;
 @Mixin(Minecraft.class)
 public class MinecraftMixin implements MinecraftExtended {
 
-    private @Unique RenderTarget canpipe_mainRenderTargetOverride;
+    @Shadow @Final private RenderTarget mainRenderTarget;
 
     @Shadow public void setScreen(@Nullable Screen guiScreen) {}
+
+    @Unique private RenderTarget canpipe_mainRenderTargetOverride;
 
     @Override
     public void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget) {
@@ -51,6 +54,17 @@ public class MinecraftMixin implements MinecraftExtended {
             original = this.canpipe_mainRenderTargetOverride;
         }
         return original;
+    }
+
+    @ModifyExpressionValue(  // Don't call getter, use this.mainRenderTarget directly
+        method = "resizeDisplay",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
+    )
+    RenderTarget getGetMainRenderTargetWhenResizingDisplay(RenderTarget renderTarget) {
+        return this.mainRenderTarget;
     }
 
 }
