@@ -295,7 +295,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Inject(method = "addVertex(FFFIFFIIFFF)V", at = @At("RETURN"))
     private void onAddVertexBulk(
-        CallbackInfo ci, @Local(name="normalX") float normalX, @Local(name="normalY") float normalY, @Local(name="normalZ") float normalZ
+        CallbackInfo ci, @Local(ordinal = 5) float normalX, @Local(ordinal = 6) float normalY, @Local(ordinal = 7) float normalZ
     ) {
         if (!this.fastFormat) { return; }  // Because I don't know how to Mixin
 

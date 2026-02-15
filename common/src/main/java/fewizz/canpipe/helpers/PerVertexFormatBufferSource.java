@@ -177,6 +177,9 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
                             ((RenderSetup.TextureAndSampler) entry.getValue()).textureView(),
                             ((RenderSetup.TextureAndSampler) entry.getValue()).sampler()
                         );
+                        if (entry.getKey().equals("Sampler0")) {
+                            Pipeline.bindSpritesExtentsSampler(renderPass, entry.getValue().textureView());
+                        }
                     }
 
                     renderPass.setVertexBuffer(0, vertexBuffer);
