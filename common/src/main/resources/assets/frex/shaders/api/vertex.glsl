@@ -1,3 +1,5 @@
+// https://github.com/vram-guild/canvas/blob/9edb051bf3cba305623e6555c7d3ececb969b215/src/main/resources/assets/frex/shaders/api/vertex.glsl
+
 #if defined CANPIPE_MATERIAL_SHADER && defined VERTEX_SHADER
 
     out vec4 frx_vertex;
@@ -12,16 +14,6 @@
     #endif
     out vec4 frx_vertexColor;
 
-    out vec3 frx_vertexNormal;
-    out vec3 frx_vertexLight;
-    out float frx_distance;
-    out vec4 frx_vertexTangent;
-
-    out vec4 frx_var0;
-    out vec4 frx_var1;
-    out vec4 frx_var2;
-    out vec4 frx_var3;
-
     flat out int canpipe_spriteIndex;
     flat out int canpipe_materialIndex;
     flat out int canpipe_materialFlags;
@@ -30,4 +22,18 @@
         flat out ivec2 canpipe_overlayPos;
     #endif
 
-# endif
+    #if defined DEPTH_PASS
+        vec3 frx_vertexNormal = vec3(0.0);
+    #else
+        out vec3 frx_vertexNormal;
+        out vec3 frx_vertexLight;
+        out float frx_distance;
+        out vec4 frx_vertexTangent;
+
+        out vec4 frx_var0;
+        out vec4 frx_var1;
+        out vec4 frx_var2;
+        out vec4 frx_var3;
+    #endif
+
+#endif

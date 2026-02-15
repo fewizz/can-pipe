@@ -1,6 +1,9 @@
+// https://github.com/vram-guild/canvas/blob/9edb051bf3cba305623e6555c7d3ececb969b215/src/main/resources/assets/frex/shaders/api/fragment.glsl
+
 #if defined CANPIPE_MATERIAL_SHADER && defined FRAGMENT_SHADER
 
     in vec4 frx_vertex;
+
     #if defined CANPIPE_HAS_TEXTURE_POS
         in vec2 frx_texcoord;
     #else
@@ -40,7 +43,7 @@
     bool frx_fragEnableDiffuse = false;
     float frx_fragEmissive = 0.0;
 
-    #ifdef PBR_ENABLED
+    #if defined PBR_ENABLED
         float frx_fragReflectance = 0.04;
         vec3 frx_fragNormal = vec3(0.0, 0.0, 1.0);
         float frx_fragHeight = 0.0;

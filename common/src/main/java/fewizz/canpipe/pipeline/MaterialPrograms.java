@@ -285,26 +285,29 @@ public class MaterialPrograms {
 
         void main() {
             frx_vertex = vec4(in_vertex, 1.0);
-            frx_vertexColor = in_color;
-            frx_vertexNormal = in_normal;
-            frx_vertexLight = vec3(
-                clamp(
-                    in_lightmap / 256.0,
-                    vec2(0.5 / 16.0),
-                    vec2(15.5 / 16.0)
-                ),
-                in_ao
-            );
-            frx_vertexTangent = in_tangent;
-            canpipe_spriteIndex = in_spriteIndex;
-            canpipe_materialIndex = in_materialIndex;
-
             #if defined CANPIPE_HAS_TEXTURE_POS
                 frx_texcoord = in_uv;
             #endif
+            frx_vertexColor = in_color;
 
+            canpipe_spriteIndex = in_spriteIndex;
+            canpipe_materialIndex = in_materialIndex;
             #if defined CANPIPE_HAS_MATERIAL_FLAGS
                 canpipe_materialFlags = in_materialFlags;
+            #endif
+
+            #if !defined DEPTH_PASS
+                frx_vertexNormal = in_normal;
+                frx_vertexLight = vec3(
+                    clamp(
+                        in_lightmap / 256.0,
+                        vec2(0.5 / 16.0),
+                        vec2(15.5 / 16.0)
+                    ),
+                    in_ao
+                );
+                frx_vertexTangent = in_tangent;
+
             #endif
 
             #if defined CANPIPE_HAS_OVERLAY_POS
