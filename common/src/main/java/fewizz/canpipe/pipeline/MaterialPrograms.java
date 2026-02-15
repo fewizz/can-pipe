@@ -48,7 +48,7 @@ public class MaterialPrograms {
             vertexFormat = CanPipe.VertexFormats.BLOCK;
         }
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.NEW_ENTITY) {
-            vertexFormat = CanPipe.VertexFormats.NEW_ENTITY;
+            vertexFormat = !shadow ? CanPipe.VertexFormats.NEW_ENTITY : CanPipe.VertexFormats.NEW_ENTITY_SHADOW;
         }
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE) {
             vertexFormat = CanPipe.VertexFormats.PARTICLE;
@@ -454,7 +454,11 @@ public class MaterialPrograms {
             #endif
 
             frx_fragEmissive = frx_matEmissive;
-            frx_fragLight = frx_vertexLight;
+
+            #if !defined DEPTH_PASS
+                frx_fragLight = frx_vertexLight;
+            #endif
+
             frx_fragEnableAo = frx_matDisableAo == 0;
             frx_fragEnableDiffuse = frx_matDisableDiffuse == 0;
 

@@ -25,6 +25,7 @@
     #if defined DEPTH_PASS
         vec3 frx_vertexNormal = vec3(0.0);
     #else
+
         out vec3 frx_vertexNormal;
         out vec3 frx_vertexLight;
         out float frx_distance;
@@ -34,6 +35,7 @@
         out vec4 frx_var1;
         out vec4 frx_var2;
         out vec4 frx_var3;
+
     #endif
 
 #endif

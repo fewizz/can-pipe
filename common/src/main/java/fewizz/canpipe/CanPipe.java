@@ -89,6 +89,14 @@ public class CanPipe {
             /* 40 + 1*4 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
             .build();
 
+        public static final VertexFormat NEW_ENTITY_SHADOW = VertexFormat.builder()
+            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
+            /* 12 + 1*4 */.add("in_color", VertexFormatElement.COLOR)
+            /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
+            /* 24 + 2*2 */.add("in_overlayPos", VertexFormatElement.UV1)
+            /* 28 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
+            .build();
+
         public static final VertexFormat PARTICLE = VertexFormat.builder()
             /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
             /* 12 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
