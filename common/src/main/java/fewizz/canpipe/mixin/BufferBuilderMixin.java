@@ -184,7 +184,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     private void canpipe_setSpriteAndMaterial(long spriteIndexPtr, long materialIndexPtr, long materialFlagsPtr) {
-        if (spriteIndexPtr == -1 && materialFlagsPtr == -1 && materialFlagsPtr == -1) { return; }
+        if (spriteIndexPtr == -1 && materialIndexPtr == -1 && materialFlagsPtr == -1) { return; }
 
         int offsetToFirstVertex = -(this.mode.primitiveLength - 1);
 
