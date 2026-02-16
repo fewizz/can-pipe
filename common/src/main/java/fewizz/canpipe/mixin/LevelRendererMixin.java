@@ -170,7 +170,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         this.canpipe_isRenderingShadows = true;
 
-        Profiler.get().popPush("canpipe_shadows");
+        Profiler.get().popPush("can-pipe shadows");
         Profiler.get().push("preparations");
 
         GameRendererExtended gre = ((GameRendererExtended) mc.gameRenderer);

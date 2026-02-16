@@ -26,6 +26,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.fog.FogRenderer;
+import net.minecraft.util.profiling.Profiler;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererExtended {
@@ -131,6 +132,8 @@ public class GameRendererMixin implements GameRendererExtended {
         }
 
         if (p.shadows != null) {
+            Profiler.get().push("can-pipe calculate shadow uniforms");
+
             Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
             Vector3f sunPosOffset = toSunDir.mul(this.renderDistance + 48, new Vector3f());
 
@@ -232,8 +235,10 @@ public class GameRendererMixin implements GameRendererExtended {
                    -Math.max(min.z, center.z - cascadeRadius)   // far
                 );
             }
+            Profiler.get().pop();
         }
 
+        Uniforms.updateFREXUniforms(viewMatrix, projectionMatrix);
         p.onBeforeWorldRender(viewMatrix, projectionMatrix);
     }
 

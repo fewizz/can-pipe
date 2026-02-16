@@ -10,6 +10,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
+import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.UniformBufferStruct.FloatUniform;
@@ -35,6 +36,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
@@ -171,7 +173,11 @@ public class Uniforms {
     );
 
     public static void updateFREXUniforms(Matrix4f view, Matrix4f projection) {
+        Profiler.get().push("can-pipe update FREX uniforms");
+
         Minecraft mc = Minecraft.getInstance();
+        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+
         Pipeline p = Pipelines.getCurrent();
         GameRendererExtended gre = (GameRendererExtended) mc.gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
@@ -196,11 +202,6 @@ public class Uniforms {
         FRX_DAMAGE_TILT.set((float)(double) mc.options.damageTiltStrength().get());
         FRX_GLINT_STRENGTH.set((float)(double) mc.options.glintStrength().get());
         FRX_GLINT_SPEED.set((float)(double) mc.options.glintSpeed().get());
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, ACCESSIBILITY.size());
-            ACCESSIBILITY.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(ACCESSIBILITY_UBO.slice(), builder.get());
-        }
 
         // view.glsl
         FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
@@ -236,19 +237,6 @@ public class Uniforms {
             (float) mc.getWindow().getWidth(),
             (float) mc.getWindow().getHeight()
         );
-
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, VIEW.size());
-            VIEW.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(VIEW_UBO.slice(), builder.get());
-        }
-
-        // view.glsl / shadow
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, SHADOW.size());
-            SHADOW.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(SHADOW_UBO.slice(), builder.get());
-        }
 
         // player.glsl
         {
@@ -357,12 +345,6 @@ public class Uniforms {
             CANPIPE_EFFECTS_FLAGS.set((int)(result & 0xFFFFFFFFL), (int)(result >>> 32));
         }
 
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, PLAYER.size());
-            PLAYER.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(PLAYER_UBO.slice(), builder.get());
-        }
-
         // world
         {
             long ticks = Pipeline.getFixedTimeOrDayTime(mc.level);
@@ -421,12 +403,6 @@ public class Uniforms {
             lre.canpipe_getSmoothedThunderGradient()
         );
 
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, WORLD.size());
-            WORLD.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(WORLD_UBO.slice(), builder.get());
-        }
-
         // fog.glsl
         FRX_FOG_COLOR.set(
             gre.canpipe_getFogRenderer().setupFog(
@@ -440,10 +416,33 @@ public class Uniforms {
         FRX_FOG_ENABLED.set(1);
 
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var builder = Std140Builder.onStack(memoryStack, FOG.size());
+
+            var builder = Std140Builder.onStack(memoryStack, ACCESSIBILITY.size());
+            ACCESSIBILITY.writeTo(builder);
+            commandEncoder.writeToBuffer(ACCESSIBILITY_UBO.slice(), builder.get());
+
+            builder = Std140Builder.onStack(memoryStack, VIEW.size());
+            VIEW.writeTo(builder);
+            commandEncoder.writeToBuffer(VIEW_UBO.slice(), builder.get());
+
+            builder = Std140Builder.onStack(memoryStack, SHADOW.size());
+            SHADOW.writeTo(builder);
+            commandEncoder.writeToBuffer(SHADOW_UBO.slice(), builder.get());
+
+            builder = Std140Builder.onStack(memoryStack, PLAYER.size());
+            PLAYER.writeTo(builder);
+            commandEncoder.writeToBuffer(PLAYER_UBO.slice(), builder.get());
+
+            builder = Std140Builder.onStack(memoryStack, WORLD.size());
+            WORLD.writeTo(builder);
+            commandEncoder.writeToBuffer(WORLD_UBO.slice(), builder.get());
+
+            builder = Std140Builder.onStack(memoryStack, FOG.size());
             FOG.writeTo(builder);
-            RenderSystem.getDevice().createCommandEncoder().writeToBuffer(FOG_UBO.slice(), builder.get());
+            commandEncoder.writeToBuffer(FOG_UBO.slice(), builder.get());
         }
+
+        Profiler.get().pop();
     }
 
 }

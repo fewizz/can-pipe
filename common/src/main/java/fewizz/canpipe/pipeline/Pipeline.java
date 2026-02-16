@@ -50,6 +50,7 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 
@@ -483,7 +484,7 @@ public class Pipeline implements AutoCloseable {
     }
 
     public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
-        Uniforms.updateFREXUniforms(view, projection);
+        Profiler.get().push("can-pipe before world");
 
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(0);  // camera
@@ -509,9 +510,13 @@ public class Pipeline implements AutoCloseable {
         }
 
         ((MinecraftExtended) Minecraft.getInstance()).canpipe_setMainRenderTargetOverride(this.solidFramebuffer);
+
+        Profiler.get().pop();
     }
 
     public void onAfterWorldRender() {
+        Profiler.get().push("can-pipe after world");
+
         CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
 
         for (PassBase pass : this.fabulousPasses) {
@@ -520,9 +525,13 @@ public class Pipeline implements AutoCloseable {
 
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(3);  // hands
+
+        Profiler.get().pop();
     }
 
     public void onAfterRenderHand() {
+        Profiler.get().push("can-pipe after hand");
+
         ((MinecraftExtended) Minecraft.getInstance()).canpipe_setMainRenderTargetOverride(this.defaultFramebuffer);
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(2);  // screen
@@ -532,6 +541,8 @@ public class Pipeline implements AutoCloseable {
         for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply(commandEncoder);
         }
+
+        Profiler.get().pop();
     }
 
     public RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline) {
