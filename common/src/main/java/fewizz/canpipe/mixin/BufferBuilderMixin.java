@@ -314,7 +314,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             );
 
             this.canpipe_setNormalAndTangent(
-                this.canpipe_recomputeNormal && this.canpipe_normalOffset != 1 ? this.vertexPointer + this.canpipe_normalOffset : -1,
+                this.canpipe_recomputeNormal && this.canpipe_normalOffset != -1 ? this.vertexPointer + this.canpipe_normalOffset : -1,
                 normalX, normalY, normalZ,
                 this.canpipe_tangentOffset != -1 ? this.vertexPointer + this.canpipe_tangentOffset : -1
             );
