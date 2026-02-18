@@ -2,18 +2,26 @@ package fewizz.canpipe.material;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
 
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.material.Fluid;
 
 final public class MaterialMaps implements PreparableReloadListener {
@@ -30,6 +38,43 @@ final public class MaterialMaps implements PreparableReloadListener {
 
     public static MaterialMap getForFluid(Fluid fluid) {
         return INSTANCE.fluids.get(fluid);
+    }
+
+    private static Stream<Block> blocksThatUseMaterial(Material material) {
+        return INSTANCE.blocks.entrySet().stream()
+            .filter(e -> e.getValue().usesMaterial(material))
+            .map(e -> e.getKey());
+    }
+
+    private static Stream<Fluid> fluidsThatUseMaterial(Material material) {
+        return INSTANCE.fluids.entrySet().stream()
+            .filter(e -> e.getValue().usesMaterial(material))
+            .map(e -> e.getKey());
+    }
+
+    static Set<ChunkSectionLayer> chunkLayerSectoinLayersThatUseMaterial(Material material) {
+        Set<ChunkSectionLayer> result = new HashSet<>();
+        blocksThatUseMaterial(material).forEach(block -> {
+            if (block instanceof LeavesBlock) {
+                result.add(ChunkSectionLayer.CUTOUT);
+            }
+            result.add(ItemBlockRenderTypes.getChunkRenderType(block.defaultBlockState()));
+        });
+        fluidsThatUseMaterial(material).forEach(fluid -> {
+            result.add(ItemBlockRenderTypes.getRenderLayer(fluid.defaultFluidState()));
+        });
+        return result;
+    }
+
+    static Set<RenderType> movingBlocksRenderTypesThatUseMaterial(Material material) {
+        Set<RenderType> result = new HashSet<>();
+        blocksThatUseMaterial(material).forEach((block) -> {
+            if (block instanceof LeavesBlock) {
+                result.add(RenderTypes.cutoutMovingBlock());
+            }
+            result.add(ItemBlockRenderTypes.getMovingBlockRenderType(block.defaultBlockState()));
+        });
+        return result;
     }
 
     @Override
@@ -74,7 +119,7 @@ final public class MaterialMaps implements PreparableReloadListener {
                             this.fluids.put(fluid.get().value(), materialMap);
                         }
                         if (type.equals("block")) {
-                            if (subpath.equals("grass")) subpath = "short_grass"; // compat
+                            if (subpath.equals("grass")) subpath = "short_grass";  // compat
                             var block = BuiltInRegistries.BLOCK.get(location.withPath(subpath));
                             if (block.isEmpty()) continue;
                             this.blocks.put(block.get().value(), materialMap);

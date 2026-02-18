@@ -196,7 +196,7 @@ public class MaterialPrograms {
         if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
-            for (Material m : Materials.allCopy()) {
+            for (Material m : Materials.usedByRenderType(originalRenderPipeline)) {
                 String src = shadow ? m.depthVertexShaderSource : m.vertexShaderSource;
                 if (src == null) {
                     continue;
@@ -275,6 +275,7 @@ public class MaterialPrograms {
 
         #include frex:shaders/api/vertex.glsl
         #include frex:shaders/api/view.glsl
+        #include frex:shaders/api/header.glsl
 
         """
         );
@@ -347,7 +348,7 @@ public class MaterialPrograms {
         if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
-            for (Material m : Materials.allCopy()) {
+            for (Material m : Materials.usedByRenderType(originalRenderPipeline)) {
                 String src = shadow ? m.depthFragmentShaderSource : m.fragmentShaderSource;
                 if (src == null) {
                     continue;
@@ -439,6 +440,7 @@ public class MaterialPrograms {
         #include frex:shaders/api/sampler.glsl
         #include frex:shaders/api/material.glsl
         #include frex:shaders/api/view.glsl
+        #include frex:shaders/api/header.glsl
 
         """);
         fragmentSrcBuilder.append(materialsFunctionsSrc);

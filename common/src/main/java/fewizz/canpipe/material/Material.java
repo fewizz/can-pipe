@@ -71,4 +71,9 @@ public class Material {
         this.depthFragmentShaderSource = depthFragmentShaderSource;
     }
 
+    @Override
+    public String toString() {
+        return this.location.toString();
+    }
+
 }

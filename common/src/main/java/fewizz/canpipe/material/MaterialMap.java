@@ -36,4 +36,8 @@ public class MaterialMap {
         }
     }
 
+    boolean usesMaterial(Material material) {
+        return this.defaultMaterial == material || this.spriteMap.values().contains(material);
+    }
+
 }
