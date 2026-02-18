@@ -29,6 +29,7 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -122,6 +123,13 @@ public class Uniforms {
         () -> "can-pipe shadow UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         SHADOW.size()
+    );
+
+
+    public static final GpuBuffer PASS_DYNAMIC_TRANSFORMS_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe pass dynamic transforms UBO",
+        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
+        DynamicUniforms.TRANSFORM_UBO_SIZE
     );
 
     // player
@@ -445,6 +453,16 @@ public class Uniforms {
             builder = Std140Builder.onStack(memoryStack, FOG.size());
             FOG.writeTo(builder);
             commandEncoder.writeToBuffer(FOG_UBO.slice(), builder.get());
+
+            var buffer = memoryStack.malloc(DynamicUniforms.TRANSFORM_UBO_SIZE);
+            new DynamicUniforms.Transform(
+                ((GameRendererExtended) mc.gameRenderer).canpipe_worldViewMatrix(),
+                new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
+                new Vector3f(),
+                new Matrix4f()
+            ).write(buffer);
+            buffer.rewind();
+            commandEncoder.writeToBuffer(PASS_DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
         }
 
         Profiler.get().pop();

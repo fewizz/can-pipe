@@ -6,14 +6,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
-import org.joml.Matrix4f;
 import org.joml.Vector2i;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
@@ -31,7 +27,6 @@ import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
-import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
@@ -120,13 +115,6 @@ public class Pass extends PassBase {
             }
         }
 
-        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
-            ((GameRendererExtended)mc.gameRenderer).canpipe_worldViewMatrix(),
-            new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
-            new Vector3f(),
-            new Matrix4f()
-        );
-
         try (
             RenderPass renderPass = commandEncoder.canpipe_createRenderPass(
                 () -> "can-pipe pass \""+this.name+"\"",
@@ -144,10 +132,8 @@ public class Pass extends PassBase {
             }
 
             RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setUniform("DynamicTransforms", dynamicTransforms);
-
+            renderPass.setUniform("DynamicTransforms", Uniforms.PASS_DYNAMIC_TRANSFORMS_UBO);
             renderPass.setUniform("canpipe_ub_pass", this.passUbo);
-
             renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
             renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
             renderPass.setUniform("frx_ub_shadow", Uniforms.SHADOW_UBO);

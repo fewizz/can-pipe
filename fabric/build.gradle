@@ -80,7 +80,9 @@ loom {
             ideConfigGenerated true
             runDir "../run"
             appendProjectPathToConfigName = false
-            programArg "--renderDebugLabels"
+            // programArg "--renderDebugLabels"
+            // programArg "--tracy"
+            // vmArg "-XX:-Inline"
             properties([
                 "mixin.debug": "true",
                 // "cinnabar.vulkanValidationLayers": "true",
