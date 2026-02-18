@@ -50,25 +50,28 @@ import net.minecraft.world.phys.Vec3;
 
 public class Uniforms {
 
-    // This is kinda stupid, they have same data
-    // Anyway...
-    public static final GpuBuffer FRXU_CASCADES_UBO = RenderSystem.getDevice().createBuffer(
-        () -> "can-pipe frxu_cascade UBO",
-        GpuBuffer.USAGE_UNIFORM,
-        MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(4).put(0, new int[] {0, 1, 2, 3}))
-    );
-
-    public static final GpuBuffer CANPIPE_RENDER_TARGETS_UBO = RenderSystem.getDevice().createBuffer(
-        () -> "can-pipe canpipe_renderTarget UBO",
-        GpuBuffer.USAGE_UNIFORM,
-        MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(4).put(0, new int[] {0, 1, 2, 3}))
-    );
-
-    public static final GpuBuffer CANPIPE_ORIGIN_TYPES_UBO = RenderSystem.getDevice().createBuffer(
-        () -> "can-pipe canpipe_originType UBO",
-        GpuBuffer.USAGE_UNIFORM,
-        MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(4).put(0, new int[] {0, 1, 2, 3}))
-    );
+    public static final GpuBuffer[] INT_0_4_UBO_BUFFERS = new GpuBuffer[] {
+        RenderSystem.getDevice().createBuffer(
+            () -> "can-pipe 0",
+            GpuBuffer.USAGE_UNIFORM,
+            MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 0))
+        ),
+        RenderSystem.getDevice().createBuffer(
+            () -> "can-pipe 1",
+            GpuBuffer.USAGE_UNIFORM,
+            MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 1))
+        ),
+        RenderSystem.getDevice().createBuffer(
+            () -> "can-pipe 2",
+            GpuBuffer.USAGE_UNIFORM,
+            MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 2))
+        ),
+        RenderSystem.getDevice().createBuffer(
+            () -> "can-pipe 3",
+            GpuBuffer.USAGE_UNIFORM,
+            MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 3))
+        )
+    };
 
     // accessibility
     private static final UniformBufferStruct ACCESSIBILITY = new UniformBufferStruct();
@@ -174,6 +177,7 @@ public class Uniforms {
 
     public static void updateFREXUniforms(Matrix4f view, Matrix4f projection) {
         Profiler.get().push("can-pipe update FREX uniforms");
+        Profiler.get().push("collect");
 
         Minecraft mc = Minecraft.getInstance();
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
@@ -415,6 +419,7 @@ public class Uniforms {
         );
         FRX_FOG_ENABLED.set(1);
 
+        Profiler.get().popPush("upload");
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
 
             var builder = Std140Builder.onStack(memoryStack, ACCESSIBILITY.size());
@@ -442,6 +447,7 @@ public class Uniforms {
             commandEncoder.writeToBuffer(FOG_UBO.slice(), builder.get());
         }
 
+        Profiler.get().pop();
         Profiler.get().pop();
     }
 

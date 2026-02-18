@@ -589,9 +589,9 @@ public class Pipeline implements AutoCloseable {
         renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
         renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
 
-        renderPass.setUniform("frxu_ub_cascade", Uniforms.FRXU_CASCADES_UBO.slice(lre.canpipe_getShadowCascade() * Integer.BYTES, Integer.BYTES));
-        renderPass.setUniform("canpipe_ub_render_target", Uniforms.CANPIPE_RENDER_TARGETS_UBO.slice(gre.canpipe_getRenderTarget() * Integer.BYTES, Integer.BYTES));
-        renderPass.setUniform("canpipe_ub_origin_type", Uniforms.CANPIPE_ORIGIN_TYPES_UBO.slice(lre.canpipe_getOriginType() * Integer.BYTES, Integer.BYTES));
+        renderPass.setUniform("frxu_ub_cascade", Uniforms.INT_0_4_UBO_BUFFERS[lre.canpipe_getShadowCascade()]);
+        renderPass.setUniform("canpipe_ub_render_target", Uniforms.INT_0_4_UBO_BUFFERS[gre.canpipe_getRenderTarget()]);
+        renderPass.setUniform("canpipe_ub_origin_type", Uniforms.INT_0_4_UBO_BUFFERS[lre.canpipe_getOriginType()]);
 
         // var sampler0 = RenderSystem.getShaderTexture(0);
         // if (sampler0 != null) {
