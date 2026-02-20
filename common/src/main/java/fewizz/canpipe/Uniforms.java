@@ -41,7 +41,6 @@ import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.DimensionType;
@@ -270,12 +269,15 @@ public class Uniforms {
         FRX_SMOOTHED_EYE_BRIGHTNESS.set(lre.canpipe_getSmoothedEyeBlockLight(), lre.canpipe_getSmoothedEyeSkyLight());
 
         Light light = ((Supplier<Light>)() -> {
-            Item item = mc.player.getMainHandItem().getItem();
-            if (item == Items.AIR) item = mc.player.getOffhandItem().getItem();
-            if (item == Items.AIR) return null;
-            Identifier itemLocation = BuiltInRegistries.ITEM.getKey(item);
-            if (itemLocation == null) return null;
-            return Lights.get(itemLocation);
+            for (Item item : new Item[]{mc.player.getMainHandItem().getItem(), mc.player.getOffhandItem().getItem()}) {
+                Identifier itemLocation = BuiltInRegistries.ITEM.getKey(item);
+                if (itemLocation == null) return null;
+                Light result = Lights.get(itemLocation);
+                if (result != null) {
+                    return result;
+                }
+            }
+            return null;
         }).get();
 
         {
