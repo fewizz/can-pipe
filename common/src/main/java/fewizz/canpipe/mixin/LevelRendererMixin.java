@@ -163,7 +163,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(pt));
         this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(pt));
 
-        if (p.shadows == null) {
+        if (p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
             return;
         }
 

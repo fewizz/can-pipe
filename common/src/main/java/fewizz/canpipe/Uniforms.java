@@ -360,10 +360,8 @@ public class Uniforms {
         }
 
         // world
-        {
-            long ticks = Pipeline.getFixedTimeOrDayTime(mc.level);
-            CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
-        }
+        long ticks = Pipeline.getFixedTimeOrDayTime(mc.level);
+        CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F);
         FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
         FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.getLevelRenderState().skyRenderState.moonPhase.index()]);
@@ -418,15 +416,20 @@ public class Uniforms {
         );
 
         // fog.glsl
-        FRX_FOG_COLOR.set(
-            gre.canpipe_getFogRenderer().setupFog(
-                mc.gameRenderer.getMainCamera(),
-                mc.options.getEffectiveRenderDistance(),
-                mc.getDeltaTracker(),
-                mc.gameRenderer.getDarkenWorldAmount(pt),
-                mc.level
-            )
-        );
+        if (ticks == 0 && !mc.level.dimensionType().hasSkyLight()) {
+            FRX_FOG_COLOR.set(1.0F);
+        }
+        else {
+            FRX_FOG_COLOR.set(
+                gre.canpipe_getFogRenderer().setupFog(
+                    mc.gameRenderer.getMainCamera(),
+                    mc.options.getEffectiveRenderDistance(),
+                    mc.getDeltaTracker(),
+                    mc.gameRenderer.getDarkenWorldAmount(pt),
+                    mc.level
+                )
+            );
+        }
         FRX_FOG_ENABLED.set(1);
 
         Profiler.get().popPush("upload");
