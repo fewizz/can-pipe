@@ -1,5 +1,5 @@
 package fewizz.canpipe.compat.indigo.mixin;
-
+/*
 import java.util.Arrays;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,11 +13,10 @@ import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-
-@Mixin(MutableQuadViewImpl.class)
-public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin implements MutableQuadViewExtended
-{
-
+*/
+/*@Mixin(MutableQuadViewImpl.class)*/
+public abstract class MutableQuadViewImplMixin /*extends QuadViewImplMixin implements MutableQuadViewExtended*/ {
+/*
     @Inject(method = "clear", at = @At("TAIL"), remap = false)
     void onClear(CallbackInfo ci) {
         Arrays.fill(this.ao, 1.0F);
@@ -41,5 +40,5 @@ public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin impleme
     public void canpipe_setAO(int index, float value) {
         this.ao[index] = value;
     }
-
+*/
 }

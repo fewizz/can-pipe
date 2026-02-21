@@ -5,7 +5,7 @@ import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
@@ -17,22 +17,22 @@ public class CanPipeClientInitializer implements ClientModInitializer {
         var clientResourcesLoader = ResourceLoader.get(PackType.CLIENT_RESOURCES);
 
         var materials = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "materials");
-        clientResourcesLoader.registerReloader(materials,Materials.INSTANCE);
+        clientResourcesLoader.registerReloadListener(materials,Materials.INSTANCE);
 
         var materialMaps = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "material-maps");
-        clientResourcesLoader.registerReloader(materialMaps, MaterialMaps.INSTANCE);
+        clientResourcesLoader.registerReloadListener(materialMaps, MaterialMaps.INSTANCE);
 
         var lights = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "lights");
-        clientResourcesLoader.registerReloader(lights, Lights.INSTANCE);
+        clientResourcesLoader.registerReloadListener(lights, Lights.INSTANCE);
 
         var pipelines = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "pipelines");
-        clientResourcesLoader.registerReloader(pipelines, Pipelines.INSTANCE);
+        clientResourcesLoader.registerReloadListener(pipelines, Pipelines.INSTANCE);
 
-        clientResourcesLoader.addReloaderOrdering(materials, materialMaps);
-        clientResourcesLoader.addReloaderOrdering(lights, pipelines);
-        clientResourcesLoader.addReloaderOrdering(materialMaps, pipelines);
+        clientResourcesLoader.addListenerOrdering(materials, materialMaps);
+        clientResourcesLoader.addListenerOrdering(lights, pipelines);
+        clientResourcesLoader.addListenerOrdering(materialMaps, pipelines);
 
-        KeyBindingHelper.registerKeyBinding(CanPipe.PIPELINES_RELOAD_KEY);
+        KeyMappingHelper.registerKeyMapping(CanPipe.PIPELINES_RELOAD_KEY);
     }
 
 }

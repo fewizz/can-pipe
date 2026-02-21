@@ -1,5 +1,5 @@
 plugins {
-    id "fabric-loom" version "${fabric_loom_version}"
+    id "net.fabricmc.fabric-loom" version "${fabric_loom_version}"
 }
 
 loom {
@@ -21,15 +21,11 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.layered {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${parchment_minecraft}:${parchment_version}@zip")
-    }
-    modImplementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+    implementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
     compileOnly "blue.endless:jankson:1.2.3"
 
-    compileOnly "org.lwjgl:lwjgl-vulkan:3.3.3"  // For Cinnabar
-    modCompileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
+    compileOnly "org.lwjgl:lwjgl-vulkan:3.4.1"  // For Cinnabar
+    compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
 }
 
 tasks.withType(JavaCompile).configureEach {

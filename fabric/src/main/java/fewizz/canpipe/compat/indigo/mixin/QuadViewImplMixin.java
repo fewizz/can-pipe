@@ -1,5 +1,5 @@
 package fewizz.canpipe.compat.indigo.mixin;
-
+/*
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -10,10 +10,10 @@ import fewizz.canpipe.compat.indigo.QuadViewExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.QuadViewImpl;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-
-@Mixin(value = QuadViewImpl.class, remap = false)
-public abstract class QuadViewImplMixin implements QuadViewExtended {
-
+*/
+/*@Mixin(value = QuadViewImpl.class, remap = false)*/
+public abstract class QuadViewImplMixin /*implements QuadViewExtended*/ {
+/*
     @Unique protected final float[] ao = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
     @Unique protected TextureAtlasSprite sprite;
 
@@ -35,5 +35,5 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
         }
         return original;
     }
-
+*/
 }
