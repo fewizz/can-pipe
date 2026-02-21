@@ -83,10 +83,11 @@ public class CanPipe {
             /* 32 + 3*1 */.add("in_normal", VertexFormatElement.NORMAL)
             /* 35 + 1*1 */.padding(1)
 
-            // .add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
             /* 36 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
-            // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             /* 40 + 1*4 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
+            /* 44 + 1*2 */.add("in_materialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            /* 46 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+            /* 47 + 1*1 */.padding(1)
             .build();
 
         public static final VertexFormat NEW_ENTITY_SHADOW = VertexFormat.builder()

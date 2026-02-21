@@ -13,6 +13,7 @@ import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
 @Mixin(ItemRenderer.class)
@@ -40,24 +41,19 @@ public class ItemRendererMixin {
         return glint;
     }
 
-    /*@ModifyVariable(
-        method = "getArmorFoilBuffer",
-        at = @At("HEAD"),
-        argsOnly = true,
-        ordinal = 0
-    )
-    private static boolean onGetArmorFoilBuffer(
-        boolean hasFoil,
+    @ModifyVariable(method = "renderItem", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+    private static ItemStackRenderState.FoilType onGetArmorFoilBuffer(
+        ItemStackRenderState.FoilType foilType,
         @Local(argsOnly = true) MultiBufferSource bufferSource,
         @Local(argsOnly = true) RenderType renderType
     ) {
-        if (Pipelines.getCurrent() != null && hasFoil) {
+        if (Pipelines.getCurrent() != null && foilType != ItemStackRenderState.FoilType.NONE) {
             VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
             vce.canpipe_setSharedGlint(true);
-            hasFoil = false;
+            foilType = null;
         }
-        return hasFoil;
-    }*/
+        return foilType;
+    }
 
     @Inject(
         method = "renderItem",
