@@ -16,6 +16,7 @@ import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.world.level.block.state.BlockState;
 
 @Mixin(BlockRenderDispatcher.class)
@@ -31,7 +32,7 @@ public class BlockRenderDispatcherMixin {
         @Local(argsOnly = true) BlockState bs
     ) {
         if (Pipelines.getCurrent() != null) {
-            var vc = bufferSource.getBuffer(ItemBlockRenderTypes.getRenderType(state));
+            var vc = bufferSource.getBuffer(ItemBlockRenderTypes.getRenderType(ChunkSectionLayer.SOLID));  // TODO
             // ((VertexConsumerExtended) vc).canpipe_recomputeNormal(true);
             if (
                 bs != null &&
@@ -54,7 +55,7 @@ public class BlockRenderDispatcherMixin {
         @Local(argsOnly = true) BlockState bs
     ) {
         if (Pipelines.getCurrent() != null) {
-            var vc = bufferSource.getBuffer(ItemBlockRenderTypes.getRenderType(state));
+            var vc = bufferSource.getBuffer(ItemBlockRenderTypes.getRenderType(ChunkSectionLayer.SOLID));  // TODO
             // (VertexConsumerExtended) vc).canpipe_recomputeNormal(false);
             if (
                 bs != null &&

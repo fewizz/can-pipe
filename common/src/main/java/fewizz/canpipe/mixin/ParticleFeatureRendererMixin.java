@@ -16,7 +16,7 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.feature.ParticleFeatureRenderer;
@@ -44,7 +44,7 @@ public class ParticleFeatureRendererMixin {
         @Local(ordinal = 0) RenderTarget renderTargetMain
     ) {
         if (renderTargetMain instanceof Framebuffer framebuffer) {
-            return Pipelines.getCurrent().createRenderPass((CommandEncoderExtended) instance, nameSupplier, framebuffer);
+            return Pipelines.getCurrent().createRenderPass((CommandEncoderBackendExtended) instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, colorTextureView, clearColor, depthTextureView, clearDepth);
     }
@@ -69,7 +69,7 @@ public class ParticleFeatureRendererMixin {
         @Local(ordinal = 1) RenderTarget renderTargetTranslucent
     ) {
         if (renderTargetTranslucent instanceof Framebuffer framebuffer) {
-            return Pipelines.getCurrent().createRenderPass((CommandEncoderExtended) instance, nameSupplier, framebuffer);
+            return Pipelines.getCurrent().createRenderPass((CommandEncoderBackendExtended) instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, colorTextureView, clearColor, depthTextureView, clearDepth);
     }

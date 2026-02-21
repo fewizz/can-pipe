@@ -1,6 +1,6 @@
 package fewizz.canpipe.pipeline;
 
-import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 
 public abstract class PassBase implements AutoCloseable {
 
@@ -11,7 +11,7 @@ public abstract class PassBase implements AutoCloseable {
     }
 
 
-    public abstract void apply(CommandEncoderExtended commandEncoder);
+    public abstract void apply(CommandEncoderBackendExtended commandEncoder);
 
     @Override
     public abstract void close();

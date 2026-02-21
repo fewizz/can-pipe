@@ -10,7 +10,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.TextureFormat;
 
-import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 import net.minecraft.client.Screenshot;
 
 @Mixin(Screenshot.class)
@@ -50,7 +50,7 @@ public class ScreenshotMixin {
                 texture.getWidth(0), texture.getHeight(0)
             );*/
 
-            ((CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder()).canpipe_blitImage(
+            ((CommandEncoderBackendExtended) RenderSystem.getDevice().createCommandEncoder()).canpipe_blitImage(
                 texture,
                 canpipe_rgba8Texture
             );

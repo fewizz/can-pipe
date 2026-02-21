@@ -29,7 +29,7 @@ public interface VertexConsumerMixin {
             this instanceof VertexConsumerExtended vce &&
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
         ) {
-            vce.canpipe_setSpriteSupplier(() -> bakedQuad.sprite());
+            vce.canpipe_setSpriteSupplier(() -> bakedQuad.spriteInfo().sprite());
         }
     }
 

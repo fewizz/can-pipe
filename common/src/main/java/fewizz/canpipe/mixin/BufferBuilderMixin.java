@@ -236,9 +236,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
     }
 
-    @ModifyVariable(method = "<init>", at = @At("STORE"), ordinal = 0)  // if format is NEW_ENTITY
+    @ModifyVariable(method = "<init>", at = @At("STORE"), ordinal = 0)  // if format is ENTITY
     private boolean onEntityFormatSet(boolean value) {
-        return value || this.format == CanPipe.VertexFormats.NEW_ENTITY || this.format == CanPipe.VertexFormats.NEW_ENTITY_SHADOW;
+        return value || this.format == CanPipe.VertexFormats.ENTITY || this.format == CanPipe.VertexFormats.ENTITY_SHADOW;
     }
 
     @ModifyVariable(method = "<init>", at = @At("STORE"), ordinal = 1)  // if format is BLOCK

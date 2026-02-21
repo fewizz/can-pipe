@@ -26,7 +26,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat.IndexType;
 
-import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 import fewizz.canpipe.mixin.ByteBufferBuilderAccessor;
 import fewizz.canpipe.mixin.RenderSetupAccessor;
 import fewizz.canpipe.mixin.RenderTypeAccessor;
@@ -151,7 +151,7 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
                         }
                         renderTarget = newRenderTarget;
                         renderPass = pipeline.createRenderPass(
-                            (CommandEncoderExtended) commandEncoder,
+                            (CommandEncoderBackendExtended) commandEncoder,
                             () -> "can-pipe immediate for \""+((RenderTypeAccessor) s.renderType).canpipe_getName()+"\"-like rendertype",
                             (Framebuffer) renderTarget
                         );

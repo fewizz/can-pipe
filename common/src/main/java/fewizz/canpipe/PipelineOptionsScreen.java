@@ -122,7 +122,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
         @Override
         protected void renderScrollbar(GuiGraphics guiGraphics, int i, int j) {
-            if (this.scrollbarVisible()) {
+            if (this.scrollable()) {
                 guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
                     Identifier.withDefaultNamespace("widget/scroller"),

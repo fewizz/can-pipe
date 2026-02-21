@@ -1,6 +1,6 @@
 package fewizz.canpipe.mixin;
 
-import org.joml.Vector4f;
+/*import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,11 +17,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 
 import fewizz.canpipe.mixininterface.LightTextureExtended;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.LightTexture;*/
 
-@Mixin(LightTexture.class)
-public class LightTextureMixin implements LightTextureExtended {
-
+/*@Mixin(LightTexture.class)*/
+public class LightTextureMixin /*implements LightTextureExtended*/ {
+/*
     @Shadow @Final private GpuTexture texture;
 
     @Unique private float canpipe_darknessScale = 1.0F;
@@ -106,5 +106,5 @@ public class LightTextureMixin implements LightTextureExtended {
             0  // level
         );
     }
-
+*/
 }

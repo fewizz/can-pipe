@@ -18,7 +18,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -47,8 +47,8 @@ public class MaterialPrograms {
         if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.BLOCK) {
             vertexFormat = CanPipe.VertexFormats.BLOCK;
         }
-        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.NEW_ENTITY) {
-            vertexFormat = !shadow ? CanPipe.VertexFormats.NEW_ENTITY : CanPipe.VertexFormats.NEW_ENTITY_SHADOW;
+        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
+            vertexFormat = !shadow ? CanPipe.VertexFormats.ENTITY : CanPipe.VertexFormats.ENTITY_SHADOW;
         }
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE) {
             vertexFormat = CanPipe.VertexFormats.PARTICLE;
@@ -144,7 +144,7 @@ public class MaterialPrograms {
             return src;
         };
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
+        ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
             renderPipeline,
             (Identifier location, ShaderType type) -> {
                 String src = switch (type) {
@@ -371,7 +371,6 @@ public class MaterialPrograms {
             originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
 
             // use ITEM_ENTITY_TARGET output state shard
-            originalRenderPipeline == RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL ||
             originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
@@ -380,11 +379,8 @@ public class MaterialPrograms {
             originalRenderPipeline == RenderPipelines.LINES_TRANSLUCENT ||
 
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
-            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL ||
-            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET ||
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
-            originalRenderPipeline == RenderPipelines.ENTITY_SMOOTH_CUTOUT ||
             originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||

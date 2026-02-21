@@ -14,7 +14,7 @@ import com.mojang.blaze3d.textures.TextureFormat;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
@@ -29,7 +29,7 @@ public class Texture extends AbstractTexture {
         this.recreateOnResize = recreateOnResize;
         this.sampler = sampler;
         this.texture = this.gpuTextureSupplier.get();
-        this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+        this.textureView = ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_createTextureView(
             this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
         );
     }
@@ -45,7 +45,7 @@ public class Texture extends AbstractTexture {
             this.texture.close();
             this.textureView.close();
             this.texture = this.gpuTextureSupplier.get();
-            this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+            this.textureView = ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                 this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
             );
         }
@@ -189,7 +189,7 @@ public class Texture extends AbstractTexture {
                 CanPipe.LOGGER.warn("Texture \""+name+"\" type is TEXTURE_2D_ARRAY, but depth="+depth);
             }
 
-            GpuSampler sampler = (GpuSampler) ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createSampler(
+            GpuSampler sampler = (GpuSampler) ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_createSampler(
                 v, u, min, mag, 1, OptionalDouble.of(maxLod),
                 w, compare ? compareOp : null, linearMip
             );

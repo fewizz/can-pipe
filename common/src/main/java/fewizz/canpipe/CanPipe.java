@@ -37,21 +37,11 @@ public class CanPipe {
     public static class VertexFormatElements {
 
         public static final VertexFormatElement
-            MATERIAL_FLAGS = VertexFormatElement.register(
-                7, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.UV, 1
-            ),  // UV, because it uses vertexAttrib *I* Pointer in this case
-            SPRITE_INDEX = VertexFormatElement.register(
-                8, 0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.UV, 1
-            ),  // UV, because it uses vertexAttrib *I* Pointer in this case
-            MATERIAL_INDEX = VertexFormatElement.register(
-                9, 0, VertexFormatElement.Type.SHORT, VertexFormatElement.Usage.UV, 1
-            ),
-            TANGENT = VertexFormatElement.register(
-                10, 0, VertexFormatElement.Type.BYTE, VertexFormatElement.Usage.NORMAL, 4
-            ),
-            AO = VertexFormatElement.register(
-                11, 0, VertexFormatElement.Type.UBYTE, VertexFormatElement.Usage.COLOR, 1
-            );
+            MATERIAL_FLAGS = VertexFormatElement.register(7, 0, VertexFormatElement.Type.BYTE, false, 1),  // UV, because it uses vertexAttrib *I* Pointer in this case
+            SPRITE_INDEX = VertexFormatElement.register(8, 0, VertexFormatElement.Type.INT, false, 1),  // UV, because it uses vertexAttrib *I* Pointer in this case
+            MATERIAL_INDEX = VertexFormatElement.register(9, 0, VertexFormatElement.Type.SHORT, false, 1),
+            TANGENT = VertexFormatElement.register(10, 0, VertexFormatElement.Type.BYTE, true, 4),
+            AO = VertexFormatElement.register(11, 0, VertexFormatElement.Type.UBYTE, true, 1);
 
     }
 
@@ -74,7 +64,7 @@ public class CanPipe {
             /* 44 + 4*1 */.padding(4)
             .build();
 
-        public static final VertexFormat NEW_ENTITY = VertexFormat.builder()
+        public static final VertexFormat ENTITY = VertexFormat.builder()
             /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
             /* 12 + 1*4 */.add("in_color", VertexFormatElement.COLOR)
             /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
@@ -90,7 +80,7 @@ public class CanPipe {
             /* 47 + 1*1 */.padding(1)
             .build();
 
-        public static final VertexFormat NEW_ENTITY_SHADOW = VertexFormat.builder()
+        public static final VertexFormat ENTITY_SHADOW = VertexFormat.builder()
             /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
             /* 12 + 1*4 */.add("in_color", VertexFormatElement.COLOR)
             /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)

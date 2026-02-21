@@ -30,16 +30,16 @@ import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
 import com.mojang.blaze3d.opengl.GlTextureView;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 @Mixin(GlCommandEncoder.class)
-public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
+public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExtended {
 
     @Shadow @Final private int readFbo;
     @Shadow @Final private int drawFbo;
@@ -54,7 +54,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderExtended {
     @Unique private int canpipe_clearLayerCount = -1;
 
     @Override
-    public RenderPass canpipe_createRenderPass(
+    public RenderPassBackend canpipe_createRenderPass(
         Supplier<String> supplier,
         GpuTextureView[] colorAttachments,
         @Nullable GpuTextureView depthAttachment

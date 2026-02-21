@@ -24,6 +24,7 @@ import org.joml.Vector3f;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
@@ -36,8 +37,8 @@ import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
-import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
+import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -296,8 +297,6 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.CUTOUT_TERRAIN,
             RenderPipelines.TRANSLUCENT_TERRAIN,
             RenderPipelines.TRANSLUCENT_MOVING_BLOCK,
-            RenderPipelines.TRIPWIRE_BLOCK,
-            RenderPipelines.TRIPWIRE_TERRAIN,
 
             RenderPipelines.ARMOR_CUTOUT_NO_CULL,
             RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
@@ -305,15 +304,9 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.ENTITY_SOLID,
             RenderPipelines.ENTITY_SOLID_Z_OFFSET_FORWARD,
             RenderPipelines.ENTITY_CUTOUT,
-            RenderPipelines.ENTITY_CUTOUT_NO_CULL,
-            RenderPipelines.ENTITY_CUTOUT_NO_CULL_Z_OFFSET,
             RenderPipelines.ENTITY_TRANSLUCENT,
             RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE,
-            RenderPipelines.ENTITY_SMOOTH_CUTOUT,
-            RenderPipelines.ENTITY_NO_OUTLINE,
             RenderPipelines.EYES,
-            RenderPipelines.ENTITY_DECAL,
-            RenderPipelines.ITEM_ENTITY_TRANSLUCENT_CULL,
 
             RenderPipelines.LEASH,
 
@@ -385,7 +378,7 @@ public class Pipeline implements AutoCloseable {
                     (idx) -> { throw new RuntimeException("Color texture getter should not be called"); },
                     new int[]{},  // clear colors
                     () -> {
-                        var shadowMapCascadeTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                        var shadowMapCascadeTextureView = ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                             shadowMapTexture,
                             shadowMapTextureView.baseMipLevel(),
                             shadowMapTextureView.mipLevels(),
@@ -489,7 +482,7 @@ public class Pipeline implements AutoCloseable {
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(0);  // camera
 
-        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoderBackendExtended commandEncoder = (CommandEncoderBackendExtended) RenderSystem.getDevice().createCommandEncoder();
 
         if (this.runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
@@ -517,7 +510,7 @@ public class Pipeline implements AutoCloseable {
     public void onAfterWorldRender() {
         Profiler.get().push("can-pipe after world");
 
-        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoderBackendExtended commandEncoder = (CommandEncoderBackendExtended) RenderSystem.getDevice().createCommandEncoder();
 
         for (PassBase pass : this.fabulousPasses) {
             pass.apply(commandEncoder);
@@ -536,7 +529,7 @@ public class Pipeline implements AutoCloseable {
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(2);  // screen
 
-        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoderBackendExtended commandEncoder = (CommandEncoderBackendExtended) RenderSystem.getDevice().createCommandEncoder();
 
         for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply(commandEncoder);
@@ -556,7 +549,7 @@ public class Pipeline implements AutoCloseable {
         return renderPipeline;
     }
 
-    public RenderPass createRenderPass(CommandEncoderExtended commandEncoder, Supplier<String> name, @Nullable Framebuffer framebuffer) {
+    public RenderPassBackend createRenderPass(CommandEncoderBackendExtended commandEncoder, Supplier<String> name, @Nullable Framebuffer framebuffer) {
         int newTarget = 0;
         if (framebuffer == this.translucentTerrainFramebuffer) {
             newTarget = 1;
@@ -573,7 +566,7 @@ public class Pipeline implements AutoCloseable {
 
         gre.canpipe_setRenderTarget(newTarget);
 
-        RenderPass renderPass;
+        RenderPassBackend renderPass;
         // For example, when rendering gui items
         if (RenderSystem.outputColorTextureOverride != null && RenderSystem.outputDepthTextureOverride != null) {
             renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, OptionalInt.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());

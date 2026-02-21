@@ -19,7 +19,7 @@ import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
 import net.minecraft.resources.Identifier;
 
 public class Framebuffer extends RenderTarget {
@@ -200,7 +200,7 @@ public class Framebuffer extends RenderTarget {
                     baseLayer = baseLayer * 6 + face;
                 }
 
-                var textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                var textureView = ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                     texture, lod, 1, baseLayer, layerCount
                 );
                 return Pair.of(texture, textureView);
@@ -213,7 +213,7 @@ public class Framebuffer extends RenderTarget {
                     var lod = Optional.ofNullable(depthAttachmentJson.get(Integer.class, "lod"));
                     var layer = Optional.ofNullable(depthAttachmentJson.get(Integer.class, "layer"));
                     texture = getOrLoadTexture.apply(depthAttachmentJson.get(String.class, "image")).getTexture();
-                    textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                    textureView = ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                         texture, lod.orElse(0), 1, layer.orElse(0), 1
                     );
                 }

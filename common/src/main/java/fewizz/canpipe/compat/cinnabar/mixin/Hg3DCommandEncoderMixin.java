@@ -10,10 +10,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 import fewizz.canpipe.compat.cinnabar.HgCommandBufferExtended;
 import graphics.cinnabar.api.hg.HgCommandBuffer;
 import graphics.cinnabar.api.hg.HgFramebuffer;
@@ -27,7 +28,7 @@ import graphics.cinnabar.core.hg3d.Hg3DGpuTexture;
 import graphics.cinnabar.core.hg3d.Hg3DGpuTextureView;
 
 @Mixin(Hg3DCommandEncoder.class)
-public abstract class Hg3DCommandEncoderMixin implements CommandEncoderExtended {
+public abstract class Hg3DCommandEncoderMixin implements CommandEncoderBackendExtended {
 
     @Shadow @Final private Hg3DGpuDevice device;
 
@@ -35,7 +36,7 @@ public abstract class Hg3DCommandEncoderMixin implements CommandEncoderExtended 
     @Shadow public Hg3DRenderPass createRenderPass(Supplier<String> debugGroup, HgRenderPass renderpass, HgFramebuffer framebuffer) { return null; }
 
     @Override
-    public RenderPass canpipe_createRenderPass(
+    public RenderPassBackend canpipe_createRenderPass(
         Supplier<String> supplier,
         GpuTextureView[] colorAttachments,
         @Nullable GpuTextureView depthAttachment

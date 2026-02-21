@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.ShaderSource;
-import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
@@ -16,7 +16,7 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 
 import net.minecraft.resources.Identifier;
 
-public interface GpuDeviceExtended extends GpuDevice {
+public interface GpuDeviceBackendExtended extends GpuDeviceBackend {
 
     GpuSamplerExteneded canpipe_createSampler(
         AddressMode u, AddressMode v, FilterMode min, FilterMode mag, int maxAnisotropy, OptionalDouble maxLod,

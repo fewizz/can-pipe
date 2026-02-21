@@ -24,7 +24,6 @@ import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
-import fewizz.canpipe.mixininterface.LightTextureExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
@@ -226,7 +225,7 @@ public class Uniforms {
 
             BlockPos cameraBlockPos = BlockPos.containing(camera.position());
             Iterable<TagKey<Fluid>> fluidTags = () -> {
-                return mc.level.getFluidState(cameraBlockPos).getTags().iterator();
+                return mc.level.getFluidState(cameraBlockPos).tags().iterator();
             };
             for (var tag : fluidTags) {
                 result |= 1 << 0;  // frx_cameraInFluid
@@ -261,8 +260,10 @@ public class Uniforms {
             FRX_EFFECT_MODIFIER.set(effectModifier);
         }
         {
-            float darknessScale = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getDarknessScale();
-            CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));
+            // TODO
+            /*float darknessScale = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getDarknessScale();
+            CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));*/
+            CANPIPE_DARKNESS_FACTOR.set(1.0F);
         }
         FRX_EYE_POS.set(eyePosition.toVector3f());
         FRX_EYE_BRIGHTNESS.set(lre.canpipe_getEyeBlockLight(), lre.canpipe_getEyeSkyLight());
@@ -295,7 +296,7 @@ public class Uniforms {
             int result = 0;
             BlockPos bp = BlockPos.containing(eyePosition);
             Iterable<TagKey<Fluid>> fluidTags = ()
-                -> mc.level.getFluidState(bp).getTags().iterator();
+                -> mc.level.getFluidState(bp).tags().iterator();
             for (var tag : fluidTags) {
                 result |= 1 << 0;  // frx_playerEyeInFluid
                 if (tag.equals(FluidTags.WATER)) {
@@ -362,8 +363,9 @@ public class Uniforms {
         // world
         long ticks = Pipeline.getFixedTimeOrDayTime(mc.level);
         CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
-        FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getDayTime() / 24000L) % 2147483647L : 0.0F);
-        FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);
+        // TODO
+        /*FRX_WORLD_DAY.set(mc.level != null ? (mc.level.dayTime() / 24000L) % 2147483647L : 0.0F);
+        FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);*/
         FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.getLevelRenderState().skyRenderState.moonPhase.index()]);
         FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
         FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.getLevelRenderState().skyRenderState.sunAngle);
@@ -382,10 +384,10 @@ public class Uniforms {
         }
         FRX_AMBIENT_INTENSITY.set(camera.attributeProbe().getValue(EnvironmentAttributes.SKY_LIGHT_FACTOR, pt));
         {
-            Vector4f emissiveColor = (
-                (LightTextureExtended) mc.gameRenderer.lightTexture()
-            ).canpipe_getEmissiveColor();
-            FRX_EMISSIVE_COLOR.set(emissiveColor);
+            // TODO
+            /*Vector4f emissiveColor = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getEmissiveColor();
+            FRX_EMISSIVE_COLOR.set(emissiveColor);*/
+            FRX_EMISSIVE_COLOR.set(1.0F);
         }
         {
             int value = 0;
@@ -425,9 +427,9 @@ public class Uniforms {
                     mc.gameRenderer.getMainCamera(),
                     mc.options.getEffectiveRenderDistance(),
                     mc.getDeltaTracker(),
-                    mc.gameRenderer.getDarkenWorldAmount(pt),
+                    0.0F, // mc.gameRenderer.getDarkenWorldAmount(pt), TODO
                     mc.level
-                )
+                ).color
             );
         }
         FRX_FOG_ENABLED.set(1);

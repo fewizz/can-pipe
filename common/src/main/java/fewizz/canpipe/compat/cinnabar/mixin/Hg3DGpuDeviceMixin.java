@@ -28,7 +28,7 @@ import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
 import fewizz.canpipe.b3d.GpuSamplerExteneded;
 import graphics.cinnabar.api.hg.HgDevice;
 import graphics.cinnabar.api.hg.HgFramebuffer;
@@ -40,7 +40,7 @@ import graphics.cinnabar.core.hg3d.Hg3DRenderPipeline;
 import net.minecraft.resources.Identifier;
 
 @Mixin(Hg3DGpuDevice.class)
-public abstract class Hg3DGpuDeviceMixin implements GpuDeviceExtended {
+public abstract class Hg3DGpuDeviceMixin implements GpuDeviceBackendExtended {
 
     @Shadow @Final private HgDevice hgDevice;
     @Shadow @Final private ShaderSource shaderSourceProvider;

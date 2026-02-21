@@ -18,6 +18,7 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.opengl.GlBackend;
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
@@ -31,15 +32,15 @@ import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
 import fewizz.canpipe.b3d.GpuSamplerExteneded;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 
-@Mixin(GlDevice.class)
-public abstract class GlDeviceMixin implements GpuDeviceExtended {
+@Mixin(GlBackend.class)
+public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
 
     @Shadow abstract protected GlShaderModule getOrCompileShader(Identifier shader, ShaderType type, ShaderDefines defines, ShaderSource shaderSource);
 

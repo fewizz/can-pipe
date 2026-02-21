@@ -4,14 +4,14 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.CommandEncoderBackend;
+import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-public interface CommandEncoderExtended extends CommandEncoder {
+public interface CommandEncoderBackendExtended extends CommandEncoderBackend {
 
-    RenderPass canpipe_createRenderPass(
+    RenderPassBackend canpipe_createRenderPass(
         Supplier<String> supplier, GpuTextureView[] colorAttachments, @Nullable GpuTextureView depthAttachment
     );
 

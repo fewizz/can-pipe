@@ -33,7 +33,7 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.Uniforms;
-import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 import fewizz.canpipe.helpers.PerVertexFormatBufferSource;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.FeatureRenderDispatcherExtended;
@@ -184,7 +184,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         PoseStack poseStack = new PoseStack();
 
-        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoderBackendExtended commandEncoder = (CommandEncoderBackendExtended) RenderSystem.getDevice().createCommandEncoder();
 
         GpuTexture shadowTexture = p.shadows.framebuffers().get(0).getDepthTexture();
         commandEncoder.canpipe_clearDepthTexture(
