@@ -22,7 +22,6 @@
     "ModelBlockRendererMixin",
     "ParticleFeatureRendererMixin",
     "QuadParticleRenderStateMixin",
-    "RenderBuffersMixin",
     "RenderSetupAccessor",
     "RenderSystemMixin",
     "RenderSystemAccessor",
