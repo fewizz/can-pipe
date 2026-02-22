@@ -71,9 +71,6 @@ final public class Materials implements PreparableReloadListener {
         if (renderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN) {
             return Materials.usedByChunkSectionLayer(ChunkSectionLayer.TRANSLUCENT);
         }
-        if (renderPipeline == RenderPipelines.TRIPWIRE_TERRAIN) {
-            return Materials.usedByChunkSectionLayer(ChunkSectionLayer.TRIPWIRE);
-        }
 
         if (renderPipeline == RenderPipelines.SOLID_BLOCK) {
             return Materials.usedByMovingBlockRenderType(RenderTypes.solidMovingBlock());
@@ -83,9 +80,6 @@ final public class Materials implements PreparableReloadListener {
         }
         if (renderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK) {
             return Materials.usedByMovingBlockRenderType(RenderTypes.translucentMovingBlock());
-        }
-        if (renderPipeline == RenderPipelines.TRIPWIRE_BLOCK) {
-            return Materials.usedByMovingBlockRenderType(RenderTypes.tripwireMovingBlock());
         }
 
         return Collections.emptyList();

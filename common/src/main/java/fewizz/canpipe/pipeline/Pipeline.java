@@ -23,8 +23,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
@@ -37,7 +37,7 @@ import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
-import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
+import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
@@ -482,7 +482,7 @@ public class Pipeline implements AutoCloseable {
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(0);  // camera
 
-        CommandEncoderBackendExtended commandEncoder = (CommandEncoderBackendExtended) RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
         if (this.runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
@@ -510,7 +510,7 @@ public class Pipeline implements AutoCloseable {
     public void onAfterWorldRender() {
         Profiler.get().push("can-pipe after world");
 
-        CommandEncoderBackendExtended commandEncoder = (CommandEncoderBackendExtended) RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
         for (PassBase pass : this.fabulousPasses) {
             pass.apply(commandEncoder);
@@ -529,7 +529,7 @@ public class Pipeline implements AutoCloseable {
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
         lre.canpipe_setOriginType(2);  // screen
 
-        CommandEncoderBackendExtended commandEncoder = (CommandEncoderBackendExtended) RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
         for (PassBase pass : this.afterRenderHandPasses) {
             pass.apply(commandEncoder);
@@ -549,7 +549,7 @@ public class Pipeline implements AutoCloseable {
         return renderPipeline;
     }
 
-    public RenderPassBackend createRenderPass(CommandEncoderBackendExtended commandEncoder, Supplier<String> name, @Nullable Framebuffer framebuffer) {
+    public RenderPass createRenderPass(CommandEncoder commandEncoder, Supplier<String> name, @Nullable Framebuffer framebuffer) {
         int newTarget = 0;
         if (framebuffer == this.translucentTerrainFramebuffer) {
             newTarget = 1;
@@ -566,13 +566,13 @@ public class Pipeline implements AutoCloseable {
 
         gre.canpipe_setRenderTarget(newTarget);
 
-        RenderPassBackend renderPass;
+        RenderPass renderPass;
         // For example, when rendering gui items
         if (RenderSystem.outputColorTextureOverride != null && RenderSystem.outputDepthTextureOverride != null) {
             renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, OptionalInt.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
         }
         else {
-            renderPass = commandEncoder.canpipe_createRenderPass(name, framebuffer.colorTextureViews, framebuffer.getDepthTextureView());
+            renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(name, framebuffer.colorTextureViews, framebuffer.getDepthTextureView());
         }
 
         renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
@@ -591,7 +591,7 @@ public class Pipeline implements AutoCloseable {
         //    bindSpritesExtentsSampler(renderPass, sampler0);
         //}
 
-        renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
+        renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 
         for (var e : this.materialProgramSamplerTextures.entrySet()) {
             AbstractTexture texture = e.getValue();
@@ -621,7 +621,7 @@ public class Pipeline implements AutoCloseable {
 
     public static long getFixedTimeOrDayTime(Level level) {
         if (!level.dimensionType().hasFixedTime()) {
-            return level.getDayTime();
+            return 0; // return level.getDayTime(); TODO
         }
         
         // Fixed time is not specified since MC 1.21.11

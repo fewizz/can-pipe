@@ -59,7 +59,8 @@ final public class MaterialMaps implements PreparableReloadListener {
                 result.add(ChunkSectionLayer.CUTOUT);
             }
             else {
-                result.add(ItemBlockRenderTypes.getChunkRenderType(block.defaultBlockState()));
+                // result.add(ItemBlockRenderTypes.getChunkRenderType(block.defaultBlockState())); TODO
+                result.add(ChunkSectionLayer.SOLID);
             }
         });
         fluidsThatUseMaterial(material).forEach(fluid -> {
@@ -75,7 +76,8 @@ final public class MaterialMaps implements PreparableReloadListener {
                 result.add(RenderTypes.cutoutMovingBlock());
             }
             else {
-                result.add(ItemBlockRenderTypes.getMovingBlockRenderType(block.defaultBlockState()));
+                // result.add(ItemBlockRenderTypes.getMovingBlockRenderType(block.defaultBlockState())); TODO
+                result.add(ItemBlockRenderTypes.getRenderType(ChunkSectionLayer.SOLID));
             }
         });
         return result;

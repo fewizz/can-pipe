@@ -23,7 +23,6 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -75,7 +74,7 @@ public class RenderTypeMixin {
         @Local RenderTarget renderTarget
     ) {
         if (renderTarget instanceof Framebuffer framebuffer) {
-            return Pipelines.getCurrent().createRenderPass((CommandEncoderBackendExtended) instance, nameSupplier, framebuffer);
+            return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);
     }

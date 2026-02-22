@@ -60,7 +60,7 @@ public abstract class Hg3DGpuSamplerMixin extends GpuSampler implements GpuSampl
         };
 
         int addressW = this.canpipe_addressModeW == null ? createInfo.addressW() : Hg3DConst.addressMode(canpipe_addressModeW);
-        boolean mip = deviceAccessor.get_canpipe_linearMipmap() == null ? createInfo.mip() : deviceAccessor.get_canpipe_linearMipmap();
+        /*boolean mip = deviceAccessor.get_canpipe_linearMipmap() == null ? createInfo.mip() : deviceAccessor.get_canpipe_linearMipmap();
 
         return new HgSampler.CreateInfo(
             createInfo.minLinear(),
@@ -71,7 +71,8 @@ public abstract class Hg3DGpuSamplerMixin extends GpuSampler implements GpuSampl
             mip,
             hgCompareOp,
             createInfo.maxAnisotropy()
-        );
+        );*/
+        return null;  // TODO
     }
 
 }

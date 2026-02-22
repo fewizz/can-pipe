@@ -12,8 +12,8 @@ import org.lwjgl.system.MemoryStack;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
@@ -25,7 +25,7 @@ import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
 import fewizz.canpipe.UniformBufferStruct.IntUniform;
 import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
 import fewizz.canpipe.Uniforms;
-import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
+import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
 import net.minecraft.client.Minecraft;
@@ -85,7 +85,7 @@ public class Pass extends PassBase {
     }
 
     @Override
-    public void apply(CommandEncoderBackendExtended commandEncoder) {
+    public void apply(CommandEncoder commandEncoder) {
         Minecraft mc = Minecraft.getInstance();
 
         int w = this.extent.x;
@@ -117,7 +117,7 @@ public class Pass extends PassBase {
         }
 
         try (
-            RenderPassBackend renderPass = commandEncoder.canpipe_createRenderPass(
+            RenderPass renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(
                 () -> "can-pipe pass \""+this.name+"\"",
                 this.framebuffer.colorTextureViews,
                 this.framebuffer.getDepthTextureView()
@@ -212,9 +212,9 @@ public class Pass extends PassBase {
         }
 
         @Override
-        public void apply(CommandEncoderBackendExtended commandEncoder) {
+        public void apply(CommandEncoder commandEncoder) {
             for (int i = 0; i < this.framebuffer.colorTextureViews.length; ++i) {
-                commandEncoder.canpipe_clearColorTexture(
+                ((CommandEncoderExtended) commandEncoder).canpipe_clearColorTexture(
                     this.framebuffer.colorTextures[i],
                     this.framebuffer.colorTextureClearColors[i],
                     this.framebuffer.colorTextureViews[i].baseMipLevel(),
@@ -224,7 +224,7 @@ public class Pass extends PassBase {
                 );
             }
             if (this.framebuffer.getDepthTexture() != null) {
-                commandEncoder.canpipe_clearDepthTexture(
+                ((CommandEncoderExtended) commandEncoder).canpipe_clearDepthTexture(
                     this.framebuffer.getDepthTexture(),
                     this.framebuffer.depthTextureClearDepth,
                     this.framebuffer.getDepthTextureView().baseMipLevel(),
