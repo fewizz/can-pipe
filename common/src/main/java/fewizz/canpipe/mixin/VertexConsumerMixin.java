@@ -6,7 +6,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.vertex.QuadBrightness;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipe;
@@ -16,14 +19,7 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 @Mixin(VertexConsumer.class)
 public interface VertexConsumerMixin {
 
-    @Inject(
-        method = "putBulkData("+
-            "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
-            "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-            "[FFFFF[II"+
-        ")V",
-        at = @At("HEAD")
-    )
+    @Inject(method = "putBulkData", at = @At("HEAD"))
     default void setSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
         if (
             this instanceof VertexConsumerExtended vce &&
@@ -33,14 +29,7 @@ public interface VertexConsumerMixin {
         }
     }
 
-    @Inject(
-        method = "putBulkData("+
-            "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
-            "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-            "[FFFFF[II"+
-        ")V",
-        at = @At("RETURN")
-    )
+    @Inject(method = "putBulkData", at = @At("RETURN"))
     default void resetSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
         if (
             this instanceof VertexConsumerExtended vce &&
@@ -50,41 +39,37 @@ public interface VertexConsumerMixin {
         }
     }
 
-    @ModifyVariable(
-        method = "putBulkData("+
-            "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
-            "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-            "[FFFFF[II"+
-        ")V",
-        at = @At(value = "HEAD"),
-        ordinal = 0,
-        argsOnly = true
+    @WrapOperation(
+        method = "putBulkData",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/QuadBrightness;scaleColor(II)I"
+        )
     )
-    default float[] dontBlendColorWithAO(float[] ao) {
-        boolean requiresAO =
+    default int dontBlendColorWithAO(QuadBrightness brightness, int vertex, int color, Operation<Integer> operation) {
+        boolean separateAO =
             this instanceof VertexConsumerExtended vce &&
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO);
-        return requiresAO ? new float[]{1.0F, 1.0F, 1.0F, 1.0F, ao[0], ao[1], ao[2], ao[3]} : ao;
+        if (separateAO) {
+            return color;
+        }
+        return operation.call(brightness, vertex, color);
     }
 
     @Inject(
-        method = "putBulkData("+
-            "Lcom/mojang/blaze3d/vertex/PoseStack$Pose;"+
-            "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
-            "[FFFFF[II"+
-        ")V",
+        method = "putBulkData",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V")
     )
     default void setAO(
         CallbackInfo ci,
-        @Local(ordinal = 0, argsOnly = true) float[] ao,
+        @Local QuadBrightness brightness,
         @Local(ordinal = 2) int vertexIndex
     ) {
         if (
             this instanceof VertexConsumerExtended vce &&
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)
         ) {
-            vce.canpipe_setPendingAO(ao[vertexIndex + 4]);  // because of the change above
+            vce.canpipe_setPendingAO(brightness.get(vertexIndex));  // because of the change above
         }
     }
 

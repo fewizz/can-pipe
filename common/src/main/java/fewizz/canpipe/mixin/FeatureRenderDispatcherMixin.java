@@ -22,7 +22,7 @@ public class FeatureRenderDispatcherMixin implements FeatureRenderDispatcherExte
     }
 
     @ModifyExpressionValue(
-        method = "renderAllFeatures",
+        method = {"renderSolidFeatures", "renderTranslucentFeatures"},
         at = @At(
             value = "FIELD",
             target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher;bufferSource:Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;"

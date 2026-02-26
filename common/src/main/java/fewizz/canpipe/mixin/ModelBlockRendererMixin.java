@@ -33,7 +33,7 @@ public class ModelBlockRendererMixin {
         return shade && Pipelines.getCurrent() == null;
     }
 
-    @Inject(
+    /*@Inject(
         method = "putQuadData",
         at = @At(
             value = "INVOKE",
@@ -91,6 +91,6 @@ public class ModelBlockRendererMixin {
                 vce.canpipe_setSharedMaterialMap(null);
             }
         }
-    }
+    }*/
 
 }

@@ -2,9 +2,8 @@ package fewizz.canpipe.mixininterface;
 
 import org.joml.Vector4f;
 
-public interface LightTextureExtended {
+public interface LightmapExtended {
 
-    float canpipe_getDarknessScale();
     Vector4f canpipe_getEmissiveColor();
 
 }

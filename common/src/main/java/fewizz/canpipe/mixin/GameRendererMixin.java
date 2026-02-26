@@ -10,14 +10,12 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.mixininterface.CameraExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -26,6 +24,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.fog.FogRenderer;
+import net.minecraft.client.renderer.state.LevelRenderState;
 import net.minecraft.util.profiling.Profiler;
 
 @Mixin(GameRenderer.class)
@@ -34,17 +33,13 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow @Final Minecraft minecraft;
     @Shadow @Final private Camera mainCamera;
     @Shadow @Final private FogRenderer fogRenderer;
-    @Shadow private float renderDistance;
-    @Shadow private float fovModifier;
-
-    @Shadow public Matrix4f getProjectionMatrix(float fov) { return null; }
+    @Shadow @Final private LevelRenderState levelRenderState;
 
     @Unique private long canpipe_renderStartNano = -1;
     @Unique private int canpipe_renderTarget = -1;
     @Unique private Matrix4f[] canpipe_shadowProjectionMatrices = null;
     @Unique private Matrix4f[] canpipe_shortendedViewProjectionMatrices = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
-    @Unique private Float canpipe_depthFarOverride = null;
     @Unique private Matrix4f canpipe_worldViewMatrix = null;
     @Unique private Matrix4f canpipe_worldProjectionMatrix = null;
 
@@ -96,26 +91,26 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
-                "Lnet/minecraft/client/Camera;"+
-                "Lorg/joml/Matrix4f;"+
-                "Lorg/joml/Matrix4f;"+
+                "Lnet/minecraft/client/renderer/state/CameraRenderState;"+
                 "Lorg/joml/Matrix4f;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
                 "Z"+
+                "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"+
             ")V"
         )
     )
     void onBeforeWorldRender(
         DeltaTracker deltaTracker,
         CallbackInfo ci,
-        @Local(ordinal = 0) Matrix4f projectionMatrix,
-        @Local(ordinal = 1) Matrix4f viewMatrix
+        @Local(ordinal = 0) Matrix4f viewMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) {
             return;
         }
+
+        Matrix4f projectionMatrix = this.levelRenderState.cameraRenderState.projectionMatrix;
 
         this.canpipe_worldViewMatrix = new Matrix4f(viewMatrix);
         this.canpipe_worldProjectionMatrix = new Matrix4f(projectionMatrix);
@@ -131,11 +126,13 @@ public class GameRendererMixin implements GameRendererExtended {
             Uniforms.FRX_LAST_CAMERA_POS.set(Uniforms.FRX_CAMERA_POS);
         }
 
+        float renderDistance = this.minecraft.options.getEffectiveRenderDistance() * 16;
+
         if (p.shadows != null) {
             Profiler.get().push("can-pipe calculate shadow uniforms");
 
             Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
-            Vector3f sunPosOffset = toSunDir.mul(this.renderDistance + 48, new Vector3f());
+            Vector3f sunPosOffset = toSunDir.mul(renderDistance + 48, new Vector3f());
 
             Uniforms.FRX_SHADOW_VIEW_MATRIX.setLookAt(
                 sunPosOffset,                                  // eye pos
@@ -150,7 +147,7 @@ public class GameRendererMixin implements GameRendererExtended {
             var shadowRotationMatrix = new Matrix3f(Uniforms.FRX_SHADOW_VIEW_MATRIX);
             var inverseShadowViewMatrix = new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
 
-            final float maxCascadeRadius = this.renderDistance + 48;
+            final float maxCascadeRadius = renderDistance + 48;
 
             float prevCascadeRadius = -1.0F;
 
@@ -190,7 +187,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 // sometimes cascade is out of frustum bounds
                 // we don't want to render chunks and entiteis more than needed, right?
                 // (help)
-                this.canpipe_depthFarOverride = 0.0F;
+                float depthFar = Float.MAX_VALUE;
 
                 for (int x = -1; x <= 1; x += 2) {
                     for (int y = -1; y <= 1; y += 2) {
@@ -201,28 +198,25 @@ public class GameRendererMixin implements GameRendererExtended {
                                 center.z + cascadeRadius*z
                             ).mulProject(inverseShadowViewMatrix).mulProject(viewMatrix);
 
-                            this.canpipe_depthFarOverride = Math.min(
-                                Math.max(this.canpipe_depthFarOverride, -edge.z),
-                                this.renderDistance + 48.0F
+                            depthFar = Math.min(
+                                Math.max(depthFar, -edge.z),
+                                renderDistance + 48.0F
                             );
                         }
                     }
                 }
 
                 this.canpipe_shortendedViewProjectionMatrices[cascade] =
-                    this.getProjectionMatrix(this.minecraft.options.fov().get().floatValue())
+                    ((CameraExtended) this.mainCamera).canpipe_createProjectionMatrixForCulling(depthFar)
                     .mul(viewMatrix);
 
                 Vector3f min = new Vector3f();
                 Vector3f max = new Vector3f();
 
                 new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).mul(
-                    this.getProjectionMatrix(
-                        this.minecraft.options.fov().get().floatValue()
-                    ).mul(viewMatrix).invert()
+                    ((CameraExtended) this.mainCamera).canpipe_createProjectionMatrixForCulling(depthFar)
+                    .mul(viewMatrix).invert()
                 ).frustumAabb(min, max);  // frustum AABB in shadow view space
-
-                this.canpipe_depthFarOverride = null;
 
                 // those matrices aren't passed into shadow material programs,
                 // no need to worry about constant radius
@@ -242,21 +236,6 @@ public class GameRendererMixin implements GameRendererExtended {
         p.onBeforeWorldRender(viewMatrix, projectionMatrix);
     }
 
-    @ModifyArg(
-        method = "renderLevel",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/GameRenderer;getFov(Lnet/minecraft/client/Camera;FZ)F"
-        ),
-        index = 2
-    )
-    private boolean fixZeroFovOnFirstFrame(boolean useFovSetting) {
-        if (this.fovModifier == 0.0) {
-            return false;
-        }
-        return useFovSetting;
-    }
-
     @Inject(
         method = "renderLevel",
         at = @At(
@@ -265,13 +244,12 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
-                "Lnet/minecraft/client/Camera;"+
-                "Lorg/joml/Matrix4f;"+
-                "Lorg/joml/Matrix4f;"+
+                "Lnet/minecraft/client/renderer/state/CameraRenderState;"+
                 "Lorg/joml/Matrix4f;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
                 "Z"+
+                "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"+
             ")V",
             shift = Shift.AFTER
         )
@@ -297,14 +275,6 @@ public class GameRendererMixin implements GameRendererExtended {
         Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
         Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
         Uniforms.FRX_LAST_CAMERA_POS.set(this.mainCamera.position().toVector3f());
-    }
-
-    @WrapMethod(method = "getDepthFar")
-    float wrapGetDepthFar(Operation<Float> operation) {
-        if (this.canpipe_depthFarOverride != null) {
-            return this.canpipe_depthFarOverride;
-        }
-        return operation.call();
     }
 
     @Override

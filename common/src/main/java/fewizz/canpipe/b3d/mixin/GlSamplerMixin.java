@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlSampler;
 import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.textures.AddressMode;
 
 import fewizz.canpipe.b3d.GpuSamplerExteneded;
@@ -38,13 +39,13 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
         at = @At("TAIL")
     )
     void onInitEnd(CallbackInfo ci) {
-        var device = (GlDeviceAccessor) RealGpuDeviceProviderService.getRealGpuDevice();
-        this.canpipe_addressModeW = device.get_canpipe_addressModeW();
-        this.canpipe_linearMipmap = device.get_canpipe_linearMipmap() != null ? device.get_canpipe_linearMipmap() : true;
+        GpuDeviceBackend device = RealGpuDeviceProviderService.getRealGpuDeviceBackend();
+        this.canpipe_addressModeW = ((GlDeviceAccessor) device).get_canpipe_addressModeW();
+        this.canpipe_linearMipmap = ((GlDeviceAccessor) device).get_canpipe_linearMipmap() != null ? ((GlDeviceAccessor) device).get_canpipe_linearMipmap() : true;
         if (this.canpipe_addressModeW == null) {
             this.canpipe_addressModeW = AddressMode.REPEAT;
         }
-        this.canpipe_compareOp = device.get_canpipe_compareOp();
+        this.canpipe_compareOp = ((GlDeviceAccessor) device).get_canpipe_compareOp();
 
         if (this.canpipe_compareOp != null) {
             GL33C.glSamplerParameteri(this.id, GL33C.GL_TEXTURE_COMPARE_MODE, GL33C.GL_COMPARE_REF_TO_TEXTURE);

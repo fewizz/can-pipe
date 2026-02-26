@@ -1,14 +1,14 @@
 package fewizz.canpipe.mixin;
 
-/*import org.joml.Vector4f;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -16,17 +16,17 @@ import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 
-import fewizz.canpipe.mixininterface.LightTextureExtended;
-import net.minecraft.client.renderer.LightTexture;*/
+import fewizz.canpipe.mixininterface.LightmapExtended;
+import net.minecraft.client.renderer.Lightmap;
 
-/*@Mixin(LightTexture.class)*/
-public class LightTextureMixin /*implements LightTextureExtended*/ {
-/*
+@Mixin(Lightmap.class)
+public class LightmapMixin implements LightmapExtended {
+
     @Shadow @Final private GpuTexture texture;
 
-    @Unique private float canpipe_darknessScale = 1.0F;
     @Unique private Vector4f canpipe_emissiveColor = new Vector4f(1.0F);
     @Unique private GpuBuffer canpipe_emissiveColorReadGpuBuffer;
+
 
     @Inject(method = "<init>", at = @At("TAIL"))
     void onInit(CallbackInfo ci) {
@@ -55,31 +55,12 @@ public class LightTextureMixin /*implements LightTextureExtended*/ {
     }
 
     @Override
-    public float canpipe_getDarknessScale() {
-        return this.canpipe_darknessScale;
-    }
-
-    @Override
     public Vector4f canpipe_getEmissiveColor() {
         return this.canpipe_emissiveColor;
     }
 
-    @ModifyExpressionValue(
-        method = "updateLightTexture",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LightTexture;calculateDarknessScale("+
-                "Lnet/minecraft/world/entity/LivingEntity;FF"+
-            ")F"
-        )
-    )
-    float saveDarknessScale(float darknessScale) {
-        this.canpipe_darknessScale = darknessScale;
-        return darknessScale;
-    }
-
     @Inject(
-        method = "updateLightTexture",
+        method = "update",
         at = @At(
             value = "INVOKE",
             // right after draw
@@ -106,5 +87,5 @@ public class LightTextureMixin /*implements LightTextureExtended*/ {
             0  // level
         );
     }
-*/
+
 }

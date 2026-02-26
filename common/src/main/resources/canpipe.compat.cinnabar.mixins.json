@@ -15,7 +15,6 @@
         "Hg3DRenderPassMixin",
         "Hg3DRenderPipelineAccessor",
         "Hg3DRenderPipelineMixin",
-        "MCCachedOrthoProjectionMatrixBufferMixin",
         "MCGameRendererMixin",
         "MercuryCommandBufferMixin",
         "MercuryDeviceAccessor",

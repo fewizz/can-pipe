@@ -3,18 +3,21 @@ package fewizz.canpipe.b3d;
 import java.util.ServiceLoader;
 
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
+import com.mojang.blaze3d.systems.RenderSystem;
+
+import fewizz.canpipe.b3d.mixin.GpuDeviceAccessor;
 
 public abstract class RealGpuDeviceProviderService {
 
     private static ServiceLoader<RealGpuDeviceProviderService> loader = ServiceLoader.load(RealGpuDeviceProviderService.class);
 
-    public abstract GpuDeviceBackend realGpuDevice();
+    public abstract GpuDeviceBackend realGpuDeviceBackend();
 
-    public static GpuDeviceBackend getRealGpuDevice() {
+    public static GpuDeviceBackend getRealGpuDeviceBackend() {
         for (RealGpuDeviceProviderService s : RealGpuDeviceProviderService.loader) {
-            return s.realGpuDevice();
+            return s.realGpuDeviceBackend();
         }
-        return null; //RenderSystem.getDevice();
+        return ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
     }
 
 }

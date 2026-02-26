@@ -16,6 +16,8 @@
         "GlStateManagerAccessor",
         "GlStateManagerMixin",
         "GlTextureViewMixin",
+        "GpuDeviceAccessor",
+        "GpuDeviceMixin",
         "TextureFormatMixin"
     ]
 }

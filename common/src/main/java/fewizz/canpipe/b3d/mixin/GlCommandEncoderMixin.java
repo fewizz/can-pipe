@@ -79,7 +79,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         return GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
     }
 
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = "createRenderPass("+
             "Ljava/util/function/Supplier;"+
             "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
@@ -102,7 +102,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     )
     int suppressMaxLayerCheckError(int layers) {
         return 0;
-    }
+    }*/
 
     @Inject(
         method = "createRenderPass("+
@@ -111,7 +111,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             "Ljava/util/OptionalInt;"+
             "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
             "Ljava/util/OptionalDouble;"+
-        ")Lcom/mojang/blaze3d/systems/RenderPass;",
+        ")Lcom/mojang/blaze3d/systems/RenderPassBackend;",
         at = @At("HEAD")
     )
     void replaceTextureViewIfNull(
@@ -136,7 +136,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             "Ljava/util/OptionalInt;"+
             "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
             "Ljava/util/OptionalDouble;"+
-        ")Lcom/mojang/blaze3d/systems/RenderPass;",
+        ")Lcom/mojang/blaze3d/systems/RenderPassBackend;",
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/opengl/GlTextureView;getFbo(Lcom/mojang/blaze3d/opengl/DirectStateAccess;Lcom/mojang/blaze3d/textures/GpuTexture;)I"
@@ -307,7 +307,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         }
     }
 
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = "verifyColorTexture",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I")
     )
@@ -327,6 +327,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             layers = 1;  // replacing texture.getDepthOrLayers() with 1
         }
         return layers;
-    }
+    }*/
 
 }

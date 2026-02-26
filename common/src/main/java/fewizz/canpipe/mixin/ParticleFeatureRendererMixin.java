@@ -37,37 +37,12 @@ public class ParticleFeatureRendererMixin {
             ordinal = 0
         )
     )
-    RenderPass replaceMainColorAttachments(
+    RenderPass replaceColorAttachments(
         CommandEncoder instance, Supplier<String> nameSupplier, GpuTextureView colorTextureView, OptionalInt clearColor, @Nullable GpuTextureView depthTextureView, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
         @Local(ordinal = 0) RenderTarget renderTargetMain
     ) {
         if (renderTargetMain instanceof Framebuffer framebuffer) {
-            return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
-        }
-        return operation.call(instance, nameSupplier, colorTextureView, clearColor, depthTextureView, clearDepth);
-    }
-
-    @WrapOperation(
-        method = "render",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/CommandEncoder;createRenderPass("+
-                "Ljava/util/function/Supplier;"+
-                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-                "Ljava/util/OptionalInt;"+
-                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-                "Ljava/util/OptionalDouble;"+
-            ")Lcom/mojang/blaze3d/systems/RenderPass;",
-            ordinal = 1
-        )
-    )
-    RenderPass replaceTranslucentColorAttachments(
-        CommandEncoder instance, Supplier<String> nameSupplier, GpuTextureView colorTextureView, OptionalInt clearColor, @Nullable GpuTextureView depthTextureView, OptionalDouble clearDepth,
-        Operation<RenderPass> operation,
-        @Local(ordinal = 1) RenderTarget renderTargetTranslucent
-    ) {
-        if (renderTargetTranslucent instanceof Framebuffer framebuffer) {
             return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, colorTextureView, clearColor, depthTextureView, clearDepth);

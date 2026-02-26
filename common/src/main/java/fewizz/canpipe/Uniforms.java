@@ -261,9 +261,8 @@ public class Uniforms {
         }
         {
             // TODO
-            /*float darknessScale = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getDarknessScale();
+            /*float darknessScale = ((LightTextureExtended) mc.gameRenderer.lightmap()).canpipe_getDarknessScale();
             CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));*/
-            CANPIPE_DARKNESS_FACTOR.set(1.0F);
         }
         FRX_EYE_POS.set(eyePosition.toVector3f());
         FRX_EYE_BRIGHTNESS.set(lre.canpipe_getEyeBlockLight(), lre.canpipe_getEyeSkyLight());
