@@ -38,7 +38,7 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -378,7 +378,7 @@ public class Pipeline implements AutoCloseable {
                     (idx) -> { throw new RuntimeException("Color texture getter should not be called"); },
                     new int[]{},  // clear colors
                     () -> {
-                        var shadowMapCascadeTextureView = ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                        var shadowMapCascadeTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
                             shadowMapTexture,
                             shadowMapTextureView.baseMipLevel(),
                             shadowMapTextureView.mipLevels(),

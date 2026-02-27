@@ -3,7 +3,6 @@ package fewizz.canpipe.mixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -63,7 +62,7 @@ public interface VertexConsumerMixin {
     default void setAO(
         CallbackInfo ci,
         @Local QuadBrightness brightness,
-        @Local(ordinal = 2) int vertexIndex
+        @Local(ordinal = 3) int vertexIndex
     ) {
         if (
             this instanceof VertexConsumerExtended vce &&

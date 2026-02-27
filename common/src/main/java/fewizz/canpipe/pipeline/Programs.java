@@ -18,7 +18,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
 import net.minecraft.resources.Identifier;
 
 
@@ -84,7 +84,7 @@ public class Programs {
             return src;
         };
 
-        ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
             pipeline,
             (Identifier location, ShaderType type) -> {
                 String src = getShaderSource.apply(location).get();

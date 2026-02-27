@@ -18,7 +18,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
+import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -144,7 +144,7 @@ public class MaterialPrograms {
             return src;
         };
 
-        ((GpuDeviceBackendExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
             renderPipeline,
             (Identifier location, ShaderType type) -> {
                 String src = switch (type) {

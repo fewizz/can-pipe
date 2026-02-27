@@ -57,6 +57,7 @@ import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import net.minecraft.client.renderer.state.CameraRenderState;
 import net.minecraft.client.renderer.state.LevelRenderState;
 import net.minecraft.client.renderer.state.ParticlesRenderState;
 import net.minecraft.core.BlockPos;
@@ -76,11 +77,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
     @Shadow @Final private RenderBuffers renderBuffers;
 
-    @Shadow abstract ChunkSectionsToRender prepareChunkRenders(Matrix4fc matrix4fc, double d, double e, double f);
+    // @Shadow abstract ChunkSectionsToRender prepareChunkRenders(Matrix4fc matrix4fc, double d, double e, double f);
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
-    @Shadow private void cullTerrain(Camera camera, Frustum frustum, boolean bl) {}
+    @Shadow private void cullTerrain(Camera camera, Frustum frustum, boolean spectator) {}
     @Shadow private void extractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState levelRenderState) {}
-    @Shadow private void extractVisibleBlockEntities(Camera camera, float f, LevelRenderState levelRenderState) {}
+    @Shadow private void extractVisibleBlockEntities(Camera camera, float dt, LevelRenderState levelRenderState) {}
     @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeStorage submitNodeStorage) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
     @Shadow private void applyFrustum(Frustum frustum) {}
@@ -111,22 +112,18 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Inject(
         method = "renderLevel",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/world/level/lighting/LevelLightEngine;runLightUpdates()I"
-        )
+        at = @At(value = "HEAD")
     )
     void renderShadowsAfterLightUpdates(
-        GraphicsResourceAllocator graphicsResourceAllocator,
-        DeltaTracker deltaTracker,
-        boolean renderBlockOutline,
-        Camera camera,
-        Matrix4f viewMatrix,
-        Matrix4f projectionMatrix,
-        Matrix4f cullMatrix,
-        GpuBufferSlice gpuBufferSlice,
-        Vector4f clearColor,
-        boolean renderSky,
+        final GraphicsResourceAllocator resourceAllocator,
+        final DeltaTracker deltaTracker,
+        final boolean renderOutline,
+        final CameraRenderState cameraState,
+        final Matrix4f modelViewMatrix,
+        final GpuBufferSlice terrainFog,
+        final Vector4f fogColor,
+        final boolean shouldRenderSky,
+        final ChunkSectionsToRender chunkSectionsToRender,
         CallbackInfo ci
     ) throws Exception {
         Pipeline p = Pipelines.getCurrent();
@@ -163,7 +160,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(pt));
         this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(pt));
 
-        if (p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
+        return;
+
+        /*if (true || p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
             return;
         }
 
@@ -281,7 +280,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         mc.options.entityShadows().set(prevEntityShadows);
         this.canpipe_isRenderingShadows = false;
 
-        Profiler.get().pop();
+        Profiler.get().pop();*/
     }
 
     @WrapOperation(
@@ -341,7 +340,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return this.canpipe_isRenderingShadows ? true : original;
     }
 
-    @WrapOperation(
+    /*@WrapOperation(
         method = {
             "method_62214",  // Fabric
             "lambda$addMainPass$1"  // NeoForge
@@ -364,7 +363,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return operation.call(device, u, v, FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
         }
         return operation.call(device, u, v, min, mag, maxAnisotropy, maxLod);
-    }
+    }*/
 
     @ModifyExpressionValue(
         method = {"clearVisibleSections", "applyFrustum", "prepareChunkRenders"},

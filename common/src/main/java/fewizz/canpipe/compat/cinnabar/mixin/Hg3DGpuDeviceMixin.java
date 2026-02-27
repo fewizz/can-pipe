@@ -25,11 +25,11 @@ import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
-import fewizz.canpipe.b3d.GpuSamplerExteneded;
 import graphics.cinnabar.api.hg.HgDevice;
 import graphics.cinnabar.api.hg.HgFramebuffer;
 import graphics.cinnabar.api.hg.HgImage;
@@ -58,7 +58,7 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceBackendExtended {
     @Unique private Boolean canpipe_linearMipmap = null;
 
     @Override
-    public GpuSamplerExteneded canpipe_createSampler(
+    public GpuSampler canpipe_createSampler(
         AddressMode u, AddressMode v,
         FilterMode min, FilterMode mag,
         int maxAnisotropy, OptionalDouble maxLod,
@@ -68,7 +68,7 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceBackendExtended {
             this.canpipe_addressModeW = w;
             this.canpipe_compareOp = compareOp;
             this.canpipe_linearMipmap = linearMipmap;
-            return (GpuSamplerExteneded) this.createSampler(u, v, min, mag, 0, maxLod);
+            return this.createSampler(u, v, min, mag, 0, maxLod);
         } finally {
             this.canpipe_addressModeW = null;
             this.canpipe_compareOp = null;

@@ -11,6 +11,7 @@ import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
@@ -18,20 +19,20 @@ import net.minecraft.resources.Identifier;
 
 public interface GpuDeviceBackendExtended extends GpuDeviceBackend {
 
-    GpuSamplerExteneded canpipe_createSampler(
+    GpuSampler canpipe_createSampler(
         AddressMode u, AddressMode v, FilterMode min, FilterMode mag, int maxAnisotropy, OptionalDouble maxLod,
         AddressMode w, @Nullable DepthTestFunction compareOp, boolean linearMipmap  // added
+    );
+
+    GpuTextureView canpipe_createTextureView(
+        GpuTexture gpuTexture, int baseMip, int levelCount,
+        int baseLayer, int layerCount  // added
     );
 
     void canpipe_precompilePipelineShaderModules(
         RenderPipeline pipeline,
         ShaderSource shaderSource,
         TriConsumer<String, Identifier, String> onCompilationError
-    );
-
-    GpuTextureView canpipe_createTextureView(
-        GpuTexture gpuTexture, int baseMip, int levelCount,
-        int baseLayer, int layerCount  // added
     );
 
 }
