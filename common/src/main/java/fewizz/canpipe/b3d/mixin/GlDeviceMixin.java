@@ -23,7 +23,7 @@ import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.AddressMode;
@@ -50,7 +50,7 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
 
     @Unique private AddressMode canpipe_addressModeW = null;
-    @Unique private DepthTestFunction canpipe_compareOp = null;
+    @Unique private CompareOp canpipe_compareOp = null;
     @Unique private Boolean canpipe_linearMipmap = null;
 
     /** Color textures + depth texture at the end (nullable) **/
@@ -61,7 +61,7 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         AddressMode u, AddressMode v,
         FilterMode min, FilterMode mag,
         int maxAnisotropy, OptionalDouble maxLod,
-        AddressMode w, @Nullable DepthTestFunction compareOp, boolean linearMipmap
+        AddressMode w, @Nullable CompareOp compareOp, boolean linearMipmap
     ) {
         try {
             this.canpipe_addressModeW = w;

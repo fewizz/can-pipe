@@ -6,7 +6,7 @@ import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
@@ -20,7 +20,7 @@ public interface GpuDeviceExtended {
 
     GpuSampler canpipe_createSampler(
         AddressMode u, AddressMode v, FilterMode min, FilterMode mag, int maxAnisotropy, OptionalDouble maxLod,
-        AddressMode w, @Nullable DepthTestFunction compareOp, boolean linearMipmap  // added
+        AddressMode w, @Nullable CompareOp compareOp, boolean linearMipmap  // added
     );
 
     GpuTextureView canpipe_createTextureView(

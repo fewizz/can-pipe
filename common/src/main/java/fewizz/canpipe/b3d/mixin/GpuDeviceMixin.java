@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
@@ -32,7 +32,7 @@ public class GpuDeviceMixin implements GpuDeviceExtended {
     @Override
     public GpuSampler canpipe_createSampler(
         AddressMode u, AddressMode v, FilterMode min, FilterMode mag, int maxAnisotropy, OptionalDouble maxLod,
-        AddressMode w, @Nullable DepthTestFunction compareOp, boolean linearMipmap  // added
+        AddressMode w, @Nullable CompareOp compareOp, boolean linearMipmap  // added
     ) {
         return ((GpuDeviceBackendExtended) this.backend).canpipe_createSampler(
             u, v, min, mag, maxAnisotropy, maxLod,

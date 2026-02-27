@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlSampler;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.textures.AddressMode;
 
@@ -31,7 +31,7 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
     @Shadow @Final private OptionalDouble maxLod;
 
     @Unique protected AddressMode canpipe_addressModeW;
-    @Unique @Nullable protected DepthTestFunction canpipe_compareOp = null;
+    @Unique @Nullable protected CompareOp canpipe_compareOp = null;
     @Unique protected boolean canpipe_linearMipmap;
 
     @Inject(
@@ -86,7 +86,7 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
     }
 
     @Override
-    public @Nullable DepthTestFunction canpipe_getCompareOp() {
+    public @Nullable CompareOp canpipe_getCompareOp() {
         return this.canpipe_compareOp;
     }
 

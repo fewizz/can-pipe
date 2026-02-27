@@ -43,7 +43,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.dimension.DimensionType.CardinalLightType;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
 
@@ -393,7 +392,7 @@ public class Uniforms {
             value |= (mc.level.dimensionType().hasSkyLight() ? 1 : 0) << 0;
             value |= (mc.level.isRaining() ? 1 : 0)                   << 1;
             value |= (mc.level.isThundering() ? 1 : 0)                << 2;
-            value |= (mc.level.dimensionType().cardinalLightType() == CardinalLightType.NETHER ? 1 : 0)  << 3;
+            // value |= (mc.level.dimensionType().cardinalLightType() == CardinalLightType.NETHER ? 1 : 0)  << 3;  // TODO
 
             int dimension = 3;
             if (mc.level.dimension() == Level.OVERWORLD) {

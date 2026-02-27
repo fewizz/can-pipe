@@ -13,7 +13,6 @@ import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -22,7 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 @Mixin(BlockRenderDispatcher.class)
 public class BlockRenderDispatcherMixin {
 
-    @Inject(
+    /*@Inject(
         method = "renderSingleBlock",
         at = @At("HEAD")
     )
@@ -65,6 +64,6 @@ public class BlockRenderDispatcherMixin {
                 vce.canpipe_setSharedMaterialMap(null);
             }
         }
-    }
+    }*/
 
 }

@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
@@ -64,7 +63,8 @@ final public class MaterialMaps implements PreparableReloadListener {
             }
         });
         fluidsThatUseMaterial(material).forEach(fluid -> {
-            result.add(ItemBlockRenderTypes.getRenderLayer(fluid.defaultFluidState()));
+            // result.add(ItemBlockRenderTypes.getRenderLayer(fluid.defaultFluidState()));
+            result.add(ChunkSectionLayer.SOLID);
         });
         return result;
     }
@@ -77,7 +77,8 @@ final public class MaterialMaps implements PreparableReloadListener {
             }
             else {
                 // result.add(ItemBlockRenderTypes.getMovingBlockRenderType(block.defaultBlockState())); TODO
-                result.add(ItemBlockRenderTypes.getRenderType(ChunkSectionLayer.SOLID));
+                // result.add(ItemBlockRenderTypes.getRenderType(ChunkSectionLayer.SOLID));
+                result.add(RenderTypes.solidMovingBlock());
             }
         });
         return result;
