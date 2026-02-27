@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.AddressMode;
@@ -54,7 +54,7 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceBackendExtended {
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
 
     @Unique private AddressMode canpipe_addressModeW = null;
-    @Unique private DepthTestFunction canpipe_compareOp = null;
+    @Unique private CompareOp canpipe_compareOp = null;
     @Unique private Boolean canpipe_linearMipmap = null;
 
     @Override
@@ -62,7 +62,7 @@ public abstract class Hg3DGpuDeviceMixin implements GpuDeviceBackendExtended {
         AddressMode u, AddressMode v,
         FilterMode min, FilterMode mag,
         int maxAnisotropy, OptionalDouble maxLod,
-        AddressMode w, @Nullable DepthTestFunction compareOp, boolean linearMipmap  // added
+        AddressMode w, @Nullable CompareOp compareOp, boolean linearMipmap  // added
     ) {
         try {
             this.canpipe_addressModeW = w;

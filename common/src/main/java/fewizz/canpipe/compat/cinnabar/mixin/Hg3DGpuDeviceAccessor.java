@@ -7,7 +7,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.textures.AddressMode;
 
 import graphics.cinnabar.api.hg.HgFramebuffer;
@@ -33,7 +33,7 @@ public interface Hg3DGpuDeviceAccessor {
 
     @Accessor("canpipe_addressModeW") AddressMode get_canpipe_addressModeW();
 
-    @Accessor("canpipe_compareOp") DepthTestFunction get_canpipe_compareOp();
+    @Accessor("canpipe_compareOp") CompareOp get_canpipe_compareOp();
 
     @Accessor("canpipe_linearMipmap") Boolean get_canpipe_linearMipmap();
 

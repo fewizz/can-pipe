@@ -3,7 +3,7 @@ package fewizz.canpipe.pipeline;
 import java.util.OptionalDouble;
 import java.util.function.Supplier;
 
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
@@ -111,7 +111,7 @@ public class Texture extends AbstractTexture {
         AddressMode w = AddressMode.REPEAT;
 
         boolean compare = false;
-        DepthTestFunction compareOp = null;
+        CompareOp compareOp = null;
 
         for (var paramsJson : JanksonUtils.listOfObjects(json, "texParams")) {
             String paramName = paramsJson.get(String.class, "name");
@@ -168,14 +168,14 @@ public class Texture extends AbstractTexture {
             }
             else if (paramName.equals("TEXTURE_COMPARE_FUNC")) {
                 compareOp = switch(paramValue) {
-                    case "EQUAL" -> DepthTestFunction.EQUAL_DEPTH_TEST;
-                    case "LESS" -> DepthTestFunction.LESS_DEPTH_TEST;
-                    case "LEQUAL" -> DepthTestFunction.LEQUAL_DEPTH_TEST;
-                    case "GREATER" -> DepthTestFunction.GREATER_DEPTH_TEST;
-                    case "ALWAYS" -> DepthTestFunction.NO_DEPTH_TEST;
-                    // case "NEVER" -> ;
-                    // case "NOTEQUAL" -> ;
-                    // case "GEQUAL" -> ;
+                    case "EQUAL" -> CompareOp.EQUAL;
+                    case "NOTEQUAL" -> CompareOp.NOT_EQUAL;
+                    case "LESS" -> CompareOp.LESS_THAN;
+                    case "LEQUAL" -> CompareOp.LESS_THAN_OR_EQUAL;
+                    case "GREATER" -> CompareOp.GREATER_THAN;
+                    case "GEQUAL" -> CompareOp.GREATER_THAN_OR_EQUAL;
+                    case "ALWAYS" -> CompareOp.ALWAYS_PASS;
+                    case "NEVER" -> CompareOp.NEVER_PASS;
                     default -> throw new RuntimeException(paramValue);
                 };
             }

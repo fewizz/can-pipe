@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public class ModelBlockRendererMixin {
 
     // Shading is controlled by pipeline
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = {"renderModelFaceAO", "renderModelFaceFlat"},
         at = @At(
             value = "INVOKE",
@@ -31,7 +31,7 @@ public class ModelBlockRendererMixin {
     )
     boolean dontShade(boolean shade) {
         return shade && Pipelines.getCurrent() == null;
-    }
+    }*/
 
     /*@Inject(
         method = "putQuadData",

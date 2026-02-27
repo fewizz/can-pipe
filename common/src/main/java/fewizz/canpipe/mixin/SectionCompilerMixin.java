@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.chunk.SectionCompiler;
 @Mixin(SectionCompiler.class)
 public class SectionCompilerMixin {
 
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = "getOrBeginLayer",
         at = @At(
             value = "FIELD",
@@ -25,6 +25,6 @@ public class SectionCompilerMixin {
         @Local(argsOnly = true) ChunkSectionLayer chunkSectionLayer
     ) {
         return chunkSectionLayer.pipeline().getVertexFormat();
-    }
+    }*/
 
 }

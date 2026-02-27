@@ -17,7 +17,7 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 @Mixin(VertexConsumer.class)
 public interface VertexConsumerMixin {
 
-    @Inject(method = "putBulkData", at = @At("HEAD"))
+    @Inject(method = {"putBlockBakedQuad", "putBakedQuad"}, at = @At("HEAD"))
     default void setSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
         if (
             this instanceof VertexConsumerExtended vce &&
@@ -27,7 +27,7 @@ public interface VertexConsumerMixin {
         }
     }
 
-    @Inject(method = "putBulkData", at = @At("RETURN"))
+    @Inject(method = {"putBlockBakedQuad", "putBakedQuad"}, at = @At("RETURN"))
     default void resetSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
         if (
             this instanceof VertexConsumerExtended vce &&
@@ -37,7 +37,7 @@ public interface VertexConsumerMixin {
         }
     }
 
-    @WrapOperation(
+    /*@WrapOperation(
         method = "putBulkData",
         at = @At(
             value = "INVOKE",
@@ -69,6 +69,6 @@ public interface VertexConsumerMixin {
         ) {
             vce.canpipe_setPendingAO(brightness.get(vertexIndex));  // because of the change above
         }
-    }
+    }*/
 
 }

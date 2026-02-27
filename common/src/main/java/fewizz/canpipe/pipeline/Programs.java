@@ -8,8 +8,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -45,8 +46,7 @@ public class Programs {
             .withLocation(pipelineLocation.withSuffix("-"+name))
             .withVertexShader(vertexLocation)
             .withFragmentShader(fragmentLocation)
-            .withDepthWrite(false)
-            .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
             .withVertexFormat(CanPipe.VertexFormats.POSITION_TEX, VertexFormat.Mode.QUADS);
 
         renderPipelineBuilder.withUniform("canpipe_ub_pass", UniformType.UNIFORM_BUFFER);

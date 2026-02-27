@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
@@ -69,20 +71,19 @@ public class MaterialPrograms {
                 .withLocation(location)
                 .withVertexShader(vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()))
                 .withFragmentShader(fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()))
-                .withDepthTestFunction(originalRenderPipeline.getDepthTestFunction())
-                .withDepthBias(
-                    !shadow ? originalRenderPipeline.getDepthBiasScaleFactor() : shadowsOffsetSlopeFactor,
-                    !shadow ? originalRenderPipeline.getDepthBiasConstant() : shadowsOffsetBiasUnits
-                )
+                .withDepthStencilState(new DepthStencilState(
+                    originalRenderPipeline.getDepthStencilState().depthTest(),
+                    originalRenderPipeline.getDepthStencilState().writeDepth(),
+                    !shadow ? originalRenderPipeline.getDepthStencilState().depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
+                    !shadow ? originalRenderPipeline.getDepthStencilState().depthBiasConstant() : shadowsOffsetBiasUnits
+                ))
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow ? originalRenderPipeline.isCull() : false)
-                .withColorWrite(originalRenderPipeline.isWriteColor(), originalRenderPipeline.isWriteAlpha())
-                .withDepthWrite(originalRenderPipeline.isWriteDepth())
+                .withColorTargetState(new ColorTargetState(
+                    originalRenderPipeline.getColorTargetState().blendFunction(),
+                    originalRenderPipeline.getColorTargetState().writeMask()
+                ))
                 .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
-        }
-
-        if (originalRenderPipeline.getBlendFunction().isPresent()) {
-            renderPipelineBuilder.withBlend(originalRenderPipeline.getBlendFunction().get());
         }
 
         renderPipelineBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
