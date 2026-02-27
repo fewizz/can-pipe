@@ -79,31 +79,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         return GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
     }
 
-    /*@ModifyExpressionValue(
-        method = "createRenderPass("+
-            "Ljava/util/function/Supplier;"+
-            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-            "Ljava/util/OptionalInt;"+
-            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-            "Ljava/util/OptionalDouble;"+
-        ")Lcom/mojang/blaze3d/systems/RenderPass;",
-        at = {
-            @At(
-                value = "INVOKE",
-                target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I",
-                ordinal = 0
-            ),
-            @At(
-                value = "INVOKE",
-                target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I",
-                ordinal = 1
-            )
-        }
-    )
-    int suppressMaxLayerCheckError(int layers) {
-        return 0;
-    }*/
-
     @Inject(
         method = "createRenderPass("+
             "Ljava/util/function/Supplier;"+
@@ -306,27 +281,5 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             }
         }
     }
-
-    /*@ModifyExpressionValue(
-        method = "verifyColorTexture",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I")
-    )
-    private int allowColorTextureWithMultipleLayers(int layers) {
-        if (this.canpipe_clearBaseLayer != -1) {
-            layers = 1;  // replacing texture.getDepthOrLayers() with 1
-        }
-        return layers;
-    }
-
-    @ModifyExpressionValue(
-        method = "verifyDepthTexture",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I")
-    )
-    private int allowDepthTextureWithMultipleLayers(int layers) {
-        if (this.canpipe_clearBaseLayer != -1) {
-            layers = 1;  // replacing texture.getDepthOrLayers() with 1
-        }
-        return layers;
-    }*/
 
 }

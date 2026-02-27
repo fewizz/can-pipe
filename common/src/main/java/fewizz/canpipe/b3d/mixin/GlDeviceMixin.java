@@ -140,16 +140,6 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         return module;
     }
 
-    /*@ModifyExpressionValue(
-        method = "createTexture("+
-            "Ljava/lang/String;ILcom/mojang/blaze3d/textures/TextureFormat;IIII"+
-        ")Lcom/mojang/blaze3d/textures/GpuTexture;",
-        at = @At(value = "CONSTANT", args = "intValue=1", ordinal = 3)
-    )
-    int suppressMaxLayerCheckError(int layers) {
-        return 9000;
-    }*/
-
     @Inject(
         method = "createTexture("+
             "Ljava/lang/String;ILcom/mojang/blaze3d/textures/TextureFormat;IIII"+

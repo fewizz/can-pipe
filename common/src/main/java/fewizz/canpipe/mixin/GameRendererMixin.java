@@ -100,17 +100,15 @@ public class GameRendererMixin implements GameRendererExtended {
             ")V"
         )
     )
-    void onBeforeWorldRender(
-        DeltaTracker deltaTracker,
-        CallbackInfo ci,
-        @Local(ordinal = 0) Matrix4f viewMatrix
+    void beforeRenderLevel(
+        DeltaTracker deltaTracker, CallbackInfo ci,
+        @Local(ordinal = 0) Matrix4f viewMatrix,
+        @Local(ordinal = 1) Matrix4f projectionMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) {
             return;
         }
-
-        Matrix4f projectionMatrix = this.levelRenderState.cameraRenderState.projectionMatrix;
 
         this.canpipe_worldViewMatrix = new Matrix4f(viewMatrix);
         this.canpipe_worldProjectionMatrix = new Matrix4f(projectionMatrix);
@@ -254,7 +252,7 @@ public class GameRendererMixin implements GameRendererExtended {
             shift = Shift.AFTER
         )
     )
-    void onAfterLevelRender(DeltaTracker deltaTracker, CallbackInfo ci) {
+    void afterRenderLevel(DeltaTracker deltaTracker, CallbackInfo ci) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             p.onAfterWorldRender();
@@ -264,8 +262,8 @@ public class GameRendererMixin implements GameRendererExtended {
     @Inject(method = "renderLevel", at = @At("TAIL"))
     void onRenderLevelEnd(
         CallbackInfo ci,
-        @Local(ordinal = 0) Matrix4f projectionMatrix,
-        @Local(ordinal = 1) Matrix4f viewMatrix
+        @Local(ordinal = 0) Matrix4f viewMatrix,
+        @Local(ordinal = 1) Matrix4f projectionMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
