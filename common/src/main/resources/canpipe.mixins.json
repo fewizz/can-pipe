@@ -33,7 +33,6 @@
     "TextureAtlasMixin",
     "TextureAtlasSpriteMixin",
     "VertexConsumerMixin",
-    "VertexFormatBuilderMixin",
     "VideoSettingsScreenMixin"
   ]
 }
