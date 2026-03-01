@@ -44,7 +44,7 @@ final public class Materials implements PreparableReloadListener {
     private static Collection<Material> usedByChunkSectionLayer(ChunkSectionLayer layer) {
         List<Material> result = new ArrayList<>();
         for (var material : INSTANCE.materials.values()) {
-            if (MaterialMaps.chunkLayerSectoinLayersThatUseMaterial(material).contains(layer)) {
+            if (MaterialMaps.chunkLayerSectionLayersThatUseMaterial(material).contains(layer)) {
                 result.add(material);
             }
         }

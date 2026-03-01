@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -12,13 +13,18 @@ import java.util.stream.Stream;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.BlockModelPart;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.material.Fluid;
@@ -51,20 +57,27 @@ final public class MaterialMaps implements PreparableReloadListener {
             .map(e -> e.getKey());
     }
 
-    static Set<ChunkSectionLayer> chunkLayerSectoinLayersThatUseMaterial(Material material) {
+    static Set<ChunkSectionLayer> chunkLayerSectionLayersThatUseMaterial(Material material) {
         Set<ChunkSectionLayer> result = new HashSet<>();
+        Minecraft mc = Minecraft.getInstance();
+        RandomSource rnd = RandomSource.create();
+
         blocksThatUseMaterial(material).forEach(block -> {
             if (block instanceof LeavesBlock) {
                 result.add(ChunkSectionLayer.CUTOUT);
             }
             else {
-                // result.add(ItemBlockRenderTypes.getChunkRenderType(block.defaultBlockState())); TODO
-                result.add(ChunkSectionLayer.SOLID);
+                for (BlockModelPart part : mc.getModelManager().getBlockModelSet().get(block.defaultBlockState()).collectParts(rnd)) {
+                    for (Direction dir : Direction.values()) {
+                        for (BakedQuad quad : part.getQuads(dir)) {
+                            result.add(quad.spriteInfo().layer());
+                        }
+                    }
+                }
             }
         });
         fluidsThatUseMaterial(material).forEach(fluid -> {
-            // result.add(ItemBlockRenderTypes.getRenderLayer(fluid.defaultFluidState()));
-            result.add(ChunkSectionLayer.SOLID);
+            result.add(mc.getBlockRenderer().getLiquidRenderer().getRenderLayer(fluid.defaultFluidState()));
         });
         return result;
     }
