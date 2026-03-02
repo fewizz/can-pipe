@@ -340,11 +340,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return this.canpipe_isRenderingShadows ? true : original;
     }
 
-    /*@WrapOperation(
-        method = {
-            "method_62214",  // Fabric
-            "lambda$addMainPass$1"  // NeoForge
-        },
+    @WrapOperation(
+        method = {"lambda$addMainPass$0"},
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/systems/GpuDevice;createSampler("+
@@ -363,7 +360,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return operation.call(device, u, v, FilterMode.NEAREST, FilterMode.NEAREST, 1, OptionalDouble.empty());
         }
         return operation.call(device, u, v, min, mag, maxAnisotropy, maxLod);
-    }*/
+    }
 
     @ModifyExpressionValue(
         method = {"clearVisibleSections", "applyFrustum", "prepareChunkRenders"},
