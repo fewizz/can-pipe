@@ -61,6 +61,7 @@ public class SectionCompilerMixin {
             }
 
             ((VertexConsumerExtended) bufferBuilder).canpipe_setSharedMaterialMap(blockStateAndMaterialMap.right);
+            ((VertexConsumerExtended) bufferBuilder).canpipe_recomputeNormals(true);
         }
     }
 
