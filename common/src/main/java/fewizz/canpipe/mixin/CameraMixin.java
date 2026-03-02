@@ -39,7 +39,7 @@ public class CameraMixin implements CameraExtended {
         Matrix4f projection = new Matrix4f();
         return projection.perspective(
             fovForCulling * (float) (Math.PI / 180.0),
-            (float)this.minecraft.getWindow().getWidth() / this.minecraft.getWindow().getHeight(),
+            (float) this.minecraft.getWindow().getWidth() / this.minecraft.getWindow().getHeight(),
             0.05F,
             depthFar,
             RenderSystem.getDevice().isZZeroToOne()

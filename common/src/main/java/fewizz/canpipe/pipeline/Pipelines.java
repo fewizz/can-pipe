@@ -47,9 +47,9 @@ final public class Pipelines implements PreparableReloadListener {
 
     public static final Map<Identifier, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
 
-    private static volatile @Nullable PipelineRaw currentRaw = null;
-    private static volatile @Nullable Throwable loadingError = null;
-    private static volatile @Nullable Pipeline current = null;
+    private static @Nullable PipelineRaw currentRaw = null;
+    private static @Nullable Throwable loadingError = null;
+    private static @Nullable Pipeline current = null;
 
     public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Map<Option.Element<?>, Object> optionsChanges) {
         assert RenderSystem.isOnRenderThread();

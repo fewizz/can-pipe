@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.CameraExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
@@ -37,9 +38,8 @@ public class GameRendererMixin implements GameRendererExtended {
 
     @Unique private long canpipe_renderStartNano = -1;
     @Unique private int canpipe_renderTarget = -1;
-    @Unique private Matrix4f[] canpipe_shadowProjectionMatrices = null;
-    @Unique private Matrix4f[] canpipe_shortendedViewProjectionMatrices = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
+    @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
     @Unique private Matrix4f canpipe_worldViewMatrix = null;
     @Unique private Matrix4f canpipe_worldProjectionMatrix = null;
 
@@ -57,16 +57,11 @@ public class GameRendererMixin implements GameRendererExtended {
         Uniforms.FRX_LAST_CAMERA_POS.set(Float.NEGATIVE_INFINITY);
 
         Uniforms.FRX_SHADOW_VIEW_MATRIX.identity();
-
-        this.canpipe_shadowProjectionMatrices = new Matrix4f[] {
-            new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f()
-        };
-        this.canpipe_shortendedViewProjectionMatrices = new Matrix4f[] {
-            new Matrix4f(), new Matrix4f(), new Matrix4f(), new Matrix4f()
-        };
         this.canpipe_shadowInnerOffsets = new Vector3f[] {
             new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()
         };
+        this.canpipe_shadowFrustums = new ShadowFrustum[4];
+
         Uniforms.CANPIPE_SHADOW_CENTERS[0].set(0.0);
         Uniforms.CANPIPE_SHADOW_CENTERS[1].set(0.0);
         Uniforms.CANPIPE_SHADOW_CENTERS[2].set(0.0);
@@ -106,9 +101,7 @@ public class GameRendererMixin implements GameRendererExtended {
         @Local(ordinal = 1) Matrix4f projectionMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) {
-            return;
-        }
+        if (p == null) { return; }
 
         this.canpipe_worldViewMatrix = new Matrix4f(viewMatrix);
         this.canpipe_worldProjectionMatrix = new Matrix4f(projectionMatrix);
@@ -182,43 +175,34 @@ public class GameRendererMixin implements GameRendererExtended {
 
                 Uniforms.CANPIPE_SHADOW_CENTERS[cascade].set(center.x, center.y, center.z, cascadeRadius);
 
-                // sometimes cascade is out of frustum bounds
-                // we don't want to render chunks and entiteis more than needed, right?
-                // (help)
+                // For shortened projection matrix, from player's perspective
+                // Such frustum should include whole cascade along -z
                 float depthFar = Float.MAX_VALUE;
-
-                for (int x = -1; x <= 1; x += 2) {
+                for (int x = -1; x <= 1; x += 2) {  // for each cascade corner
                     for (int y = -1; y <= 1; y += 2) {
                         for (int z = -1; z <= 1; z += 2) {
-                            var edge = new Vector3f(
-                                center.x + cascadeRadius*x,
-                                center.y + cascadeRadius*y,
-                                center.z + cascadeRadius*z
-                            ).mulProject(inverseShadowViewMatrix).mulProject(viewMatrix);
+                            var corner = new Vector3f(center).add(x, y, z).mul(cascadeRadius)
+                                .mulProject(inverseShadowViewMatrix).mulProject(viewMatrix);
 
-                            depthFar = Math.min(
-                                Math.max(depthFar, -edge.z),
-                                renderDistance + 48.0F
-                            );
+                            depthFar = Math.min(Math.max(depthFar, -corner.z), renderDistance + 48.0F);
                         }
                     }
                 }
 
-                this.canpipe_shortendedViewProjectionMatrices[cascade] =
-                    ((CameraExtended) this.mainCamera).canpipe_createProjectionMatrixForCulling(depthFar)
-                    .mul(viewMatrix);
+                var shortenedProjectionMatrix = ((CameraExtended) this.mainCamera).canpipe_createProjectionMatrixForCulling(depthFar);
+
+                var shortendedViewProjectionMatrix = new Matrix4f(shortenedProjectionMatrix).mul(viewMatrix);
 
                 Vector3f min = new Vector3f();
                 Vector3f max = new Vector3f();
 
-                new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).mul(
-                    ((CameraExtended) this.mainCamera).canpipe_createProjectionMatrixForCulling(depthFar)
-                    .mul(viewMatrix).invert()
-                ).frustumAabb(min, max);  // frustum AABB in shadow view space
+                new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX)
+                    .mul(shortenedProjectionMatrix).mul(viewMatrix).invert()
+                    .frustumAabb(min, max);  // frustum AABB in shadow view space
 
                 // those matrices aren't passed into shadow material programs,
                 // no need to worry about constant radius
-                this.canpipe_shadowProjectionMatrices[cascade].setOrtho(
+                var shadowProjectionMatrix = new Matrix4f().setOrtho(
                     Math.max(min.x, center.x - cascadeRadius),  // left
                     Math.min(max.x, center.x + cascadeRadius),  // right
                     Math.max(min.y, center.y - cascadeRadius),  // bottom
@@ -226,6 +210,13 @@ public class GameRendererMixin implements GameRendererExtended {
                     0.0F,                       // near
                    -Math.max(min.z, center.z - cascadeRadius)   // far
                 );
+
+                ShadowFrustum shadowFrustum = new ShadowFrustum(
+                    Uniforms.FRX_SHADOW_VIEW_MATRIX, shadowProjectionMatrix,
+                    shortendedViewProjectionMatrix, toSunDir
+                );
+                shadowFrustum.prepare(this.mainCamera.position().x, this.mainCamera.position().y, this.mainCamera.position().z);
+                this.canpipe_shadowFrustums[cascade] = shadowFrustum;
             }
             Profiler.get().pop();
         }
@@ -276,13 +267,8 @@ public class GameRendererMixin implements GameRendererExtended {
     }
 
     @Override
-    public Matrix4f[] canpipe_getShadowProjectionMatrices() {
-        return this.canpipe_shadowProjectionMatrices;
-    }
-
-    @Override
-    public Matrix4f[] canpipe_getShortenedViewProjectionMatrices() {
-        return this.canpipe_shortendedViewProjectionMatrices;
+    public ShadowFrustum[] canpipe_getShadowFrustums() {
+        return this.canpipe_shadowFrustums;
     }
 
     @Override
