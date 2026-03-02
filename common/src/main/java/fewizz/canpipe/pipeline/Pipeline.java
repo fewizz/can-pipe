@@ -621,7 +621,7 @@ public class Pipeline implements AutoCloseable {
 
     public static long getFixedTimeOrDayTime(Level level) {
         if (!level.dimensionType().hasFixedTime()) {
-            return 0; // return level.getDayTime(); TODO
+            return level.getGameTime();
         }
         
         // Fixed time is not specified since MC 1.21.11

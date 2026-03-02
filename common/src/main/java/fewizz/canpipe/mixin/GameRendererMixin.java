@@ -117,13 +117,13 @@ public class GameRendererMixin implements GameRendererExtended {
             Uniforms.FRX_LAST_CAMERA_POS.set(Uniforms.FRX_CAMERA_POS);
         }
 
-        float renderDistance = this.minecraft.options.getEffectiveRenderDistance() * 16;
-
         if (p.shadows != null) {
             Profiler.get().push("can-pipe calculate shadow uniforms");
 
+            final float maxCascadeRadius = this.minecraft.options.getEffectiveRenderDistance() * 16 + 48.0F;
+
             Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
-            Vector3f sunPosOffset = toSunDir.mul(renderDistance + 48, new Vector3f());
+            Vector3f sunPosOffset = toSunDir.mul(maxCascadeRadius, new Vector3f());
 
             Uniforms.FRX_SHADOW_VIEW_MATRIX.setLookAt(
                 sunPosOffset,                                  // eye pos
@@ -137,8 +137,6 @@ public class GameRendererMixin implements GameRendererExtended {
 
             var shadowRotationMatrix = new Matrix3f(Uniforms.FRX_SHADOW_VIEW_MATRIX);
             var inverseShadowViewMatrix = new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
-
-            final float maxCascadeRadius = renderDistance + 48;
 
             float prevCascadeRadius = -1.0F;
 
@@ -184,7 +182,7 @@ public class GameRendererMixin implements GameRendererExtended {
                             var corner = new Vector3f(center).add(x, y, z).mul(cascadeRadius)
                                 .mulProject(inverseShadowViewMatrix).mulProject(viewMatrix);
 
-                            depthFar = Math.min(Math.max(depthFar, -corner.z), renderDistance + 48.0F);
+                            depthFar = Math.min(Math.max(depthFar, -corner.z), maxCascadeRadius);
                         }
                     }
                 }
@@ -257,9 +255,9 @@ public class GameRendererMixin implements GameRendererExtended {
         @Local(ordinal = 1) Matrix4f projectionMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null) {
-            p.onAfterRenderHand();
-        }
+        if (p == null) { return; }
+
+        p.onAfterRenderHand();
 
         Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
         Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);

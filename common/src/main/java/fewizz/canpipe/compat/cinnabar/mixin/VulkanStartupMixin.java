@@ -32,7 +32,7 @@ public class VulkanStartupMixin {
     @Inject(
         method = "createLogicalDeviceAndQueues",
         at = @At(
-            value="INVOKE",
+            value = "INVOKE",
             target = "Lorg/lwjgl/vulkan/VkPhysicalDeviceFeatures;multiDrawIndirect(Z)Lorg/lwjgl/vulkan/VkPhysicalDeviceFeatures;"
         )
     )

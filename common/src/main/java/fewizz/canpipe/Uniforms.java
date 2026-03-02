@@ -362,8 +362,8 @@ public class Uniforms {
         long ticks = Pipeline.getFixedTimeOrDayTime(mc.level);
         CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         // TODO
-        /*FRX_WORLD_DAY.set(mc.level != null ? (mc.level.dayTime() / 24000L) % 2147483647L : 0.0F);
-        FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getDayTime() % 24000L) / 24000.0F : 0.0F);*/
+        FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getGameTime() / 24000L) % 2147483647L : 0.0F);
+        FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getGameTime() % 24000L) / 24000.0F : 0.0F);
         FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.getLevelRenderState().skyRenderState.moonPhase.index()]);
         FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
         FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.getLevelRenderState().skyRenderState.sunAngle);
