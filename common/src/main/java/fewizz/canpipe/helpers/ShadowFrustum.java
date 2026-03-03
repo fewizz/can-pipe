@@ -144,6 +144,7 @@ public class ShadowFrustum extends Frustum {
 
     @Override
     public boolean pointInFrustum(double x, double y, double z) {  // Used mostly by QuadParticleGroup.extractRenderState
+        if (!super.pointInFrustum(x, y, z)) { return false; }
         float xf = (float) (x - this.getCamX());
         float yf = (float) (y - this.getCamY());
         float zf = (float) (z - this.getCamZ());
@@ -159,6 +160,7 @@ public class ShadowFrustum extends Frustum {
 
     @Override
     public boolean isVisible(AABB aabb) {  // Used mostly by LevelRenderer.extractVisibleEntities
+        if (!super.isVisible(aabb)) { return false; }
         return this.check(
             (float) (aabb.minX - this.getCamX()),
             (float) (aabb.minY - this.getCamY()),
@@ -171,6 +173,9 @@ public class ShadowFrustum extends Frustum {
 
     @Override
     public int cubeInFrustum(BoundingBox bb) {  // Used mostly by SectionOcclusionGraph.addSectionsInFrustum
+        int result = super.cubeInFrustum(bb);
+        if (result == FrustumIntersection.OUTSIDE) { return FrustumIntersection.OUTSIDE; }
+
         return this.check(  // Can't (?) use FrustumIntersection.INSIDE for faster occlusion graph traversal
             (float) (bb.minX() - this.getCamX()),
             (float) (bb.minY() - this.getCamY()),

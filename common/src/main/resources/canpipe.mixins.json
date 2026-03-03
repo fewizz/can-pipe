@@ -17,6 +17,7 @@
     "GameRendererMixin",
     "ItemRendererMixin",
     "LevelRendererMixin",
+    "LevelRenderStateMixin",
     "LightmapMixin",
     "LiquidBlockRendererMixin",
     "MinecraftMixin",

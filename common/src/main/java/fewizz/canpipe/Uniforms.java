@@ -359,7 +359,7 @@ public class Uniforms {
         }
 
         // world
-        long ticks = Pipeline.getFixedTimeOrDayTime(mc.level);
+        long ticks = mc.level.getDefaultClockTime();
         CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         // TODO
         FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getGameTime() / 24000L) % 2147483647L : 0.0F);

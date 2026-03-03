@@ -53,7 +53,6 @@ import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 
 
 public class Pipeline implements AutoCloseable {
@@ -301,11 +300,20 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.ARMOR_CUTOUT_NO_CULL,
             RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
             RenderPipelines.ARMOR_TRANSLUCENT,
+
             RenderPipelines.ENTITY_SOLID,
             RenderPipelines.ENTITY_SOLID_Z_OFFSET_FORWARD,
             RenderPipelines.ENTITY_CUTOUT,
+            RenderPipelines.ENTITY_CUTOUT_CULL,
+            RenderPipelines.ENTITY_CUTOUT_Z_OFFSET,
+            RenderPipelines.ENTITY_CUTOUT_DISSOLVE,
             RenderPipelines.ENTITY_TRANSLUCENT,
+            RenderPipelines.ENTITY_TRANSLUCENT_CULL,
             RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE,
+
+            RenderPipelines.ITEM_CUTOUT,
+            RenderPipelines.ITEM_TRANSLUCENT,
+
             RenderPipelines.EYES,
 
             RenderPipelines.LEASH,
@@ -619,25 +627,10 @@ public class Pipeline implements AutoCloseable {
         );
     }
 
-    public static long getFixedTimeOrDayTime(Level level) {
-        if (!level.dimensionType().hasFixedTime()) {
-            return level.getGameTime();
-        }
-        
-        // Fixed time is not specified since MC 1.21.11
-        if (level.dimensionTypeRegistration() == BuiltinDimensionTypes.NETHER) {
-            return 18000;
-        }
-        if (level.dimensionTypeRegistration() == BuiltinDimensionTypes.END) {
-            return 6000;
-        }
-        return 0;
-    }
-
     public Vector3f getSunOrMoonDir(Level level, Vector3f result) {
         // 0.0 - noon, 0.5 - midnight
         float hourAngle = Minecraft.getInstance().gameRenderer.getLevelRenderState().skyRenderState.sunAngle;
-        long ticks = Pipeline.getFixedTimeOrDayTime(level) % 24000L;
+        long ticks = level.getDefaultClockTime() % 24000L;
 
         result.set(
             (float) (-Math.sin(hourAngle)),

@@ -44,6 +44,7 @@ public class RenderTypeMixin {
 
     @ModifyExpressionValue(
         method = {"format", "mode", "pipeline", "draw"},
+        require = 4,
         at = @At(
             value = "FIELD",
             target = "Lnet/minecraft/client/renderer/rendertype/RenderSetup;"+

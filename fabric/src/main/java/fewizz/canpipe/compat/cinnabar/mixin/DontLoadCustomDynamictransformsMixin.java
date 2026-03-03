@@ -27,7 +27,6 @@ public class DontLoadCustomDynamictransformsMixin {
     )
     void getPath(String filename, CallbackInfoReturnable<Path> cir) {
         if (this.id.equals("cinnabar") && filename.endsWith("/dynamictransforms.glsl")) {
-            System.out.println("SKIPPED!!!!");
             cir.setReturnValue(null);
             cir.cancel();
         }

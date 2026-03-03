@@ -26,7 +26,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.state.LevelRenderState;
-import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererExtended {
@@ -82,6 +82,135 @@ public class GameRendererMixin implements GameRendererExtended {
         method = "renderLevel",
         at = @At(
             value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;extractLevel("+
+                "Lnet/minecraft/client/DeltaTracker;"+
+                "Lnet/minecraft/client/Camera;"+
+                "F"+
+            ")V"
+        )
+    )
+    void beforeExtractLevel(
+        CallbackInfo ci,
+        @Local(index = 0) Matrix4f viewMatrix,
+        @Local ProfilerFiller profiler
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) { return; }
+
+        Uniforms.CANPIPE_RENDER_FRAMES.add(1);
+        Uniforms.FRX_RENDER_SECONDS.set((float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0));
+        Uniforms.FRX_CAMERA_POS.set(this.mainCamera.position().toVector3f());
+
+        if (Uniforms.FRX_LAST_CAMERA_POS.get(0) == Float.NEGATIVE_INFINITY) {
+            Uniforms.FRX_LAST_CAMERA_POS.set(Uniforms.FRX_CAMERA_POS);
+        }
+
+        if (p.shadows == null) { return; }
+
+        profiler.popPush("can-pipe calculate shadow frustums");
+
+        final float maxCascadeRadius = this.minecraft.options.getEffectiveRenderDistance() * 16 + 48.0F;
+        final float depthTextureSize = (float) p.shadows.framebuffers().get(0).getDepthTexture().getWidth(0);
+
+        Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
+        Vector3f sunPosOffset = toSunDir.mul(maxCascadeRadius, new Vector3f());
+
+        Uniforms.FRX_SHADOW_VIEW_MATRIX.setLookAt(
+            sunPosOffset,                                  // eye pos
+            new Vector3f(0.0F, 0.0F, 0.0F),                // center
+            !(sunPosOffset.x == 0 && sunPosOffset.z == 0)  // up
+                ? new Vector3f(0.0F, 1.0F, 0.0F)
+                : new Vector3f(0.0F, 0.0F, 1.0F)
+        );
+
+        Uniforms.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
+
+        var shadowRotationMatrix = new Matrix3f(Uniforms.FRX_SHADOW_VIEW_MATRIX);
+        var inverseShadowViewMatrix = new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
+
+        float prevCascadeRadius = -1.0F;
+
+        // from smallest to biggest
+        for (int cascade = p.shadows.cascadeRadii().size(); cascade >= 0; --cascade) {
+            float cascadeRadius;
+            Vector3f center;
+
+            if (cascade == 0) {  // biggest, radius depends on render distance
+                cascadeRadius = maxCascadeRadius;
+            }
+            else {
+                cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
+            }
+
+            prevCascadeRadius = Math.max(cascadeRadius, prevCascadeRadius);
+
+            center = new Vector3f(mainCamera.forwardVector()).mul(cascadeRadius);
+            center.mulProject(Uniforms.FRX_SHADOW_VIEW_MATRIX);
+
+            final float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
+
+            Vector3f dPos = Uniforms.FRX_CAMERA_POS.sub(Uniforms.FRX_LAST_CAMERA_POS, new Vector3f());
+            Vector3f dShadowPos = dPos.mul(shadowRotationMatrix).div(metersPerPixel);
+
+            this.canpipe_shadowInnerOffsets[cascade].add(dShadowPos);
+            this.canpipe_shadowInnerOffsets[cascade].sub(this.canpipe_shadowInnerOffsets[cascade].floor(new Vector3f()));
+
+                            // for camera rotation                         // for position change
+            center.x -= (center.x % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].x * metersPerPixel;
+            center.y -= (center.y % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].y * metersPerPixel;
+            center.z -= (center.z % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].z * metersPerPixel;
+
+            Uniforms.CANPIPE_SHADOW_CENTERS[cascade].set(center.x, center.y, center.z, cascadeRadius);
+
+            // For shortened projection matrix, from player's perspective
+            // Such frustum should include whole cascade along -z
+            float depthFar = 0.0F;
+            for (int x = -1; x <= 1; x += 2) {  // for each cascade corner
+                for (int y = -1; y <= 1; y += 2) {
+                    for (int z = -1; z <= 1; z += 2) {
+                        var corner = new Vector3f(x, y, z).mul(cascadeRadius).add(center)
+                            .mulProject(inverseShadowViewMatrix).mulProject(viewMatrix);
+                        depthFar = Math.min(Math.max(depthFar, -corner.z), maxCascadeRadius);
+                    }
+                }
+            }
+
+            var shortenedProjectionMatrix = ((CameraExtended) this.mainCamera).canpipe_createProjectionMatrixForCulling(depthFar);
+
+            var shortendedViewProjectionMatrix = new Matrix4f(shortenedProjectionMatrix).mul(viewMatrix);
+
+            Vector3f min = new Vector3f();
+            Vector3f max = new Vector3f();
+
+            new Matrix4f()
+                .mul(Uniforms.FRX_SHADOW_VIEW_MATRIX)
+                .mul(new Matrix4f(shortenedProjectionMatrix).mul(viewMatrix).invert())
+                .frustumAabb(min, max);  // frustum AABB in shadow view space
+
+            // those matrices aren't passed into shadow material programs,
+            // no need to worry about constant radius
+            var shadowProjectionMatrix = new Matrix4f().setOrtho(
+                Math.max(min.x, center.x - cascadeRadius),  // left
+                Math.min(max.x, center.x + cascadeRadius),  // right
+                Math.max(min.y, center.y - cascadeRadius),  // bottom
+                Math.min(max.y, center.y + cascadeRadius),  // up
+                0.0F,                       // near
+               -Math.max(min.z, center.z - cascadeRadius)   // far
+            );
+
+            ShadowFrustum shadowFrustum = new ShadowFrustum(
+                Uniforms.FRX_SHADOW_VIEW_MATRIX, shadowProjectionMatrix,
+                shortendedViewProjectionMatrix, toSunDir
+            );
+            shadowFrustum.prepare(this.mainCamera.position().x, this.mainCamera.position().y, this.mainCamera.position().z);
+            this.canpipe_shadowFrustums[cascade] = shadowFrustum;
+        }
+    }
+
+    @Inject(
+        method = "renderLevel",
+        at = @At(
+            value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel("+
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
@@ -106,117 +235,9 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_worldViewMatrix = new Matrix4f(viewMatrix);
         this.canpipe_worldProjectionMatrix = new Matrix4f(projectionMatrix);
 
-        Uniforms.CANPIPE_RENDER_FRAMES.add(1);
-        Uniforms.FRX_RENDER_SECONDS.set((float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0));
-
-        Uniforms.FRX_CAMERA_POS.set(this.mainCamera.position().toVector3f());
-
         if (Uniforms.FRX_LAST_VIEW_MATRIX.get(0, 0) == Float.NEGATIVE_INFINITY) {
             Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
             Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
-            Uniforms.FRX_LAST_CAMERA_POS.set(Uniforms.FRX_CAMERA_POS);
-        }
-
-        if (p.shadows != null) {
-            Profiler.get().push("can-pipe calculate shadow uniforms");
-
-            final float maxCascadeRadius = this.minecraft.options.getEffectiveRenderDistance() * 16 + 48.0F;
-
-            Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
-            Vector3f sunPosOffset = toSunDir.mul(maxCascadeRadius, new Vector3f());
-
-            Uniforms.FRX_SHADOW_VIEW_MATRIX.setLookAt(
-                sunPosOffset,                                  // eye pos
-                new Vector3f(0.0F, 0.0F, 0.0F),                // center
-                !(sunPosOffset.x == 0 && sunPosOffset.z == 0)  // up
-                    ? new Vector3f(0.0F, 1.0F, 0.0F)
-                    : new Vector3f(0.0F, 0.0F, 1.0F)
-            );
-
-            Uniforms.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
-
-            var shadowRotationMatrix = new Matrix3f(Uniforms.FRX_SHADOW_VIEW_MATRIX);
-            var inverseShadowViewMatrix = new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
-
-            float prevCascadeRadius = -1.0F;
-
-            // from smallest to biggest
-            for (int cascade = p.shadows.cascadeRadii().size(); cascade >= 0; --cascade) {
-                float cascadeRadius;
-                Vector3f center;
-
-                if (cascade == 0) {  // biggest, radius depends on render distance
-                    cascadeRadius = maxCascadeRadius;
-                }
-                else {
-                    cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
-                }
-
-                prevCascadeRadius = Math.max(cascadeRadius, prevCascadeRadius);
-
-                center = new Vector3f(mainCamera.forwardVector()).mul(cascadeRadius);
-                center.mulProject(Uniforms.FRX_SHADOW_VIEW_MATRIX);
-
-                float depthTextureSize = (float) p.shadows.framebuffers().get(0).getDepthTexture().getWidth(0);
-                float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
-
-                Vector3f dPos = Uniforms.FRX_CAMERA_POS.sub(Uniforms.FRX_LAST_CAMERA_POS, new Vector3f());
-                Vector3f dShadowPos = dPos.mul(shadowRotationMatrix).div(metersPerPixel);
-
-                this.canpipe_shadowInnerOffsets[cascade].add(dShadowPos);
-                this.canpipe_shadowInnerOffsets[cascade].sub(this.canpipe_shadowInnerOffsets[cascade].floor(new Vector3f()));
-
-                              // for camera rotation                         // for position change
-                center.x -= (center.x % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].x * metersPerPixel;
-                center.y -= (center.y % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].y * metersPerPixel;
-                center.z -= (center.z % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].z * metersPerPixel;
-
-                Uniforms.CANPIPE_SHADOW_CENTERS[cascade].set(center.x, center.y, center.z, cascadeRadius);
-
-                // For shortened projection matrix, from player's perspective
-                // Such frustum should include whole cascade along -z
-                float depthFar = Float.MAX_VALUE;
-                for (int x = -1; x <= 1; x += 2) {  // for each cascade corner
-                    for (int y = -1; y <= 1; y += 2) {
-                        for (int z = -1; z <= 1; z += 2) {
-                            var corner = new Vector3f(center).add(x, y, z).mul(cascadeRadius)
-                                .mulProject(inverseShadowViewMatrix).mulProject(viewMatrix);
-
-                            depthFar = Math.min(Math.max(depthFar, -corner.z), maxCascadeRadius);
-                        }
-                    }
-                }
-
-                var shortenedProjectionMatrix = ((CameraExtended) this.mainCamera).canpipe_createProjectionMatrixForCulling(depthFar);
-
-                var shortendedViewProjectionMatrix = new Matrix4f(shortenedProjectionMatrix).mul(viewMatrix);
-
-                Vector3f min = new Vector3f();
-                Vector3f max = new Vector3f();
-
-                new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX)
-                    .mul(shortenedProjectionMatrix).mul(viewMatrix).invert()
-                    .frustumAabb(min, max);  // frustum AABB in shadow view space
-
-                // those matrices aren't passed into shadow material programs,
-                // no need to worry about constant radius
-                var shadowProjectionMatrix = new Matrix4f().setOrtho(
-                    Math.max(min.x, center.x - cascadeRadius),  // left
-                    Math.min(max.x, center.x + cascadeRadius),  // right
-                    Math.max(min.y, center.y - cascadeRadius),  // bottom
-                    Math.min(max.y, center.y + cascadeRadius),  // up
-                    0.0F,                       // near
-                   -Math.max(min.z, center.z - cascadeRadius)   // far
-                );
-
-                ShadowFrustum shadowFrustum = new ShadowFrustum(
-                    Uniforms.FRX_SHADOW_VIEW_MATRIX, shadowProjectionMatrix,
-                    shortendedViewProjectionMatrix, toSunDir
-                );
-                shadowFrustum.prepare(this.mainCamera.position().x, this.mainCamera.position().y, this.mainCamera.position().z);
-                this.canpipe_shadowFrustums[cascade] = shadowFrustum;
-            }
-            Profiler.get().pop();
         }
 
         Uniforms.updateFREXUniforms(viewMatrix, projectionMatrix);
@@ -243,9 +264,9 @@ public class GameRendererMixin implements GameRendererExtended {
     )
     void afterRenderLevel(DeltaTracker deltaTracker, CallbackInfo ci) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null) {
-            p.onAfterWorldRender();
-        }
+        if (p == null) { return; }
+
+        p.onAfterWorldRender();
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
