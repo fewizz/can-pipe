@@ -210,7 +210,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(this.canpipe_perVertexFormetBufferSource);
 
                 profiler.popPush("render sections");
-                ChunkSectionsToRender sections = this.prepareChunkRenders(viewMatrix);
+                ChunkSectionsToRender sections = gre.canpipe_getChunkSectionsToRender()[this.canpipe_shadowCascade];
                 sections.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
 
                 if (p.shadows.allowEntities()) {
@@ -269,27 +269,18 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         profiler.pop();
     }
 
-    /*@Inject(
-        method = "update",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;cullTerrain(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;Z)V",
-            shift = Shift.AFTER
-        )
-    )
-    void onUpdate(CallbackInfo ci) {
+    @Override
+    public void canpipe_prepareCascadesChunkSectionsToRender(Matrix4f viewMatrix, ChunkSectionsToRender[] chunkSectionsToRender) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) { return; }
-
         GameRendererExtended gre = ((GameRendererExtended) this.minecraft.gameRenderer);
 
+        this.canpipe_isRenderingShadows = true;
         for (this.canpipe_shadowCascade = 0; this.canpipe_shadowCascade < p.shadows.cascadeRadii().size()+1; ++this.canpipe_shadowCascade) {
-            Profiler.get().popPush("cascade " + this.canpipe_shadowCascade);
-            Profiler.get().push("apply frustum");
             applyFrustum(gre.canpipe_getShadowFrustums()[this.canpipe_shadowCascade]);
+            chunkSectionsToRender[this.canpipe_shadowCascade] = (prepareChunkRenders(viewMatrix));
         }
-
-    }*/
+        this.canpipe_isRenderingShadows = false;
+    }
 
     @WrapOperation(
         method = "renderLevel",
