@@ -10,7 +10,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 
 @Mixin(VertexConsumer.class)
 public interface VertexConsumerMixin {

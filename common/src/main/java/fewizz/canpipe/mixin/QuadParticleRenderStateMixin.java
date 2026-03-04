@@ -16,7 +16,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.renderer.state.QuadParticleRenderState;
+import net.minecraft.client.renderer.state.level.QuadParticleRenderState;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 
 @Mixin(QuadParticleRenderState.class)

@@ -629,7 +629,7 @@ public class Pipeline implements AutoCloseable {
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result) {
         // 0.0 - noon, 0.5 - midnight
-        float hourAngle = Minecraft.getInstance().gameRenderer.getLevelRenderState().skyRenderState.sunAngle;
+        float hourAngle = Minecraft.getInstance().gameRenderer.getGameRenderState().levelRenderState.skyRenderState.sunAngle;
         long ticks = level.getDefaultClockTime() % 24000L;
 
         result.set(

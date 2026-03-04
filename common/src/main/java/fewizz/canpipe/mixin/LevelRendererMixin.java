@@ -60,9 +60,8 @@ import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
-import net.minecraft.client.renderer.state.CameraRenderState;
-import net.minecraft.client.renderer.state.LevelRenderState;
-import net.minecraft.client.renderer.state.ParticlesRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
@@ -77,7 +76,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private LevelRenderState levelRenderState;
     @Shadow @Final private SubmitNodeStorage submitNodeStorage;
     @Shadow @Final private FeatureRenderDispatcher featureRenderDispatcher;
-    @Shadow @Final private ParticlesRenderState particlesRenderState;
 
     @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
     @Shadow @Final private RenderBuffers renderBuffers;
@@ -274,12 +272,16 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Pipeline p = Pipelines.getCurrent();
         GameRendererExtended gre = ((GameRendererExtended) this.minecraft.gameRenderer);
 
-        this.canpipe_isRenderingShadows = true;
-        for (this.canpipe_shadowCascade = 0; this.canpipe_shadowCascade < p.shadows.cascadeRadii().size()+1; ++this.canpipe_shadowCascade) {
-            applyFrustum(gre.canpipe_getShadowFrustums()[this.canpipe_shadowCascade]);
-            chunkSectionsToRender[this.canpipe_shadowCascade] = (prepareChunkRenders(viewMatrix));
+        try {
+            this.canpipe_isRenderingShadows = true;
+            for (this.canpipe_shadowCascade = 0; this.canpipe_shadowCascade < p.shadows.cascadeRadii().size()+1; ++this.canpipe_shadowCascade) {
+                applyFrustum(gre.canpipe_getShadowFrustums()[this.canpipe_shadowCascade]);
+                chunkSectionsToRender[this.canpipe_shadowCascade] = (prepareChunkRenders(viewMatrix));
+            }
+        } finally {
+            this.canpipe_shadowCascade = 0;
+            this.canpipe_isRenderingShadows = false;
         }
-        this.canpipe_isRenderingShadows = false;
     }
 
     @WrapOperation(
@@ -399,7 +401,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         require = 2,
         at = @At(
             value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/state/LevelRenderState;entityRenderStates:Ljava/util/List;"
+            target = "Lnet/minecraft/client/renderer/state/level/LevelRenderState;entityRenderStates:Ljava/util/List;"
         )
     )
     List<EntityRenderState> replaceEntityRenderStates(List<EntityRenderState> entityRenderStates) {
@@ -428,6 +430,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 this.extractVisibleEntities(camera, frustum, deltaTracker, this.levelRenderState);
             }
         } finally {
+            this.canpipe_shadowCascade = 0;
             this.canpipe_isRenderingShadows = false;
         }
     }

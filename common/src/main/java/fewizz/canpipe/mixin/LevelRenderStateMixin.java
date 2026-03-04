@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import fewizz.canpipe.mixininterface.LevelRenderStateExtended;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.state.LevelRenderState;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
 
 @Mixin(LevelRenderState.class)
 public class LevelRenderStateMixin implements LevelRenderStateExtended {

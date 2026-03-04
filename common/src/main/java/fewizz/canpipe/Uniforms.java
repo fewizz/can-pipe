@@ -364,12 +364,12 @@ public class Uniforms {
         // TODO
         FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getGameTime() / 24000L) % 2147483647L : 0.0F);
         FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getGameTime() % 24000L) / 24000.0F : 0.0F);
-        FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.getLevelRenderState().skyRenderState.moonPhase.index()]);
+        FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.moonPhase.index()]);
         FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
-        FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.getLevelRenderState().skyRenderState.sunAngle);
+        FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.sunAngle);
         {
             var result = new Vector3f(0.0F);
-            int color = mc.gameRenderer.getLevelRenderState().skyRenderState.sunriseAndSunsetColor;
+            int color = mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.sunriseAndSunsetColor;
             if (mc.level.dimensionType().hasSkyLight()) {
                 result.set((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
                 result.div(255.0F);
@@ -377,7 +377,7 @@ public class Uniforms {
             CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
         }
         {
-            float skyFlashStrength = mc.gameRenderer.getLevelRenderState().skyRenderState.endFlashIntensity;
+            float skyFlashStrength = mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.endFlashIntensity;
             FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);
         }
         FRX_AMBIENT_INTENSITY.set(camera.attributeProbe().getValue(EnvironmentAttributes.SKY_LIGHT_FACTOR, pt));

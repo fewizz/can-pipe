@@ -56,15 +56,18 @@ public class MinecraftMixin implements MinecraftExtended {
         return original;
     }
 
-    @ModifyExpressionValue(  // Don't call getter, use this.mainRenderTarget directly
-        method = "resizeDisplay",
+    @ModifyExpressionValue(
+        method = "renderFrame",
         at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+            value = "FIELD",
+            target = "Lnet/minecraft/client/Minecraft;mainRenderTarget:Lcom/mojang/blaze3d/pipeline/RenderTarget;"
         )
     )
-    RenderTarget getGetMainRenderTargetWhenResizingDisplay(RenderTarget renderTarget) {
-        return this.mainRenderTarget;
+    RenderTarget getGetOverridenMainRenderTarget(RenderTarget renderTarget) {
+        if (this.canpipe_mainRenderTargetOverride != null) {
+            renderTarget = this.canpipe_mainRenderTargetOverride;
+        }
+        return renderTarget;
     }
 
 }

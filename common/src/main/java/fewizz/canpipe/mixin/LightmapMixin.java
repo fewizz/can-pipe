@@ -59,7 +59,7 @@ public class LightmapMixin implements LightmapExtended {
     }
 
     @Inject(
-        method = "update",
+        method = "render",
         at = @At(
             value = "INVOKE",
             // right after draw

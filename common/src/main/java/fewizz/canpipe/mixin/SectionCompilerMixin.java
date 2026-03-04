@@ -33,7 +33,7 @@ public class SectionCompilerMixin {
                 "Lnet/minecraft/client/renderer/block/BlockAndTintGetter;"+
                 "Lnet/minecraft/core/BlockPos;"+
                 "Lnet/minecraft/world/level/block/state/BlockState;"+
-                "Lnet/minecraft/client/renderer/block/model/BlockStateModel;"+
+                "Lnet/minecraft/client/renderer/block/dispatch/BlockStateModel;"+
                 "J"+
             ")V"
         )
@@ -48,7 +48,7 @@ public class SectionCompilerMixin {
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;putBlockBakedQuad("+
                 "FFF"+
-                "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
+                "Lnet/minecraft/client/resources/model/geometry/BakedQuad;"+
                 "Lcom/mojang/blaze3d/vertex/QuadInstance;"+
             ")V"
         )
@@ -71,7 +71,7 @@ public class SectionCompilerMixin {
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;putBlockBakedQuad("+
                 "FFF"+
-                "Lnet/minecraft/client/renderer/block/model/BakedQuad;"+
+                "Lnet/minecraft/client/resources/model/geometry/BakedQuad;"+
                 "Lcom/mojang/blaze3d/vertex/QuadInstance;"+
             ")V",
             shift = Shift.AFTER

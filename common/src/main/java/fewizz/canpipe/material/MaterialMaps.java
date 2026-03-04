@@ -1,10 +1,11 @@
 package fewizz.canpipe.material;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -14,11 +15,11 @@ import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.BlockModelPart;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -65,13 +66,16 @@ final public class MaterialMaps implements PreparableReloadListener {
         blocksThatUseMaterial(material).forEach(block -> {
             if (block instanceof LeavesBlock) {
                 result.add(ChunkSectionLayer.CUTOUT);
+                return;
             }
-            else {
-                for (BlockModelPart part : mc.getModelManager().getBlockModelSet().get(block.defaultBlockState()).collectParts(rnd)) {
-                    for (Direction dir : Direction.values()) {
-                        for (BakedQuad quad : part.getQuads(dir)) {
-                            result.add(quad.spriteInfo().layer());
-                        }
+
+            List<BlockStateModelPart> output = new ArrayList<>();
+            mc.getModelManager().getBlockStateModelSet().get(block.defaultBlockState()).collectParts(rnd, output);
+
+            for (BlockStateModelPart part : output) {
+                for (Direction dir : Direction.values()) {
+                    for (BakedQuad quad : part.getQuads(dir)) {
+                        result.add(quad.spriteInfo().layer());
                     }
                 }
             }

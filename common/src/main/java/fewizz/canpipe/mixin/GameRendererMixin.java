@@ -27,7 +27,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.fog.FogRenderer;
-import net.minecraft.client.renderer.state.LevelRenderState;
+import net.minecraft.client.renderer.state.GameRenderState;
+import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 @Mixin(GameRenderer.class)
@@ -36,7 +37,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow @Final Minecraft minecraft;
     @Shadow @Final private Camera mainCamera;
     @Shadow @Final private FogRenderer fogRenderer;
-    @Shadow @Final private LevelRenderState levelRenderState;
+    @Shadow @Final private GameRenderState gameRenderState;
 
     @Unique private long canpipe_renderStartNano = -1;
     @Unique private int canpipe_renderTarget = -1;
@@ -83,7 +84,7 @@ public class GameRendererMixin implements GameRendererExtended {
     }
 
     @Inject(
-        method = "renderLevel",
+        method = "extract",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/LevelRenderer;extractLevel("+
@@ -93,13 +94,12 @@ public class GameRendererMixin implements GameRendererExtended {
             ")V"
         )
     )
-    void beforeExtractLevel(
-        CallbackInfo ci,
-        @Local(index = 0) Matrix4f viewMatrix,
-        @Local ProfilerFiller profiler
-    ) {
+    void beforeExtractLevel(CallbackInfo ci) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
+
+        ProfilerFiller profiler = Profiler.get();
+        Matrix4f viewMatrix = this.gameRenderState.levelRenderState.cameraRenderState.viewRotationMatrix;
 
         Uniforms.CANPIPE_RENDER_FRAMES.add(1);
         Uniforms.FRX_RENDER_SECONDS.set((float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0));
@@ -221,7 +221,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
-                "Lnet/minecraft/client/renderer/state/CameraRenderState;"+
+                "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
                 "Lorg/joml/Matrix4f;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
@@ -258,7 +258,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
-                "Lnet/minecraft/client/renderer/state/CameraRenderState;"+
+                "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
                 "Lorg/joml/Matrix4f;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+

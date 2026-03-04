@@ -21,7 +21,6 @@
     "LightmapMixin",
     "LiquidBlockRendererMixin",
     "MinecraftMixin",
-    "MultiPartModelAccessor",
     "ParticleFeatureRendererMixin",
     "QuadParticleRenderStateMixin",
     "RenderSetupAccessor",
