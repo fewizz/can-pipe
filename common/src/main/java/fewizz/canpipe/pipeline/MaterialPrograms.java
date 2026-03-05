@@ -380,11 +380,21 @@ public class MaterialPrograms {
             originalRenderPipeline == RenderPipelines.LINES_TRANSLUCENT ||
 
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_CULL ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_Z_OFFSET ||
+            originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT_DISSOLVE ||
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT ||
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE ||
+            originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_CULL ||
+
+            originalRenderPipeline == RenderPipelines.ITEM_CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ITEM_TRANSLUCENT ||
+
             originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||
+
+            originalRenderPipeline == RenderPipelines.END_CRYSTAL_BEAM ||
             originalRenderPipeline == RenderPipelines.BREEZE_WIND ||
             originalRenderPipeline == RenderPipelines.ENERGY_SWIRL
         ) {
