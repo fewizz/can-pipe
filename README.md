@@ -1,10 +1,8 @@
 # can-pipe
 Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader pipelines
 
-## 
-
 ## What doesn't work / not implemented?
-* some Material properties
+* Some Material properties
 * Material map's `variants` properties
 * `fabulousTargets` - array of render targets
 * `material.glsl` uniforms, and some others: `frx_entityView`, `frx_cleanViewProjectionMatrix`, `frx_vanillaClearColor`
@@ -24,3 +22,6 @@ Performance is not on par with `Canvas`.
 1. Install this mod
 2. Put preferred shaderpacks into `resourcepacks` directory and activate them
 3. In video settings, click on `Pipeline: ...` to switch between available pipelines
+
+## Discord
+https://discord.gg/WuF24ttw

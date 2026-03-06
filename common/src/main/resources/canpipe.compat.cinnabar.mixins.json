@@ -19,11 +19,11 @@
         "MercuryCommandBufferMixin",
         "MercuryDeviceAccessor",
         "MercuryDeviceMixin",
+        "MercuryDeviceStartupMixin",
         "MercuryFramebufferMixin",
         "MercuryGraphicsPipelineMixin",
         "MercuryRenderPassMixin",
         "MercurySamplerMixin",
-        "MercuryShaderSetMixin",
-        "VulkanStartupMixin"
+        "MercuryShaderSetMixin"
     ]
 }

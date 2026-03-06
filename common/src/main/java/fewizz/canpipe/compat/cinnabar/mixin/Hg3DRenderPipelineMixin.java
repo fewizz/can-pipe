@@ -10,8 +10,6 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import graphics.cinnabar.api.hg.HgGraphicsPipeline;
@@ -63,6 +61,17 @@ public class Hg3DRenderPipelineMixin {
         String vertexShader = args.get(0);
         String fragmentShader = args.get(1);
 
+        vertexShader = vertexShader.replace("#define main realMain", "#undef main\n#define main realMain");
+
+        vertexShader = vertexShader.replace(
+            "layout(location = 6) CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;",
+            "layout(location = 16) CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;"
+        );
+        vertexShader = vertexShader.replace(
+            "layout(location = 7) CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;",
+            "layout(location = 17) CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;"
+        );
+
         vertexShader =
             "#define sample _sample\n"+  // `sampler` is reserved word
             "#define sampler _sampler\n\n"+
@@ -76,6 +85,15 @@ public class Hg3DRenderPipelineMixin {
             "#define main canpipe_main\n\n"+
             vertexShader;
 
+        fragmentShader = fragmentShader.replace(
+            "layout(location = 6) CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;",
+            "layout(location = 16) CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;"
+        );
+        fragmentShader = fragmentShader.replace(
+            "layout(location = 7) CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;",
+            "layout(location = 17) CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;"
+        );
+
         fragmentShader =
             "#define sample _sample\n"+
             "#define sampler _sampler\n\n"+
@@ -83,20 +101,6 @@ public class Hg3DRenderPipelineMixin {
 
         args.set(0, vertexShader);
         args.set(1, fragmentShader);
-    }
-
-    @WrapOperation(  // Handled other way, above
-        method = "<init>",
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/lang/String;replace(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Ljava/lang/String;"
-        )
-    )
-    String disableSamplerRemplacement(String instance, CharSequence target, CharSequence replacement, Operation<String> operation) {
-        if (target.equals("sampler2D sampler") || target.equals("return textureGrad(sampler, uv, du, dv);")) {
-            return instance;
-        }
-        return operation.call(instance, target, replacement);
     }
 
 }

@@ -53,7 +53,7 @@ dependencies {
     include "blue.endless:jankson:1.2.3"
 
     if (System.getenv("WITH_CINNABAR") == "1") {
-        modImplementation "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
+        implementation "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
     }
     else {
         compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
