@@ -14,6 +14,7 @@ import java.util.concurrent.Executor;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonNull;
@@ -47,9 +48,9 @@ final public class Pipelines implements PreparableReloadListener {
 
     public static final Map<Identifier, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
 
-    private static volatile @Nullable PipelineRaw currentRaw = null;
-    private static volatile @Nullable Throwable loadingError = null;
-    private static volatile @Nullable Pipeline current = null;
+    private static @Nullable PipelineRaw currentRaw = null;
+    private static @Nullable Throwable loadingError = null;
+    private static @Nullable Pipeline current = null;
 
     public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Map<Option.Element<?>, Object> optionsChanges) {
         assert RenderSystem.isOnRenderThread();
@@ -137,7 +138,9 @@ final public class Pipelines implements PreparableReloadListener {
         if (raw != null) {
             // Flushes main command buffer for Cinnabar, does nothing for GL backend
             // Main command buffer could already be created at this point, because of texture loading
-            RenderSystem.getDevice().createCommandEncoder().createFence().awaitCompletion(Long.MAX_VALUE);
+            GpuFence fence = RenderSystem.getDevice().createCommandEncoder().createFence();
+            fence.awaitCompletion(Long.MAX_VALUE);
+            fence.close();
 
             RenderSystem.getDevice().clearPipelineCache();
 

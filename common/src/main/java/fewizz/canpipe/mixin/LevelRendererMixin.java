@@ -89,7 +89,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow private void applyFrustum(Frustum frustum) {}
     @Shadow public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix) { return null; }
 
-    @Unique private volatile boolean canpipe_isRenderingShadows = false;
+    @Unique private boolean canpipe_isRenderingShadows = false;
     @Unique private int canpipe_shadowCascade = 0;
     @Unique private int canpipe_originType = 0;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
