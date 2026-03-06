@@ -12,13 +12,16 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.CameraExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
+import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
@@ -289,6 +292,23 @@ public class GameRendererMixin implements GameRendererExtended {
         Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
         Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
         Uniforms.FRX_LAST_CAMERA_POS.set(this.mainCamera.position().toVector3f());
+    }
+
+    @ModifyExpressionValue(
+        method = "resize",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
+    )
+    RenderTarget useOriginalMainRenderTargetOnResize(RenderTarget mainRenderTarget) {
+        if (Pipelines.getCurrent() != null) {
+            RenderTarget mainRenderTargetOverride = mainRenderTarget;
+            ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(null);
+            mainRenderTarget = this.minecraft.getMainRenderTarget();
+            ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(mainRenderTargetOverride);
+        }
+        return mainRenderTarget;
     }
 
     @Override
