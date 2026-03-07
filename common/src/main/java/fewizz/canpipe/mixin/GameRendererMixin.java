@@ -20,7 +20,6 @@ import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.CameraExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
-import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -50,7 +49,6 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
     @Unique private Matrix4f canpipe_worldViewMatrix = null;
     @Unique private Matrix4f canpipe_worldProjectionMatrix = null;
-    @Unique private ChunkSectionsToRender[] canpipe_chunkSectionsToRender = null;
 
     @Override
     public void canpipe_onPipelineActivated() {
@@ -70,7 +68,6 @@ public class GameRendererMixin implements GameRendererExtended {
             new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()
         };
         this.canpipe_shadowFrustums = new ShadowFrustum[4];
-        this.canpipe_chunkSectionsToRender = new ChunkSectionsToRender[4];
 
         Uniforms.CANPIPE_SHADOW_CENTERS[0].set(0.0);
         Uniforms.CANPIPE_SHADOW_CENTERS[1].set(0.0);
@@ -215,7 +212,6 @@ public class GameRendererMixin implements GameRendererExtended {
             this.canpipe_shadowFrustums[cascade] = shadowFrustum;
         }
 
-        ((LevelRendererExtended) this.minecraft.levelRenderer).canpipe_prepareCascadesChunkSectionsToRender(viewMatrix, this.canpipe_chunkSectionsToRender);
         profiler.pop();
     }
 
@@ -317,10 +313,6 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override
     public ShadowFrustum[] canpipe_getShadowFrustums() {
         return this.canpipe_shadowFrustums;
-    }
-
-    public ChunkSectionsToRender[] canpipe_getChunkSectionsToRender() {
-        return this.canpipe_chunkSectionsToRender;
     }
 
     @Override

@@ -1,9 +1,5 @@
 package fewizz.canpipe.mixininterface;
 
-import org.joml.Matrix4f;
-
-import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
-
 public interface LevelRendererExtended {
 
     boolean canpipe_getIsRenderingShadows();
@@ -17,7 +13,5 @@ public interface LevelRendererExtended {
 
     int canpipe_getOriginType();
     void canpipe_setOriginType(int originType);
-
-    void canpipe_prepareCascadesChunkSectionsToRender(Matrix4f viewMatrix, ChunkSectionsToRender[] chunkSectionsToRender);
 
 }
