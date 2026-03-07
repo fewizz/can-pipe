@@ -1,4 +1,4 @@
-package fewizz.canpipe.b3d.mixin;
+package fewizz.canpipe.b3d;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ import com.mojang.blaze3d.textures.TextureFormat;
 
 import net.minecraft.client.Screenshot;
 
-public class Plugin implements IMixinConfigPlugin, Opcodes {
+public class MixinPlugin implements IMixinConfigPlugin, Opcodes {
 
     /**
      * pixelSize - will be used in {@link TextureFormat#pixelSize()}, which is used in

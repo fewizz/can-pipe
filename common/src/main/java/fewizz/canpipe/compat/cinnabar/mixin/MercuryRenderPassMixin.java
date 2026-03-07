@@ -48,8 +48,6 @@ public abstract class MercuryRenderPassMixin implements HgRenderPassExtended {
         return this.canpipe_colorFormats.size();  // including VK_ATTACHMENT_UNUSED
     }
 
-    // Committing some crimes...
-    // TODO: Temporary
     @ModifyConstant(
         method = "<init>",
         constant = @Constant(intValue = VK10.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)

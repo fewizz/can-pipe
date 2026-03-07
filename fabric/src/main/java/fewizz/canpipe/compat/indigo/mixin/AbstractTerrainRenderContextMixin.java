@@ -1,5 +1,5 @@
 package fewizz.canpipe.compat.indigo.mixin;
-/*
+
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,10 +22,10 @@ import net.fabricmc.fabric.impl.client.indigo.renderer.aocalc.AoCalculator;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractTerrainRenderContext;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
-*/
-/*@Mixin(AbstractTerrainRenderContext.class)*/
+
+@Mixin(AbstractTerrainRenderContext.class)
 public class AbstractTerrainRenderContextMixin {
-/*
+
     @Shadow(remap = false) @Final protected AoCalculator aoCalc;
     @Shadow(remap = false) @Final protected BlockRenderInfo blockInfo;
 
@@ -41,7 +41,7 @@ public class AbstractTerrainRenderContextMixin {
     )
     void beforeVertexConsumerWrite(CallbackInfo ci, @Local VertexConsumer vc) {
         if (vc instanceof VertexConsumerExtended vce) {
-            MaterialMap materialMap = MaterialMaps.getForBlock(blockInfo.blockState.getBlock());
+            MaterialMap materialMap = MaterialMaps.getForBlock(null/*blockInfo.blockState.getBlock()*/);
             vce.canpipe_setSharedMaterialMap(materialMap);
         }
     }
@@ -86,5 +86,5 @@ public class AbstractTerrainRenderContextMixin {
         }
         return operation.call(instance, vertexIndex, newColor);
     }
-*/
+
 }

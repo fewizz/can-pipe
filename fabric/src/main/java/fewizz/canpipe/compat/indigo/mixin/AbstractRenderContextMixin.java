@@ -1,8 +1,7 @@
 package fewizz.canpipe.compat.indigo.mixin;
-/*
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
@@ -15,10 +14,10 @@ import fewizz.canpipe.compat.indigo.MutableQuadViewExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractRenderContext;
-*/
-/*@Mixin(value = AbstractRenderContext.class)*/
+
+@Mixin(value = AbstractRenderContext.class)
 public class AbstractRenderContextMixin {
-/*
+
     @Inject(
         method = "bufferQuad("+
             "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"+
@@ -86,5 +85,5 @@ public class AbstractRenderContextMixin {
             }
         }
     }
-*/
+
 }

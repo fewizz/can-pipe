@@ -2,6 +2,7 @@
 	"required": false,
 	"compatibilityLevel": "JAVA_21",
 	"package": "fewizz.canpipe.compat.indigo.mixin",
+	"plugin": "fewizz.canpipe.compat.indigo.MixinPlugin",
 	"injectors": {
 		"defaultRequire": 1
 	},

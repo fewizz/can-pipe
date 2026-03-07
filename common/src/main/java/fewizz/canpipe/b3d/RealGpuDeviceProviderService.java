@@ -11,11 +11,11 @@ public abstract class RealGpuDeviceProviderService {
 
     private static ServiceLoader<RealGpuDeviceProviderService> loader = ServiceLoader.load(RealGpuDeviceProviderService.class);
 
-    public abstract GpuDeviceBackend realGpuDeviceBackend();
+    public abstract GpuDeviceBackend impl_getRealGpuDeviceBackend();
 
     public static GpuDeviceBackend getRealGpuDeviceBackend() {
         for (RealGpuDeviceProviderService s : RealGpuDeviceProviderService.loader) {
-            return s.realGpuDeviceBackend();
+            return s.impl_getRealGpuDeviceBackend();
         }
         return ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
     }

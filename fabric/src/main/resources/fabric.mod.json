@@ -13,7 +13,7 @@
 	"license": "${license}",
 	"entrypoints": { 
 		"client": [
-			"fewizz.canpipe.CanPipeClientInitializer"
+			"fewizz.canpipe.fabric.CanPipeClientInitializer"
 		]
 	},
 	"icon": "assets/${mod_id}/icon.png",
