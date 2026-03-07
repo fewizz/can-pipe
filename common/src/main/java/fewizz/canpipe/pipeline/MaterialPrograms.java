@@ -53,7 +53,7 @@ public class MaterialPrograms {
             vertexFormat = !shadow ? CanPipe.VertexFormats.ENTITY : CanPipe.VertexFormats.ENTITY_SHADOW;
         }
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE) {
-            vertexFormat = CanPipe.VertexFormats.PARTICLE;
+            vertexFormat = !shadow ? CanPipe.VertexFormats.PARTICLE : CanPipe.VertexFormats.PARTICLE_SHADOW;
         }
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
             vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_LIGHTMAP;

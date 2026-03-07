@@ -546,7 +546,7 @@ public class Pipeline implements AutoCloseable {
         Profiler.get().pop();
     }
 
-    public RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline) {
+    public RenderPipeline getReplaceRenderPipeline(RenderPipeline renderPipeline) {
         Minecraft mc = Minecraft.getInstance();
         if (!((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
             renderPipeline = this.materialPrograms.getOrDefault(renderPipeline, renderPipeline);

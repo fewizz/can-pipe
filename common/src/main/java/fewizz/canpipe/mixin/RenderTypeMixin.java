@@ -37,7 +37,7 @@ public class RenderTypeMixin {
     private RenderPipeline canpipe_getReplacedRenderPipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            renderPipeline = p.replaceRenderPipeline(renderPipeline);
+            renderPipeline = p.getReplaceRenderPipeline(renderPipeline);
         }
         return renderPipeline;
     }

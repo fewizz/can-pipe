@@ -10,12 +10,13 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.state.level.QuadParticleRenderState;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 
@@ -30,10 +31,11 @@ public class QuadParticleRenderStateMixin {
         )
     )
     VertexFormat replaceVertexFormat(VertexFormat vertexFormat) {
-        assert vertexFormat == DefaultVertexFormat.PARTICLE;
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            vertexFormat = CanPipe.VertexFormats.PARTICLE;
+            vertexFormat = ((LevelRendererExtended) Minecraft.getInstance().levelRenderer).canpipe_getIsRenderingShadows()
+                ? CanPipe.VertexFormats.PARTICLE_SHADOW
+                : CanPipe.VertexFormats.PARTICLE;
         }
         return vertexFormat;
     }
@@ -49,7 +51,7 @@ public class QuadParticleRenderStateMixin {
     RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            renderPipeline = p.replaceRenderPipeline(renderPipeline);
+            renderPipeline = p.getReplaceRenderPipeline(renderPipeline);
         }
         return renderPipeline;
     }

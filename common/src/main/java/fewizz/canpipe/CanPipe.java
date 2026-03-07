@@ -102,6 +102,14 @@ public class CanPipe {
             /* 36 + 4*1 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
             .build();
 
+        public static final VertexFormat PARTICLE_SHADOW = VertexFormat.builder()
+            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
+            /* 12 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
+            /* 20 + 4*1 */.add("in_color", VertexFormatElement.COLOR)
+            /* 24 + 2*2 */.add("in_lightmap", VertexFormatElement.UV2)
+            /* 28 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
+            .build();
+
         public static final VertexFormat POSITION_COLOR_LIGHTMAP = VertexFormat.builder()
             /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
             /* 12 + 4*1 */.add("in_color", VertexFormatElement.COLOR)
