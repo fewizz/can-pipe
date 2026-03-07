@@ -137,7 +137,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         @Local(ordinal = 0) Matrix4f viewMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) { return; }
+        if (p == null || p.shadows == null) { return; }
 
         GameRendererExtended gre = ((GameRendererExtended) this.minecraft.gameRenderer);
         LevelRenderStateExtended lrse = ((LevelRenderStateExtended) this.levelRenderState);

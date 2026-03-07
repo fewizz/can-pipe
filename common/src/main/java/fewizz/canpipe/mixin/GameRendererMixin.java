@@ -28,7 +28,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Lightmap;
-import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.state.GameRenderState;
 import net.minecraft.util.profiling.Profiler;
