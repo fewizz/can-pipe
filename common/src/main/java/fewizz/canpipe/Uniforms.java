@@ -24,6 +24,7 @@ import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
+import fewizz.canpipe.mixininterface.LightmapExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
@@ -40,6 +41,7 @@ import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.DimensionType;
@@ -259,9 +261,8 @@ public class Uniforms {
             FRX_EFFECT_MODIFIER.set(effectModifier);
         }
         {
-            // TODO
-            /*float darknessScale = ((LightTextureExtended) mc.gameRenderer.lightmap()).canpipe_getDarknessScale();
-            CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));*/
+            float darknessScale = mc.gameRenderer.getGameRenderState().lightmapRenderState.darknessEffectScale;
+            CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));
         }
         FRX_EYE_POS.set(eyePosition.toVector3f());
         FRX_EYE_BRIGHTNESS.set(lre.canpipe_getEyeBlockLight(), lre.canpipe_getEyeSkyLight());
@@ -361,7 +362,6 @@ public class Uniforms {
         // world
         long ticks = mc.level.getDefaultClockTime();
         CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
-        // TODO
         FRX_WORLD_DAY.set(mc.level != null ? (mc.level.getGameTime() / 24000L) % 2147483647L : 0.0F);
         FRX_WORLD_TIME.set(mc.level != null ? (mc.level.getGameTime() % 24000L) / 24000.0F : 0.0F);
         FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.moonPhase.index()]);
@@ -382,17 +382,15 @@ public class Uniforms {
         }
         FRX_AMBIENT_INTENSITY.set(camera.attributeProbe().getValue(EnvironmentAttributes.SKY_LIGHT_FACTOR, pt));
         {
-            // TODO
-            /*Vector4f emissiveColor = ((LightTextureExtended) mc.gameRenderer.lightTexture()).canpipe_getEmissiveColor();
-            FRX_EMISSIVE_COLOR.set(emissiveColor);*/
-            FRX_EMISSIVE_COLOR.set(1.0F);
+            Vector4f emissiveColor = ((LightmapExtended) ((GameRendererExtended) mc.gameRenderer).canpipe_getLightmap()).canpipe_getEmissiveColor();
+            FRX_EMISSIVE_COLOR.set(emissiveColor);
         }
         {
             int value = 0;
             value |= (mc.level.dimensionType().hasSkyLight() ? 1 : 0) << 0;
             value |= (mc.level.isRaining() ? 1 : 0)                   << 1;
             value |= (mc.level.isThundering() ? 1 : 0)                << 2;
-            // value |= (mc.level.dimensionType().cardinalLightType() == CardinalLightType.NETHER ? 1 : 0)  << 3;  // TODO
+            value |= (mc.level.dimensionType().cardinalLightType() == CardinalLighting.Type.NETHER ? 1 : 0)  << 3;
 
             int dimension = 3;
             if (mc.level.dimension() == Level.OVERWORLD) {
@@ -425,7 +423,7 @@ public class Uniforms {
                     mc.gameRenderer.getMainCamera(),
                     mc.options.getEffectiveRenderDistance(),
                     mc.getDeltaTracker(),
-                    0.0F, // mc.gameRenderer.getDarkenWorldAmount(pt), TODO
+                    mc.gameRenderer.getBossOverlayWorldDarkening(pt),
                     mc.level
                 ).color
             );

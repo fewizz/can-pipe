@@ -28,6 +28,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.Lightmap;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.state.GameRenderState;
@@ -41,6 +42,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow @Final private Camera mainCamera;
     @Shadow @Final private FogRenderer fogRenderer;
     @Shadow @Final private GameRenderState gameRenderState;
+    @Shadow @Final private Lightmap lightmap = new Lightmap();
 
     @Unique private long canpipe_renderStartNano = -1;
     @Unique private int canpipe_renderTarget = -1;
@@ -344,6 +346,11 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override
     public void canpipe_setRenderTarget(int renderTarget) {
         this.canpipe_renderTarget = renderTarget;
+    }
+
+    @Override
+    public Lightmap canpipe_getLightmap() {
+        return this.lightmap;
     }
 
 }
