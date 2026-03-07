@@ -54,9 +54,14 @@ const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
     #define frx_modelToCamera vec4(ModelOffset, 0.0)
 #endif
 
+#define MODEL_ORIGIN_CAMERA 0
+#define MODEL_ORIGIN_REGION 1
+#define MODEL_ORIGIN_SCREEN 2
+
 #define frx_modelOriginCamera (canpipe_originType == 0)
 #define frx_modelOriginRegion (canpipe_originType == 1)
-#define frx_modelOriginScreen (canpipe_originType == 2 || canpipe_originType == 3)
+#define frx_modelOriginScreen (canpipe_originType == 2)
+
 #define frx_isHand (canpipe_originType == 3)
 #define frx_isGui frx_modelOriginScreen
 
@@ -98,3 +103,6 @@ mat4 frx_shadowProjectionMatrix(int index) {
     #define frx_renderTargetEntity      (canpipe_renderTarget == 2)
     #define frx_renderTargetParticles   (canpipe_renderTarget == 3)
 #endif
+
+// Compat
+int frx_modelOriginType() { return canpipe_originType; }

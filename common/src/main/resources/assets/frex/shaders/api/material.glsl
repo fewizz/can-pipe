@@ -13,3 +13,6 @@ const int frx_matUnmipped = 0;  // TODO define
 #define frx_matGlint ((canpipe_materialFlags >> 0) & 1)
 const int frx_matGlintEntity = 0;  // unused?
 const float frx_matExposure = 0.0;  // unused?
+
+// Compat
+float frx_matUnmippedFactor() { return float(frx_matUnmipped); }
