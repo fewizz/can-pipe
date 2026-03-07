@@ -69,6 +69,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Override public VertexFormat canpipe_getVertexFormat() { return this.format; }
 
+    private static byte canpipe_normalIntValueWithoutClamp(float value) {
+        return (byte) Math.fma(value, 127.5F, -1.0F / 255.0F);
+    }
+
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
         this.canpipe_aoOffset = this.format.getOffset(CanPipe.VertexFormatElements.AO);
@@ -131,29 +135,29 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 Vector3f mid = new Vector3f(normal0).add(normal1).normalize();
 
                 int i = offsetToFirstVertex;
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, normalIntValue(mid.x));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, normalIntValue(mid.y));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, normalIntValue(mid.z));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(mid.x));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(mid.y));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(mid.z));
 
                 i += 1;
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, normalIntValue(normal0.x));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, normalIntValue(normal0.y));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, normalIntValue(normal0.z));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(normal0.x));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(normal0.y));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(normal0.z));
 
                 i += 1;
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, normalIntValue(mid.x));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, normalIntValue(mid.y));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, normalIntValue(mid.z));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(mid.x));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(mid.y));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(mid.z));
 
                 i += 1;
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, normalIntValue(normal1.x));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, normalIntValue(normal1.y));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, normalIntValue(normal1.z));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(normal1.x));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(normal1.y));
+                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(normal1.z));
             } else {
                 for (int i = offsetToFirstVertex; i <= 0; ++i) {
-                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, normalIntValue(normal0.x));
-                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, normalIntValue(normal0.y));
-                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, normalIntValue(normal0.z));
+                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(normal0.x));
+                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(normal0.y));
+                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(normal0.z));
                 }
             }
         }
@@ -175,10 +179,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             Vector3f tangent = tangentPair.getLeft();
             boolean inverseBitangent = tangentPair.getRight();
             for (int i = offsetToFirstVertex; i <= 0; ++i) {
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+0, normalIntValue(tangent.x));
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+1, normalIntValue(tangent.y));
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+2, normalIntValue(tangent.z));
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+3, normalIntValue(inverseBitangent ? -1.0F : 1.0F));
+                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+0, canpipe_normalIntValueWithoutClamp(tangent.x));
+                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+1, canpipe_normalIntValueWithoutClamp(tangent.y));
+                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+2, canpipe_normalIntValueWithoutClamp(tangent.z));
+                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+3, canpipe_normalIntValueWithoutClamp(inverseBitangent ? -1.0F : 1.0F));
             }
         }
     }
