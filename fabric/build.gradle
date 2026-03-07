@@ -79,6 +79,8 @@ loom {
             // programArg "--renderDebugLabels"
             // programArg "--tracy"
             // vmArg "-XX:-Inline"
+            vmArg "-XX:+UnlockDiagnosticVMOptions"
+            vmArg "-XX:+DebugNonSafepoints"
             properties([
                 "mixin.debug": "true",
                 // "cinnabar.vulkanValidationLayers": "true",

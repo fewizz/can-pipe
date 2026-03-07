@@ -309,16 +309,13 @@ public class MaterialPrograms {
                     in_ao
                 );
                 frx_vertexTangent = in_tangent;
-
             #endif
 
             #if defined CANPIPE_HAS_OVERLAY_POS
                 canpipe_overlayPos = in_overlayPos;
             #endif
 
-            if (frx_isGui && !frx_isHand) {
-                frx_vertexNormal.y *= -1.0;  // compat
-            }
+            if (frx_isGui && !frx_isHand) frx_vertexNormal.y *= -1.0;  // compat
         """);
         vertexSrcBuilder.append(materialsSwitchSrc);
         vertexSrcBuilder.append(
@@ -472,13 +469,14 @@ public class MaterialPrograms {
             frx_fragColor = frx_sampleColor * frx_vertexColor;
 
             #if defined CANPIPE_ALPHA_CUTOUT
-            if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) discard;
+                if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) discard;
             #endif
 
         """);
         fragmentSrcBuilder.append(materialsSwitchSrc);
         fragmentSrcBuilder.append(
         """
+
             frx_pipelineFragment();
         }
         """);

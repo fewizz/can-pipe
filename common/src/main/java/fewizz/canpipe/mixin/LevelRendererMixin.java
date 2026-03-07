@@ -292,12 +292,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 if (p.shadows.allowParticles()) {
                     profiler.popPush("particles");
 
-                    profiler.popPush("submit particles");
+                    profiler.push("submit particles");
                     ParticlesRenderState state = ((LevelRenderStateExtended) this.levelRenderState).canpipe_getParticlesRenderStates()[this.canpipe_shadowCascade];
                     state.submit(this.submitNodeStorage, levelRenderState.cameraRenderState);
 
                     profiler.popPush("render features");
                     this.featureRenderDispatcher.renderAllFeatures();
+
                     // state.reset();  // `ParticleGroupRenderState`s are shared
                     state.particles.clear();
 

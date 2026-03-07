@@ -114,7 +114,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
         if (p.shadows == null) { return; }
 
-        profiler.popPush("can-pipe calculate shadow frustums");
+        profiler.push("can-pipe calculate shadow frustums");
 
         final float maxCascadeRadius = this.minecraft.options.getEffectiveRenderDistance() * 16 + 48.0F;
         final float depthTextureSize = (float) p.shadows.framebuffers().get(0).getDepthTexture().getWidth(0);
@@ -214,6 +214,7 @@ public class GameRendererMixin implements GameRendererExtended {
         }
 
         ((LevelRendererExtended) this.minecraft.levelRenderer).canpipe_prepareCascadesChunkSectionsToRender(viewMatrix, this.canpipe_chunkSectionsToRender);
+        profiler.pop();
     }
 
     @Inject(

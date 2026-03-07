@@ -46,7 +46,7 @@ public class Programs {
             .withLocation(pipelineLocation.withSuffix("-"+name))
             .withVertexShader(vertexLocation)
             .withFragmentShader(fragmentLocation)
-            .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
+            .withCull(false)
             .withVertexFormat(CanPipe.VertexFormats.POSITION_TEX, VertexFormat.Mode.QUADS);
 
         renderPipelineBuilder.withUniform("canpipe_ub_pass", UniformType.UNIFORM_BUFFER);
