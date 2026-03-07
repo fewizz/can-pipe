@@ -367,11 +367,10 @@ public class MaterialPrograms {
             materialsSwitchSrc.append("    }\n");
         }
 
-        float alphaCutout;
+        Float alphaCutout = null;
         if (
             originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
 
-            // use ITEM_ENTITY_TARGET output state shard
             originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
@@ -406,9 +405,6 @@ public class MaterialPrograms {
         ) {
             alphaCutout = 0.5F;
         }
-        else {
-            alphaCutout = 0.0F;
-        }
 
         boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
         boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
@@ -418,7 +414,9 @@ public class MaterialPrograms {
         var fragmentSrcBuilder = new StringBuilder();
 
         fragmentSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
-        fragmentSrcBuilder.append("#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n");
+        if (alphaCutout != null) {
+            fragmentSrcBuilder.append("#define CANPIPE_ALPHA_CUTOUT "+alphaCutout+"\n");
+        }
         if (terrain) {
             fragmentSrcBuilder.append("#define CANPIPE_TERRAIN\n");
         }
@@ -473,9 +471,10 @@ public class MaterialPrograms {
 
             frx_fragColor = frx_sampleColor * frx_vertexColor;
 
-            if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) {
-                discard;
-            }
+            #if defined CANPIPE_ALPHA_CUTOUT
+            if (frx_fragColor.a < CANPIPE_ALPHA_CUTOUT) discard;
+            #endif
+
         """);
         fragmentSrcBuilder.append(materialsSwitchSrc);
         fragmentSrcBuilder.append(
