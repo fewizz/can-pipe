@@ -146,19 +146,13 @@ public class Shaders {
                 var right = numByValueOrOption.apply(floatConditionalMatcher.group(4));
 
                 if (left instanceof Double leftF && right instanceof Double rightF) {
-                    boolean opResult = false;
-                    switch (op) {
-                        case ">":
-                            opResult = leftF > rightF; break;
-                        case "<":
-                            opResult = leftF < rightF; break;
-                        case "==":
-                            opResult = leftF == rightF; break;
-                        case "!=":
-                            opResult = leftF != rightF; break;
-                        default:
-                            throw new NotImplementedException(op);
-                    }
+                    boolean opResult = switch (op) {
+                        case ">" -> leftF > rightF;
+                        case "<" -> leftF < rightF;
+                        case "==" -> (double) leftF == (double) rightF;
+                        case "!=" -> (double) leftF != (double) rightF;
+                        default -> throw new NotImplementedException(op);
+                    };
                     int conditionalStart = floatConditionalMatcher.start(2);
 
                     line =
@@ -248,7 +242,7 @@ public class Shaders {
                         if (element instanceof Option.EnumElement enumElement && enumElement.prefix != null) {
                             // define all the variants
                             for (String choice : enumElement.choices) {
-                                String defName = enumElement.prefix.toUpperCase()+""+choice.toUpperCase();
+                                String defName = enumElement.prefix.toUpperCase()+choice.toUpperCase();
                                 int valueIndex = enumElement.choices.indexOf(choice);
                                 definitions.add("#define "+defName+" "+valueIndex);
                             }

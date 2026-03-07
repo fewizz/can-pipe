@@ -335,12 +335,12 @@ public class Pipeline implements AutoCloseable {
             Optional.empty()
         );
 
-        JsonObject materailProgram = pipelineJson.getObject("materialProgram");
+        JsonObject materialProgram = pipelineJson.getObject("materialProgram");
 
-        var materialVertexShaderLocation = Identifier.parse(materailProgram.get(String.class, "vertexSource"));
-        var materialFragmentShaderLocation = Identifier.parse(materailProgram.get(String.class, "fragmentSource"));
+        var materialVertexShaderLocation = Identifier.parse(materialProgram.get(String.class, "vertexSource"));
+        var materialFragmentShaderLocation = Identifier.parse(materialProgram.get(String.class, "fragmentSource"));
 
-        List<String> samplers = new ArrayList<>(JanksonUtils.listOfStrings(materailProgram, "samplers"));
+        List<String> samplers = new ArrayList<>(JanksonUtils.listOfStrings(materialProgram, "samplers"));
         if (shadowFramebuffer != null) {
             samplers.add("frxs_shadowMap");
             samplers.add("frxs_shadowMapTexture");
@@ -355,7 +355,7 @@ public class Pipeline implements AutoCloseable {
             )
         ));
 
-        var samplerImagesNames = JanksonUtils.listOfStrings(materailProgram, "samplerImages");
+        var samplerImagesNames = JanksonUtils.listOfStrings(materialProgram, "samplerImages");
         Map<String, AbstractTexture> samplerToTexture = new HashMap<>();
         for (int i = 0; i < Math.min(samplers.size(), samplerImagesNames.size()); ++i) {
             String sampler = samplers.get(i);
@@ -451,7 +451,7 @@ public class Pipeline implements AutoCloseable {
                         getOrLoadOptionalFramebuffer,
                         getOrLoadProgram,
                         getOrLoadPipelineOrResourcepackTexture
-                    ).ifPresent(pass -> passes.add(pass));
+                    ).ifPresent(passes::add);
                 }
             }
         };
@@ -468,11 +468,11 @@ public class Pipeline implements AutoCloseable {
 
     @Override
     public void close() {
-        this.onInitPasses.forEach(p -> p.close());
-        this.onResizePasses.forEach(p -> p.close());
-        this.beforeWorldRenderPasses.forEach(p -> p.close());
-        this.fabulousPasses.forEach(p -> p.close());
-        this.afterRenderHandPasses.forEach(p -> p.close());
+        this.onInitPasses.forEach(PassBase::close);
+        this.onResizePasses.forEach(PassBase::close);
+        this.beforeWorldRenderPasses.forEach(PassBase::close);
+        this.fabulousPasses.forEach(PassBase::close);
+        this.afterRenderHandPasses.forEach(PassBase::close);
 
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
@@ -548,16 +548,16 @@ public class Pipeline implements AutoCloseable {
 
     public RenderPipeline getReplaceRenderPipeline(RenderPipeline renderPipeline) {
         Minecraft mc = Minecraft.getInstance();
-        if (!((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
-            renderPipeline = this.materialPrograms.getOrDefault(renderPipeline, renderPipeline);
+        if (this.shadows != null && ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
+            renderPipeline = this.shadows.materialPrograms().getOrDefault(renderPipeline, renderPipeline);
         }
         else {
-            renderPipeline = this.shadows.materialPrograms().getOrDefault(renderPipeline, renderPipeline);
+            renderPipeline = this.materialPrograms.getOrDefault(renderPipeline, renderPipeline);
         }
         return renderPipeline;
     }
 
-    public RenderPass createRenderPass(CommandEncoder commandEncoder, Supplier<String> name, @Nullable Framebuffer framebuffer) {
+    public RenderPass createRenderPass(CommandEncoder commandEncoder, Supplier<String> name, Framebuffer framebuffer) {
         int newTarget = 0;
         if (framebuffer == this.translucentTerrainFramebuffer) {
             newTarget = 1;
@@ -593,11 +593,6 @@ public class Pipeline implements AutoCloseable {
         renderPass.setUniform("frxu_ub_cascade", Uniforms.INT_0_4_UBO_BUFFERS[lre.canpipe_getShadowCascade()]);
         renderPass.setUniform("canpipe_ub_render_target", Uniforms.INT_0_4_UBO_BUFFERS[gre.canpipe_getRenderTarget()]);
         renderPass.setUniform("canpipe_ub_origin_type", Uniforms.INT_0_4_UBO_BUFFERS[lre.canpipe_getOriginType()]);
-
-        // var sampler0 = RenderSystem.getShaderTexture(0);
-        // if (sampler0 != null) {
-        //    bindSpritesExtentsSampler(renderPass, sampler0);
-        //}
 
         renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 

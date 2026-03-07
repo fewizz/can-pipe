@@ -37,7 +37,7 @@ public class Pass extends PassBase {
     final Framebuffer framebuffer;
     final RenderPipeline renderPipeline;
     // Textures (specified in "samplers": ["X", "Y"]) may not exist,
-    // and that's ok if program doesn't actually uses them
+    // and that's ok if program doesn't actually use them
     final List<AbstractTexture> textures;
     final Vector2i extent;
 

@@ -4,7 +4,7 @@ import java.util.ServiceLoader;
 
 public abstract class PlatformHelperService {
 
-    private static ServiceLoader<PlatformHelperService> loader = ServiceLoader.load(PlatformHelperService.class);
+    private static final ServiceLoader<PlatformHelperService> loader = ServiceLoader.load(PlatformHelperService.class);
 
     public abstract boolean impl_isModLoaded(String modId);
 

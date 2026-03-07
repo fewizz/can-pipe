@@ -38,14 +38,16 @@ public class ParticleFeatureRendererMixin {
         )
     )
     RenderPass replaceColorAttachments(
-        CommandEncoder instance, Supplier<String> nameSupplier, GpuTextureView colorTextureView, OptionalInt clearColor, @Nullable GpuTextureView depthTextureView, OptionalDouble clearDepth,
+        CommandEncoder instance, Supplier<String> nameSupplier,
+        GpuTextureView colorTexture, OptionalInt clearColor,
+        @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
         @Local(ordinal = 0) RenderTarget renderTargetMain
     ) {
         if (renderTargetMain instanceof Framebuffer framebuffer) {
             return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
         }
-        return operation.call(instance, nameSupplier, colorTextureView, clearColor, depthTextureView, clearDepth);
+        return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
 }

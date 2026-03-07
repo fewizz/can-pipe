@@ -66,15 +66,16 @@ public class ChunkSectionsToRenderMixin {
         )
     )
     RenderPass replaceColorAttachments(
-        CommandEncoder instance, Supplier<String> nameSupplier, GpuTextureView colorTextureView, OptionalInt clearColor, @Nullable GpuTextureView depthTextureView, OptionalDouble clearDepth,
+        CommandEncoder instance, Supplier<String> nameSupplier,
+        GpuTextureView colorTexture, OptionalInt clearColor,
+        @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
-        @Local RenderTarget renderTarget,
-        @Local ChunkSectionLayerGroup group
+        @Local RenderTarget renderTarget
     ) {
         if (renderTarget instanceof Framebuffer framebuffer) {
             return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
         }
-        return operation.call(instance, nameSupplier, colorTextureView, clearColor, depthTextureView, clearDepth);
+        return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
     @Inject(

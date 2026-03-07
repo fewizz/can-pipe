@@ -10,7 +10,6 @@ public abstract class PassBase implements AutoCloseable {
         this.name = name;
     }
 
-
     public abstract void apply(CommandEncoder commandEncoder);
 
     @Override

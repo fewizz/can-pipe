@@ -28,6 +28,7 @@ import fewizz.canpipe.mixininterface.MinecraftExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
+import org.jspecify.annotations.NonNull;
 
 final public class Pipelines implements PreparableReloadListener {
 
@@ -35,11 +36,11 @@ final public class Pipelines implements PreparableReloadListener {
     private Pipelines() {}
 
     @Override
-    public CompletableFuture<Void> reload(
-        PreparableReloadListener.SharedState sharedState,
-        Executor loadExecutor,
+    public @NonNull CompletableFuture<Void> reload(
+        PreparableReloadListener.@NonNull SharedState sharedState,
+        @NonNull Executor loadExecutor,
         PreparableReloadListener.PreparationBarrier preparationBarrier,
-        Executor applyExecutor
+        @NonNull Executor applyExecutor
     ) {
         return CompletableFuture.supplyAsync(Pipelines::readRawPipelines, loadExecutor)
             .thenCompose(preparationBarrier::wait)
@@ -63,12 +64,12 @@ final public class Pipelines implements PreparableReloadListener {
             try {
                 Files.walkFileTree(CanPipe.getCompilationErrorsDirPath(), new SimpleFileVisitor<Path>() {
                     @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    public @NonNull FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs) throws IOException {
                         Files.delete(file);
                         return FileVisitResult.CONTINUE;
                     }
                     @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    public @NonNull FileVisitResult postVisitDirectory(@NonNull Path dir, IOException exc) throws IOException {
                         Files.delete(dir);
                         return FileVisitResult.CONTINUE;
                     }
@@ -172,7 +173,9 @@ final public class Pipelines implements PreparableReloadListener {
             ((GameRendererExtended) mc.gameRenderer).canpipe_onPipelineActivated();
         }
 
-        if ((prevPipeline != null) != (loadedPipeline != null)) {
+        boolean prevPipelineUnloaded = prevPipeline != null;
+        boolean newPipelineLoaded = loadedPipeline != null;
+        if (prevPipelineUnloaded != newPipelineLoaded) {
             mc.levelRenderer.setLevel(null);
             mc.levelRenderer.setLevel(mc.level);
             mc.levelRenderer.resetSampler();

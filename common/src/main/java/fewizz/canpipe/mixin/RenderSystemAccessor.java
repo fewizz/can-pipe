@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin;
 
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -10,6 +11,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 public interface RenderSystemAccessor {
 
     @Accessor(value = "CANPIPE_QUAD_VERTEX_UV_BUFFER", remap = false)
-    public static GpuBuffer canpipe_getQuadBuffer() { return null; }
+    static @NonNull GpuBuffer canpipe_getQuadBuffer() { return null; }
 
 }

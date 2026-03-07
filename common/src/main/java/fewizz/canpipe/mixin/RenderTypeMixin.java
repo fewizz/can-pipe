@@ -70,14 +70,16 @@ public class RenderTypeMixin {
         )
     )
     RenderPass onCreateRenderPass(
-        CommandEncoder instance, Supplier<String> nameSupplier, GpuTextureView gpuTextureView, OptionalInt optionalInt, @Nullable GpuTextureView gpuTextureView2, OptionalDouble optionalDouble,
+        CommandEncoder instance, Supplier<String> nameSupplier,
+        GpuTextureView colorTexture, OptionalInt clearColor,
+        @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
     ) {
         if (renderTarget instanceof Framebuffer framebuffer) {
             return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
         }
-        return operation.call(instance, nameSupplier, gpuTextureView, optionalInt, gpuTextureView2, optionalDouble);
+        return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
     @Inject(

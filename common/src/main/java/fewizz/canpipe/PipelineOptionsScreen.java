@@ -35,6 +35,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.NonNull;
 
 public class PipelineOptionsScreen extends OptionsSubScreen {
 
@@ -71,7 +72,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void renderBackground(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         if (this.minecraft.level == null) {
             super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         }
@@ -118,10 +119,10 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         }
 
         @Override
-        protected void renderListBackground(GuiGraphics guiGraphics) {}
+        protected void renderListBackground(@NonNull GuiGraphics guiGraphics) {}
 
         @Override
-        protected void renderScrollbar(GuiGraphics guiGraphics, int i, int j) {
+        protected void renderScrollbar(@NonNull GuiGraphics guiGraphics, int i, int j) {
             if (this.scrollable()) {
                 guiGraphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
@@ -134,7 +135,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
         }
 
-        abstract class Entry extends ContainerObjectSelectionList.Entry<Entry> {}
+        abstract static class Entry extends ContainerObjectSelectionList.Entry<Entry> {}
 
         public class CategoryEntry extends Entry {
             final Component name;
@@ -161,17 +162,17 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
 
             @Override
-            public ComponentPath nextFocusPath(FocusNavigationEvent event) {
+            public ComponentPath nextFocusPath(@NonNull FocusNavigationEvent event) {
                 return null;
             }
 
             @Override
-            public List<? extends GuiEventListener> children() {
+            public @NonNull List<? extends GuiEventListener> children() {
                 return Collections.emptyList();
             }
 
             @Override
-            public List<? extends NarratableEntry> narratables() {
+            public @NonNull List<? extends NarratableEntry> narratables() {
                 return Collections.emptyList();
             }
         }
@@ -226,7 +227,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         protected void applyValue() {}
 
                         @Override
-                        public void onRelease(MouseButtonEvent e) {
+                        public void onRelease(@NonNull MouseButtonEvent e) {
                             super.onRelease(e);
                             var value = (this.value * (floatElement.max - floatElement.min)) + floatElement.min;
                             applyValue.accept(value);
@@ -256,7 +257,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         protected void applyValue() {}
 
                         @Override
-                        public void onRelease(MouseButtonEvent e) {
+                        public void onRelease(@NonNull MouseButtonEvent e) {
                             super.onRelease(e);
                             var value = (long)((this.value * (intElement.max - intElement.min)) + intElement.min);
                             applyValue.accept(value);
@@ -294,7 +295,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
             @Override
             public void renderContent(
-                GuiGraphics guiGraphics,
+                @NonNull GuiGraphics guiGraphics,
                 int mouseX, int mouseY,
                 boolean hovering, float partialTick
             ) {
@@ -312,12 +313,12 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
 
             @Override
-            public List<? extends GuiEventListener> children() {
+            public @NonNull List<? extends GuiEventListener> children() {
                 return List.of(this.valueWidget);
             }
 
             @Override
-            public List<? extends NarratableEntry> narratables() {
+            public @NonNull List<? extends NarratableEntry> narratables() {
                 return ImmutableList.of(this.valueWidget);
             }
         }

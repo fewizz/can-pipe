@@ -45,7 +45,7 @@ public class CanPipe {
 
     }
 
-    public class VertexFormats {
+    public static class VertexFormats {
 
         /* size % 4 should be == 0, for quads sorting */
         public static final VertexFormat BLOCK = VertexFormat.builder()
