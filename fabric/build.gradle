@@ -33,6 +33,11 @@ repositories {
     }
 }
 
+configurations{
+    cinnabar
+    compileOnly.extendsFrom cinnabar
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
 
@@ -52,12 +57,7 @@ dependencies {
     implementation "blue.endless:jankson:1.2.3"
     include "blue.endless:jankson:1.2.3"
 
-    if (System.getenv("WITH_CINNABAR") == "1") {
-        implementation "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
-    }
-    else {
-        compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
-    }
+    cinnabar "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
 }
 
 compileJava.source project(":common").sourceSets.main.allSource
@@ -75,16 +75,29 @@ loom {
             setConfigName "Fabric"
             ideConfigGenerated true
             runDir "../run"
-            appendProjectPathToConfigName = false
-            // programArg "--renderDebugLabels"
-            // programArg "--tracy"
-            // vmArg "-XX:-Inline"
             vmArg "-XX:+UnlockDiagnosticVMOptions"
             vmArg "-XX:+DebugNonSafepoints"
             properties([
                 "mixin.debug": "true",
-                // "cinnabar.vulkanValidationLayers": "true",
-                // "cinnabar.debugLogging": "true"
+            ])
+            appendProjectPathToConfigName = false
+        }
+        clientCinnabar {
+            inherit client
+            runDir "../run"
+            setConfigName "Fabric Cinnabar"
+            properties([
+                "fabric.addMods": project.configurations.cinnabar.getFiles()
+                    .stream().map({f -> f.getAbsolutePath()})
+                    .collect(java.util.stream.Collectors.joining(File.pathSeparator))
+            ])
+        }
+        clientCinnabarValidated {
+            inherit client
+            runDir "../run"
+            setConfigName "Fabric Cinnabar Validated"
+            properties([
+                "cinnabar.vulkanValidationLayers": "true"
             ])
         }
     }

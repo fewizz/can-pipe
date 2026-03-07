@@ -23,5 +23,11 @@ Performance is not on par with `Canvas`.
 2. Put preferred shaderpacks into `resourcepacks` directory and activate them
 3. In video settings, click on `Pipeline: ...` to switch between available pipelines
 
+## Gradle run tasks
+* `fabric:runClient`
+* `fabric:runClientCinnabar`
+* `fabric:runClientCinnabarValidated`
+* `neoforge:runClient` (if subproject is included)
+
 ## Discord
 https://discord.gg/WuF24ttw
