@@ -33,7 +33,7 @@ repositories {
     }
 }
 
-configurations{
+configurations {
     cinnabar
     compileOnly.extendsFrom cinnabar
 }
@@ -67,6 +67,13 @@ loom {
 
     mixin {
         useLegacyMixinAp = false
+    }
+
+    mods {
+        "canpipe" {
+            sourceSet sourceSets.main
+            sourceSet("main", ":common")
+        }
     }
 
     runs {
