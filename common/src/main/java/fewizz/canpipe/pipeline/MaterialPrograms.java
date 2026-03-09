@@ -120,7 +120,7 @@ public class MaterialPrograms {
 
         var renderPipeline = renderPipelineBuilder.build();
 
-        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, terrain);
+        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, terrain, enablePBR);
         String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, terrain, enablePBR);
 
         Function<String, String> postprocess = (String src) -> {
@@ -182,7 +182,8 @@ public class MaterialPrograms {
         VertexFormat vertexFormat,
         RenderPipeline originalRenderPipeline,
         boolean shadow,
-        boolean terrain
+        boolean terrain,
+        boolean enablePBR
     ) {
         String vertexSrcOriginal = getShaderSource.apply(vertexShaderLocation).get();
 
@@ -223,6 +224,9 @@ public class MaterialPrograms {
         }
         if (shadow) {
             vertexSrcBuilder.append("#define DEPTH_PASS\n");
+        }
+        if (enablePBR) {
+            vertexSrcBuilder.append("#define PBR_ENABLED\n");
         }
         if (flatVertexColor) {
             vertexSrcBuilder.append("#define CANPIPE_FLAT_VERTEX_COLOR\n");
@@ -275,6 +279,7 @@ public class MaterialPrograms {
         """
 
         #include frex:shaders/api/vertex.glsl
+        #include frex:shaders/api/sampler.glsl
         #include frex:shaders/api/view.glsl
         #include frex:shaders/api/header.glsl
 
