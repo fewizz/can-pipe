@@ -26,6 +26,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.material.Fluid;
@@ -35,11 +36,16 @@ final public class MaterialMaps implements PreparableReloadListener {
     public static final MaterialMaps INSTANCE = new MaterialMaps();
     private MaterialMaps() {}
 
-    private final Map<Fluid, MaterialMap> fluids = new HashMap<>();
     private final Map<Block, MaterialMap> blocks = new HashMap<>();
+    private final Map<Item, MaterialMap> items = new HashMap<>();
+    private final Map<Fluid, MaterialMap> fluids = new HashMap<>();
 
     public static MaterialMap getForBlock(Block block) {
         return INSTANCE.blocks.get(block);
+    }
+
+    public static MaterialMap getForItem(Item item) {
+        return INSTANCE.items.get(item);
     }
 
     public static MaterialMap getForFluid(Fluid fluid) {
@@ -147,6 +153,11 @@ final public class MaterialMaps implements PreparableReloadListener {
                             var block = BuiltInRegistries.BLOCK.get(location.withPath(subpath));
                             if (block.isEmpty()) continue;
                             this.blocks.put(block.get().value(), materialMap);
+                        }
+                        if (type.equals("item")) {
+                            var item = BuiltInRegistries.ITEM.get(location.withPath(subpath));
+                            if (item.isEmpty()) continue;
+                            this.items.put(item.get().value(), materialMap);
                         }
                     } catch (IOException | SyntaxError ex) {
                         ex.printStackTrace();

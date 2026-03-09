@@ -26,7 +26,6 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 
 @Mixin(ChunkSectionsToRender.class)

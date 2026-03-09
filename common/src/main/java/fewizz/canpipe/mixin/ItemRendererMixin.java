@@ -4,6 +4,7 @@ import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.pipeline.Pipeline;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -44,11 +45,15 @@ public class ItemRendererMixin {
         if (p == null) { return; }
 
         VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
+        Item item = canpipe_itemStack.getItem();
 
-        if (canpipe_itemStack.getItem() instanceof BlockItem bi) {
+        if (item instanceof BlockItem bi) {
             MaterialMap materialMap = MaterialMaps.getForBlock(bi.getBlock());
             vce.canpipe_setSharedMaterialMap(materialMap);
-            // vce.canpipe_recomputeNormals(true);
+        }
+        else {
+            MaterialMap materialMap = MaterialMaps.getForItem(item);
+            vce.canpipe_setSharedMaterialMap(materialMap);
         }
 
         if (foilType.get() != ItemStackRenderState.FoilType.NONE) {
@@ -77,7 +82,6 @@ public class ItemRendererMixin {
         VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
         vce.canpipe_setSharedGlint(false);
         vce.canpipe_setSharedMaterialMap(null);
-        // vce.canpipe_recomputeNormals(false);
     }
 
 }

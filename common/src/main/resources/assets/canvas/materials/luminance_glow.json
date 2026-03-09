@@ -1,0 +1,3 @@
+{
+  "fragmentSource": "canvas:shaders/material/luminance_glow.frag"
+}
