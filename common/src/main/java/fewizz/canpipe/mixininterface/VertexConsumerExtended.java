@@ -23,13 +23,13 @@ public interface VertexConsumerExtended extends VertexConsumer {
      * Persistent state. If enabled, <code>addNormal()</code> will be ignored,
      * and normal will be recalculated in <code>endLastVertex()</code>
      */
-    void canpipe_recomputeNormals(boolean recompute);
+    void canpipe_forceNormalRecomputation(boolean recompute);
 
-    void canpipe_setSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier);
+    void canpipe_setScopedSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier);
 
-    void canpipe_setSharedMaterialMap(MaterialMap materialMap);
+    void canpipe_setScopedMaterialMap(MaterialMap materialMap);
 
-    void canpipe_setSharedGlint(boolean glint);
+    void canpipe_setScopedGlint(boolean glint);
 
     float canpipe_getU(int vertexOffset);
     float canpipe_getV(int vertexOffset);

@@ -26,7 +26,7 @@ public interface VertexConsumerMixin {
     ) {
         if (this instanceof VertexConsumerExtended vce) {
             if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-                vce.canpipe_setSpriteSupplier(() -> bakedQuad.spriteInfo().sprite());
+                vce.canpipe_setScopedSpriteSupplier(() -> bakedQuad.spriteInfo().sprite());
             }
             // if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)) {
             //     vce.canpipe_setPendingAO(((QuadInstanceExtended) instance).canpipe_getSeparatedShade(vertexIndex));
@@ -57,7 +57,7 @@ public interface VertexConsumerMixin {
             this instanceof VertexConsumerExtended vce &&
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
         ) {
-            vce.canpipe_setSpriteSupplier(null);
+            vce.canpipe_setScopedSpriteSupplier(null);
         }
     }
 

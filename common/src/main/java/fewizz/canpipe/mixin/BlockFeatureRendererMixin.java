@@ -38,7 +38,7 @@ public class BlockFeatureRendererMixin {
     ) {
         BlockState block = ((MultiPartModelAccessor) submit.model()).canpipe_getBlockState();
         MaterialMap materialMap = MaterialMaps.getForBlock(block.getBlock());
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setSharedMaterialMap(materialMap);
+        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedMaterialMap(materialMap);
     }
 
     @Inject(
@@ -59,7 +59,7 @@ public class BlockFeatureRendererMixin {
         CallbackInfo ci,
         @Local(ordinal = 0) VertexConsumer vertexConsumer
     ) {
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setSharedMaterialMap(null);
+        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedMaterialMap(null);
     }*/
 
 }

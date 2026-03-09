@@ -42,7 +42,7 @@ public class AbstractTerrainRenderContextMixin {
     void beforeVertexConsumerWrite(CallbackInfo ci, @Local VertexConsumer vc) {
         if (vc instanceof VertexConsumerExtended vce) {
             MaterialMap materialMap = MaterialMaps.getForBlock(null/*blockInfo.blockState.getBlock()*/);
-            vce.canpipe_setSharedMaterialMap(materialMap);
+            vce.canpipe_setScopedMaterialMap(materialMap);
         }
     }
 
@@ -59,7 +59,7 @@ public class AbstractTerrainRenderContextMixin {
     )
     void afterVertexConsumerWrite(CallbackInfo ci, @Local VertexConsumer vc) {
         if (vc instanceof VertexConsumerExtended vce) {
-            vce.canpipe_setSharedMaterialMap(null);
+            vce.canpipe_setScopedMaterialMap(null);
         }
     }
 

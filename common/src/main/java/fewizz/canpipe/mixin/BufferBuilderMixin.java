@@ -349,23 +349,23 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
-    public void canpipe_setSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier) {
+    public void canpipe_setScopedSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier) {
         this.canpipe_spriteSupplier = spriteSupplier;
     }
 
     @Override
-    public void canpipe_setSharedMaterialMap(MaterialMap materialmap) {
+    public void canpipe_setScopedMaterialMap(MaterialMap materialmap) {
         this.canpipe_materialMap = materialmap;
     }
 
     @Override
-    public void canpipe_setSharedGlint(boolean glint) {
+    public void canpipe_setScopedGlint(boolean glint) {
         if (glint) { this.canpipe_materialFlags |=   1 << 0;  }
         else       { this.canpipe_materialFlags &= ~(1 << 0); }
     }
 
     @Override
-    public void canpipe_recomputeNormals(boolean recompute) {
+    public void canpipe_forceNormalRecomputation(boolean recompute) {
         this.canpipe_recomputeNormal = recompute;
     }
 

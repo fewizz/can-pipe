@@ -42,7 +42,7 @@ public class LiquidBlockRendererMixin {
             var sprites = ((TextureAtlasExtended) atlas).canpipe_getSprites();
 
             // TODO. Disgusting. Can't think of other universal way for finding sprite
-            vce.canpipe_setSpriteSupplier(() -> {
+            vce.canpipe_setScopedSpriteSupplier(() -> {
                 float u0 = vce.canpipe_getU(0);
                 float v0 = vce.canpipe_getV(0);
 
@@ -66,9 +66,9 @@ public class LiquidBlockRendererMixin {
             });
 
             MaterialMap materialMap = MaterialMaps.getForFluid(fs.getType());
-            vce.canpipe_setSharedMaterialMap(materialMap);
+            vce.canpipe_setScopedMaterialMap(materialMap);
 
-            vce.canpipe_recomputeNormals(true);
+            vce.canpipe_forceNormalRecomputation(true);
         }
     }
 
@@ -81,9 +81,9 @@ public class LiquidBlockRendererMixin {
         @Local(argsOnly = true) VertexConsumer vc
     ) {
         if (vc instanceof VertexConsumerExtended vce) {
-            vce.canpipe_setSpriteSupplier(null);
-            vce.canpipe_setSharedMaterialMap(null);
-            vce.canpipe_recomputeNormals(false);
+            vce.canpipe_setScopedSpriteSupplier(null);
+            vce.canpipe_setScopedMaterialMap(null);
+            vce.canpipe_forceNormalRecomputation(false);
         }
     }
 

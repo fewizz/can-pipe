@@ -35,7 +35,7 @@ public class AbstractRenderContextMixin {
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX) &&
             quad instanceof MutableQuadViewExtended mq
         ) {
-            vce.canpipe_setSpriteSupplier(mq::canpipe_getSprite);
+            vce.canpipe_setScopedSpriteSupplier(mq::canpipe_getSprite);
         }
     }
 
@@ -55,7 +55,7 @@ public class AbstractRenderContextMixin {
             vc instanceof VertexConsumerExtended vce &&
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
         ) {
-            vce.canpipe_setSpriteSupplier(null);
+            vce.canpipe_setScopedSpriteSupplier(null);
         }
     }
 

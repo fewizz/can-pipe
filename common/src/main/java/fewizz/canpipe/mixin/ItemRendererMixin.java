@@ -49,15 +49,15 @@ public class ItemRendererMixin {
 
         if (item instanceof BlockItem bi) {
             MaterialMap materialMap = MaterialMaps.getForBlock(bi.getBlock());
-            vce.canpipe_setSharedMaterialMap(materialMap);
+            vce.canpipe_setScopedMaterialMap(materialMap);
         }
         else {
             MaterialMap materialMap = MaterialMaps.getForItem(item);
-            vce.canpipe_setSharedMaterialMap(materialMap);
+            vce.canpipe_setScopedMaterialMap(materialMap);
         }
 
         if (foilType.get() != ItemStackRenderState.FoilType.NONE) {
-            vce.canpipe_setSharedGlint(true);
+            vce.canpipe_setScopedGlint(true);
             foilType.set(ItemStackRenderState.FoilType.NONE);
         }
     }
@@ -80,8 +80,8 @@ public class ItemRendererMixin {
         @Local(argsOnly = true) MultiBufferSource bufferSource
     ) {
         VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
-        vce.canpipe_setSharedGlint(false);
-        vce.canpipe_setSharedMaterialMap(null);
+        vce.canpipe_setScopedGlint(false);
+        vce.canpipe_setScopedMaterialMap(null);
     }
 
 }
