@@ -1,6 +1,12 @@
 package fewizz.canpipe.mixin;
 
+import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.pipeline.Pipeline;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,8 +22,10 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
-@Mixin(ItemRenderer.class)
+@Mixin(value = ItemRenderer.class, priority = 1000)
 public class ItemRendererMixin {
+
+    @Unique private static ItemStack canpipe_itemStack = null;
 
     @Inject(
         method = "renderItem",
@@ -32,8 +40,18 @@ public class ItemRendererMixin {
         @Local(argsOnly = true, ordinal = 0) LocalRef<ItemStackRenderState.FoilType> foilType,
         @Local(argsOnly = true) MultiBufferSource bufferSource
     ) {
-        if (Pipelines.getCurrent() != null && foilType.get() != ItemStackRenderState.FoilType.NONE) {
-            VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) { return; }
+
+        VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
+
+        if (canpipe_itemStack.getItem() instanceof BlockItem bi) {
+            MaterialMap materialMap = MaterialMaps.getForBlock(bi.getBlock());
+            vce.canpipe_setSharedMaterialMap(materialMap);
+            // vce.canpipe_recomputeNormals(true);
+        }
+
+        if (foilType.get() != ItemStackRenderState.FoilType.NONE) {
             vce.canpipe_setSharedGlint(true);
             foilType.set(ItemStackRenderState.FoilType.NONE);
         }
@@ -58,6 +76,8 @@ public class ItemRendererMixin {
     ) {
         VertexConsumerExtended vce = (VertexConsumerExtended) bufferSource.getBuffer(renderType);
         vce.canpipe_setSharedGlint(false);
+        vce.canpipe_setSharedMaterialMap(null);
+        // vce.canpipe_recomputeNormals(false);
     }
 
 }

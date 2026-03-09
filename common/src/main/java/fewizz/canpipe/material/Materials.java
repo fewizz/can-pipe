@@ -41,6 +41,10 @@ final public class Materials implements PreparableReloadListener {
         return INSTANCE.materials.get(location);
     }
 
+    public static Collection<Material> all() {
+        return Collections.unmodifiableCollection(INSTANCE.materials.values());
+    }
+
     private static Collection<Material> usedByChunkSectionLayer(ChunkSectionLayer layer) {
         List<Material> result = new ArrayList<>();
         for (var material : INSTANCE.materials.values()) {
@@ -80,6 +84,10 @@ final public class Materials implements PreparableReloadListener {
         }
         if (renderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK) {
             return Materials.usedByMovingBlockRenderType(RenderTypes.translucentMovingBlock());
+        }
+
+        if (renderPipeline == RenderPipelines.ITEM_CUTOUT || renderPipeline == RenderPipelines.ITEM_TRANSLUCENT) {
+            return Materials.all();
         }
 
         return Collections.emptyList();

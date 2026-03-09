@@ -60,7 +60,7 @@ const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
 
 #define frx_modelOriginCamera (canpipe_originType == 0)
 #define frx_modelOriginRegion (canpipe_originType == 1)
-#define frx_modelOriginScreen (canpipe_originType == 2)
+#define frx_modelOriginScreen (canpipe_originType == 2 || canpipe_originType == 3)
 
 #define frx_isHand (canpipe_originType == 3)
 #define frx_isGui frx_modelOriginScreen
