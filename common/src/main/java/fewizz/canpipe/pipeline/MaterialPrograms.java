@@ -65,7 +65,7 @@ public class MaterialPrograms {
         var renderPipelineBuilder = RenderPipeline.builder();
         {
             Identifier location = Identifier.fromNamespaceAndPath(
-                "canpipe", (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
+                CanPipe.MOD_ID, (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
             );
             renderPipelineBuilder
                 .withLocation(location)

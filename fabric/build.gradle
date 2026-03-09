@@ -63,14 +63,14 @@ dependencies {
 compileJava.source project(":common").sourceSets.main.allSource
 
 loom {
-    accessWidenerPath = file("src/main/resources/canpipe.accesswidener")
+    accessWidenerPath = file("src/main/resources/can-pipe.accesswidener")
 
     mixin {
         useLegacyMixinAp = false
     }
 
     mods {
-        "canpipe" {
+        "can-pipe" {
             sourceSet sourceSets.main
             sourceSet("main", ":common")
         }
