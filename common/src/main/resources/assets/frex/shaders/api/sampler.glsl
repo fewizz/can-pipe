@@ -16,16 +16,11 @@
     uniform samplerBuffer canpipe_spritesExtents;
 
     vec2 frx_mapNormalizedUV(vec2 coord) {
-        vec4 uv01 = texelFetch(canpipe_spritesExtents, canpipe_spriteIndex);
-        return uv01.xy + coord * (uv01.zw - uv01.xy);
+        return canpipe_spriteExtents.xy + coord * (canpipe_spriteExtents.zw - canpipe_spriteExtents.xy);
     }
 
     vec2 frx_normalizeMappedUV(vec2 coord) {
-        if (canpipe_spriteIndex == -1) {
-            return coord;
-        }
-        vec4 uv01 = texelFetch(canpipe_spritesExtents, canpipe_spriteIndex);
-        return (coord - uv01.xy) / (uv01.zw - uv01.xy);
+        return (coord - canpipe_spriteExtents.xy) / (canpipe_spriteExtents.zw - canpipe_spriteExtents.xy);
     }
 
 #endif

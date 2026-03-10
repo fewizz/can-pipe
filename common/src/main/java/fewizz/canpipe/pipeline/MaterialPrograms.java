@@ -300,6 +300,7 @@ public class MaterialPrograms {
             #endif
 
             #if defined CANPIPE_HAS_TEXTURE_POS
+                canpipe_spriteExtents = texelFetch(canpipe_spritesExtents, canpipe_spriteIndex);
                 frx_texcoord = frx_normalizeMappedUV(in_uv);
             #endif
             frx_vertexColor = in_color;

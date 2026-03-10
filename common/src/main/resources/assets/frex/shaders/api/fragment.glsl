@@ -6,8 +6,10 @@
 
     #if defined CANPIPE_HAS_TEXTURE_POS
         in vec2 frx_texcoord;
+        in vec4 canpipe_spriteExtents;
     #else
         const vec2 frx_texcoord = vec2(-1);
+        const vec4 canpipe_spriteExtents = vec4(0);
     #endif
 
     #if defined CANPIPE_FLAT_VERTEX_COLOR
