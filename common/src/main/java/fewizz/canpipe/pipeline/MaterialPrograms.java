@@ -292,16 +292,17 @@ public class MaterialPrograms {
 
         void main() {
             frx_vertex = vec4(in_vertex, 1.0);
-            #if defined CANPIPE_HAS_TEXTURE_POS
-                frx_texcoord = in_uv;
-            #endif
-            frx_vertexColor = in_color;
 
             canpipe_spriteIndex = in_spriteIndex;
             canpipe_materialIndex = in_materialIndex;
             #if defined CANPIPE_HAS_MATERIAL_FLAGS
                 canpipe_materialFlags = in_materialFlags;
             #endif
+
+            #if defined CANPIPE_HAS_TEXTURE_POS
+                frx_texcoord = frx_normalizeMappedUV(in_uv);
+            #endif
+            frx_vertexColor = in_color;
 
             #if !defined DEPTH_PASS
                 frx_vertexNormal = in_normal;
@@ -325,6 +326,10 @@ public class MaterialPrograms {
         vertexSrcBuilder.append(materialsSwitchSrc);
         vertexSrcBuilder.append(
         """
+
+            #if defined CANPIPE_HAS_TEXTURE_POS
+                frx_texcoord = in_uv;
+            #endif
 
             frx_pipelineVertex();
         }
