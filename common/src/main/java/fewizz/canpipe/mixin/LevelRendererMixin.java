@@ -91,7 +91,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Unique private boolean canpipe_isRenderingShadows = false;
     @Unique private int canpipe_shadowCascade = 0;
-    @Unique private int canpipe_originType = 0;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
     @Unique private float canpipe_eyeSkyLight = 0.0F;
     @Unique private float canpipe_smoothedEyeBlockLight = 0.0F;
@@ -116,8 +115,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Override public float canpipe_getSmoothedEyeSkyLight() { return this.canpipe_smoothedEyeSkyLight; }
     @Override public float canpipe_getSmoothedRainGradient() { return this.canpipe_smoothedRainGradient; }
     @Override public float canpipe_getSmoothedThunderGradient() { return this.canpipe_smoothedThunderGradient; }
-    @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
-    @Override public void canpipe_setOriginType(int originType) { this.canpipe_originType = originType; }
 
     @Inject(
         method = "extractLevel",

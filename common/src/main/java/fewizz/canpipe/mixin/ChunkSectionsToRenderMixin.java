@@ -20,11 +20,9 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
-import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 
@@ -32,24 +30,6 @@ import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 public class ChunkSectionsToRenderMixin {
 
     @Shadow @Final GpuTextureView textureView;
-
-    @Inject(
-        method = "renderGroup",
-        at = @At("HEAD")
-    )
-    void preRenderGroup(CallbackInfo ci) {
-        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
-        lre.canpipe_setOriginType(1);  // region
-    }
-
-    @Inject(
-        method = "renderGroup",
-        at = @At("RETURN")
-    )
-    void postRenderGroup(CallbackInfo ci) {
-        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
-        lre.canpipe_setOriginType(0);  // camera
-    }
 
     @WrapOperation(
         method = "renderGroup",

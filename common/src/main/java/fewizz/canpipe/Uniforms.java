@@ -50,7 +50,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class Uniforms {
 
-    public static final GpuBuffer[] INT_0_4_UBO_BUFFERS = new GpuBuffer[] {
+    public static final GpuBuffer[] INT_0_3_UBO_BUFFERS = new GpuBuffer[] {
         RenderSystem.getDevice().createBuffer(
             () -> "can-pipe 0",
             GpuBuffer.USAGE_UNIFORM,

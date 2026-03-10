@@ -36,12 +36,6 @@ layout(std140) uniform frx_ub_shadow {
     vec4[4] canpipe_shadowCenters;
 };
 
-#ifdef CANPIPE_MATERIAL_SHADER
-    // uniform int canpipe_originType;  // defined by canpipe_ub_origin_type
-#else
-    const int canpipe_originType = 2;  // always 2 (screen) for passes
-#endif
-
 const vec3 frx_entityView = vec3(0.0);  // TODO define
 const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO define
 const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
@@ -58,11 +52,28 @@ const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
 #define MODEL_ORIGIN_REGION 1
 #define MODEL_ORIGIN_SCREEN 2
 
-#define frx_modelOriginCamera (canpipe_originType == 0)
-#define frx_modelOriginRegion (canpipe_originType == 1)
-#define frx_modelOriginScreen (canpipe_originType == 2 || canpipe_originType == 3)
+#define frx_modelOriginCamera (frx_modelOriginType() == MODEL_ORIGIN_CAMERA)
+#define frx_modelOriginRegion (frx_modelOriginType() == MODEL_ORIGIN_REGION)
+#define frx_modelOriginScreen (frx_modelOriginType() == MODEL_ORIGIN_SCREEN)
 
-#define frx_isHand (canpipe_originType == 3)
+int frx_modelOriginType() {
+    #if defined CANPIPE_MATERIAL_SHADER
+        #if defined CANPIPE_TERRAIN
+            return MODEL_ORIGIN_REGION;
+        #else
+            return canpipe_originType;  // defined in canpipe_ub_origin_type
+        #endif
+    #else
+        return MODEL_ORIGIN_SCREEN;  // always 2 (screen) for passes
+    #endif
+}
+
+#if defined CANPIPE_MATERIAL_SHADER
+    #define frx_isHand (canpipe_isRenderingHand == 1)
+#else
+    #define frx_isHand false
+#endif
+
 #define frx_isGui frx_modelOriginScreen
 
 #define frx_guiViewProjectionMatrix frx_viewProjectionMatrix
@@ -103,6 +114,3 @@ mat4 frx_shadowProjectionMatrix(int index) {
     #define frx_renderTargetEntity      (canpipe_renderTarget == 2)
     #define frx_renderTargetParticles   (canpipe_renderTarget == 3)
 #endif
-
-// Compat
-int frx_modelOriginType() { return canpipe_originType; }

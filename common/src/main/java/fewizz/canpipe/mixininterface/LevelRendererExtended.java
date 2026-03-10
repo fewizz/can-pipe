@@ -11,7 +11,4 @@ public interface LevelRendererExtended {
     float canpipe_getSmoothedRainGradient();
     float canpipe_getSmoothedThunderGradient();
 
-    int canpipe_getOriginType();
-    void canpipe_setOriginType(int originType);
-
 }

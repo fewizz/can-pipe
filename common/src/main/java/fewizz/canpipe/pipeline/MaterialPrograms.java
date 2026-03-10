@@ -89,6 +89,7 @@ public class MaterialPrograms {
         renderPipelineBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("canpipe_ub_origin_type", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withUniform("canpipe_ub_is_rendering_hand", UniformType.UNIFORM_BUFFER);
 
         renderPipelineBuilder.withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER);
@@ -140,6 +141,9 @@ public class MaterialPrograms {
                 "};\n\n"+
                 "layout(std140) uniform canpipe_ub_origin_type {\n"+
                 "    int canpipe_originType;\n"+
+                "};\n\n"+
+                "layout(std140) uniform canpipe_ub_is_rendering_hand {\n"+
+                "    int canpipe_isRenderingHand;\n"+
                 "};\n\n"+
                 src;
             return src;

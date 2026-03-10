@@ -40,18 +40,32 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow @Final private Camera mainCamera;
     @Shadow @Final private FogRenderer fogRenderer;
     @Shadow @Final private GameRenderState gameRenderState;
-    @Shadow @Final private Lightmap lightmap = new Lightmap();
+    @Shadow @Final private Lightmap lightmap;
 
     @Unique private long canpipe_renderStartNano = -1;
     @Unique private int canpipe_renderTarget = -1;
+    @Unique private int canpipe_originType = 0;
+    @Unique private boolean canpipe_isRenderingHand = false;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
     @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
     @Unique private Matrix4f canpipe_worldViewMatrix = null;
     @Unique private Matrix4f canpipe_worldProjectionMatrix = null;
 
+    @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
+    @Override public FogRenderer canpipe_getFogRenderer() { return this.fogRenderer; }
+    @Override public Matrix4f canpipe_worldViewMatrix() { return this.canpipe_worldViewMatrix; }
+    @Override public Matrix4f canpipe_worldProjectionMatrix() { return this.canpipe_worldProjectionMatrix; }
+    @Override public int canpipe_getRenderTarget() { return this.canpipe_renderTarget; }
+    @Override public void canpipe_setRenderTarget(int renderTarget) { this.canpipe_renderTarget = renderTarget; }
+    @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
+    @Override public boolean canpipe_isRenderingHand() { return this.canpipe_isRenderingHand; }
+    @Override public Lightmap canpipe_getLightmap() { return this.lightmap; }
+
     @Override
     public void canpipe_onPipelineActivated() {
         this.canpipe_renderStartNano = System.nanoTime();
+        this.canpipe_originType = 0;
+        this.canpipe_isRenderingHand = false;
 
         Uniforms.CANPIPE_RENDER_FRAMES.set(-1);
         Uniforms.FRX_RENDER_SECONDS.set(0);
@@ -248,7 +262,8 @@ public class GameRendererMixin implements GameRendererExtended {
         }
 
         Uniforms.updateFREXUniforms(viewMatrix, projectionMatrix);
-        p.onBeforeWorldRender(viewMatrix, projectionMatrix);
+        this.canpipe_originType = 0;  // camera
+        p.onBeforeRenderingLevel(viewMatrix, projectionMatrix);
     }
 
     @Inject(
@@ -273,7 +288,9 @@ public class GameRendererMixin implements GameRendererExtended {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
+        this.canpipe_originType = 2;  // camera
         p.onAfterWorldRender();
+        this.canpipe_isRenderingHand = true;
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
@@ -285,6 +302,7 @@ public class GameRendererMixin implements GameRendererExtended {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
+        this.canpipe_isRenderingHand = false;
         p.onAfterRenderHand();
 
         Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
@@ -307,41 +325,6 @@ public class GameRendererMixin implements GameRendererExtended {
             ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(mainRenderTargetOverride);
         }
         return mainRenderTarget;
-    }
-
-    @Override
-    public ShadowFrustum[] canpipe_getShadowFrustums() {
-        return this.canpipe_shadowFrustums;
-    }
-
-    @Override
-    public FogRenderer canpipe_getFogRenderer() {
-        return this.fogRenderer;
-    }
-
-    @Override
-    public Matrix4f canpipe_worldViewMatrix() {
-        return this.canpipe_worldViewMatrix;
-    }
-
-    @Override
-    public Matrix4f canpipe_worldProjectionMatrix() {
-        return this.canpipe_worldProjectionMatrix;
-    }
-
-    @Override
-    public int canpipe_getRenderTarget() {
-        return this.canpipe_renderTarget;
-    }
-
-    @Override
-    public void canpipe_setRenderTarget(int renderTarget) {
-        this.canpipe_renderTarget = renderTarget;
-    }
-
-    @Override
-    public Lightmap canpipe_getLightmap() {
-        return this.lightmap;
     }
 
 }

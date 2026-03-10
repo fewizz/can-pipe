@@ -484,11 +484,8 @@ public class Pipeline implements AutoCloseable {
         this.runResizePasses = true;
     }
 
-    public void onBeforeWorldRender(Matrix4f view, Matrix4f projection) {
+    public void onBeforeRenderingLevel(Matrix4f view, Matrix4f projection) {
         Profiler.get().push("can-pipe before world");
-
-        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
-        lre.canpipe_setOriginType(0);  // camera
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
@@ -524,9 +521,6 @@ public class Pipeline implements AutoCloseable {
             pass.apply(commandEncoder);
         }
 
-        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
-        lre.canpipe_setOriginType(3);  // hands
-
         Profiler.get().pop();
     }
 
@@ -534,8 +528,6 @@ public class Pipeline implements AutoCloseable {
         Profiler.get().push("can-pipe after hand");
 
         ((MinecraftExtended) Minecraft.getInstance()).canpipe_setMainRenderTargetOverride(this.defaultFramebuffer);
-        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
-        lre.canpipe_setOriginType(2);  // screen
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
@@ -590,9 +582,10 @@ public class Pipeline implements AutoCloseable {
         renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
         renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
 
-        renderPass.setUniform("frxu_ub_cascade", Uniforms.INT_0_4_UBO_BUFFERS[lre.canpipe_getShadowCascade()]);
-        renderPass.setUniform("canpipe_ub_render_target", Uniforms.INT_0_4_UBO_BUFFERS[gre.canpipe_getRenderTarget()]);
-        renderPass.setUniform("canpipe_ub_origin_type", Uniforms.INT_0_4_UBO_BUFFERS[lre.canpipe_getOriginType()]);
+        renderPass.setUniform("frxu_ub_cascade", Uniforms.INT_0_3_UBO_BUFFERS[lre.canpipe_getShadowCascade()]);
+        renderPass.setUniform("canpipe_ub_render_target", Uniforms.INT_0_3_UBO_BUFFERS[gre.canpipe_getRenderTarget()]);
+        renderPass.setUniform("canpipe_ub_origin_type", Uniforms.INT_0_3_UBO_BUFFERS[gre.canpipe_getOriginType()]);
+        renderPass.setUniform("canpipe_ub_is_rendering_hand", Uniforms.INT_0_3_UBO_BUFFERS[gre.canpipe_isRenderingHand() ? 1 : 0]);
 
         renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 
