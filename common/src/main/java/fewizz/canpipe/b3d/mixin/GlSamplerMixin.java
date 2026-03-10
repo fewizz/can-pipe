@@ -36,9 +36,9 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
 
     @Inject(
         method = "<init>",
-        at = @At("TAIL")
+        at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/GL33C;glGenSamplers()I")
     )
-    void onInitEnd(CallbackInfo ci) {
+    void onInitBegin(CallbackInfo ci) {
         GpuDeviceBackend device = RealGpuDeviceProviderService.getRealGpuDeviceBackend();
         this.canpipe_addressModeW = ((GlDeviceAccessor) device).get_canpipe_addressModeW();
         this.canpipe_linearMipmap = ((GlDeviceAccessor) device).get_canpipe_linearMipmap() != null ? ((GlDeviceAccessor) device).get_canpipe_linearMipmap() : true;
@@ -46,7 +46,13 @@ public abstract class GlSamplerMixin implements GpuSamplerExteneded {
             this.canpipe_addressModeW = AddressMode.REPEAT;
         }
         this.canpipe_compareOp = ((GlDeviceAccessor) device).get_canpipe_compareOp();
+    }
 
+    @Inject(
+        method = "<init>",
+        at = @At("TAIL")
+    )
+    void onInitEnd(CallbackInfo ci) {
         if (this.canpipe_compareOp != null) {
             GL33C.glSamplerParameteri(this.id, GL33C.GL_TEXTURE_COMPARE_MODE, GL33C.GL_COMPARE_REF_TO_TEXTURE);
             GL33C.glSamplerParameteri(this.id, GL33C.GL_TEXTURE_COMPARE_FUNC, GlConst.toGl(this.canpipe_compareOp));
