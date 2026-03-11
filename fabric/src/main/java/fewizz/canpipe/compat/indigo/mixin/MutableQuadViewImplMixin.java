@@ -27,7 +27,7 @@ public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin impleme
     private void onFromBakedQuad(BakedQuad quad, CallbackInfoReturnable<MutableQuadViewImpl> ci) {
         if (Pipelines.getCurrent() != null) {
             Arrays.fill(this.ao, 1.0F);
-            this.sprite = quad.spriteInfo().sprite();
+            this.sprite = quad.materialInfo().sprite();
         }
     }
 

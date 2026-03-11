@@ -3,6 +3,7 @@ package fewizz.canpipe;
 import java.util.function.Supplier;
 
 import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
@@ -182,7 +183,7 @@ public class Uniforms {
         FOG.size()
     );
 
-    public static void updateFREXUniforms(Matrix4f view, Matrix4f projection) {
+    public static void updateFREXUniforms(Matrix4fc view, Matrix4fc projection) {
         Profiler.get().push("can-pipe update FREX uniforms");
         Profiler.get().push("collect");
 

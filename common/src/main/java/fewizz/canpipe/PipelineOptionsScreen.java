@@ -17,7 +17,7 @@ import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -72,9 +72,9 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
     }
 
     @Override
-    public void renderBackground(@NonNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
         if (this.minecraft.level == null) {
-            super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+            super.extractBackground(graphics, mouseX, mouseY, a);
         }
     }
 
@@ -119,12 +119,12 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         }
 
         @Override
-        protected void renderListBackground(@NonNull GuiGraphics guiGraphics) {}
+        protected void extractListBackground(final GuiGraphicsExtractor graphics) {}
 
         @Override
-        protected void renderScrollbar(@NonNull GuiGraphics guiGraphics, int i, int j) {
+        protected void extractScrollbar(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY) {
             if (this.scrollable()) {
-                guiGraphics.blitSprite(
+                graphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
                     Identifier.withDefaultNamespace("widget/scroller"),
                     this.scrollBarX(),
@@ -147,12 +147,11 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
 
             @Override
-            public void renderContent(
-                GuiGraphics guiGraphics,
-                int mouseX, int mouseY,
-                boolean hovering, float partialTick
+            public void extractContent(
+                final GuiGraphicsExtractor graphics,
+                int mouseX, int mouseY, boolean hovered, float a
             ) {
-                guiGraphics.drawString(
+                graphics.text(
                     minecraft.font,
                     this.name,
                     (PipelineOptionsList.this.width - this.width) / 2,
@@ -294,22 +293,21 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             }
 
             @Override
-            public void renderContent(
-                @NonNull GuiGraphics guiGraphics,
-                int mouseX, int mouseY,
-                boolean hovering, float partialTick
+            public void extractContent(
+                final GuiGraphicsExtractor graphics,
+                int mouseX, int mouseY, boolean hovered, float a
             ) {
                 this.nameWidget.setPosition(
                     PipelineOptionsList.this.width / 2 - this.nameWidget.getWidth() - 5 + RIGHT_SHIFT,
                     this.getY() + (this.getHeight() - minecraft.font.lineHeight) / 2
                 );
-                this.nameWidget.render(guiGraphics, mouseX, mouseY, partialTick);
+                this.nameWidget.extractRenderState(graphics, mouseX, mouseY, a);
 
                 this.valueWidget.setPosition(
                     PipelineOptionsList.this.width / 2 + 5 + RIGHT_SHIFT,
                     this.getY() + (this.getHeight() - this.valueWidget.getHeight()) / 2
                 );
-                this.valueWidget.render(guiGraphics, mouseX, mouseY, partialTick);
+                this.valueWidget.extractRenderState(graphics, mouseX, mouseY, a);
             }
 
             @Override

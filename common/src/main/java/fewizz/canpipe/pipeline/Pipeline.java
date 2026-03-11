@@ -19,7 +19,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -46,7 +46,7 @@ import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
@@ -205,7 +205,7 @@ public class Pipeline implements AutoCloseable {
 
                 // compat, was changed in resource pack format v13
                 if (id.equals(Identifier.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
-                    id = ItemRenderer.ENCHANTED_GLINT_ITEM;
+                    id = ItemFeatureRenderer.ENCHANTED_GLINT_ITEM;
                 }
                 // was changed in MC 1.21.11
                 if (id.equals(Identifier.withDefaultNamespace("textures/environment/sun.png"))) {
@@ -295,7 +295,7 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.CUTOUT_BLOCK,
             RenderPipelines.CUTOUT_TERRAIN,
             RenderPipelines.TRANSLUCENT_TERRAIN,
-            RenderPipelines.TRANSLUCENT_MOVING_BLOCK,
+            // RenderPipelines.TRANSLUCENT_MOVING_BLOCK,
 
             RenderPipelines.ARMOR_CUTOUT_NO_CULL,
             RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
@@ -484,7 +484,7 @@ public class Pipeline implements AutoCloseable {
         this.runResizePasses = true;
     }
 
-    public void onBeforeRenderingLevel(Matrix4f view, Matrix4f projection) {
+    public void onBeforeRenderingLevel(Matrix4fc view, Matrix4fc projection) {
         Profiler.get().push("can-pipe before world");
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();

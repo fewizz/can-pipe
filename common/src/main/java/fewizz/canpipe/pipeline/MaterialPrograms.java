@@ -383,7 +383,7 @@ public class MaterialPrograms {
         if (
             originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
 
-            originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
+            // originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
             originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||

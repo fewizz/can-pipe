@@ -169,12 +169,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @Inject(method = "renderLevel", at = @At(value = "HEAD"))
-    void renderShadowsAfterLightUpdates(
+    void renderShadows(
         final GraphicsResourceAllocator resourceAllocator,
         final DeltaTracker deltaTracker,
         final boolean renderOutline,
         final CameraRenderState cameraState,
-        final Matrix4f modelViewMatrix,
+        final Matrix4fc modelViewMatrix,
         final GpuBufferSlice terrainFog,
         final Vector4f fogColor,
         final boolean shouldRenderSky,

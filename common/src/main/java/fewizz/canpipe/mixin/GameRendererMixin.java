@@ -2,6 +2,7 @@ package fewizz.canpipe.mixin;
 
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -232,12 +233,13 @@ public class GameRendererMixin implements GameRendererExtended {
         method = "renderLevel",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel("+
+            target =
+            "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel("+
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
                 "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
-                "Lorg/joml/Matrix4f;"+
+                "Lorg/joml/Matrix4fc;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
                 "Z"+
@@ -247,8 +249,8 @@ public class GameRendererMixin implements GameRendererExtended {
     )
     void beforeRenderLevel(
         DeltaTracker deltaTracker, CallbackInfo ci,
-        @Local(ordinal = 0) Matrix4f viewMatrix,
-        @Local(ordinal = 1) Matrix4f projectionMatrix
+        @Local(ordinal = 0) Matrix4fc viewMatrix,
+        @Local(ordinal = 0) Matrix4f projectionMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
@@ -275,7 +277,7 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
                 "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
-                "Lorg/joml/Matrix4f;"+
+                "Lorg/joml/Matrix4fc;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
                 "Z"+
@@ -296,8 +298,8 @@ public class GameRendererMixin implements GameRendererExtended {
     @Inject(method = "renderLevel", at = @At("TAIL"))
     void onRenderLevelEnd(
         CallbackInfo ci,
-        @Local(ordinal = 0) Matrix4f viewMatrix,
-        @Local(ordinal = 1) Matrix4f projectionMatrix
+        @Local(ordinal = 0) Matrix4fc viewMatrix,
+        @Local(ordinal = 0) Matrix4f projectionMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }

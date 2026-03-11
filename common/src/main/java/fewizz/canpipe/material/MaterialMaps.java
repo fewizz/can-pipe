@@ -87,13 +87,13 @@ final public class MaterialMaps implements PreparableReloadListener {
             for (BlockStateModelPart part : output) {
                 for (Direction dir : Direction.values()) {
                     for (BakedQuad quad : part.getQuads(dir)) {
-                        result.add(quad.spriteInfo().layer());
+                        result.add(quad.materialInfo().layer());
                     }
                 }
             }
         });
         fluidsThatUseMaterial(material).forEach(fluid -> {
-            result.add(mc.getBlockRenderer().getLiquidRenderer().getRenderLayer(fluid.defaultFluidState()));
+            result.add(mc.getModelManager().getFluidStateModelSet().get(fluid.defaultFluidState()).layer());
         });
         return result;
     }

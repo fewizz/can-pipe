@@ -83,9 +83,9 @@ final public class Materials implements PreparableReloadListener {
         if (renderPipeline == RenderPipelines.CUTOUT_BLOCK) {
             return Materials.usedByMovingBlockRenderType(RenderTypes.cutoutMovingBlock());
         }
-        if (renderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK) {
+        /*if (renderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK) {
             return Materials.usedByMovingBlockRenderType(RenderTypes.translucentMovingBlock());
-        }
+        }*/
 
         if (renderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
             return Materials.all();
