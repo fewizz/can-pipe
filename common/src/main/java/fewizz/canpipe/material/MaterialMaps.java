@@ -29,6 +29,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
 
 final public class MaterialMaps implements PreparableReloadListener {
@@ -37,11 +38,16 @@ final public class MaterialMaps implements PreparableReloadListener {
     private MaterialMaps() {}
 
     private final Map<Block, MaterialMap> blocks = new HashMap<>();
+    private final Map<BlockEntityType<?>, MaterialMap> blockEntities = new HashMap<>();
     private final Map<Item, MaterialMap> items = new HashMap<>();
     private final Map<Fluid, MaterialMap> fluids = new HashMap<>();
 
     public static MaterialMap getForBlock(Block block) {
         return INSTANCE.blocks.get(block);
+    }
+
+    public static MaterialMap getForBlockEntity(BlockEntityType<?> blockEntityType) {
+        return INSTANCE.blockEntities.get(blockEntityType);
     }
 
     public static MaterialMap getForItem(Item item) {
@@ -127,8 +133,10 @@ final public class MaterialMaps implements PreparableReloadListener {
             loadExecutor
         ).thenCompose(preparationBarrier::wait).thenAcceptAsync(
             (Map<Identifier, Resource> materialMapsJson) -> {
-                this.fluids.clear();
                 this.blocks.clear();
+                this.blockEntities.clear();
+                this.fluids.clear();
+                this.items.clear();
 
                 for (var e : materialMapsJson.entrySet()) {
                     Identifier location = e.getKey();
@@ -143,16 +151,21 @@ final public class MaterialMaps implements PreparableReloadListener {
                         JsonObject materialMapJson = CanPipe.JANKSON.load(e.getValue().open());
                         MaterialMap materialMap = new MaterialMap(materialMapJson);
 
-                        if (type.equals("fluid")) {
-                            var fluid = BuiltInRegistries.FLUID.get(location.withPath(subpath));
-                            if (fluid.isEmpty()) continue;
-                            this.fluids.put(fluid.get().value(), materialMap);
-                        }
                         if (type.equals("block")) {
                             if (subpath.equals("grass")) subpath = "short_grass";  // compat
                             var block = BuiltInRegistries.BLOCK.get(location.withPath(subpath));
                             if (block.isEmpty()) continue;
                             this.blocks.put(block.get().value(), materialMap);
+                        }
+                        if (type.equals("block_entity")) {
+                            var blockEntityType = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(location.withPath(subpath));
+                            if (blockEntityType.isEmpty()) continue;
+                            this.blockEntities.put(blockEntityType.get().value(), materialMap);
+                        }
+                        if (type.equals("fluid")) {
+                            var fluid = BuiltInRegistries.FLUID.get(location.withPath(subpath));
+                            if (fluid.isEmpty()) continue;
+                            this.fluids.put(fluid.get().value(), materialMap);
                         }
                         if (type.equals("item")) {
                             var item = BuiltInRegistries.ITEM.get(location.withPath(subpath));

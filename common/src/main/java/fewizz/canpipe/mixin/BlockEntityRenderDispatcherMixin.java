@@ -1,0 +1,54 @@
+package fewizz.canpipe.mixin;
+
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+
+@Mixin(BlockEntityRenderDispatcher.class)
+public class BlockEntityRenderDispatcherMixin {
+
+    @WrapOperation(
+        method = "submit",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderer;submit("+
+                "Lnet/minecraft/client/renderer/blockentity/state/BlockEntityRenderState;"+
+                "Lcom/mojang/blaze3d/vertex/PoseStack;"+
+                "Lnet/minecraft/client/renderer/SubmitNodeCollector;"+
+                "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
+            ")V"
+        )
+    )
+    void applyMaterialMapOnSubmit(
+        BlockEntityRenderer<?, ?> instance,
+        BlockEntityRenderState state,
+        PoseStack poseStack,
+        SubmitNodeCollector submitNodeCollector,
+        CameraRenderState camera,
+        Operation<Void> operation
+    ) {
+        try {
+            MaterialMap materialMap = MaterialMaps.getForBlockEntity(state.blockEntityType);
+            if (materialMap != null) {
+                ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setModelMaterialMapScope(materialMap);
+            }
+            operation.call(instance, state, poseStack, submitNodeCollector, camera);
+        }
+        finally {
+            ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setModelMaterialMapScope(null);
+        }
+    }
+
+}

@@ -11,6 +11,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
@@ -86,7 +87,7 @@ final public class Materials implements PreparableReloadListener {
             return Materials.usedByMovingBlockRenderType(RenderTypes.translucentMovingBlock());
         }
 
-        if (renderPipeline == RenderPipelines.ITEM_CUTOUT || renderPipeline == RenderPipelines.ITEM_TRANSLUCENT) {
+        if (renderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
             return Materials.all();
         }
 
