@@ -13,6 +13,8 @@ import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 @Mixin(ModelFeatureRenderer.class)
 public class ModelFeatureRendererMixin {
@@ -28,10 +30,19 @@ public class ModelFeatureRendererMixin {
     void beforeRenderModel(
         CallbackInfo ci,
         @Local SubmitNodeStorage.ModelSubmit<?> submit,
-        @Local(ordinal = 0) VertexConsumer buffer
+        @Local(ordinal = 0) VertexConsumer buffer,
+        @Local RenderType renderType
     ) {
+
         var modelsMaterialMaps = ((SubmitNodeCollectorExtended) this.canpipe_nodeCollectionHolded).canpipe_getModelsMaterialMaps();
         var materialMap = modelsMaterialMaps.get(submit);
+
+        if (submit.sprite() == null) {
+            RenderSetup renderSetup = ((RenderTypeAccessor) renderType).canpipe_getState();
+            var tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
+            ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(tex.location());
+        }
+
         if (materialMap != null) {
             ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(materialMap);
         }
@@ -40,6 +51,7 @@ public class ModelFeatureRendererMixin {
     @Inject(method = "renderModel", at = @At("RETURN"))
     void afterRenderModel(CallbackInfo ci, @Local(ordinal = 0) VertexConsumer buffer) {
         ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(null);
+        ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(null);
     }
 
 }

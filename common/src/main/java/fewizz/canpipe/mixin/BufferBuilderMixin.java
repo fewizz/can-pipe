@@ -35,6 +35,7 @@ import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.resources.Identifier;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
@@ -56,7 +57,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private byte canpipe_materialFlags = 0;
     @Unique private Supplier<TextureAtlasSprite> canpipe_spriteSupplier = null;
     @Unique private boolean canpipe_recomputeNormal = false;
-    @Unique private Float canpipe_aoPending;
+    @Unique private Float canpipe_aoPending = null;
+    @Unique private Identifier canpipe_textureIdentifier = null;
 
     @Unique @Final private int canpipe_aoOffset;
     @Unique @Final private int canpipe_uv0Offset;
@@ -205,8 +207,13 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             Material material = null;
 
             if (this.canpipe_materialMap != null) {
-                if (this.canpipe_materialMap.spriteMap != null && sprite != null) {
+                if (this.canpipe_textureIdentifier != null) {
+                    material = this.canpipe_materialMap.spriteMap.get(this.canpipe_textureIdentifier);
+                }
+
+                if (material == null && this.canpipe_materialMap.spriteMap != null && sprite != null) {
                     Minecraft mc = Minecraft.getInstance();
+
                     MutableObject<TextureAtlas> atlas = new MutableObject<>();
                     mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
                         if (atlas.get() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
@@ -220,6 +227,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                         }
                     }
                 }
+
                 if (material == null) {
                     material = canpipe_materialMap.defaultMaterial;
                 }
@@ -367,6 +375,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Override
     public void canpipe_forceNormalRecomputation(boolean recompute) {
         this.canpipe_recomputeNormal = recompute;
+    }
+
+    @Override
+    public void canpipe_setScopedTextureIdentifier(Identifier textureIdentifier) {
+        this.canpipe_textureIdentifier = textureIdentifier;
     }
 
     @Override public float canpipe_getU(int vertexOffset) {
