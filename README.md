@@ -30,4 +30,4 @@ Performance is not on par with `Canvas`.
 * `neoforge:runClient` (if subproject is included)
 
 ## Discord
-https://discord.gg/WuF24ttw
+https://discord.gg/jW2UvpvFKh
