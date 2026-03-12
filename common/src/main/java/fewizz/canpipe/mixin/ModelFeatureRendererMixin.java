@@ -42,6 +42,9 @@ public class ModelFeatureRendererMixin {
             var tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
             ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(tex.location());
         }
+        else {
+            ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(() -> submit.sprite());
+        }
 
         if (materialMap != null) {
             ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(materialMap);
@@ -51,6 +54,7 @@ public class ModelFeatureRendererMixin {
     @Inject(method = "renderModel", at = @At("RETURN"))
     void afterRenderModel(CallbackInfo ci, @Local(ordinal = 0) VertexConsumer buffer) {
         ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(null);
+        ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(null);
         ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(null);
     }
 
