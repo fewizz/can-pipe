@@ -6,6 +6,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 import blue.endless.jankson.JsonObject;
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.resources.Identifier;
 
@@ -48,7 +49,7 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
                 continue;
             }
             Identifier textureId = Identifier.parse(textureIdStr);
-            textureId = MaterialMaps.updateResourcePath(textureId);
+            textureId = CanPipe.upgradeResourcePath(textureId);
 
             Identifier materialId = Identifier.parse(entry.get(String.class, "material"));
             Material material = Materials.get(materialId);

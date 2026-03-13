@@ -147,7 +147,7 @@ final public class MaterialMaps implements PreparableReloadListener {
 
                 for (var e : materialMapsJson.entrySet()) {
                     Identifier location = e.getKey();
-                    location = updateResourcePath(location);
+                    location = CanPipe.upgradeResourcePath(location);
                     String path = location.getPath();
                     path = path.substring("materialmaps/".length());
 
@@ -197,39 +197,5 @@ final public class MaterialMaps implements PreparableReloadListener {
             applyExecutor
         );
     }
-
-    public static Identifier updateResourcePath(Identifier identifier) {
-        String path = identifier.getPath();
-
-        if (identifier.getNamespace().equals("minecraft")) {
-            path = switch (path) {
-                case "block/grass" -> "block/short_grass";
-
-                case "textures/models/armor/chainmail_layer_1.png" -> "textures/entity/equipment/humanoid/chainmail.png";
-                case "textures/models/armor/chainmail_layer_2.png" -> "textures/entity/equipment/humanoid_leggings/chainmail.png";
-
-                case "textures/models/armor/gold_layer_1.png" -> "textures/entity/equipment/humanoid/gold.png";
-                case "textures/models/armor/gold_layer_2.png" -> "textures/entity/equipment/humanoid_legging/gold.png";
-
-                case "textures/models/armor/iron_layer_1.png" -> "textures/entity/equipment/humanoid/iron.png";
-                case "textures/models/armor/iron_layer_2.png" -> "textures/entity/equipment/humanoid_legging/iron.png";
-
-                case "textures/models/armor/netherite_layer_1.png" -> "textures/entity/equipment/humanoid/netherite.png";
-                case "textures/models/armor/netherite_layer_2.png" -> "textures/entity/equipment/humanoid_legging/netherite.png";
-
-                case "textures/models/armor/leather_layer_1.png" -> "textures/entity/equipment/humanoid/leather.png";
-                case "textures/models/armor/leather_layer_2.png" -> "textures/entity/equipment/humanoid_legging/leather.png";
-
-                case "textures/models/armor/leather_layer_1_overlay.png" -> "textures/entity/equipment/humanoid/leather_overlay.png";
-                case "textures/models/armor/leather_layer_2_overlay.png" -> "textures/entity/equipment/humanoid_legging/leather_overlay.png";
-
-                case "textures/models/armor/diamond_layer_1.png" -> "textures/entity/equipment/humanoid/diamond.png";
-                case "textures/models/armor/diamond_layer_2.png" -> "textures/entity/equipment/humanoid_legging/diamond.png";
-                default -> path;
-            };
-            identifier = identifier.withPath(path);
-        }
-        return identifier;
-    };
 
 }

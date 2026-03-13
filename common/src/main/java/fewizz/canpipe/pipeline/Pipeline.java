@@ -46,7 +46,6 @@ import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
@@ -201,17 +200,8 @@ public class Pipeline implements AutoCloseable {
             AbstractTexture texture = null;
             if (name.contains(":")) {
                 var mc = Minecraft.getInstance();
-                var id = Identifier.parse(name);
+                var id = CanPipe.upgradeResourcePath(Identifier.parse(name));
 
-                // compat, was changed in resource pack format v13
-                if (id.equals(Identifier.withDefaultNamespace("textures/misc/enchanted_item_glint.png"))) {
-                    id = ItemFeatureRenderer.ENCHANTED_GLINT_ITEM;
-                }
-                // was changed in MC 1.21.11
-                if (id.equals(Identifier.withDefaultNamespace("textures/environment/sun.png"))) {
-                    // Note, not through celestial atlas
-                    id = Identifier.withDefaultNamespace("textures/environment/celestial/sun.png");
-                }
                 if (id.equals(Identifier.withDefaultNamespace("textures/environment/moon_phases.png"))) {
                     texture = new MoonPhasesTexture();
                 }
@@ -295,6 +285,8 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.CUTOUT_BLOCK,
             RenderPipelines.CUTOUT_TERRAIN,
             RenderPipelines.TRANSLUCENT_TERRAIN,
+            RenderPipelines.BEACON_BEAM_OPAQUE,
+            RenderPipelines.BEACON_BEAM_TRANSLUCENT,
             // RenderPipelines.TRANSLUCENT_MOVING_BLOCK,
 
             RenderPipelines.ARMOR_CUTOUT_NO_CULL,

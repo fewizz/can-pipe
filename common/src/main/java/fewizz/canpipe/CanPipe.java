@@ -12,6 +12,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import blue.endless.jankson.Jankson;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
 import net.minecraft.resources.Identifier;
 
 public class CanPipe {
@@ -122,5 +123,47 @@ public class CanPipe {
             .build();
 
     }
+
+    public static Identifier upgradeResourcePath(Identifier identifier) {
+        String path = identifier.getPath();
+
+        if (identifier.getNamespace().equals("minecraft")) {
+            path = switch (path) {
+                case "block/grass" -> "block/short_grass";
+
+                case "textures/models/armor/chainmail_layer_1.png" -> "textures/entity/equipment/humanoid/chainmail.png";
+                case "textures/models/armor/chainmail_layer_2.png" -> "textures/entity/equipment/humanoid_leggings/chainmail.png";
+
+                case "textures/models/armor/gold_layer_1.png" -> "textures/entity/equipment/humanoid/gold.png";
+                case "textures/models/armor/gold_layer_2.png" -> "textures/entity/equipment/humanoid_legging/gold.png";
+
+                case "textures/models/armor/iron_layer_1.png" -> "textures/entity/equipment/humanoid/iron.png";
+                case "textures/models/armor/iron_layer_2.png" -> "textures/entity/equipment/humanoid_legging/iron.png";
+
+                case "textures/models/armor/netherite_layer_1.png" -> "textures/entity/equipment/humanoid/netherite.png";
+                case "textures/models/armor/netherite_layer_2.png" -> "textures/entity/equipment/humanoid_legging/netherite.png";
+
+                case "textures/models/armor/leather_layer_1.png" -> "textures/entity/equipment/humanoid/leather.png";
+                case "textures/models/armor/leather_layer_2.png" -> "textures/entity/equipment/humanoid_legging/leather.png";
+
+                case "textures/models/armor/leather_layer_1_overlay.png" -> "textures/entity/equipment/humanoid/leather_overlay.png";
+                case "textures/models/armor/leather_layer_2_overlay.png" -> "textures/entity/equipment/humanoid_legging/leather_overlay.png";
+
+                case "textures/models/armor/diamond_layer_1.png" -> "textures/entity/equipment/humanoid/diamond.png";
+                case "textures/models/armor/diamond_layer_2.png" -> "textures/entity/equipment/humanoid_legging/diamond.png";
+
+                // Was changed in resource pack format v13
+                case "textures/misc/enchanted_item_glint.png" -> ItemFeatureRenderer.ENCHANTED_GLINT_ITEM.getPath();
+
+                // Was changed in MC 1.21.11
+                case "textures/environment/sun.png" -> "textures/environment/celestial/sun.png";
+                // case "textures/environment/moon_phases.png" ->  // Generated manually
+
+                default -> path;
+            };
+            identifier = identifier.withPath(path);
+        }
+        return identifier;
+    };
 
 }
