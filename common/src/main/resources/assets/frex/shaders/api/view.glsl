@@ -43,7 +43,7 @@ const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
 #define frx_viewMatrix ModelViewMat
 #define frx_projectionMatrix ProjMat
 #ifdef CANPIPE_TERRAIN
-    #define frx_modelToCamera vec4((ChunkPosition - CameraBlockPos) + CameraOffset, 0.0)
+    #define frx_modelToCamera vec4(-CameraBlockPos + CameraOffset, 0.0)
 #else
     #define frx_modelToCamera vec4(ModelOffset, 0.0)
 #endif

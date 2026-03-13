@@ -297,6 +297,10 @@ public class MaterialPrograms {
         void main() {
             frx_vertex = vec4(in_vertex, 1.0);
 
+            #if defined CANPIPE_TERRAIN
+                frx_vertex.xyz += ChunkPosition;  // Losing precision (could be part of `frx_modelToCamera`), but pipelines rely on this behaviour
+            #endif
+
             canpipe_spriteIndex = in_spriteIndex;
             canpipe_materialIndex = in_materialIndex;
             #if defined CANPIPE_HAS_MATERIAL_FLAGS
