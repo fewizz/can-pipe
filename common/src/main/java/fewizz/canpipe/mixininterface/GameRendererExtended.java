@@ -18,9 +18,6 @@ public interface GameRendererExtended {
     FogRenderer canpipe_getFogRenderer();
     Lightmap canpipe_getLightmap();
 
-    int canpipe_getRenderTarget();
-    void canpipe_setRenderTarget(int renderTarget);
-
     int canpipe_getOriginType();
 
     boolean canpipe_isRenderingHand();

@@ -44,7 +44,6 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow @Final private Lightmap lightmap;
 
     @Unique private long canpipe_renderStartNano = -1;
-    @Unique private int canpipe_renderTarget = -1;
     @Unique private int canpipe_originType = 0;
     @Unique private boolean canpipe_isRenderingHand = false;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
@@ -56,8 +55,6 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override public FogRenderer canpipe_getFogRenderer() { return this.fogRenderer; }
     @Override public Matrix4f canpipe_worldViewMatrix() { return this.canpipe_worldViewMatrix; }
     @Override public Matrix4f canpipe_worldProjectionMatrix() { return this.canpipe_worldProjectionMatrix; }
-    @Override public int canpipe_getRenderTarget() { return this.canpipe_renderTarget; }
-    @Override public void canpipe_setRenderTarget(int renderTarget) { this.canpipe_renderTarget = renderTarget; }
     @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
     @Override public boolean canpipe_isRenderingHand() { return this.canpipe_isRenderingHand; }
     @Override public Lightmap canpipe_getLightmap() { return this.lightmap; }
@@ -90,7 +87,6 @@ public class GameRendererMixin implements GameRendererExtended {
 
         this.canpipe_worldViewMatrix = null;
         this.canpipe_worldProjectionMatrix = null;
-        this.canpipe_renderTarget = -1;
     }
 
     @Inject(method = "resize", at = @At("HEAD"))

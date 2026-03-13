@@ -550,21 +550,8 @@ public class Pipeline implements AutoCloseable {
     }
 
     public RenderPass createRenderPass(CommandEncoder commandEncoder, Supplier<String> name, Framebuffer framebuffer) {
-        int newTarget = 0;
-        if (framebuffer == this.translucentTerrainFramebuffer) {
-            newTarget = 1;
-        }
-        if (framebuffer == this.translucentItemEntityFramebuffer) {
-            newTarget = 2;
-        }
-        if (framebuffer == this.particlesFramebuffer) {
-            newTarget = 3;
-        }
-
         GameRendererExtended gre = (GameRendererExtended) Minecraft.getInstance().gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
-
-        gre.canpipe_setRenderTarget(newTarget);
 
         RenderPass renderPass;
         // For example, when rendering gui items
@@ -583,9 +570,21 @@ public class Pipeline implements AutoCloseable {
         renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
 
         renderPass.setUniform("frxu_ub_cascade", Uniforms.INT_0_3_UBO_BUFFERS[lre.canpipe_getShadowCascade()]);
-        renderPass.setUniform("canpipe_ub_render_target", Uniforms.INT_0_3_UBO_BUFFERS[gre.canpipe_getRenderTarget()]);
         renderPass.setUniform("canpipe_ub_origin_type", Uniforms.INT_0_3_UBO_BUFFERS[gre.canpipe_getOriginType()]);
         renderPass.setUniform("canpipe_ub_is_rendering_hand", Uniforms.INT_0_3_UBO_BUFFERS[gre.canpipe_isRenderingHand() ? 1 : 0]);
+
+        int renderTarget = 0;
+        if (framebuffer == this.translucentTerrainFramebuffer) {
+            renderTarget = 1;
+        }
+        if (framebuffer == this.translucentItemEntityFramebuffer) {
+            renderTarget = 2;
+        }
+        if (framebuffer == this.particlesFramebuffer) {
+            renderTarget = 3;
+        }
+
+        renderPass.setUniform("canpipe_ub_render_target", Uniforms.INT_0_3_UBO_BUFFERS[renderTarget]);
 
         renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 
