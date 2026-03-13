@@ -271,7 +271,7 @@ public class Shaders {
                         );
                     }
                     else {
-                        CanPipe.LOGGER.warn(sourceLocation+": couldn't include " + location);
+                        innerIter = Iterators.singletonIterator("// can-pipe: couldn't include \"" + location + "\"");
                     }
                 }
 
