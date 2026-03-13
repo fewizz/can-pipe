@@ -125,11 +125,7 @@ final public class Materials implements PreparableReloadListener {
                             .replace(".json", "").replace(".json5", "")
                         );
                         JsonObject materialJson = CanPipe.JANKSON.load(e.getValue().open());
-                        Material material = new Material(
-                            sharedState.resourceManager(),
-                            location,
-                            materialJson
-                        );
+                        Material material = Material.load(sharedState.resourceManager(), location, materialJson);
                         if (id == Short.MAX_VALUE) {
                             throw new RuntimeException("Material index exceeded "+Short.MAX_VALUE);
                         }

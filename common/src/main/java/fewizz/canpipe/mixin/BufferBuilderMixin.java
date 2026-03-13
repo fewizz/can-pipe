@@ -208,10 +208,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
             if (this.canpipe_materialMap != null) {
                 if (this.canpipe_textureIdentifier != null) {
-                    material = this.canpipe_materialMap.spriteMap.get(this.canpipe_textureIdentifier);
+                    material = this.canpipe_materialMap.spriteMap().get(this.canpipe_textureIdentifier);
                 }
 
-                if (material == null && this.canpipe_materialMap.spriteMap != null && sprite != null) {
+                if (material == null && this.canpipe_materialMap.spriteMap() != null && sprite != null) {
                     Minecraft mc = Minecraft.getInstance();
 
                     MutableObject<TextureAtlas> atlas = new MutableObject<>();
@@ -221,7 +221,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                         }
                     });
 
-                    for (var kv : this.canpipe_materialMap.spriteMap.entrySet()) {
+                    for (var kv : this.canpipe_materialMap.spriteMap().entrySet()) {
                         if (atlas.get().getSprite(kv.getKey()) == sprite) {
                             material = kv.getValue();
                         }
@@ -229,16 +229,16 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 }
 
                 if (material == null) {
-                    material = canpipe_materialMap.defaultMaterial;
+                    material = canpipe_materialMap.defaultMaterial();
                 }
             }
 
             int materialIndex = material != null ? Materials.id(material) : -1;
 
-            if (material != null && material.disableAO) { this.canpipe_materialFlags |= 1 << 1; }
+            if (material != null && material.disableAO()) { this.canpipe_materialFlags |= 1 << 1; }
             else  { this.canpipe_materialFlags &= ~(1 << 1); }
 
-            if (material != null && material.disableDiffuse) { this.canpipe_materialFlags |= 1 << 2; }
+            if (material != null && material.disableDiffuse()) { this.canpipe_materialFlags |= 1 << 2; }
             else  { this.canpipe_materialFlags &= ~(1 << 2); }
 
             for (int i = offsetToFirstVertex; i <= 0; ++i) {

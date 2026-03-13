@@ -3,21 +3,13 @@ package fewizz.canpipe.material;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.resources.Identifier;
 
-public class MaterialMap {
-
-    @Nullable public final Material defaultMaterial;
-    public final Map<Identifier, Material> spriteMap;
-
-    MaterialMap(Material defaultMaterial, Map<Identifier, Material> spriteMap) {
-        this.defaultMaterial = defaultMaterial;
-        this.spriteMap = spriteMap;
-    }
+public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Material> spriteMap) {
 
     static MaterialMap load(JsonObject json) {
         Material defaultMaterial = null;

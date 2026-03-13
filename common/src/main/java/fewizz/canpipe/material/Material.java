@@ -12,23 +12,21 @@ import fewizz.canpipe.JanksonUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-public class Material {
+public record Material(
+    Identifier location,
+    @Nullable String vertexShaderSource,
+    @Nullable String fragmentShaderSource,
+    @Nullable String depthVertexShaderSource,
+    @Nullable String depthFragmentShaderSource,
+    boolean disableAO,
+    boolean disableDiffuse
+) {
 
-    public final Identifier location;
-    @Nullable public final String vertexShaderSource;
-    @Nullable public final String fragmentShaderSource;
-    @Nullable public final String depthVertexShaderSource;
-    @Nullable public final String depthFragmentShaderSource;
-    public final boolean disableAO;
-    public final boolean disableDiffuse;
-
-    Material(
+    public static Material load(
         ResourceManager manager,
         Identifier location,
         JsonObject materialJson
     ) throws FileNotFoundException, IOException {
-        this.location = location;
-
         var layers = materialJson.get("layers");
         if (layers instanceof JsonArray layersArray && layersArray.size() > 0) {
             JanksonUtils.mergeJsonObjectB2A(materialJson, (JsonObject) layersArray.get(0));
@@ -62,13 +60,15 @@ public class Material {
             depthFragmentShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
 
-        this.disableAO = materialJson.getBoolean("disableAo", false);
-        this.disableDiffuse = materialJson.getBoolean("disableDiffuse", false);
+        boolean disableAO = materialJson.getBoolean("disableAo", false);
+        boolean disableDiffuse = materialJson.getBoolean("disableDiffuse", false);
 
-        this.vertexShaderSource = vertexShaderSource;
-        this.fragmentShaderSource = fragmentShaderSource;
-        this.depthVertexShaderSource = depthVertexShaderSource;
-        this.depthFragmentShaderSource = depthFragmentShaderSource;
+        return new Material(
+            location,
+            vertexShaderSource, fragmentShaderSource,
+            depthVertexShaderSource, depthFragmentShaderSource,
+            disableAO, disableDiffuse
+        );
     }
 
     @Override

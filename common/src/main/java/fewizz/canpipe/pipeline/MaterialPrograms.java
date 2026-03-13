@@ -203,7 +203,7 @@ public class MaterialPrograms {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
             for (Material m : Materials.usedByRenderType(originalRenderPipeline)) {
-                String src = shadow ? m.depthVertexShaderSource : m.vertexShaderSource;
+                String src = shadow ? m.depthVertexShaderSource() : m.vertexShaderSource();
                 if (src == null) {
                     continue;
                 }
@@ -304,7 +304,13 @@ public class MaterialPrograms {
             #endif
 
             #if defined CANPIPE_HAS_TEXTURE_POS
-                if (canpipe_spriteIndex != -1) {
+                if (
+                    #if defined CANPIPE_TERRAIN
+                        true
+                    #else
+                        canpipe_spriteIndex != -1
+                    #endif
+                ) {
                     canpipe_spriteExtents = texelFetch(canpipe_spritesExtents, canpipe_spriteIndex);
                     frx_texcoord = frx_normalizeMappedUV(in_uv);
                 }
@@ -368,7 +374,7 @@ public class MaterialPrograms {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
             for (Material m : Materials.usedByRenderType(originalRenderPipeline)) {
-                String src = shadow ? m.depthFragmentShaderSource : m.fragmentShaderSource;
+                String src = shadow ? m.depthFragmentShaderSource() : m.fragmentShaderSource();
                 if (src == null) {
                     continue;
                 }
