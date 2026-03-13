@@ -68,13 +68,17 @@ int frx_modelOriginType() {
     #endif
 }
 
-#if defined CANPIPE_MATERIAL_SHADER
-    #define frx_isHand (canpipe_isRenderingHand == 1)
-#else
+#if !defined CANPIPE_MATERIAL_SHADER || defined CANPIPE_TERRAIN
     #define frx_isHand false
+#else
+    #define frx_isHand (canpipe_isRenderingHand == 1)
 #endif
 
-#define frx_isGui frx_modelOriginScreen
+#if defined CANPIPE_TERRAIN
+    #define frx_isGui false
+#else
+    #define frx_isGui frx_modelOriginScreen
+#endif
 
 #define frx_guiViewProjectionMatrix frx_viewProjectionMatrix
 #define frx_normalModelMatrix mat3(frx_viewMatrix)
