@@ -66,6 +66,16 @@ final public class Materials implements PreparableReloadListener {
         return result;
     }
 
+    private static Collection<Material> usedByEntities() {
+        List<Material> result = new ArrayList<>();
+        for (var material : INSTANCE.materials.values()) {
+            if (MaterialMaps.INSTANCE.usedByAnyEntityOrBlockEntityOrItem(material)) {
+                result.add(material);
+            }
+        }
+        return result;
+    }
+
     public static Collection<Material> usedByRenderType(RenderPipeline renderPipeline) {
         if (renderPipeline == RenderPipelines.SOLID_TERRAIN) {
             return Materials.usedByChunkSectionLayer(ChunkSectionLayer.SOLID);
@@ -83,12 +93,12 @@ final public class Materials implements PreparableReloadListener {
         if (renderPipeline == RenderPipelines.CUTOUT_BLOCK) {
             return Materials.usedByMovingBlockRenderType(RenderTypes.cutoutMovingBlock());
         }
-        /*if (renderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK) {
+        if (renderPipeline == RenderPipelines.TRANSLUCENT_BLOCK) {
             return Materials.usedByMovingBlockRenderType(RenderTypes.translucentMovingBlock());
-        }*/
+        }
 
         if (renderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
-            return Materials.all();
+            return Materials.usedByEntities();
         }
 
         return Collections.emptyList();

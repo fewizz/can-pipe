@@ -285,7 +285,7 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.TRANSLUCENT_TERRAIN,
             RenderPipelines.BEACON_BEAM_OPAQUE,
             RenderPipelines.BEACON_BEAM_TRANSLUCENT,
-            // RenderPipelines.TRANSLUCENT_MOVING_BLOCK,
+            RenderPipelines.TRANSLUCENT_BLOCK,
 
             RenderPipelines.ARMOR_CUTOUT_NO_CULL,
             RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,

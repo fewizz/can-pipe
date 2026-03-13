@@ -119,6 +119,19 @@ final public class MaterialMaps implements PreparableReloadListener {
         return result;
     }
 
+    public boolean usedByAnyEntityOrBlockEntityOrItem(Material material) {
+        for (MaterialMap m : this.entities.values()) {
+            if (m.usesMaterial(material)) { return true; }
+        }
+        for (MaterialMap m : this.blockEntities.values()) {
+            if (m.usesMaterial(material)) { return true; }
+        }
+        for (MaterialMap m : this.items.values()) {
+            if (m.usesMaterial(material)) { return true; }
+        }
+        return false;
+    }
+
     @Override
     public CompletableFuture<Void> reload(
         PreparableReloadListener.SharedState sharedState,
