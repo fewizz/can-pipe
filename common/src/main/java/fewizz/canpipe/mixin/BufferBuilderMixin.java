@@ -29,7 +29,6 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.helpers.NormalAndTangent;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
-import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.Minecraft;
@@ -233,7 +232,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 }
             }
 
-            int materialIndex = material != null ? Materials.id(material) : -1;
+            int materialIndex = material != null ? material.id() : -1;
 
             if (material != null && material.disableAO()) { this.canpipe_materialFlags |= 1 << 2; }
             else  { this.canpipe_materialFlags &= ~(1 << 2); }

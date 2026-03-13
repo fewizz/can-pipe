@@ -14,15 +14,20 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.light.Lights;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin implements MinecraftExtended {
 
     @Shadow @Final private RenderTarget mainRenderTarget;
+    @Shadow @Final private ReloadableResourceManager resourceManager;
 
     @Shadow public void setScreen(@Nullable Screen guiScreen) {}
 
@@ -44,7 +49,10 @@ public class MinecraftMixin implements MinecraftExtended {
     @Inject(method = "handleKeybinds", at = @At("RETURN"))
     private void handleKeybinds(CallbackInfo ci) {
         while (CanPipe.PIPELINES_RELOAD_KEY.consumeClick()) {
-            Pipelines.loadRawPipelines(Pipelines.readRawPipelines());
+            Lights.loadRaw(Lights.readRaw(this.resourceManager));
+            Materials.loadRaw(Materials.readRaw(this.resourceManager));
+            MaterialMaps.loadRaw(MaterialMaps.readRaw(this.resourceManager));
+            Pipelines.loadRaw(Pipelines.readRaw(this.resourceManager));
         }
     }
 

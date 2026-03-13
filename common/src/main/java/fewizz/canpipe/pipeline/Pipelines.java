@@ -29,6 +29,7 @@ import fewizz.canpipe.mixininterface.MinecraftExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 final public class Pipelines implements PreparableReloadListener {
 
@@ -42,9 +43,10 @@ final public class Pipelines implements PreparableReloadListener {
         PreparableReloadListener.PreparationBarrier preparationBarrier,
         @NonNull Executor applyExecutor
     ) {
-        return CompletableFuture.supplyAsync(Pipelines::readRawPipelines, loadExecutor)
+        return CompletableFuture
+            .supplyAsync(() -> Pipelines.readRaw(sharedState.resourceManager()), loadExecutor)
             .thenCompose(preparationBarrier::wait)
-            .thenAcceptAsync(Pipelines::loadRawPipelines, applyExecutor);
+            .thenAcceptAsync(Pipelines::loadRaw, applyExecutor);
     }
 
     public static final Map<Identifier, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
@@ -75,7 +77,7 @@ final public class Pipelines implements PreparableReloadListener {
                     }
                 });
             } catch (IOException e) {
-                e.printStackTrace();
+                CanPipe.LOGGER.error("Couldn't delete previous compilation errors", e);
             }
         }
 
@@ -87,7 +89,7 @@ final public class Pipelines implements PreparableReloadListener {
             try {
                 config = CanPipe.JANKSON.load(Files.newInputStream(CanPipe.getConfigurationFilePath()));
             } catch (IOException | SyntaxError e) {
-                e.printStackTrace();
+                CanPipe.LOGGER.error("Couldn't load configuration file \""+CanPipe.getConfigurationFilePath()+"\"", e);
             }
         }
 
@@ -130,7 +132,7 @@ final public class Pipelines implements PreparableReloadListener {
             Files.createDirectories(CanPipe.getConfigurationFilePath().getParent());
             Files.writeString(CanPipe.getConfigurationFilePath(), config.toJson(true, true));
         } catch (IOException e) {
-            e.printStackTrace();
+            CanPipe.LOGGER.error("Couldn't save configuration file \""+CanPipe.getConfigurationFilePath()+"\"", e);
         }
 
         // "load" part
@@ -148,7 +150,7 @@ final public class Pipelines implements PreparableReloadListener {
             try {
                 loadedPipeline = new Pipeline(raw, appliedOptions);
             } catch (Exception e) {
-                e.printStackTrace();
+                CanPipe.LOGGER.error("Couldn't load pipeline \""+raw.location+"\"", e);
                 Pipelines.loadingError = e;
                 RenderSystem.getDevice().clearPipelineCache();
             }
@@ -182,10 +184,9 @@ final public class Pipelines implements PreparableReloadListener {
         }
     }
 
-    public static Map<Identifier, PipelineRaw> readRawPipelines() {
+    public static Map<Identifier, PipelineRaw> readRaw(ResourceManager resourceManager) {
         Map<Identifier, PipelineRaw> rawPipelines = new LinkedHashMap<>();
-        Minecraft mc = Minecraft.getInstance();
-        mc.getResourceManager().listResources(
+        resourceManager.listResources(
             "pipelines",
             (Identifier pipelineLocation) -> {
                 String pathStr = pipelineLocation.getPath();
@@ -194,15 +195,15 @@ final public class Pipelines implements PreparableReloadListener {
         ).forEach((location, pipelineJson) -> {
             try {
                 JsonObject o = CanPipe.JANKSON.load(pipelineJson.open());
-                rawPipelines.put(location, PipelineRaw.load(o, location, mc.getResourceManager()));
+                rawPipelines.put(location, PipelineRaw.load(o, location, resourceManager));
             } catch (Exception e) {
-                e.printStackTrace();
+                CanPipe.LOGGER.error("Couldn't parse pipeline json file \""+location+"\"", e);
             }
         });
         return rawPipelines;
     }
 
-    public static void loadRawPipelines(Map<Identifier, PipelineRaw> rawPipelines) {
+    public static void loadRaw(Map<Identifier, PipelineRaw> rawPipelines) {
         RAW_PIPELINES.clear();
         RAW_PIPELINES.putAll(rawPipelines);
         PipelineRaw selected = null;
@@ -216,7 +217,7 @@ final public class Pipelines implements PreparableReloadListener {
                     selected = RAW_PIPELINES.get(Identifier.parse(currentLocationStr));
                 }
             } catch (IOException | SyntaxError e) {
-                e.printStackTrace();
+                CanPipe.LOGGER.error("Couldn't load configuration file \""+CanPipe.getConfigurationFilePath()+"\"", e);
             }
         }
 

@@ -9,10 +9,12 @@ import org.jetbrains.annotations.Nullable;
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public record Material(
+    int id,
     Identifier location,
     @Nullable String vertexShaderSource,
     @Nullable String fragmentShaderSource,
@@ -22,11 +24,13 @@ public record Material(
     boolean disableDiffuse
 ) {
 
-    public static Material load(
-        ResourceManager manager,
+    static Material load(
+        int id,
         Identifier location,
         JsonObject materialJson
     ) throws FileNotFoundException, IOException {
+        ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
+
         var layers = materialJson.get("layers");
         if (layers instanceof JsonArray layersArray && layersArray.size() > 0) {
             JanksonUtils.mergeJsonObjectB2A(materialJson, (JsonObject) layersArray.get(0));
@@ -35,28 +39,28 @@ public record Material(
         String vertexShaderSource = materialJson.get(String.class, "vertexSource");
         if (vertexShaderSource != null) {
             var loc = Identifier.parse(vertexShaderSource);
-            var resource = manager.getResource(loc);
+            var resource = resourceManager.getResource(loc);
             vertexShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
 
         String fragmentShaderSource = materialJson.get(String.class, "fragmentSource");
         if (fragmentShaderSource != null) {
             var loc = Identifier.parse(fragmentShaderSource);
-            var resource = manager.getResource(loc);
+            var resource = resourceManager.getResource(loc);
             fragmentShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
 
         String depthVertexShaderSource = materialJson.get(String.class, "depthVertexSource");
         if (depthVertexShaderSource != null) {
             var loc = Identifier.parse(depthVertexShaderSource);
-            var resource = manager.getResource(loc);
+            var resource = resourceManager.getResource(loc);
             depthVertexShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
 
         String depthFragmentShaderSource = materialJson.get(String.class, "depthFragmentSource");
         if (depthFragmentShaderSource != null) {
             var loc = Identifier.parse(depthFragmentShaderSource);
-            var resource = manager.getResource(loc);
+            var resource = resourceManager.getResource(loc);
             depthFragmentShaderSource = resource.isPresent() ? IOUtils.toString(resource.get().openAsReader()) : null;
         }
 
@@ -64,7 +68,7 @@ public record Material(
         boolean disableDiffuse = materialJson.getBoolean("disableDiffuse", false);
 
         return new Material(
-            location,
+            id, location,
             vertexShaderSource, fragmentShaderSource,
             depthVertexShaderSource, depthFragmentShaderSource,
             disableAO, disableDiffuse
