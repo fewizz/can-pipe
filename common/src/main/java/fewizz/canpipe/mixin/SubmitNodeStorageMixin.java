@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
+import fewizz.canpipe.helpers.ModelSubmitExtra;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
@@ -24,22 +25,17 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
 
     @Shadow public SubmitNodeCollection order(final int order) { return null; }
 
-    @Unique private MaterialMap canpipe_pendingItemSubmitMaterialMap = null;
     @Unique private MaterialMap canpipe_modelSubmitMaterialMap = null;
 
     @ModifyReturnValue(method = "lambda$order$0", at = @At("RETURN"))
     SubmitNodeCollection onSubmitNodeCollectionInit(SubmitNodeCollection snc) {
-        ((SubmitNodeCollectorExtended) snc).canpipe_setPendingItemSubmitMaterialMap(this.canpipe_pendingItemSubmitMaterialMap);
-        ((SubmitNodeCollectorExtended) snc).canpipe_setModelSumbitMaterialMapScope(this.canpipe_modelSubmitMaterialMap);
+        ((SubmitNodeCollectorExtended) snc).canpipe_setScopedModelMaterialMap(this.canpipe_modelSubmitMaterialMap);
         return snc;
     }
 
     @Override
     public void canpipe_setPendingItemSubmitMaterialMap(MaterialMap materialMap) {
-        this.canpipe_pendingItemSubmitMaterialMap = materialMap;
-        for (SubmitNodeCollection snc : this.submitsPerOrder.values()) {
-            ((SubmitNodeCollectorExtended) snc).canpipe_setPendingItemSubmitMaterialMap(materialMap);
-        }
+        ((SubmitNodeCollectorExtended) this.order(0)).canpipe_setPendingItemSubmitMaterialMap(materialMap);
     }
 
     @Override
@@ -48,16 +44,21 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
     }
 
     @Override
-    public void canpipe_setModelSumbitMaterialMapScope(MaterialMap materialMap) {
+    public void canpipe_setScopedModelMaterialMap(MaterialMap materialMap) {
         this.canpipe_modelSubmitMaterialMap = materialMap;
         for (SubmitNodeCollection snc : this.submitsPerOrder.values()) {
-            ((SubmitNodeCollectorExtended) snc).canpipe_setModelSumbitMaterialMapScope(materialMap);
+            ((SubmitNodeCollectorExtended) snc).canpipe_setScopedModelMaterialMap(materialMap);
         }
     }
 
     @Override
-    public Map<ModelSubmit<?>, MaterialMap> canpipe_getModelSubmitsMaterialMaps() {
-        return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getModelSubmitsMaterialMaps();
+    public void canpipe_setPendingModelEntityGlint() {
+        ((SubmitNodeCollectorExtended) this.order(0)).canpipe_setPendingModelEntityGlint();
+    }
+
+    @Override
+    public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() {
+        return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getModelSubmitsExtras();
     }
 
 }

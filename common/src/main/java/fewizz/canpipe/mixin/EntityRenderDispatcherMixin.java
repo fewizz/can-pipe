@@ -41,10 +41,10 @@ public class EntityRenderDispatcherMixin {
     ) {
         try {
             MaterialMap materialMap = MaterialMaps.getForEntity(state.entityType);
-            ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setModelSumbitMaterialMapScope(materialMap);
+            ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setScopedModelMaterialMap(materialMap);
             operation.call(instance, state, poseStack, submitNodeCollector, camera);
         } finally {
-            ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setModelSumbitMaterialMapScope(null);
+            ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setScopedModelMaterialMap(null);
         }
     }
 

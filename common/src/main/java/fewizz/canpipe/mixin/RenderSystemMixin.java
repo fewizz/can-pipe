@@ -34,7 +34,7 @@ public class RenderSystemMixin {
             bufferBuilder.addVertex(0.0F, 1.0F, 0.0F).setUv(0.0F, 1.0F);
 
             try (MeshData meshData = bufferBuilder.buildOrThrow()) {
-                CANPIPE_QUAD_VERTEX_UV_BUFFER = getDevice().createBuffer(() -> "Quad POSITION_TEX", GpuBuffer.USAGE_VERTEX, meshData.vertexBuffer());
+                CANPIPE_QUAD_VERTEX_UV_BUFFER = getDevice().createBuffer(() -> "can-pipe quad", GpuBuffer.USAGE_VERTEX, meshData.vertexBuffer());
             }
         }
     }

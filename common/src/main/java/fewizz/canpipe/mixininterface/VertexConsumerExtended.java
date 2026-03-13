@@ -33,6 +33,7 @@ public interface VertexConsumerExtended extends VertexConsumer {
     void canpipe_setScopedTextureIdentifier(Identifier textureIdentifier);
 
     void canpipe_setScopedGlint(boolean glint);
+    void canpipe_setScopedEntityGlint(boolean glint);
 
     float canpipe_getU(int vertexOffset);
     float canpipe_getV(int vertexOffset);

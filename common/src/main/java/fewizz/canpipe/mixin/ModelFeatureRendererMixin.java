@@ -1,5 +1,7 @@
 package fewizz.canpipe.mixin;
 
+import java.util.Map;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -8,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import fewizz.canpipe.helpers.ModelSubmitExtra;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
@@ -34,8 +37,10 @@ public class ModelFeatureRendererMixin {
         @Local RenderType renderType
     ) {
 
-        var modelsMaterialMaps = ((SubmitNodeCollectorExtended) this.canpipe_nodeCollectionHolded).canpipe_getModelSubmitsMaterialMaps();
-        var materialMap = modelsMaterialMaps.get(submit);
+        Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> extras =
+            ((SubmitNodeCollectorExtended) this.canpipe_nodeCollectionHolded).canpipe_getModelSubmitsExtras();
+
+        ModelSubmitExtra extra = extras.get(submit);
 
         if (submit.sprite() == null) {
             RenderSetup renderSetup = ((RenderTypeAccessor) renderType).canpipe_getState();
@@ -46,14 +51,16 @@ public class ModelFeatureRendererMixin {
             ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(() -> submit.sprite());
         }
 
-        if (materialMap != null) {
-            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(materialMap);
+        if (extra != null) {
+            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(extra.materialMap());
+            ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(extra.entityGlint());
         }
     }
 
     @Inject(method = "renderModel", at = @At("RETURN"))
     void afterRenderModel(CallbackInfo ci, @Local(ordinal = 0) VertexConsumer buffer) {
         ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(null);
+        ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(false);
         ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(null);
         ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(null);
     }
