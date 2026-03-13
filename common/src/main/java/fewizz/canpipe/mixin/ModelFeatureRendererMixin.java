@@ -34,7 +34,7 @@ public class ModelFeatureRendererMixin {
         @Local RenderType renderType
     ) {
 
-        var modelsMaterialMaps = ((SubmitNodeCollectorExtended) this.canpipe_nodeCollectionHolded).canpipe_getModelsMaterialMaps();
+        var modelsMaterialMaps = ((SubmitNodeCollectorExtended) this.canpipe_nodeCollectionHolded).canpipe_getModelSubmitsMaterialMaps();
         var materialMap = modelsMaterialMaps.get(submit);
 
         if (submit.sprite() == null) {

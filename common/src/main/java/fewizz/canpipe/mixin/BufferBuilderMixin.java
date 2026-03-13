@@ -197,7 +197,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         TextureAtlasSprite sprite = this.canpipe_spriteSupplier != null ? this.canpipe_spriteSupplier.get() : null;
 
         if (spriteIndexPtr != -1) {
-            int index = sprite != null ? ((TextureAtlasSpriteExtended) sprite).getIndex() : -1;
+            int index = sprite != null ? ((TextureAtlasSpriteExtended) sprite).canpipe_getIndex() : -1;
             for (int i = offsetToFirstVertex; i <= 0; ++i) {
                 MemoryUtil.memPutInt(spriteIndexPtr + i*this.vertexSize, index);
             }

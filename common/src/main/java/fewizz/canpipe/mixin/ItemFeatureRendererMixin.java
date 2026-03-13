@@ -13,9 +13,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.helpers.ItemSubmitExtra;
 import fewizz.canpipe.material.MaterialMap;
-import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipeline;
@@ -27,14 +25,11 @@ import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 
 @Mixin(ItemFeatureRenderer.class)
 public class ItemFeatureRendererMixin {
 
-    @Unique private ItemStack canpipe_itemStack = null;
+    @Unique private MaterialMap canpipe_materialMap = null;
 
     @WrapOperation(
         method = {"renderSolid", "renderTranslucent"},
@@ -56,12 +51,11 @@ public class ItemFeatureRendererMixin {
         Operation<Void> operation,
         @Local SubmitNodeCollection nodeCollection
     ) {
-        ItemSubmitExtra extra = ((SubmitNodeCollectorExtended) nodeCollection).canpipe_getItemSubmitExtras().get(submit);
         try {
-            this.canpipe_itemStack = extra.itemStack();
+            this.canpipe_materialMap = ((SubmitNodeCollectorExtended) nodeCollection).canpipe_getItemSubmitsMaterialMaps().get(submit);
             operation.call(instance, bufferSource, outlineBufferSource, submit);
         } finally {
-            this.canpipe_itemStack = null;
+            this.canpipe_materialMap = null;
         }
     }
 
@@ -83,16 +77,8 @@ public class ItemFeatureRendererMixin {
 
         VertexConsumer vc = buffer.getBuffer(renderType);
         VertexConsumerExtended vce = (VertexConsumerExtended) vc;
-        Item item = this.canpipe_itemStack.getItem();
 
-        if (item instanceof BlockItem bi) {
-            MaterialMap materialMap = MaterialMaps.getForBlock(bi.getBlock());
-            vce.canpipe_setScopedMaterialMap(materialMap);
-        }
-        else {
-            MaterialMap materialMap = MaterialMaps.getForItem(item);
-            vce.canpipe_setScopedMaterialMap(materialMap);
-        }
+        vce.canpipe_setScopedMaterialMap(this.canpipe_materialMap);
 
         if (foilType.get() != ItemStackRenderState.FoilType.NONE) {
             vce.canpipe_setScopedGlint(true);

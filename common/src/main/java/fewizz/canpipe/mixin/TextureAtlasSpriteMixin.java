@@ -9,16 +9,16 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 @Mixin(TextureAtlasSprite.class)
 public class TextureAtlasSpriteMixin implements TextureAtlasSpriteExtended {
 
-    @Unique int spriteIndex = -1;
+    @Unique int canpipe_spriteIndex = -1;
 
     @Override
-    public int getIndex() {
-        return this.spriteIndex;
+    public int canpipe_getIndex() {
+        return this.canpipe_spriteIndex;
     }
 
     @Override
-    public void setIndex(int index) {
-        this.spriteIndex = index;
+    public void canpipe_setIndex(int index) {
+        this.canpipe_spriteIndex = index;
     }
 
 }

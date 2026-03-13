@@ -42,12 +42,12 @@ public class BlockEntityRenderDispatcherMixin {
         try {
             MaterialMap materialMap = MaterialMaps.getForBlockEntity(state.blockEntityType);
             if (materialMap != null) {
-                ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setModelMaterialMapScope(materialMap);
+                ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setModelSumbitMaterialMapScope(materialMap);
             }
             operation.call(instance, state, poseStack, submitNodeCollector, camera);
         }
         finally {
-            ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setModelMaterialMapScope(null);
+            ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setModelSumbitMaterialMapScope(null);
         }
     }
 

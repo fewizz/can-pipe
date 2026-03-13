@@ -1,17 +1,22 @@
 package fewizz.canpipe.mixin;
 
-import com.llamalad7.mixinextras.sugar.Local;
-import fewizz.canpipe.helpers.ItemSubmitExtra;
-import fewizz.canpipe.mixininterface.ItemStackLayerRenderStateExtended;
-import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import com.llamalad7.mixinextras.sugar.Local;
+
+import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.mixininterface.ItemStackLayerRenderStateExtended;
+import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 @Mixin(ItemStackRenderState.LayerRenderState.class)
 public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExtended {
@@ -21,11 +26,6 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
     @Override
     public void canpipe_setItemStack(ItemStack itemStack) {
         this.canpipe_itemStack = itemStack;
-    }
-
-    @Override
-    public ItemStack canpipe_getItemStack() {
-        return this.canpipe_itemStack;
     }
 
     @Inject(
@@ -42,8 +42,17 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
         )
     )
     void onSubmit(CallbackInfo ci, @Local(argsOnly = true) SubmitNodeCollector submitNodeCollector) {
+        Item item = this.canpipe_itemStack.getItem();
+
         if (submitNodeCollector instanceof SubmitNodeCollectorExtended snce) {
-            snce.canpipe_setPendingItemSubmitExtra(new ItemSubmitExtra(this.canpipe_itemStack));
+            MaterialMap materialMap = null;
+            if (item instanceof BlockItem bi) {
+                materialMap = MaterialMaps.getForBlock(bi.getBlock());
+            }
+            else {
+                materialMap = MaterialMaps.getForItem(item);
+            }
+            snce.canpipe_setPendingItemSubmitMaterialMap(materialMap);
         }
     }
 

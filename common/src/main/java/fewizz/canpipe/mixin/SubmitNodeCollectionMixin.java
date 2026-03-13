@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
 
-import fewizz.canpipe.helpers.ItemSubmitExtra;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
@@ -28,44 +27,44 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Shadow @Final private List<SubmitNodeStorage.ItemSubmit> itemSubmits;
     @Shadow @Final private ModelFeatureRenderer.Storage modelSubmits;
 
-    @Unique private ItemSubmitExtra canpipe_pendingItemSubmitExtra = null;
-    @Unique private Map<SubmitNodeStorage.ItemSubmit, ItemSubmitExtra> canpipe_itemSubmitExtras;
+    @Unique private MaterialMap canpipe_pendingItemSubmitMaterialMap = null;
+    @Unique private Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_itemSubmitsMaterialMaps;
     @Unique private Map<SubmitNodeStorage.ModelSubmit<?>, MaterialMap> canpipe_modelSubmitMaterialMaps;
 
-    @Unique private static MaterialMap canpipe_modelMaterialMap = null;  // Static!
+    @Unique private static MaterialMap canpipe_modelSubmitMaterialMap = null;  // Static!
 
-    @Override public void canpipe_setPendingItemSubmitExtra(ItemSubmitExtra extra) { this.canpipe_pendingItemSubmitExtra = extra; }
-    @Override public Map<SubmitNodeStorage.ItemSubmit, ItemSubmitExtra> canpipe_getItemSubmitExtras() { return this.canpipe_itemSubmitExtras; }
-    @Override public void canpipe_setModelMaterialMapScope(MaterialMap materialMap) { canpipe_modelMaterialMap = materialMap; }
-    @Override public Map<ModelSubmit<?>, MaterialMap> canpipe_getModelsMaterialMaps() { return this.canpipe_modelSubmitMaterialMaps; }
+    @Override public void canpipe_setPendingItemSubmitMaterialMap(MaterialMap materialMap) { this.canpipe_pendingItemSubmitMaterialMap = materialMap; }
+    @Override public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() { return this.canpipe_itemSubmitsMaterialMaps; }
+    @Override public void canpipe_setModelSumbitMaterialMapScope(MaterialMap materialMap) { canpipe_modelSubmitMaterialMap = materialMap; }
+    @Override public Map<ModelSubmit<?>, MaterialMap> canpipe_getModelSubmitsMaterialMaps() { return this.canpipe_modelSubmitMaterialMaps; }
 
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
-        this.canpipe_itemSubmitExtras = new HashMap<>();
+        this.canpipe_itemSubmitsMaterialMaps = new HashMap<>();
         this.canpipe_modelSubmitMaterialMaps = new HashMap<>();
     }
 
     @Inject(method = "submitItem", at = @At("RETURN"))
     void onItemSubmit(CallbackInfo ci) {
-        if (this.canpipe_pendingItemSubmitExtra != null) {
-            this.canpipe_itemSubmitExtras.put(this.itemSubmits.getLast(), this.canpipe_pendingItemSubmitExtra);
+        if (this.canpipe_pendingItemSubmitMaterialMap != null) {
+            this.canpipe_itemSubmitsMaterialMaps.put(this.itemSubmits.getLast(), this.canpipe_pendingItemSubmitMaterialMap);
         }
-        this.canpipe_pendingItemSubmitExtra = null;
+        this.canpipe_pendingItemSubmitMaterialMap = null;
     }
 
     @Inject(method = "clear", at = @At("RETURN"))
     void onClear(CallbackInfo ci) {
-        this.canpipe_pendingItemSubmitExtra = null;  // Should be null here
-        canpipe_modelMaterialMap = null;
+        this.canpipe_pendingItemSubmitMaterialMap = null;  // Should be null here
+        canpipe_modelSubmitMaterialMap = null;
 
-        this.canpipe_itemSubmitExtras.clear();
+        this.canpipe_itemSubmitsMaterialMaps.clear();
         this.canpipe_modelSubmitMaterialMaps.clear();
     }
 
     @Inject(method = "submitModel", at = @At("RETURN"))
     void onModelSubmit(CallbackInfo ci, @Local SubmitNodeStorage.ModelSubmit<?> modelSubmit) {
-        if (canpipe_modelMaterialMap != null) {
-            this.canpipe_modelSubmitMaterialMaps.put(modelSubmit, canpipe_modelMaterialMap);
+        if (canpipe_modelSubmitMaterialMap != null) {
+            this.canpipe_modelSubmitMaterialMaps.put(modelSubmit, canpipe_modelSubmitMaterialMap);
         }
     }
 

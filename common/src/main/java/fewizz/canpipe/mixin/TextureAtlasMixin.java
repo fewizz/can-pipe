@@ -50,7 +50,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
             {
                 int index = 0;
                 for (TextureAtlasSprite s : texturesByName.values()) {
-                    ((TextureAtlasSpriteExtended) s).setIndex(index);
+                    ((TextureAtlasSpriteExtended) s).canpipe_setIndex(index);
                     shortBuff.put(index*4+0, (short) Mth.floor(s.getU0() * 0xFFFF));
                     shortBuff.put(index*4+1, (short) Mth.floor(s.getV0() * 0xFFFF));
                     shortBuff.put(index*4+2, (short) Mth.floor(s.getU1() * 0xFFFF));
