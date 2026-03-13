@@ -66,16 +66,6 @@ final public class Materials implements PreparableReloadListener {
         return result;
     }
 
-    private static Collection<Material> usedByEntities() {
-        List<Material> result = new ArrayList<>();
-        for (var material : INSTANCE.materials.values()) {
-            if (MaterialMaps.INSTANCE.usedByAnyEntityOrBlockEntityOrItem(material)) {
-                result.add(material);
-            }
-        }
-        return result;
-    }
-
     public static Collection<Material> usedByRenderType(RenderPipeline renderPipeline) {
         if (renderPipeline == RenderPipelines.SOLID_TERRAIN) {
             return Materials.usedByChunkSectionLayer(ChunkSectionLayer.SOLID);
@@ -98,7 +88,7 @@ final public class Materials implements PreparableReloadListener {
         }
 
         if (renderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
-            return Materials.usedByEntities();
+            return Materials.all();
         }
 
         return Collections.emptyList();
