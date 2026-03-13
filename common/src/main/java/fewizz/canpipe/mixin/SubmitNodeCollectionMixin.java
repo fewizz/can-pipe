@@ -28,10 +28,9 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Shadow @Final private ModelFeatureRenderer.Storage modelSubmits;
 
     @Unique private MaterialMap canpipe_pendingItemSubmitMaterialMap = null;
+    @Unique private MaterialMap canpipe_modelSubmitMaterialMap = null;
     @Unique private Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_itemSubmitsMaterialMaps;
     @Unique private Map<SubmitNodeStorage.ModelSubmit<?>, MaterialMap> canpipe_modelSubmitMaterialMaps;
-
-    @Unique private static MaterialMap canpipe_modelSubmitMaterialMap = null;  // Static!
 
     @Override public void canpipe_setPendingItemSubmitMaterialMap(MaterialMap materialMap) { this.canpipe_pendingItemSubmitMaterialMap = materialMap; }
     @Override public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() { return this.canpipe_itemSubmitsMaterialMaps; }
