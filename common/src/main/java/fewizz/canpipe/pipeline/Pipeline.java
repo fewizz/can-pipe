@@ -68,7 +68,7 @@ public class Pipeline implements AutoCloseable {
     ) {}
 
     public final Identifier location;
-    public final Map<Option.Element<?>, Object> appliedOptions;
+    public final Map<OptionGroup.Element<?>, Object> appliedOptions;
 
     public final float defaultZenithAngle;
     public final boolean smoothBrightnessBidirectionaly;
@@ -100,7 +100,7 @@ public class Pipeline implements AutoCloseable {
         afterRenderHandPasses = new ArrayList<>(),
         onResizePasses = new ArrayList<>();
 
-    Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) { try {
+    Pipeline(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) { try {
         this.location = rawPipeline.location;
         this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
 

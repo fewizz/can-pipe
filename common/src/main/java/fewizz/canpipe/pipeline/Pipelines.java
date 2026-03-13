@@ -53,7 +53,7 @@ final public class Pipelines implements PreparableReloadListener {
     private static @Nullable Throwable loadingError = null;
     private static @Nullable Pipeline current = null;
 
-    public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Map<Option.Element<?>, Object> optionsChanges) {
+    public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Map<OptionGroup.Element<?>, Object> optionsChanges) {
         assert RenderSystem.isOnRenderThread();
 
         Pipelines.loadingError = null;
@@ -79,7 +79,7 @@ final public class Pipelines implements PreparableReloadListener {
             }
         }
 
-        Map<Option.Element<?>, Object> appliedOptions = new HashMap<>();
+        Map<OptionGroup.Element<?>, Object> appliedOptions = new HashMap<>();
         JsonObject config = new JsonObject();
 
         // read config
@@ -99,9 +99,9 @@ final public class Pipelines implements PreparableReloadListener {
                 String optionElementName = e.getKey();
                 Object optionValue = ((JsonPrimitive) e.getValue()).getValue();
 
-                Option.Element<?> optionElement = null;
+                OptionGroup.Element<?> optionElement = null;
                 for (var option : raw.options.values()) {
-                    optionElement = option.elements.get(optionElementName);
+                    optionElement = option.elements().get(optionElementName);
                     if (optionElement != null) {
                         appliedOptions.put(optionElement, optionValue);
                         break;

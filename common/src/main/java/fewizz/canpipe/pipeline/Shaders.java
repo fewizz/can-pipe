@@ -17,7 +17,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.google.common.collect.Iterators;
 import com.mojang.blaze3d.shaders.ShaderType;
 
-import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
 import net.minecraft.resources.Identifier;
 
@@ -42,8 +41,8 @@ public class Shaders {
 
     static String process(
         Identifier location, String source, ShaderType type, int version,
-        Map<Identifier, Option> options,
-        Map<Option.Element<?>, Object> appliedOptions,
+        Map<Identifier, OptionGroup> options,
+        Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource,
         Optional<Integer> shadowMapSize,
         Function<String, String> postProcess
@@ -94,8 +93,8 @@ public class Shaders {
     private static String processIncludesAndDefinitions(
         String source,
         Identifier sourceLocation,
-        Map<Identifier, Option> options,
-        Map<Option.Element<?>, Object> appliedOptions,
+        Map<Identifier, OptionGroup> options,
+        Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource
     ) {
         Set<Identifier> preprocessed = new HashSet<>();
@@ -131,7 +130,7 @@ public class Shaders {
                     }
 
                     var e = options.values().stream()
-                        .map(o -> o.elements.values()).flatMap(es -> es.stream())
+                        .map(o -> o.elements().values()).flatMap(es -> es.stream())
                         .filter(el -> el.name.equals(str.toLowerCase()))
                         .findAny();
                     if (e.isPresent()) {
@@ -173,8 +172,8 @@ public class Shaders {
     includePreprocessedLinesIterator(
         String source, Identifier sourceLocation,
         Set<Identifier> preprocessed,
-        Map<Identifier, Option> options,
-        Map<Option.Element<?>, Object> appliedOptions,
+        Map<Identifier, OptionGroup> options,
+        Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource
     ) {
         var linesIter = linesIterator(source.lines().iterator());
@@ -229,17 +228,17 @@ public class Shaders {
                 }
                 preprocessed.add(location);
 
-                Option option = options.get(location);
+                OptionGroup option = options.get(location);
                 if (option != null) {  // this is an option
                     ArrayList<String> definitions = new ArrayList<>();
-                    for (var e : option.elements.entrySet()) {
+                    for (var e : option.elements().entrySet()) {
                         String name = e.getKey();
-                        Option.Element<?> element = e.getValue();
+                        OptionGroup.Element<?> element = e.getValue();
                         Object value = appliedOptions.getOrDefault(element, element.defaultValue);
 
                         String definition = "#define "+name.toUpperCase();
 
-                        if (element instanceof Option.EnumElement enumElement && enumElement.prefix != null) {
+                        if (element instanceof OptionGroup.EnumElement enumElement && enumElement.prefix != null) {
                             // define all the variants
                             for (String choice : enumElement.choices) {
                                 String defName = enumElement.prefix.toUpperCase()+choice.toUpperCase();
@@ -248,7 +247,7 @@ public class Shaders {
                             }
                             definition += " "+enumElement.prefix.toUpperCase()+((String)value).toUpperCase();
                         }
-                        else if (element instanceof Option.BooleanElement) {
+                        else if (element instanceof OptionGroup.BooleanElement) {
                             // don't define if false
                             if ((Boolean) value == false) {
                                 continue;

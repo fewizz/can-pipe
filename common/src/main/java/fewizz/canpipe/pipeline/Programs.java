@@ -30,8 +30,8 @@ public class Programs {
         Identifier pipelineLocation,
         Function<Identifier, Optional<String>> getShaderSource,
         int glslVersion,
-        Map<Identifier, Option> options,
-        Map<Option.Element<?>, Object> appliedOptions,
+        Map<Identifier, OptionGroup> options,
+        Map<OptionGroup.Element<?>, Object> appliedOptions,
         Optional<Integer> shadowMapSize
     ) {
         List<String> samplers = JanksonUtils.listOfStrings(json, "samplers");

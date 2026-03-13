@@ -23,10 +23,10 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public class PipelineRaw {
     @NotNull public final Identifier location;
     @NotNull public final String nameKey;
-    @NotNull public final Map<Identifier, Option> options;
+    @NotNull public final Map<Identifier, OptionGroup> options;
     @NotNull private final JsonObject json;
 
-    PipelineRaw(Identifier location, String nameKey, Map<Identifier, Option> options, JsonObject json) {
+    PipelineRaw(Identifier location, String nameKey, Map<Identifier, OptionGroup> options, JsonObject json) {
         this.location = location;
         this.nameKey = nameKey;
         this.options = Collections.unmodifiableMap(options);
@@ -57,7 +57,7 @@ public class PipelineRaw {
         }};
         ProcessIncludes.doProcess(pipelineJson, includes, resourceManager);
 
-        Map<Identifier, Option> options = new LinkedHashMap<>();
+        Map<Identifier, OptionGroup> options = new LinkedHashMap<>();
 
         for (var optionsA : JanksonUtils.listOfObjects(pipelineJson, "options")) {
             Identifier includeToken = Identifier.parse(optionsA.get(String.class, "includeToken"));
@@ -71,7 +71,7 @@ public class PipelineRaw {
 
             var categoryKey = optionsA.get(String.class, "categoryKey");
 
-            Map<String, Option.Element<?>> elements = new LinkedHashMap<>();
+            Map<String, OptionGroup.Element<?>> elements = new LinkedHashMap<>();
             for (var entry : elementsO.entrySet()) {
                 String name = entry.getKey();
                 JsonObject elementO = (JsonObject) entry.getValue();
@@ -84,9 +84,9 @@ public class PipelineRaw {
                 var choices = JanksonUtils.listOfStrings(elementO, "choices");
                 choices = choices.size() == 0 ? null : choices;
 
-                Option.Element<?> element;
+                OptionGroup.Element<?> element;
                 if (choices != null) {
-                    element = new Option.EnumElement(
+                    element = new OptionGroup.EnumElement(
                         name, (String) defaultValue, nameKey, descriptionKey,
                         prefix, choices
                     );
@@ -95,13 +95,13 @@ public class PipelineRaw {
                     var min = (Number) elementO.get(JsonPrimitive.class, "min").getValue();
                     var max = (Number) elementO.get(JsonPrimitive.class, "max").getValue();
                     if (defaultValue instanceof Double) {
-                        element = new Option.FloatElement(
+                        element = new OptionGroup.FloatElement(
                             name, (double) defaultValue, nameKey, descriptionKey,
                             (double) min, (double) max
                         );
                     }
                     else if (defaultValue instanceof Long) {
-                        element = new Option.IntegerElement(
+                        element = new OptionGroup.IntegerElement(
                             name, (long) defaultValue, nameKey, descriptionKey,
                             (long) min, (long) max
                         );
@@ -111,7 +111,7 @@ public class PipelineRaw {
                     }
                 }
                 else if (defaultValue instanceof Boolean) {
-                    element = new Option.BooleanElement(name, (boolean) defaultValue, nameKey, descriptionKey);
+                    element = new OptionGroup.BooleanElement(name, (boolean) defaultValue, nameKey, descriptionKey);
                 }
                 else {
                     throw new NotImplementedException();
@@ -119,7 +119,7 @@ public class PipelineRaw {
 
                 elements.put(name, element);
             }
-            options.put(includeToken, new Option(includeToken, categoryKey, elements));
+            options.put(includeToken, new OptionGroup(includeToken, categoryKey, elements));
         }
 
         pipelineJson.remove("options");
@@ -129,16 +129,16 @@ public class PipelineRaw {
         return new PipelineRaw(pipelineLocation, nameKey, options, pipelineJson);
     }
 
-    public Option.Element<?> optionElementByName(String name) {
+    public OptionGroup.Element<?> optionElementByName(String name) {
         for (var o : options.values()) {
-            if (o.elements.containsKey(name)) {
-                return o.elements.get(name);
+            if (o.elements().containsKey(name)) {
+                return o.elements().get(name);
             }
         }
         return null;
     }
 
-    public JsonObject getPipelineJson(Map<Option.Element<?>, Object> appliedOptions) {
+    public JsonObject getPipelineJson(Map<OptionGroup.Element<?>, Object> appliedOptions) {
         JsonObject pipelineJson = this.json.clone();
 
         Function<String, Object> optionValueByName = (String name) -> {

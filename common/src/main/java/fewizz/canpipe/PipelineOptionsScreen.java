@@ -12,7 +12,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import com.google.common.collect.ImmutableList;
 
 import fewizz.canpipe.mixininterface.VideoSettingsScreenExtended;
-import fewizz.canpipe.pipeline.Option;
+import fewizz.canpipe.pipeline.OptionGroup;
 import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
@@ -40,13 +40,13 @@ import org.jspecify.annotations.NonNull;
 public class PipelineOptionsScreen extends OptionsSubScreen {
 
     private final PipelineRaw raw;
-    private final Map<Option.Element<?>, Object> appliedOptions;
+    private final Map<OptionGroup.Element<?>, Object> appliedOptions;
     private PipelineOptionsList list;
 
     public PipelineOptionsScreen(
         Screen previousScreen,
         PipelineRaw raw,
-        Map<Option.Element<?>, Object> appliedOptions
+        Map<OptionGroup.Element<?>, Object> appliedOptions
     ) {
         super(previousScreen, Minecraft.getInstance().options, Component.empty());
         this.raw = raw;
@@ -87,15 +87,15 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             PipelineOptionsScreen screen,
             Minecraft minecraft,
             PipelineRaw raw,
-            Map<Option.Element<?>, Object> appliedOptions
+            Map<OptionGroup.Element<?>, Object> appliedOptions
         ) {
             super(minecraft, screen.width, screen.layout.getContentHeight(), screen.layout.getHeaderHeight(), 18);
 
-            for (Option o : screen.raw.options.values()) {
+            for (OptionGroup o : screen.raw.options.values()) {
                 this.addEntry(new CategoryEntry(Component.empty()));
-                this.addEntry(new CategoryEntry(Component.translatable(o.categoryKey)));
+                this.addEntry(new CategoryEntry(Component.translatable(o.categoryKey())));
 
-                for (Option.Element<?> e : o.elements.values()) {
+                for (OptionGroup.Element<?> e : o.elements().values()) {
                     Consumer<Object> applyOptionValue = (Object value) -> {
                         Pipelines.loadAndSetPipeline(raw, Map.of(e, value));
                         if (
@@ -185,12 +185,12 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             static final int BUTTON_HEIGHT = 17;
 
             OptionEntry(
-                PipelineRaw raw, Option.Element<?> e, Object appliedValue,
+                PipelineRaw raw, OptionGroup.Element<?> e, Object appliedValue,
                 Consumer<Object> applyValue
             ) {
                 this.nameWidget = new StringWidget(Component.translatable(e.nameKey), minecraft.font);
 
-                if (e instanceof Option.BooleanElement boolElement) {
+                if (e instanceof OptionGroup.BooleanElement boolElement) {
                     var initialValue = appliedValue != null ? boolElement.validate(appliedValue) : boolElement.defaultValue;
                     this.valueWidget = Checkbox.builder(Component.empty(), minecraft.font)
                         .selected(initialValue)
@@ -199,7 +199,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         })
                         .build();
                 }
-                else if (e instanceof Option.FloatElement floatElement) {
+                else if (e instanceof OptionGroup.FloatElement floatElement) {
                     NumberFormat numberFormat = NumberFormat.getInstance();
                     numberFormat.setMinimumFractionDigits(1);
                     numberFormat.setMaximumFractionDigits(3);
@@ -233,7 +233,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         }
                     };
                 }
-                else if (e instanceof Option.IntegerElement intElement) {
+                else if (e instanceof OptionGroup.IntegerElement intElement) {
                     Function<Long, Component> valueToComponent = (Long v) -> {
                         return Component.literal(Long.toString(v));
                     };
@@ -263,7 +263,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         }
                     };
                 }
-                else if (e instanceof Option.EnumElement enumElement) {
+                else if (e instanceof OptionGroup.EnumElement enumElement) {
                     this.valueWidget = CycleButton.builder(
                         (String s) -> Component.literal(
                             (s.substring(0, 1).toUpperCase() + s.substring(1)).replace("_", " ")

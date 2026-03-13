@@ -8,20 +8,11 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.resources.Identifier;
 
-public class Option {
-    public final Identifier includeToken;
-    public final String categoryKey;
-    public final Map<String, Option.Element<?>> elements;
-
-    Option(
-        Identifier includeToken,
-        String categoryKey,
-        Map<String, Option.Element<?>> elements
-    ) {
-        this.includeToken = includeToken;
-        this.categoryKey = categoryKey;
-        this.elements = elements;
-    }
+public record OptionGroup(  // Or option category
+    Identifier includeToken,
+    String categoryKey,
+    Map<String, OptionGroup.Element<?>> elements
+) {
 
     public static abstract class Element<T> {
         public final String name;
