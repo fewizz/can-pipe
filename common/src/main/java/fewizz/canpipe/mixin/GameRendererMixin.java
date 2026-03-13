@@ -50,6 +50,8 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
     @Unique private Matrix4f canpipe_worldViewMatrix = null;
     @Unique private Matrix4f canpipe_worldProjectionMatrix = null;
+    @Unique private boolean canpipe_runResizePasses = false;
+    @Unique private boolean canpipe_runInitPasses = false;
 
     @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
     @Override public FogRenderer canpipe_getFogRenderer() { return this.fogRenderer; }
@@ -87,12 +89,17 @@ public class GameRendererMixin implements GameRendererExtended {
 
         this.canpipe_worldViewMatrix = null;
         this.canpipe_worldProjectionMatrix = null;
+
+        canpipe_runResizePasses = true;
+        canpipe_runInitPasses = true;
     }
 
     @Inject(method = "resize", at = @At("HEAD"))
     void onResize(int w, int h, CallbackInfo ci) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null) { p.onWindowSizeChanged(w, h); }
+        if (p == null) { return; }
+        p.onWindowSizeChanged(w, h);
+        this.canpipe_runResizePasses = true;
     }
 
     @Inject(
@@ -261,7 +268,9 @@ public class GameRendererMixin implements GameRendererExtended {
 
         Uniforms.updateFREXUniforms(viewMatrix, projectionMatrix);
         this.canpipe_originType = 0;  // camera
-        p.onBeforeRenderingLevel(viewMatrix, projectionMatrix);
+        p.onBeforeRenderingLevel(viewMatrix, projectionMatrix, this.canpipe_runResizePasses, this.canpipe_runInitPasses);
+        this.canpipe_runInitPasses = false;
+        this.canpipe_runResizePasses = false;
     }
 
     @Inject(

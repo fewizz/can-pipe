@@ -86,21 +86,19 @@ public class Pipeline implements AutoCloseable {
 
     public final @Nullable Shadows shadows;
 
-    public final Map<RenderPipeline, RenderPipeline> materialPrograms;
-    public final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
+    private final Map<RenderPipeline, RenderPipeline> materialPrograms;
+    private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
     private final Map<String, RenderPipeline> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
-    public final List<PassBase>
+    private final List<PassBase>
         onInitPasses = new ArrayList<>(),
         beforeWorldRenderPasses = new ArrayList<>(),
         fabulousPasses = new ArrayList<>(),
         afterRenderHandPasses = new ArrayList<>(),
         onResizePasses = new ArrayList<>();
-    private boolean runInitPasses = true;
-    private boolean runResizePasses = true;
 
     Pipeline(PipelineRaw rawPipeline, Map<Option.Element<?>, Object> appliedOptions) { try {
         this.location = rawPipeline.location;
@@ -473,26 +471,23 @@ public class Pipeline implements AutoCloseable {
     public void onWindowSizeChanged(int w, int h) {
         this.textures.forEach((n, t) -> t.onWindowSizeChanged());
         this.framebuffers.forEach((n, f) -> f.onWindowSizeChanged());
-        this.runResizePasses = true;
     }
 
-    public void onBeforeRenderingLevel(Matrix4fc view, Matrix4fc projection) {
+    public void onBeforeRenderingLevel(Matrix4fc view, Matrix4fc projection, boolean runResizePasses, boolean runInitPasses) {
         Profiler.get().push("can-pipe before world");
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
-        if (this.runInitPasses) {
+        if (runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
                 pass.apply(commandEncoder);
             }
-            this.runInitPasses = false;
         }
 
-        if (this.runResizePasses) {
+        if (runResizePasses) {
             for (PassBase pass : this.onResizePasses) {
                 pass.apply(commandEncoder);
             }
-            this.runResizePasses = false;
         }
 
         for (PassBase pass : this.beforeWorldRenderPasses) {
