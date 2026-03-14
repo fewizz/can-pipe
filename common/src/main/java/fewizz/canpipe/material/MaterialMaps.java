@@ -2,6 +2,7 @@ package fewizz.canpipe.material;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -78,7 +79,7 @@ final public class MaterialMaps implements PreparableReloadListener {
     }
 
     static Set<ChunkSectionLayer> chunkLayerSectionLayersThatUseMaterial(Material material) {
-        Set<ChunkSectionLayer> result = new HashSet<>();
+        Set<ChunkSectionLayer> result = EnumSet.noneOf(ChunkSectionLayer.class);
         Minecraft mc = Minecraft.getInstance();
         RandomSource rnd = RandomSource.create();
 
@@ -96,6 +97,9 @@ final public class MaterialMaps implements PreparableReloadListener {
                     for (BakedQuad quad : part.getQuads(dir)) {
                         result.add(quad.materialInfo().layer());
                     }
+                }
+                for (BakedQuad quad : part.getQuads(null)) {
+                    result.add(quad.materialInfo().layer());
                 }
             }
         });
