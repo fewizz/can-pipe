@@ -3,6 +3,8 @@ package fewizz.canpipe.pipeline;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,8 +24,10 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.material.Material;
+import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.resources.Identifier;
 
 public class MaterialPrograms {
@@ -202,7 +206,7 @@ public class MaterialPrograms {
         if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
-            for (Material m : Materials.usedByRenderType(originalRenderPipeline)) {
+            for (Material m : MaterialPrograms.getMaterialsUsedByRenderPipeline(originalRenderPipeline)) {
                 String src = shadow ? m.depthVertexShaderSource() : m.vertexShaderSource();
                 if (src == null) {
                     continue;
@@ -376,7 +380,7 @@ public class MaterialPrograms {
         if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
-            for (Material m : Materials.usedByRenderType(originalRenderPipeline)) {
+            for (Material m : MaterialPrograms.getMaterialsUsedByRenderPipeline(originalRenderPipeline)) {
                 String src = shadow ? m.depthFragmentShaderSource() : m.fragmentShaderSource();
                 if (src == null) {
                     continue;
@@ -511,6 +515,24 @@ public class MaterialPrograms {
         """);
 
         return fragmentSrcBuilder.toString();
+    }
+
+    public static Collection<Material> getMaterialsUsedByRenderPipeline(RenderPipeline renderPipeline) {
+        if (renderPipeline == RenderPipelines.SOLID_TERRAIN || renderPipeline == RenderPipelines.SOLID_BLOCK) {
+            return MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.SOLID);
+        }
+        if (renderPipeline == RenderPipelines.CUTOUT_TERRAIN || renderPipeline == RenderPipelines.CUTOUT_BLOCK) {
+            return MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.CUTOUT);
+        }
+        if (renderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN || renderPipeline == RenderPipelines.TRANSLUCENT_BLOCK) {
+            return MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.TRANSLUCENT);
+        }
+
+        if (renderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
+            return Materials.all();
+        }
+
+        return Collections.emptyList();
     }
 
 }

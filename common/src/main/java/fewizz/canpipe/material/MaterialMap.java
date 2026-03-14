@@ -1,7 +1,9 @@
 package fewizz.canpipe.material;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 
@@ -62,6 +64,19 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
 
     boolean usesMaterial(Material material) {
         return this.defaultMaterial == material || this.spriteMap.values().contains(material);
+    }
+
+    Set<Material> getUsedMaterials() {
+        Set<Material> result = new HashSet<>();
+        if (this.defaultMaterial != null) {
+            result.add(this.defaultMaterial);
+        }
+        for (var material : this.spriteMap.values()) {
+            if (material != null) {
+                result.add(material);
+            }
+        }
+        return result;
     }
 
 }

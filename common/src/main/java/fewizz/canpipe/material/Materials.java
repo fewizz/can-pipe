@@ -1,25 +1,16 @@
 package fewizz.canpipe.material;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
@@ -38,54 +29,6 @@ final public class Materials implements PreparableReloadListener {
 
     public static Collection<Material> all() {
         return Collections.unmodifiableCollection(Materials.materials.values());
-    }
-
-    private static Collection<Material> usedByChunkSectionLayer(ChunkSectionLayer layer) {
-        List<Material> result = new ArrayList<>();
-        for (var material : Materials.materials.values()) {
-            if (MaterialMaps.chunkLayerSectionLayersThatUseMaterial(material).contains(layer)) {
-                result.add(material);
-            }
-        }
-        return result;
-    }
-
-    private static Collection<Material> usedByMovingBlockRenderType(RenderType renderType) {
-        List<Material> result = new ArrayList<>();
-        for (var material : Materials.materials.values()) {
-            if (MaterialMaps.movingBlocksRenderTypesThatUseMaterial(material).contains(renderType)) {
-                result.add(material);
-            }
-        }
-        return result;
-    }
-
-    public static Collection<Material> usedByRenderType(RenderPipeline renderPipeline) {
-        if (renderPipeline == RenderPipelines.SOLID_TERRAIN) {
-            return Materials.usedByChunkSectionLayer(ChunkSectionLayer.SOLID);
-        }
-        if (renderPipeline == RenderPipelines.CUTOUT_TERRAIN) {
-            return Materials.usedByChunkSectionLayer(ChunkSectionLayer.CUTOUT);
-        }
-        if (renderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN) {
-            return Materials.usedByChunkSectionLayer(ChunkSectionLayer.TRANSLUCENT);
-        }
-
-        if (renderPipeline == RenderPipelines.SOLID_BLOCK) {
-            return Materials.usedByMovingBlockRenderType(RenderTypes.solidMovingBlock());
-        }
-        if (renderPipeline == RenderPipelines.CUTOUT_BLOCK) {
-            return Materials.usedByMovingBlockRenderType(RenderTypes.cutoutMovingBlock());
-        }
-        if (renderPipeline == RenderPipelines.TRANSLUCENT_BLOCK) {
-            return Materials.usedByMovingBlockRenderType(RenderTypes.translucentMovingBlock());
-        }
-
-        if (renderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
-            return Materials.all();
-        }
-
-        return Collections.emptyList();
     }
 
     @Override

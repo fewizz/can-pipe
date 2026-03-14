@@ -2,6 +2,8 @@ package fewizz.canpipe.material;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +12,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.stream.Stream;
 
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
@@ -18,8 +19,6 @@ import fewizz.canpipe.CanPipe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -46,6 +45,8 @@ final public class MaterialMaps implements PreparableReloadListener {
     private static final Map<Fluid, MaterialMap> fluids = new HashMap<>();
     private static final Map<EntityType<?>, MaterialMap> entities = new HashMap<>();
 
+    private static final Map<ChunkSectionLayer, Set<Material>> materialsUsedByLayer = new EnumMap<>(ChunkSectionLayer.class);
+
     public static MaterialMap getForBlock(Block block) {
         return MaterialMaps.blocks.get(block);
     }
@@ -66,62 +67,8 @@ final public class MaterialMaps implements PreparableReloadListener {
         return MaterialMaps.entities.get(entityType);
     }
 
-    private static Stream<Block> blocksThatUseMaterial(Material material) {
-        return MaterialMaps.blocks.entrySet().stream()
-            .filter(e -> e.getValue().usesMaterial(material))
-            .map(e -> e.getKey());
-    }
-
-    private static Stream<Fluid> fluidsThatUseMaterial(Material material) {
-        return MaterialMaps.fluids.entrySet().stream()
-            .filter(e -> e.getValue().usesMaterial(material))
-            .map(e -> e.getKey());
-    }
-
-    static Set<ChunkSectionLayer> chunkLayerSectionLayersThatUseMaterial(Material material) {
-        Set<ChunkSectionLayer> result = EnumSet.noneOf(ChunkSectionLayer.class);
-        Minecraft mc = Minecraft.getInstance();
-        RandomSource rnd = RandomSource.create();
-
-        blocksThatUseMaterial(material).forEach(block -> {
-            if (block instanceof LeavesBlock) {
-                result.add(ChunkSectionLayer.CUTOUT);
-                return;
-            }
-
-            List<BlockStateModelPart> output = new ArrayList<>();
-            mc.getModelManager().getBlockStateModelSet().get(block.defaultBlockState()).collectParts(rnd, output);
-
-            for (BlockStateModelPart part : output) {
-                for (Direction dir : Direction.values()) {
-                    for (BakedQuad quad : part.getQuads(dir)) {
-                        result.add(quad.materialInfo().layer());
-                    }
-                }
-                for (BakedQuad quad : part.getQuads(null)) {
-                    result.add(quad.materialInfo().layer());
-                }
-            }
-        });
-        fluidsThatUseMaterial(material).forEach(fluid -> {
-            result.add(mc.getModelManager().getFluidStateModelSet().get(fluid.defaultFluidState()).layer());
-        });
-        return result;
-    }
-
-    static Set<RenderType> movingBlocksRenderTypesThatUseMaterial(Material material) {
-        Set<RenderType> result = new HashSet<>();
-        blocksThatUseMaterial(material).forEach((block) -> {
-            if (block instanceof LeavesBlock) {
-                result.add(RenderTypes.cutoutMovingBlock());
-            }
-            else {
-                // result.add(ItemBlockRenderTypes.getMovingBlockRenderType(block.defaultBlockState())); TODO
-                // result.add(ItemBlockRenderTypes.getRenderType(ChunkSectionLayer.SOLID));
-                result.add(RenderTypes.solidMovingBlock());
-            }
-        });
-        return result;
+    public static Collection<Material> getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer layer) {
+        return MaterialMaps.materialsUsedByLayer.get(layer);
     }
 
     @Override
@@ -149,10 +96,13 @@ final public class MaterialMaps implements PreparableReloadListener {
 
     public static void loadRaw(Map<Identifier, Resource> materialMapsJson) {
         MaterialMaps.blocks.clear();
+
         MaterialMaps.blockEntities.clear();
         MaterialMaps.fluids.clear();
         MaterialMaps.items.clear();
         MaterialMaps.entities.clear();
+
+        MaterialMaps.materialsUsedByLayer.clear();
 
         for (var entry : materialMapsJson.entrySet()) {
             Identifier materialMapId = entry.getKey();
@@ -185,6 +135,11 @@ final public class MaterialMaps implements PreparableReloadListener {
                     var block = BuiltInRegistries.BLOCK.get(elementId);
                     if (block.isEmpty()) continue;
                     MaterialMaps.blocks.put(block.get().value(), materialMap);
+                    var materials = materialMap.getUsedMaterials();
+                    var layers = MaterialMaps.getLayersUsedByBlock(block.get().value());
+                    for (var layer : layers) {
+                        materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(materials);
+                    }
                 }
                 if (type.equals("block_entity")) {
                     var blockEntityType = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(elementId);
@@ -195,6 +150,11 @@ final public class MaterialMaps implements PreparableReloadListener {
                     var fluid = BuiltInRegistries.FLUID.get(elementId);
                     if (fluid.isEmpty()) continue;
                     MaterialMaps.fluids.put(fluid.get().value(), materialMap);
+                    var materials = materialMap.getUsedMaterials();
+                    var layers = MaterialMaps.getLayersUsedByFluid(fluid.get().value());
+                    for (var layer : layers) {
+                        materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(materials);
+                    }
                 }
                 if (type.equals("item")) {
                     var item = BuiltInRegistries.ITEM.get(elementId);
@@ -205,6 +165,40 @@ final public class MaterialMaps implements PreparableReloadListener {
                 CanPipe.LOGGER.error("Couldn't load material map \""+materialMapId+"\"", e);
             }
         }
+    }
+
+    private static Set<ChunkSectionLayer> getLayersUsedByBlock(Block block) {
+        Set<ChunkSectionLayer> result = EnumSet.noneOf(ChunkSectionLayer.class);
+
+        if (block instanceof LeavesBlock) {
+            result.add(ChunkSectionLayer.CUTOUT);
+        }
+        else {
+            Minecraft mc = Minecraft.getInstance();
+            RandomSource rnd = RandomSource.create();
+            List<BlockStateModelPart> output = new ArrayList<>();
+            mc.getModelManager().getBlockStateModelSet().get(block.defaultBlockState()).collectParts(rnd, output);
+
+            for (BlockStateModelPart part : output) {
+                for (Direction dir : Direction.values()) {
+                    for (BakedQuad quad : part.getQuads(dir)) {
+                        result.add(quad.materialInfo().layer());
+                    }
+                }
+                for (BakedQuad quad : part.getQuads(null)) {
+                    result.add(quad.materialInfo().layer());
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static Set<ChunkSectionLayer> getLayersUsedByFluid(Fluid fluid) {
+        Set<ChunkSectionLayer> result = EnumSet.noneOf(ChunkSectionLayer.class);
+        Minecraft mc = Minecraft.getInstance();
+        result.add(mc.getModelManager().getFluidStateModelSet().get(fluid.defaultFluidState()).layer());
+        return result;
     }
 
 }
