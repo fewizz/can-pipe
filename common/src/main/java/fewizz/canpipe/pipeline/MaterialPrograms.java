@@ -71,10 +71,11 @@ public class MaterialPrograms {
             Identifier location = Identifier.fromNamespaceAndPath(
                 CanPipe.MOD_ID, (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
             );
+
             renderPipelineBuilder
                 .withLocation(location)
-                .withVertexShader(vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()))
-                .withFragmentShader(fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()))
+                .withVertexShader(vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh"))
+                .withFragmentShader(fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh"))
                 .withDepthStencilState(new DepthStencilState(
                     originalRenderPipeline.getDepthStencilState().depthTest(),
                     originalRenderPipeline.getDepthStencilState().writeDepth(),
@@ -171,7 +172,7 @@ public class MaterialPrograms {
                 try {
                     Files.createDirectories(compilationErrorsPath);
                     Files.writeString(
-                        compilationErrorsPath.resolve(location.toDebugFileName()),
+                        compilationErrorsPath.resolve(location.toString().replace("/", "--").replace(":", "--")),
                         src+"\n"+log
                     );
                 } catch (IOException e) {

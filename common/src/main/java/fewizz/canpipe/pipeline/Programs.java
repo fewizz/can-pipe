@@ -96,7 +96,7 @@ public class Programs {
                 try {
                     Files.createDirectories(compilationErrorsPath);
                     Files.writeString(
-                        compilationErrorsPath.resolve(location.toDebugFileName()),
+                        compilationErrorsPath.resolve(location.toString().replace("/", "--").replace(":", "--")),
                         src+"\n"+log
                     );
                 } catch (IOException e) {
