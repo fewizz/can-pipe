@@ -3,10 +3,10 @@ package fewizz.canpipe.mixin;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,6 +18,7 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.OptionInstance;
+import net.minecraft.client.TextureFilteringMethod;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.Tooltip;
@@ -31,18 +32,44 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
 
     VideoSettingsScreenMixin() { super(null, null, null); }
 
-    MutableObject<Button> settingsButtonRef = new MutableObject<>();
-    MutableObject<CycleButton<Optional<PipelineRaw>>> pipelineButtonRef = new MutableObject<>();
+    @Unique private Button canpipe_pipelineSettingsButton = null;
+    @Unique private CycleButton<Optional<PipelineRaw>> canpipe_pipelineSwitchButton = null;
 
     @Override
     public void canpipe_onPipelineLoaded() {
-        boolean showSettings =
-            Pipelines.getCurrentRaw() != null &&
-            Pipelines.getLoadingError() == null;
+        assert this.list != null;
 
-        pipelineButtonRef.get().setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showSettings ? 30 : 0));
-        pipelineButtonRef.get().setValue(Optional.ofNullable(Pipelines.getCurrentRaw()));
-        settingsButtonRef.get().visible = showSettings;
+        boolean pipelineIsActive = Pipelines.getCurrent() != null;
+
+        this.canpipe_pipelineSwitchButton.setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (pipelineIsActive ? 30 : 0));
+        this.canpipe_pipelineSwitchButton.setValue(Optional.ofNullable(Pipelines.getCurrentRaw()));
+        this.canpipe_pipelineSettingsButton.visible = pipelineIsActive;
+
+        @SuppressWarnings("unchecked") var textureFilteringButton = (CycleButton<TextureFilteringMethod>) this.list.findOption(this.options.textureFiltering());
+
+        if (textureFilteringButton != null) {
+            if (pipelineIsActive) {
+                textureFilteringButton.active = false;
+                textureFilteringButton.setValue(TextureFilteringMethod.NONE);
+            }
+            else {
+                textureFilteringButton.active = true;
+                textureFilteringButton.setValue(this.options.textureFiltering().get());
+            }
+        }
+
+        @SuppressWarnings("unchecked") var improvedTransparencyButton = (CycleButton<Boolean>) this.list.findOption(this.options.improvedTransparency());
+
+        if (improvedTransparencyButton != null) {
+            if (pipelineIsActive) {
+                improvedTransparencyButton.active = false;
+                improvedTransparencyButton.setValue(true);
+            }
+            else {
+                improvedTransparencyButton.active = true;
+                improvedTransparencyButton.setValue(this.options.improvedTransparency().get());
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -71,7 +98,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                     current.appliedOptions
                 ));
             },
-            supplier -> supplier.get()
+            Supplier::get
         ) {
             @Override
             public void setX(int x) {
@@ -106,12 +133,12 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                     values.add(Optional.empty());
                     values.addAll(
                         Pipelines.RAW_PIPELINES.values().stream()
-                            .map(p -> Optional.of(p))
-                            .collect(Collectors.toList())
+                            .map(Optional::of)
+                            .toList()
                     );
                     return values;
                 },
-                (Optional<PipelineRaw> val) -> Optional.of(val),
+                Optional::of,
                 null
             ),
             Optional.ofNullable(Pipelines.getCurrentRaw()),  // current widget value
@@ -125,12 +152,18 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             }
         ).createButton(this.options);
 
-        settingsButtonRef.setValue(settingsButton);
-        pipelineButtonRef.setValue(pipelineButton);
+        this.canpipe_pipelineSettingsButton = settingsButton;
+        this.canpipe_pipelineSwitchButton = pipelineButton;
 
-        canpipe_onPipelineLoaded();
+        this.list.addSmall(pipelineButton, settingsButton);
+    }
 
-        list.addSmall(pipelineButton, settingsButton);
+    @Inject(
+        method = "addOptions",
+        at = @At("RETURN")
+    )
+    void onAllOptionsAdded(CallbackInfo ci) {
+        this.canpipe_onPipelineLoaded();
     }
 
 }
