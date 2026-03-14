@@ -17,9 +17,8 @@ layout(std140) uniform frx_ub_world {
     vec4 canpipe_weatherGradients;
     vec3 frx_skyLightVector;  // points to the sun or moon
     vec3 canpipe_sunriseOrSunsetColor;  // vec3(1.0) if unavailable
+    vec3 frx_vanillaClearColor;
 };
-
-const vec3 frx_vanillaClearColor = vec3(0.0);  // TODO
 
 #define frx_renderFrames uint(canpipe_renderFrames)
 

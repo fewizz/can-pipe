@@ -167,6 +167,7 @@ public class Uniforms {
     private static final Vec4Uniform CANPIPE_WEATHER_GRADIENTS = WORLD.add(new Vec4Uniform());
     private static final Vec3Uniform FRX_SKY_LIGHT_VECTOR = WORLD.add(new Vec3Uniform());
     private static final Vec3Uniform CANPIPE_SUNRISE_OR_SUNSET_COLOR = WORLD.add(new Vec3Uniform());
+    private static final Vec3Uniform FRX_VANILLA_CLEAR_COLOR = WORLD.add(new Vec3Uniform());
     public static final GpuBuffer WORLD_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe world UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -413,6 +414,7 @@ public class Uniforms {
             lre.canpipe_getSmoothedRainGradient(),
             lre.canpipe_getSmoothedThunderGradient()
         );
+        FRX_VANILLA_CLEAR_COLOR.set(mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState.fogData.color);
 
         // fog.glsl
         if (ticks == 0 && !mc.level.dimensionType().hasSkyLight()) {
