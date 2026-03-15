@@ -4,6 +4,7 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -44,20 +45,25 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow @Final private Lightmap lightmap;
 
     @Unique private long canpipe_renderStartNano = -1;
+    @Unique private int canpipe_renderFrames = -1;
     @Unique private int canpipe_originType = 0;
     @Unique private boolean canpipe_isRenderingHand = false;
     @Unique private Vector3f canpipe_lastCameraPos = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
     @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
-    @Unique private Matrix4f canpipe_worldViewMatrix = null;
-    @Unique private Matrix4f canpipe_worldProjectionMatrix = null;
+    @Unique private Vector4f[] canpipe_shadowCenters = null;
+    @Unique private Matrix4f canpipe_viewMatrix = null;
+    @Unique private Matrix4f canpipe_projectionMatrix = null;
+    @Unique private Matrix4f canpipe_shadowViewMatrix = null;
+    @Unique private Matrix4f canpipe_lastViewMatrix;
+    @Unique private Matrix4f canpipe_lastProjectionMatrix;
     @Unique private boolean canpipe_runResizePasses = false;
     @Unique private boolean canpipe_runInitPasses = false;
 
     @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
     @Override public FogRenderer canpipe_getFogRenderer() { return this.fogRenderer; }
-    @Override public Matrix4f canpipe_worldViewMatrix() { return this.canpipe_worldViewMatrix; }
-    @Override public Matrix4f canpipe_worldProjectionMatrix() { return this.canpipe_worldProjectionMatrix; }
+    @Override public Matrix4f canpipe_worldViewMatrix() { return this.canpipe_viewMatrix; }
+    @Override public Matrix4f canpipe_worldProjectionMatrix() { return this.canpipe_projectionMatrix; }
     @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
     @Override public boolean canpipe_isRenderingHand() { return this.canpipe_isRenderingHand; }
     @Override public Lightmap canpipe_getLightmap() { return this.lightmap; }
@@ -69,25 +75,18 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_originType = 0;
         this.canpipe_isRenderingHand = false;
 
-        Uniforms.CANPIPE_RENDER_FRAMES.set(-1);
-        Uniforms.FRX_RENDER_SECONDS.set(0);
+        this.canpipe_renderFrames = -1;
 
-        Uniforms.FRX_LAST_VIEW_MATRIX.m00(Float.NEGATIVE_INFINITY);
-        Uniforms.FRX_LAST_PROJECTION_MATRIX.m00(Float.NEGATIVE_INFINITY);
+        this.canpipe_lastViewMatrix = new Matrix4f().m00(Float.NEGATIVE_INFINITY);
+        this.canpipe_lastProjectionMatrix = new Matrix4f().m00(Float.NEGATIVE_INFINITY);
 
-        Uniforms.FRX_SHADOW_VIEW_MATRIX.identity();
-        this.canpipe_shadowInnerOffsets = new Vector3f[] {
-            new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()
-        };
+        this.canpipe_shadowViewMatrix = new Matrix4f();
+        this.canpipe_shadowInnerOffsets = new Vector3f[] {new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()};
+        this.canpipe_shadowCenters = new Vector4f[] {new Vector4f(), new Vector4f(), new Vector4f(), new Vector4f()};
         this.canpipe_shadowFrustums = new ShadowFrustum[4];
 
-        Uniforms.CANPIPE_SHADOW_CENTERS[0].set(0.0);
-        Uniforms.CANPIPE_SHADOW_CENTERS[1].set(0.0);
-        Uniforms.CANPIPE_SHADOW_CENTERS[2].set(0.0);
-        Uniforms.CANPIPE_SHADOW_CENTERS[3].set(0.0);
-
-        this.canpipe_worldViewMatrix = null;
-        this.canpipe_worldProjectionMatrix = null;
+        this.canpipe_viewMatrix = null;
+        this.canpipe_projectionMatrix = null;
 
         canpipe_runResizePasses = true;
         canpipe_runInitPasses = true;
@@ -119,8 +118,7 @@ public class GameRendererMixin implements GameRendererExtended {
         ProfilerFiller profiler = Profiler.get();
         Matrix4f viewMatrix = this.gameRenderState.levelRenderState.cameraRenderState.viewRotationMatrix;
 
-        Uniforms.CANPIPE_RENDER_FRAMES.add(1);
-        Uniforms.FRX_RENDER_SECONDS.set((float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0));
+        this.canpipe_renderFrames += 1;
 
         if (this.canpipe_lastCameraPos.get(0) == Float.NEGATIVE_INFINITY) {
             this.canpipe_lastCameraPos.set(this.mainCamera.position().toVector3f());
@@ -136,7 +134,7 @@ public class GameRendererMixin implements GameRendererExtended {
         Vector3f toSunDir = p.getSunOrMoonDir(this.minecraft.level, new Vector3f());
         Vector3f sunPosOffset = toSunDir.mul(maxCascadeRadius, new Vector3f());
 
-        Uniforms.FRX_SHADOW_VIEW_MATRIX.setLookAt(
+        this.canpipe_shadowViewMatrix.setLookAt(
             sunPosOffset,                                  // eye pos
             new Vector3f(0.0F, 0.0F, 0.0F),                // center
             !(sunPosOffset.x == 0 && sunPosOffset.z == 0)  // up
@@ -144,10 +142,8 @@ public class GameRendererMixin implements GameRendererExtended {
                 : new Vector3f(0.0F, 0.0F, 1.0F)
         );
 
-        Uniforms.FRX_INVERSE_SHADOW_VIEW_MATRIX.set(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
-
-        var shadowRotationMatrix = new Matrix3f(Uniforms.FRX_SHADOW_VIEW_MATRIX);
-        var inverseShadowViewMatrix = new Matrix4f(Uniforms.FRX_SHADOW_VIEW_MATRIX).invert();
+        var shadowRotationMatrix = new Matrix3f(this.canpipe_shadowViewMatrix);
+        var inverseShadowViewMatrix = new Matrix4f(this.canpipe_shadowViewMatrix).invert();
 
         float prevCascadeRadius = -1.0F;
 
@@ -166,7 +162,7 @@ public class GameRendererMixin implements GameRendererExtended {
             prevCascadeRadius = Math.max(cascadeRadius, prevCascadeRadius);
 
             center = new Vector3f(mainCamera.forwardVector()).mul(cascadeRadius);
-            center.mulProject(Uniforms.FRX_SHADOW_VIEW_MATRIX);
+            center.mulProject(this.canpipe_shadowViewMatrix);
 
             final float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
 
@@ -181,7 +177,7 @@ public class GameRendererMixin implements GameRendererExtended {
             center.y -= (center.y % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].y * metersPerPixel;
             center.z -= (center.z % metersPerPixel) + this.canpipe_shadowInnerOffsets[cascade].z * metersPerPixel;
 
-            Uniforms.CANPIPE_SHADOW_CENTERS[cascade].set(center.x, center.y, center.z, cascadeRadius);
+            this.canpipe_shadowCenters[cascade].set(center.x, center.y, center.z, cascadeRadius);
 
             // For shortened projection matrix, from player's perspective
             // Such frustum should include whole cascade along -z
@@ -189,7 +185,8 @@ public class GameRendererMixin implements GameRendererExtended {
             for (int x = -1; x <= 1; x += 2) {  // for each cascade corner
                 for (int y = -1; y <= 1; y += 2) {
                     for (int z = -1; z <= 1; z += 2) {
-                        var corner = new Vector3f(x, y, z).mul(cascadeRadius).add(center)
+                        var corner =
+                            new Vector3f(x, y, z).mul(cascadeRadius).add(center)
                             .mulProject(inverseShadowViewMatrix).mulProject(viewMatrix);
                         depthFar = Math.min(Math.max(depthFar, -corner.z), maxCascadeRadius);
                     }
@@ -204,7 +201,7 @@ public class GameRendererMixin implements GameRendererExtended {
             Vector3f max = new Vector3f();
 
             new Matrix4f()
-                .mul(Uniforms.FRX_SHADOW_VIEW_MATRIX)
+                .mul(this.canpipe_shadowViewMatrix)
                 .mul(new Matrix4f(shortenedProjectionMatrix).mul(viewMatrix).invert())
                 .frustumAabb(min, max);  // frustum AABB in shadow view space
 
@@ -220,7 +217,7 @@ public class GameRendererMixin implements GameRendererExtended {
             );
 
             ShadowFrustum shadowFrustum = new ShadowFrustum(
-                Uniforms.FRX_SHADOW_VIEW_MATRIX, shadowProjectionMatrix,
+                this.canpipe_shadowViewMatrix, shadowProjectionMatrix,
                 shortendedViewProjectionMatrix, toSunDir
             );
             shadowFrustum.prepare(this.mainCamera.position().x, this.mainCamera.position().y, this.mainCamera.position().z);
@@ -256,17 +253,28 @@ public class GameRendererMixin implements GameRendererExtended {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
-        this.canpipe_worldViewMatrix = new Matrix4f(viewMatrix);
-        this.canpipe_worldProjectionMatrix = new Matrix4f(projectionMatrix);
+        this.canpipe_viewMatrix = new Matrix4f(viewMatrix);
+        this.canpipe_projectionMatrix = new Matrix4f(projectionMatrix);
 
-        if (Uniforms.FRX_LAST_VIEW_MATRIX.get(0, 0) == Float.NEGATIVE_INFINITY) {
-            Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
-            Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
+        if (this.canpipe_lastViewMatrix.get(0, 0) == Float.NEGATIVE_INFINITY) {
+            this.canpipe_lastViewMatrix.set(viewMatrix);
+            this.canpipe_lastProjectionMatrix.set(projectionMatrix);
         }
 
-        Uniforms.updateFREXUniforms(viewMatrix, projectionMatrix, this.canpipe_lastCameraPos);
+        float renderSeconds = (float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0);
+
+        Uniforms.updateFREXUniforms(
+            viewMatrix, projectionMatrix,
+            this.canpipe_lastViewMatrix, this.canpipe_lastProjectionMatrix,
+            this.canpipe_renderFrames, renderSeconds,
+            this.canpipe_lastCameraPos,
+            this.canpipe_shadowViewMatrix, this.canpipe_shadowCenters
+        );
+
         this.canpipe_originType = 0;  // camera
+
         p.onBeforeRenderingLevel(viewMatrix, projectionMatrix, this.canpipe_runResizePasses, this.canpipe_runInitPasses);
+
         this.canpipe_runInitPasses = false;
         this.canpipe_runResizePasses = false;
     }
@@ -310,8 +318,8 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_isRenderingHand = false;
         p.onAfterRenderHand();
 
-        Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
-        Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
+        this.canpipe_lastViewMatrix.set(viewMatrix);
+        this.canpipe_lastProjectionMatrix.set(projectionMatrix);
         this.canpipe_lastCameraPos = this.mainCamera.position().toVector3f();
     }
 

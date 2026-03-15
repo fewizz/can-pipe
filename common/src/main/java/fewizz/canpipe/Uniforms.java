@@ -84,6 +84,7 @@ public class Uniforms {
     private static final FloatUniform FRX_GLINT_SPEED = ACCESSIBILITY.add(new FloatUniform());
     private static final IntUniform FRX_HIDE_LIGHTNING_FLASHES = ACCESSIBILITY.add(new IntUniform());
     private static final IntUniform FRX_HIGH_CONTRAST = ACCESSIBILITY.add(new IntUniform());
+
     public static final GpuBuffer ACCESSIBILITY_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe accessibility UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -92,10 +93,10 @@ public class Uniforms {
 
     // view
     private static final UniformBufferStruct VIEW = new UniformBufferStruct();
-    public static final Mat4Uniform FRX_INVERSE_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
-    public static final Mat4Uniform FRX_LAST_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
-    public static final Mat4Uniform FRX_INVERSE_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
-    public static final Mat4Uniform FRX_LAST_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_INVERSE_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_LAST_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_INVERSE_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_LAST_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Vec4Uniform FRX_MODEL_TO_WORLD = VIEW.add(new Vec4Uniform());
     private static final Vec2Uniform CANPIPE_SCREEN_SIZE = VIEW.add(new Vec2Uniform());
     private static final FloatUniform FRX_VIEW_BRIGHTNESS = VIEW.add(new FloatUniform());
@@ -105,6 +106,7 @@ public class Uniforms {
     private static final Vec3Uniform FRX_ENTITY_VIEW = VIEW.add(new Vec3Uniform());
     private static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
     private static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
+
     public static final GpuBuffer VIEW_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe view UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -112,14 +114,15 @@ public class Uniforms {
     );
 
     private static final UniformBufferStruct SHADOW = new UniformBufferStruct();
-    public static final Mat4Uniform FRX_SHADOW_VIEW_MATRIX = SHADOW.add(new Mat4Uniform());
-    public static final Mat4Uniform FRX_INVERSE_SHADOW_VIEW_MATRIX = SHADOW.add(new Mat4Uniform());
-    public static final Vec4Uniform[] CANPIPE_SHADOW_CENTERS = new Vec4Uniform[] {
+    private static final Mat4Uniform FRX_SHADOW_VIEW_MATRIX = SHADOW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_INVERSE_SHADOW_VIEW_MATRIX = SHADOW.add(new Mat4Uniform());
+    private static final Vec4Uniform[] CANPIPE_SHADOW_CENTERS = new Vec4Uniform[] {
         SHADOW.add(new Vec4Uniform()),
         SHADOW.add(new Vec4Uniform()),
         SHADOW.add(new Vec4Uniform()),
         SHADOW.add(new Vec4Uniform())
     };
+
     public static final GpuBuffer SHADOW_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe shadow UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -146,6 +149,7 @@ public class Uniforms {
     private static final FloatUniform FRX_PLAYER_MOOD = PLAYER.add(new FloatUniform());
     private static final IntUniform CANPIPE_PLAYER_FLAGS = PLAYER.add(new IntUniform());
     private static final IVec2Uniform CANPIPE_EFFECTS_FLAGS = PLAYER.add(new IVec2Uniform());
+
     public static final GpuBuffer PLAYER_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe player UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -154,10 +158,10 @@ public class Uniforms {
 
     // world
     private static final UniformBufferStruct WORLD = new UniformBufferStruct();
-    public static final IntUniform CANPIPE_RENDER_FRAMES = WORLD.add(new IntUniform());
+    private static final IntUniform CANPIPE_RENDER_FRAMES = WORLD.add(new IntUniform());
     private static final IntUniform CANPIPE_WORLD_FLAGS = WORLD.add(new IntUniform());
     private static final FloatUniform CANPIPE_FIXED_OR_DAY_TIME = WORLD.add(new FloatUniform());
-    public static final FloatUniform FRX_RENDER_SECONDS = WORLD.add(new FloatUniform());
+    private static final FloatUniform FRX_RENDER_SECONDS = WORLD.add(new FloatUniform());
     private static final FloatUniform FRX_WORLD_DAY = WORLD.add(new FloatUniform());
     private static final FloatUniform FRX_WORLD_TIME = WORLD.add(new FloatUniform());
     private static final FloatUniform FRX_MOON_SIZE = WORLD.add(new FloatUniform());
@@ -169,6 +173,7 @@ public class Uniforms {
     private static final Vec3Uniform FRX_SKY_LIGHT_VECTOR = WORLD.add(new Vec3Uniform());
     private static final Vec3Uniform CANPIPE_SUNRISE_OR_SUNSET_COLOR = WORLD.add(new Vec3Uniform());
     private static final Vec3Uniform FRX_VANILLA_CLEAR_COLOR = WORLD.add(new Vec3Uniform());
+
     public static final GpuBuffer WORLD_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe world UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -179,6 +184,7 @@ public class Uniforms {
     private static final UniformBufferStruct FOG = new UniformBufferStruct();
     private static final Vec4Uniform FRX_FOG_COLOR = FOG.add(new Vec4Uniform() {{ set(1.0F); }});
     private static final IntUniform FRX_FOG_ENABLED = FOG.add(new IntUniform());
+
     public static final GpuBuffer FOG_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe fog UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -187,7 +193,10 @@ public class Uniforms {
 
     public static void updateFREXUniforms(
         Matrix4fc view, Matrix4fc projection,
-        Vector3f lastCameraPos
+        Matrix4fc lastView, Matrix4fc lastProjection,
+        int renderFrames, float renderSeconds,
+        Vector3f lastCameraPos,
+        Matrix4f shadowViewMatrix, Vector4f[] shadowCenters
     ) {
         Profiler.get().push("can-pipe update FREX uniforms");
         Profiler.get().push("collect");
@@ -207,9 +216,6 @@ public class Uniforms {
             Mth.lerp(pt, mc.player.zo, mc.player.getZ())
         );
 
-        FRX_INVERSE_VIEW_MATRIX.set(view).invert();
-        FRX_INVERSE_PROJECTION_MATRIX.set(projection).invert();
-
         // accessibility.glsl
         FRX_FOV_EFFECTS.set((float)(double) mc.options.fovEffectScale().get());
         FRX_DISTORTION_EFFECTS.set((float)(double) mc.options.screenEffectScale().get());
@@ -221,6 +227,10 @@ public class Uniforms {
         FRX_GLINT_SPEED.set((float)(double) mc.options.glintSpeed().get());
 
         // view.glsl
+        FRX_INVERSE_VIEW_MATRIX.set(view).invert();
+        FRX_LAST_VIEW_MATRIX.set(lastView);
+        FRX_INVERSE_PROJECTION_MATRIX.set(projection).invert();
+        FRX_LAST_PROJECTION_MATRIX.set(lastProjection);
         FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
         FRX_CAMERA_VIEW.set(Vec3.directionFromRotation(camera.xRot(), camera.yRot()).toVector3f());
         FRX_ENTITY_VIEW.set(Vec3.directionFromRotation(mc.player.getXRot(pt), mc.player.getYRot(pt)).toVector3f());
@@ -256,6 +266,12 @@ public class Uniforms {
 
         FRX_CAMERA_POS.set(camera.position().toVector3f());
         FRX_LAST_CAMERA_POS.set(lastCameraPos);
+
+        FRX_SHADOW_VIEW_MATRIX.set(shadowViewMatrix);
+        FRX_INVERSE_SHADOW_VIEW_MATRIX.set(shadowViewMatrix).invert();
+        for (int i = 0; i < shadowCenters.length; ++i) {
+            CANPIPE_SHADOW_CENTERS[i].set(shadowCenters[i]);
+        }
 
         // player.glsl
         {
@@ -369,6 +385,8 @@ public class Uniforms {
 
         // world
         long ticks = mc.level.getDefaultClockTime();
+        CANPIPE_RENDER_FRAMES.set(renderFrames);
+        FRX_RENDER_SECONDS.set(renderSeconds);
         CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         FRX_WORLD_DAY.set((float) ((ticks / 24000L) % 2147483647L));
         FRX_WORLD_TIME.set((ticks % 24000L) / 24000.0F);
