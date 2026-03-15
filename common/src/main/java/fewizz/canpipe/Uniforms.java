@@ -7,11 +7,11 @@ import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.UniformBufferStruct.FloatUniform;
@@ -30,8 +30,8 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -51,29 +51,6 @@ import net.minecraft.world.phys.Vec3;
 
 public class Uniforms {
 
-    public static final GpuBuffer[] INT_0_3_UBO_BUFFERS = new GpuBuffer[] {
-        RenderSystem.getDevice().createBuffer(
-            () -> "can-pipe 0",
-            GpuBuffer.USAGE_UNIFORM,
-            MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 0))
-        ),
-        RenderSystem.getDevice().createBuffer(
-            () -> "can-pipe 1",
-            GpuBuffer.USAGE_UNIFORM,
-            MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 1))
-        ),
-        RenderSystem.getDevice().createBuffer(
-            () -> "can-pipe 2",
-            GpuBuffer.USAGE_UNIFORM,
-            MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 2))
-        ),
-        RenderSystem.getDevice().createBuffer(
-            () -> "can-pipe 3",
-            GpuBuffer.USAGE_UNIFORM,
-            MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 3))
-        )
-    };
-
     // accessibility
     private static final UniformBufferStruct ACCESSIBILITY = new UniformBufferStruct();
     private static final FloatUniform FRX_FOV_EFFECTS = ACCESSIBILITY.add(new FloatUniform());
@@ -85,7 +62,7 @@ public class Uniforms {
     private static final IntUniform FRX_HIDE_LIGHTNING_FLASHES = ACCESSIBILITY.add(new IntUniform());
     private static final IntUniform FRX_HIGH_CONTRAST = ACCESSIBILITY.add(new IntUniform());
 
-    public static final GpuBuffer ACCESSIBILITY_UBO = RenderSystem.getDevice().createBuffer(
+    private static final GpuBuffer ACCESSIBILITY_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe accessibility UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         ACCESSIBILITY.size()
@@ -97,6 +74,8 @@ public class Uniforms {
     private static final Mat4Uniform FRX_LAST_VIEW_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Mat4Uniform FRX_INVERSE_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Mat4Uniform FRX_LAST_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_CLEAN_VIEW_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
+    private static final Mat4Uniform FRX_INVERSE_CLEAN_VIEW_PROJECTION_MATRIX = VIEW.add(new Mat4Uniform());
     private static final Vec4Uniform FRX_MODEL_TO_WORLD = VIEW.add(new Vec4Uniform());
     private static final Vec2Uniform CANPIPE_SCREEN_SIZE = VIEW.add(new Vec2Uniform());
     private static final FloatUniform FRX_VIEW_BRIGHTNESS = VIEW.add(new FloatUniform());
@@ -107,7 +86,7 @@ public class Uniforms {
     private static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
     private static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
 
-    public static final GpuBuffer VIEW_UBO = RenderSystem.getDevice().createBuffer(
+    private static final GpuBuffer VIEW_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe view UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         VIEW.size()
@@ -123,17 +102,10 @@ public class Uniforms {
         SHADOW.add(new Vec4Uniform())
     };
 
-    public static final GpuBuffer SHADOW_UBO = RenderSystem.getDevice().createBuffer(
+    private static final GpuBuffer SHADOW_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe shadow UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         SHADOW.size()
-    );
-
-
-    public static final GpuBuffer PASS_DYNAMIC_TRANSFORMS_UBO = RenderSystem.getDevice().createBuffer(
-        () -> "can-pipe pass dynamic transforms UBO",
-        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
-        DynamicUniforms.TRANSFORM_UBO_SIZE
     );
 
     // player
@@ -150,7 +122,7 @@ public class Uniforms {
     private static final IntUniform CANPIPE_PLAYER_FLAGS = PLAYER.add(new IntUniform());
     private static final IVec2Uniform CANPIPE_EFFECTS_FLAGS = PLAYER.add(new IVec2Uniform());
 
-    public static final GpuBuffer PLAYER_UBO = RenderSystem.getDevice().createBuffer(
+    private static final GpuBuffer PLAYER_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe player UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         PLAYER.size()
@@ -174,7 +146,7 @@ public class Uniforms {
     private static final Vec3Uniform CANPIPE_SUNRISE_OR_SUNSET_COLOR = WORLD.add(new Vec3Uniform());
     private static final Vec3Uniform FRX_VANILLA_CLEAR_COLOR = WORLD.add(new Vec3Uniform());
 
-    public static final GpuBuffer WORLD_UBO = RenderSystem.getDevice().createBuffer(
+    private static final GpuBuffer WORLD_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe world UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         WORLD.size()
@@ -185,7 +157,7 @@ public class Uniforms {
     private static final Vec4Uniform FRX_FOG_COLOR = FOG.add(new Vec4Uniform() {{ set(1.0F); }});
     private static final IntUniform FRX_FOG_ENABLED = FOG.add(new IntUniform());
 
-    public static final GpuBuffer FOG_UBO = RenderSystem.getDevice().createBuffer(
+    private static final GpuBuffer FOG_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe fog UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         FOG.size()
@@ -202,13 +174,13 @@ public class Uniforms {
         Profiler.get().push("collect");
 
         Minecraft mc = Minecraft.getInstance();
+        CameraRenderState crs = mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
+        Camera camera = mc.gameRenderer.getMainCamera();
+        var cameraPos = camera.position();
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-
         Pipeline p = Pipelines.getCurrent();
         GameRendererExtended gre = (GameRendererExtended) mc.gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) mc.levelRenderer;
-        Camera camera = mc.gameRenderer.getMainCamera();
-        var cameraPos = camera.position();
         float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         Vec3 eyePosition = new Vec3(
             Mth.lerp(pt, mc.player.xo, mc.player.getX()),
@@ -231,6 +203,8 @@ public class Uniforms {
         FRX_LAST_VIEW_MATRIX.set(lastView);
         FRX_INVERSE_PROJECTION_MATRIX.set(projection).invert();
         FRX_LAST_PROJECTION_MATRIX.set(lastProjection);
+        FRX_CLEAN_VIEW_PROJECTION_MATRIX.set(crs.projectionMatrix).mul(crs.viewRotationMatrix);
+        FRX_INVERSE_CLEAN_VIEW_PROJECTION_MATRIX.set(FRX_CLEAN_VIEW_PROJECTION_MATRIX).invert();
         FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
         FRX_CAMERA_VIEW.set(Vec3.directionFromRotation(camera.xRot(), camera.yRot()).toVector3f());
         FRX_ENTITY_VIEW.set(Vec3.directionFromRotation(mc.player.getXRot(pt), mc.player.getYRot(pt)).toVector3f());
@@ -483,20 +457,19 @@ public class Uniforms {
             builder = Std140Builder.onStack(memoryStack, FOG.size());
             FOG.writeTo(builder);
             commandEncoder.writeToBuffer(FOG_UBO.slice(), builder.get());
-
-            var buffer = memoryStack.malloc(DynamicUniforms.TRANSFORM_UBO_SIZE);
-            new DynamicUniforms.Transform(
-                ((GameRendererExtended) mc.gameRenderer).canpipe_worldViewMatrix(),
-                new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
-                new Vector3f(),
-                new Matrix4f()
-            ).write(buffer);
-            buffer.rewind();
-            commandEncoder.writeToBuffer(PASS_DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
         }
 
         Profiler.get().pop();
         Profiler.get().pop();
+    }
+
+    public static void setRenderPassFREXUniforms(RenderPass renderPass) {
+        renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
+        renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
+        renderPass.setUniform("frx_ub_shadow", Uniforms.SHADOW_UBO);
+        renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
+        renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
+        renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
     }
 
 }

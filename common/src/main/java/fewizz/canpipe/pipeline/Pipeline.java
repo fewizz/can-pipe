@@ -19,8 +19,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
+import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.CommandEncoder;
@@ -40,11 +43,13 @@ import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -476,7 +481,20 @@ public class Pipeline implements AutoCloseable {
     public void onBeforeRenderingLevel(Matrix4fc view, Matrix4fc projection, boolean runResizePasses, boolean runInitPasses) {
         Profiler.get().push("can-pipe before world");
 
+        Minecraft mc = Minecraft.getInstance();
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+
+        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+            var buffer = memoryStack.malloc(DynamicUniforms.TRANSFORM_UBO_SIZE);
+            new DynamicUniforms.Transform(
+                ((GameRendererExtended) mc.gameRenderer).canpipe_worldViewMatrix(),
+                new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
+                new Vector3f(),
+                new Matrix4f()
+            ).write(buffer);
+            buffer.rewind();
+            commandEncoder.writeToBuffer(Pass.DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
+        }
 
         if (runInitPasses) {
             for (PassBase pass : this.onInitPasses) {
@@ -494,7 +512,7 @@ public class Pipeline implements AutoCloseable {
             pass.apply(commandEncoder);
         }
 
-        ((MinecraftExtended) Minecraft.getInstance()).canpipe_setMainRenderTargetOverride(this.solidFramebuffer);
+        ((MinecraftExtended) mc).canpipe_setMainRenderTargetOverride(this.solidFramebuffer);
 
         Profiler.get().pop();
     }
@@ -549,16 +567,11 @@ public class Pipeline implements AutoCloseable {
             renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(name, framebuffer.colorTextureViews, framebuffer.getDepthTextureView());
         }
 
-        renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
-        renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
-        renderPass.setUniform("frx_ub_shadow", Uniforms.SHADOW_UBO);
-        renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
-        renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
-        renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
+        Uniforms.setRenderPassFREXUniforms(renderPass);
 
-        renderPass.setUniform("frxu_ub_cascade", Uniforms.INT_0_3_UBO_BUFFERS[lre.canpipe_getShadowCascade()]);
-        renderPass.setUniform("canpipe_ub_origin_type", Uniforms.INT_0_3_UBO_BUFFERS[gre.canpipe_getOriginType()]);
-        renderPass.setUniform("canpipe_ub_is_rendering_hand", Uniforms.INT_0_3_UBO_BUFFERS[gre.canpipe_isRenderingHand() ? 1 : 0]);
+        renderPass.setUniform("frxu_ub_cascade", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[lre.canpipe_getShadowCascade()]);
+        renderPass.setUniform("canpipe_ub_origin_type", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[gre.canpipe_getOriginType()]);
+        renderPass.setUniform("canpipe_ub_is_rendering_hand", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[gre.canpipe_isRenderingHand() ? 1 : 0]);
 
         int renderTarget = 0;
         if (framebuffer == this.translucentTerrainFramebuffer) {
@@ -571,7 +584,7 @@ public class Pipeline implements AutoCloseable {
             renderTarget = 3;
         }
 
-        renderPass.setUniform("canpipe_ub_render_target", Uniforms.INT_0_3_UBO_BUFFERS[renderTarget]);
+        renderPass.setUniform("canpipe_ub_render_target", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[renderTarget]);
 
         renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 

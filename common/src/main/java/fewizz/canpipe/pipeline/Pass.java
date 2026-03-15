@@ -29,24 +29,31 @@ import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 
 public class Pass extends PassBase {
 
-    final Framebuffer framebuffer;
-    final RenderPipeline renderPipeline;
+    private final Framebuffer framebuffer;
+    private final RenderPipeline renderPipeline;
     // Textures (specified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually use them
-    final List<AbstractTexture> textures;
-    final Vector2i extent;
+    private final List<AbstractTexture> textures;
+    private final Vector2i extent;
 
-    final UniformBufferStruct pass = new UniformBufferStruct();
-    final IVec2Uniform frx_size = pass.add(new IVec2Uniform());
-    final IntUniform frx_lod = pass.add(new IntUniform());
-    final IntUniform frx_layer = pass.add(new IntUniform());
-    final Mat4Uniform frx_frame_projection_matrix = pass.add(new Mat4Uniform());
-    private GpuBuffer passUbo = null;
+    private final UniformBufferStruct pass = new UniformBufferStruct();
+    private final IVec2Uniform frxSizeUniform = pass.add(new IVec2Uniform());
+    private final IntUniform frxLoadUniform = pass.add(new IntUniform());
+    private final IntUniform frxLayerUniform = pass.add(new IntUniform());
+    private final Mat4Uniform frxFrameProjectionMatrix = pass.add(new Mat4Uniform());
+    private final GpuBuffer passUbo;
+
+    public static final GpuBuffer DYNAMIC_TRANSFORMS_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe pass dynamic transforms UBO",
+        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
+        DynamicUniforms.TRANSFORM_UBO_SIZE
+    );
 
     private Pass(
         String name, Framebuffer framebuffer, RenderPipeline renderPipeline,
@@ -68,20 +75,24 @@ public class Pass extends PassBase {
             var samplerTexture = samplerTextures.get(i).orElseGet(() -> {
                 CanPipe.LOGGER.warn("Couldn't find texture for sampler \""+sampler +"\", \"barrier\" texture will be used instead");
                 Minecraft mc = Minecraft.getInstance();
-                return mc.getTextureManager().getTexture(
-                    Identifier.withDefaultNamespace("textures/item/barrier.png")
-                );
+                return mc.getTextureManager().getTexture(Identifier.withDefaultNamespace("textures/item/barrier.png"));
             });
             this.textures.add(samplerTexture);
         }
+
+        this.passUbo = RenderSystem.getDevice().createBuffer(
+            () -> "can-pipe \""+this.name+"\" pass UBO",
+            GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
+            pass.size()
+        );
 
         this.framebuffer = framebuffer;
         this.renderPipeline = renderPipeline;
         this.extent = extent;
 
-        this.frx_lod.set(lod);
-        this.frx_layer.set(layer);
-        this.frx_size.set(-1);
+        this.frxLoadUniform.set(lod);
+        this.frxLayerUniform.set(layer);
+        this.frxSizeUniform.set(-1);
     }
 
     @Override
@@ -94,25 +105,21 @@ public class Pass extends PassBase {
         if (w == 0) w = mc.getMainRenderTarget().width;
         if (h == 0) h = mc.getMainRenderTarget().height;
 
-        w >>= this.frx_lod.get();
-        h >>= this.frx_lod.get();
+        w >>= this.frxLoadUniform.get();
+        h >>= this.frxLoadUniform.get();
 
         var autoStorageIndexBuffer = RenderSystem.getSequentialBuffer(Mode.QUADS);
         var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
         var vertexBuffer = RenderSystemAccessor.canpipe_getQuadBuffer();
 
-        if (this.frx_size.x != w || this.frx_size.y != h) {
-            this.frx_size.set(w, h);
-            this.frx_frame_projection_matrix.setOrtho2D(0, w, 0, h);
-
-            if (this.passUbo != null) { this.passUbo.close(); }
+        if (this.frxSizeUniform.x != w || this.frxSizeUniform.y != h) {
+            this.frxSizeUniform.set(w, h);
+            this.frxFrameProjectionMatrix.setOrtho2D(0, w, 0, h);
 
             try (MemoryStack memoryStack = MemoryStack.stackPush()) {
                 var builder = Std140Builder.onStack(memoryStack, this.pass.size());
                 this.pass.writeTo(builder);
-                this.passUbo = RenderSystem.getDevice().createBuffer(
-                    () -> "can-pipe \""+this.name+"\" pass UBO", GpuBuffer.USAGE_UNIFORM, builder.get()
-                );
+                commandEncoder.writeToBuffer(this.passUbo.slice(), builder.get());
             }
         }
 
@@ -133,14 +140,9 @@ public class Pass extends PassBase {
             }
 
             RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setUniform("DynamicTransforms", Uniforms.PASS_DYNAMIC_TRANSFORMS_UBO);
+            renderPass.setUniform("DynamicTransforms", DYNAMIC_TRANSFORMS_UBO);
             renderPass.setUniform("canpipe_ub_pass", this.passUbo);
-            renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
-            renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
-            renderPass.setUniform("frx_ub_shadow", Uniforms.SHADOW_UBO);
-            renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
-            renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
-            renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
+            Uniforms.setRenderPassFREXUniforms(renderPass);
 
             renderPass.setVertexBuffer(0, vertexBuffer);
             renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
@@ -150,9 +152,7 @@ public class Pass extends PassBase {
 
     @Override
     public void close() {
-        if (this.passUbo != null) {
-            this.passUbo.close();
-        }
+        this.passUbo.close();
     };
 
     static Optional<PassBase> load(
