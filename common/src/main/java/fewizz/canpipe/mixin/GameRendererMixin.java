@@ -46,6 +46,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private long canpipe_renderStartNano = -1;
     @Unique private int canpipe_originType = 0;
     @Unique private boolean canpipe_isRenderingHand = false;
+    @Unique private Vector3f canpipe_lastCameraPos = null;
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
     @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
     @Unique private Matrix4f canpipe_worldViewMatrix = null;
@@ -63,6 +64,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
     @Override
     public void canpipe_onPipelineActivated() {
+        this.canpipe_lastCameraPos = new Vector3f(Float.NEGATIVE_INFINITY);
         this.canpipe_renderStartNano = System.nanoTime();
         this.canpipe_originType = 0;
         this.canpipe_isRenderingHand = false;
@@ -72,9 +74,6 @@ public class GameRendererMixin implements GameRendererExtended {
 
         Uniforms.FRX_LAST_VIEW_MATRIX.m00(Float.NEGATIVE_INFINITY);
         Uniforms.FRX_LAST_PROJECTION_MATRIX.m00(Float.NEGATIVE_INFINITY);
-
-        Uniforms.FRX_CAMERA_POS.set(0.0F);
-        Uniforms.FRX_LAST_CAMERA_POS.set(Float.NEGATIVE_INFINITY);
 
         Uniforms.FRX_SHADOW_VIEW_MATRIX.identity();
         this.canpipe_shadowInnerOffsets = new Vector3f[] {
@@ -122,10 +121,9 @@ public class GameRendererMixin implements GameRendererExtended {
 
         Uniforms.CANPIPE_RENDER_FRAMES.add(1);
         Uniforms.FRX_RENDER_SECONDS.set((float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0));
-        Uniforms.FRX_CAMERA_POS.set(this.mainCamera.position().toVector3f());
 
-        if (Uniforms.FRX_LAST_CAMERA_POS.get(0) == Float.NEGATIVE_INFINITY) {
-            Uniforms.FRX_LAST_CAMERA_POS.set(Uniforms.FRX_CAMERA_POS);
+        if (this.canpipe_lastCameraPos.get(0) == Float.NEGATIVE_INFINITY) {
+            this.canpipe_lastCameraPos.set(this.mainCamera.position().toVector3f());
         }
 
         if (p.shadows == null) { return; }
@@ -172,7 +170,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
             final float metersPerPixel = cascadeRadius*2.0F / depthTextureSize;
 
-            Vector3f dPos = Uniforms.FRX_CAMERA_POS.sub(Uniforms.FRX_LAST_CAMERA_POS, new Vector3f());
+            Vector3f dPos = this.mainCamera.position().toVector3f().sub(this.canpipe_lastCameraPos);
             Vector3f dShadowPos = dPos.mul(shadowRotationMatrix).div(metersPerPixel);
 
             this.canpipe_shadowInnerOffsets[cascade].add(dShadowPos);
@@ -266,7 +264,7 @@ public class GameRendererMixin implements GameRendererExtended {
             Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
         }
 
-        Uniforms.updateFREXUniforms(viewMatrix, projectionMatrix);
+        Uniforms.updateFREXUniforms(viewMatrix, projectionMatrix, this.canpipe_lastCameraPos);
         this.canpipe_originType = 0;  // camera
         p.onBeforeRenderingLevel(viewMatrix, projectionMatrix, this.canpipe_runResizePasses, this.canpipe_runInitPasses);
         this.canpipe_runInitPasses = false;
@@ -314,7 +312,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
         Uniforms.FRX_LAST_VIEW_MATRIX.set(viewMatrix);
         Uniforms.FRX_LAST_PROJECTION_MATRIX.set(projectionMatrix);
-        Uniforms.FRX_LAST_CAMERA_POS.set(this.mainCamera.position().toVector3f());
+        this.canpipe_lastCameraPos = this.mainCamera.position().toVector3f();
     }
 
     @ModifyExpressionValue(

@@ -103,8 +103,8 @@ public class Uniforms {
     private static final IntUniform CANPIPE_VIEW_FLAGS = VIEW.add(new IntUniform());
     private static final Vec3Uniform FRX_CAMERA_VIEW = VIEW.add(new Vec3Uniform());
     private static final Vec3Uniform FRX_ENTITY_VIEW = VIEW.add(new Vec3Uniform());
-    public static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
-    public static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
+    private static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
+    private static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
     public static final GpuBuffer VIEW_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe view UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
@@ -185,7 +185,10 @@ public class Uniforms {
         FOG.size()
     );
 
-    public static void updateFREXUniforms(Matrix4fc view, Matrix4fc projection) {
+    public static void updateFREXUniforms(
+        Matrix4fc view, Matrix4fc projection,
+        Vector3f lastCameraPos
+    ) {
         Profiler.get().push("can-pipe update FREX uniforms");
         Profiler.get().push("collect");
 
@@ -250,6 +253,9 @@ public class Uniforms {
             (float) mc.getWindow().getWidth(),
             (float) mc.getWindow().getHeight()
         );
+
+        FRX_CAMERA_POS.set(camera.position().toVector3f());
+        FRX_LAST_CAMERA_POS.set(lastCameraPos);
 
         // player.glsl
         {
