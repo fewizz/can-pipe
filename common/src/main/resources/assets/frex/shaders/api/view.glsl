@@ -16,6 +16,9 @@ layout(std140) uniform frx_ub_view {
     mat4 frx_inverseProjectionMatrix;
     mat4 frx_lastProjectionMatrix;
 
+    mat4 frx_cleanViewProjectionMatrix;
+    mat4 frx_inverseCleanViewProjectionMatrix;
+
     // chunk block pos when frx_modelOriginRegion is true, camera pos when frx_modelOriginCamera is true, vec3(0.0) otherwise
     vec4 frx_modelToWorld;
     // vec4 frx_modelToCamera; provided by DynamicTransforms
@@ -26,6 +29,7 @@ layout(std140) uniform frx_ub_view {
     int canpipe_viewFlags;
 
     vec3 frx_cameraView;
+    vec3 frx_entityView;
     vec3 frx_cameraPos;
     vec3 frx_lastCameraPos;
 };
@@ -35,10 +39,6 @@ layout(std140) uniform frx_ub_shadow {
     mat4 frx_inverseShadowViewMatrix;
     vec4[4] canpipe_shadowCenters;
 };
-
-const vec3 frx_entityView = vec3(0.0);  // TODO define
-const mat4 frx_cleanViewProjectionMatrix = mat4(1.0);  // TODO define
-const mat4 frx_inverseCleanViewProjectionMatrix = mat4(1.0);  // TODO define
 
 #define frx_viewMatrix ModelViewMat
 #define frx_projectionMatrix ProjMat

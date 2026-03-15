@@ -5,7 +5,7 @@ Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader 
 * Some Material properties
 * Material map's `variants` properties
 * `fabulousTargets` - array of render targets
-* `material.glsl` uniforms, and some others: `frx_entityView`, `frx_cleanViewProjectionMatrix`
+* `material.glsl` uniforms, and some others: `frx_cleanViewProjectionMatrix`
 
 , and probably many other things.
 

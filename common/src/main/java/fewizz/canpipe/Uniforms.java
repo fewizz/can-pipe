@@ -102,6 +102,7 @@ public class Uniforms {
     private static final FloatUniform FRX_VIEW_DISTANCE = VIEW.add(new FloatUniform());
     private static final IntUniform CANPIPE_VIEW_FLAGS = VIEW.add(new IntUniform());
     private static final Vec3Uniform FRX_CAMERA_VIEW = VIEW.add(new Vec3Uniform());
+    private static final Vec3Uniform FRX_ENTITY_VIEW = VIEW.add(new Vec3Uniform());
     public static final Vec3Uniform FRX_CAMERA_POS = VIEW.add(new Vec3Uniform());
     public static final Vec3Uniform FRX_LAST_CAMERA_POS = VIEW.add(new Vec3Uniform());
     public static final GpuBuffer VIEW_UBO = RenderSystem.getDevice().createBuffer(
@@ -218,9 +219,8 @@ public class Uniforms {
 
         // view.glsl
         FRX_MODEL_TO_WORLD.set((float) cameraPos.x, (float) cameraPos.y, (float) cameraPos.z, 1.0F);
-        FRX_CAMERA_VIEW.set(
-            Vec3.directionFromRotation(camera.xRot(), camera.yRot()).toVector3f()
-        );
+        FRX_CAMERA_VIEW.set(Vec3.directionFromRotation(camera.xRot(), camera.yRot()).toVector3f());
+        FRX_ENTITY_VIEW.set(Vec3.directionFromRotation(mc.player.getXRot(pt), mc.player.getYRot(pt)).toVector3f());
         FRX_VIEW_DISTANCE.set(mc.options.renderDistance().get() * 16.0F);
         FRX_VIEW_BRIGHTNESS.set(mc.options.gamma().get().floatValue());
         {
