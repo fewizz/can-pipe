@@ -1,11 +1,8 @@
 package fewizz.canpipe.b3d;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.IntUnaryOperator;
 import java.util.stream.StreamSupport;
 
 import org.lwjgl.opengl.GL33C;
@@ -30,46 +27,18 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 import com.google.common.collect.Streams;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.opengl.GlConst;
-import com.mojang.blaze3d.opengl.GlDevice;
-import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.TextureUtil;
-import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.TextureFormat;
-
-import net.minecraft.client.Screenshot;
 
 public class MixinPlugin implements IMixinConfigPlugin, Opcodes {
 
     /**
-     * pixelSize - will be used in {@link TextureFormat#pixelSize()}, which is used in
-     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)},
-     * {@link TextureUtil#writeAsPNG(Path, String, GpuTexture, int, IntUnaryOperator)} and
-     * {@link Screenshot#takeScreenshot(RenderTarget, Consumer)}
-     *
-     * hasColorAspect - will be used in {@link TextureFormat#hasColorAspect()}, which is checked in
-     * {@link GlCommandEncoder#clearColorTexture(GpuTexture, int)},
-     * {@link GlCommandEncoder#clearColorAndDepthTextures(GpuTexture, int, GpuTexture, double)} and
-     * {@link GlCommandEncoder#presentTexture(GpuTexture)}
-     *
-     * hasDepthAspect - will be used in {@link TextureFormat#hasDepthAspect()}, which is checked in
-     * {@link GlCommandEncoder#clearColorAndDepthTextures(GpuTexture, int, GpuTexture, double)},
-     * {@link GlCommandEncoder#clearDepthTexture(GpuTexture, double)},
-     * {@link GlCommandEncoder#copyTextureToTexture(GpuTexture, GpuTexture, int, int, int, int, int, int, int)} and
-     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
-     *
-     * glInternalFormat - will be used in {@link GlConst#toGlInternalId(TextureFormat)}, which in used in
-     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
-     *
-     * glFormat - will be used in {@link GlConst#toGlExternalId(TextureFormat)}, which is used in
-     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)} and
-     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)}
-     *
-     * glType - will be used in {@link GlConst#toGlType(TextureFormat)}, which is used in
-     * {@link GlDevice#createTexture(String, TextureFormat, int, int, int)} and
-     * {@link GlCommandEncoder#copyTextureToBuffer(GpuTexture, GpuBuffer, int, Runnable, int, int, int, int, int)}
+     * pixelSize - will be used in {@link TextureFormat#pixelSize()}
+     * hasColorAspect - will be used in {@link TextureFormat#hasColorAspect()}
+     * hasDepthAspect - will be used in {@link TextureFormat#hasDepthAspect()}
+     * glInternalFormat - will be used in {@link GlConst#toGlInternalId(TextureFormat)}
+     * glFormat - will be used in {@link GlConst#toGlExternalId(TextureFormat)}
+     * glType - will be used in {@link GlConst#toGlType(TextureFormat)}
      **/
     public record TexFormat(
         String name,  // enum name

@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntIntPair;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.phys.AABB;
+import org.jspecify.annotations.NonNull;
 
 
 // Inspired by https://iquilezles.org/articles/frustumcorrect/
@@ -159,7 +160,7 @@ public class ShadowFrustum extends Frustum {
     }
 
     @Override
-    public boolean isVisible(AABB aabb) {  // Used mostly by LevelRenderer.extractVisibleEntities
+    public boolean isVisible(@NonNull AABB aabb) {  // Used mostly by LevelRenderer.extractVisibleEntities
         if (!super.isVisible(aabb)) { return false; }
         return this.check(
             (float) (aabb.minX - this.getCamX()),
@@ -172,7 +173,7 @@ public class ShadowFrustum extends Frustum {
     }
 
     @Override
-    public int cubeInFrustum(BoundingBox bb) {  // Used mostly by SectionOcclusionGraph.addSectionsInFrustum
+    public int cubeInFrustum(@NonNull BoundingBox bb) {  // Used mostly by SectionOcclusionGraph.addSectionsInFrustum
         int result = super.cubeInFrustum(bb);
         if (result == FrustumIntersection.OUTSIDE) { return FrustumIntersection.OUTSIDE; }
 

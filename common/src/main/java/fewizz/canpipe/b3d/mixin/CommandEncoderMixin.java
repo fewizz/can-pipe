@@ -16,12 +16,13 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(CommandEncoder.class)
 public class CommandEncoderMixin implements CommandEncoderExtended {
 
-    @Final private GpuDeviceBackend device;
-    @Final private CommandEncoderBackend backend;
+    @Final @Shadow private GpuDeviceBackend device;
+    @Final @Shadow private CommandEncoderBackend backend;
 
     @Override
     public RenderPass canpipe_createRenderPass(Supplier<String> supplier, GpuTextureView[] colorAttachments, @Nullable GpuTextureView depthAttachment) {

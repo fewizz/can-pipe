@@ -269,7 +269,6 @@ public class Uniforms {
         Light light = ((Supplier<Light>)() -> {
             for (Item item : new Item[]{mc.player.getMainHandItem().getItem(), mc.player.getOffhandItem().getItem()}) {
                 Identifier itemLocation = BuiltInRegistries.ITEM.getKey(item);
-                if (itemLocation == null) return null;
                 Light result = Lights.get(itemLocation);
                 if (result != null) {
                     return result;

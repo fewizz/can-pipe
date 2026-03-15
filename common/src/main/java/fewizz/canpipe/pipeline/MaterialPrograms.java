@@ -399,10 +399,16 @@ public class MaterialPrograms {
         }
 
         Float alphaCutout = null;
+
         if (
+            originalRenderPipeline == RenderPipelines.TRANSLUCENT_BLOCK ||
+            originalRenderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN
+        ) {
+            alphaCutout = 0.01F;
+        }
+        else if (
             originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
 
-            // originalRenderPipeline == RenderPipelines.TRANSLUCENT_MOVING_BLOCK ||
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
             originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||

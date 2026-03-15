@@ -21,11 +21,11 @@ import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.textures.AddressMode;
 
-import fewizz.canpipe.b3d.GpuSamplerExteneded;
+import fewizz.canpipe.b3d.GpuSamplerExtended;
 import fewizz.canpipe.b3d.RealGpuDeviceProviderService;
 
 @Mixin(GlSampler.class)
-public abstract class GlSamplerMixin implements GpuSamplerExteneded {
+public abstract class GlSamplerMixin implements GpuSamplerExtended {
 
     @Shadow @Final private int id;
     @Shadow @Final private OptionalDouble maxLod;

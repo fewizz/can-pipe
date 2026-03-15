@@ -72,7 +72,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
     }
 
     @Override
-    public void extractBackground(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
+    public void extractBackground(final @NonNull GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
         if (this.minecraft.level == null) {
             super.extractBackground(graphics, mouseX, mouseY, a);
         }
@@ -119,10 +119,10 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         }
 
         @Override
-        protected void extractListBackground(final GuiGraphicsExtractor graphics) {}
+        protected void extractListBackground(final @NonNull GuiGraphicsExtractor graphics) {}
 
         @Override
-        protected void extractScrollbar(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY) {
+        protected void extractScrollbar(final @NonNull GuiGraphicsExtractor graphics, final int mouseX, final int mouseY) {
             if (this.scrollable()) {
                 graphics.blitSprite(
                     RenderPipelines.GUI_TEXTURED,
@@ -294,7 +294,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
             @Override
             public void extractContent(
-                final GuiGraphicsExtractor graphics,
+                final @NonNull GuiGraphicsExtractor graphics,
                 int mouseX, int mouseY, boolean hovered, float a
             ) {
                 this.nameWidget.setPosition(

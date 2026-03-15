@@ -11,7 +11,7 @@ import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.GpuSampler;
 
-import fewizz.canpipe.b3d.GpuSamplerExteneded;
+import fewizz.canpipe.b3d.GpuSamplerExtended;
 import graphics.cinnabar.api.hg.HgSampler;
 import graphics.cinnabar.api.hg.enums.HgCompareOp;
 import graphics.cinnabar.core.hg3d.Hg3DConst;
@@ -19,7 +19,7 @@ import graphics.cinnabar.core.hg3d.Hg3DGpuDevice;
 import graphics.cinnabar.core.hg3d.Hg3DGpuSampler;
 
 @Mixin(Hg3DGpuSampler.class)
-public abstract class Hg3DGpuSamplerMixin extends GpuSampler implements GpuSamplerExteneded {
+public abstract class Hg3DGpuSamplerMixin extends GpuSampler implements GpuSamplerExtended {
 
     @Unique protected AddressMode canpipe_addressModeW;
     @Unique @Nullable protected CompareOp canpipe_compareOp = null;
@@ -45,7 +45,7 @@ public abstract class Hg3DGpuSamplerMixin extends GpuSampler implements GpuSampl
         ),
         index = 0
     )
-    HgSampler.CreateInfo beforeMecurySamplerCreation(HgSampler.CreateInfo createInfo, @Local Hg3DGpuDevice device) {
+    HgSampler.CreateInfo beforeMercurySamplerCreation(HgSampler.CreateInfo createInfo, @Local Hg3DGpuDevice device) {
         var deviceAccessor = (Hg3DGpuDeviceAccessor) device;
 
         this.canpipe_addressModeW = deviceAccessor.get_canpipe_addressModeW();

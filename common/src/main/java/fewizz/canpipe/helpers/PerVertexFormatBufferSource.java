@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
@@ -38,7 +39,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 
 public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource {
 
-    static record SliceInfo(RenderType renderType, int vertexFirst, int indexCount) {}
+    record SliceInfo(RenderType renderType, int vertexFirst, int indexCount) {}
 
     private static class VertexFormatBufferSource {
         private RenderType lastRenderType = null;
@@ -97,7 +98,7 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
     }
 
     @Override
-    public VertexConsumer getBuffer(RenderType renderType) {
+    public @NonNull VertexConsumer getBuffer(RenderType renderType) {
         var bufferSource = this.bufferSources.computeIfAbsent(renderType.format(), k -> new VertexFormatBufferSource());
         return bufferSource.getBuffer(renderType);
     }
@@ -106,7 +107,7 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
     public void endLastBatch() {}
 
     @Override
-    public void endBatch(RenderType renderType) {}
+    public void endBatch(@NonNull RenderType renderType) {}
 
     @Override
     public void endBatch() {
@@ -120,7 +121,7 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
         for (var bufferSource : this.bufferSources.values()) {
             bufferSource.endLastBufferBuilder();
 
-            if (bufferSource.vertexBufferSlices.size() == 0) {
+            if (bufferSource.vertexBufferSlices.isEmpty()) {
                 continue;
             }
 

@@ -2,10 +2,10 @@
     "required": true,
     "compatibilityLevel": "JAVA_21",
     "package": "fewizz.canpipe.compat.cinnabar.mixin",
-    "plugin": "fewizz.canpipe.compat.cinnabar.MixinPlugin",
     "injectors": {
         "defaultRequire": 1
     },
+    "plugin": "fewizz.canpipe.compat.cinnabar.MixinPlugin",
     "client": [
         "Hg3DCommandEncoderMixin",
         "Hg3DConstMixin",
@@ -16,7 +16,6 @@
         "Hg3DRenderPassMixin",
         "Hg3DRenderPipelineAccessor",
         "Hg3DRenderPipelineMixin",
-        "MCGameRendererMixin",
         "MercuryCommandBufferMixin",
         "MercuryDeviceAccessor",
         "MercuryDeviceMixin",

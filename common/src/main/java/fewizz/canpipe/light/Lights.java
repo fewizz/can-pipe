@@ -11,6 +11,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.jspecify.annotations.NonNull;
 
 final public class Lights implements PreparableReloadListener {
 
@@ -24,16 +25,16 @@ final public class Lights implements PreparableReloadListener {
     }
 
     @Override
-    public CompletableFuture<Void> reload(
-        PreparableReloadListener.SharedState sharedState,
-        Executor loadExecutor,
+    public @NonNull CompletableFuture<Void> reload(
+        PreparableReloadListener.@NonNull SharedState sharedState,
+        @NonNull Executor loadExecutor,
         PreparableReloadListener.PreparationBarrier preparationBarrier,
-        Executor applyExecutor
+        @NonNull Executor applyExecutor
     ) {
         return CompletableFuture
             .supplyAsync(() -> Lights.readRaw(sharedState.resourceManager()), loadExecutor)
             .thenCompose(preparationBarrier::wait)
-            .thenAcceptAsync((Map<Identifier, Resource> lightJsons) -> Lights.loadRaw(lightJsons), applyExecutor);
+            .thenAcceptAsync(Lights::loadRaw, applyExecutor);
     }
 
     public static Map<Identifier, Resource> readRaw(ResourceManager resourceManager) {

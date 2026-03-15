@@ -5,10 +5,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VkAttachmentReference2;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -30,8 +27,8 @@ public abstract class MercuryRenderPassMixin implements HgRenderPassExtended {
 
     @Shadow @Final private int colorAttachmentCount;
 
-    private List<HgFormat> canpipe_colorFormats;
-    @Nullable private HgFormat canpipe_depthStencilFormat;
+    @Unique private List<HgFormat> canpipe_colorFormats;
+    @Unique @Nullable private HgFormat canpipe_depthStencilFormat;
 
     @Override
     public List<HgFormat> canpipe_getColorFormats() {
@@ -43,6 +40,10 @@ public abstract class MercuryRenderPassMixin implements HgRenderPassExtended {
         return this.canpipe_depthStencilFormat;
     }
 
+    /**
+     * @author fewizz
+     * @reason .
+     */
     @Overwrite
     public int colorAttachmentCount() {
         return this.canpipe_colorFormats.size();  // including VK_ATTACHMENT_UNUSED

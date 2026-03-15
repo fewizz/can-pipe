@@ -2,6 +2,7 @@ package fewizz.canpipe.compat.cinnabar.mixin;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
@@ -16,7 +17,7 @@ import graphics.cinnabar.core.hg3d.Hg3DGpuTextureView;
 
 @Mixin(Hg3DGpuTextureView.class)
 public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
-    @Final private HgImage.View imageView;
+    @Final @Shadow private HgImage.View imageView;
 
     @Override
     public int canpipe_baseArrayLayer() {

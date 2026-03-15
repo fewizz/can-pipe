@@ -10,14 +10,6 @@ public class NormalAndTangent {
      * <a href="https://github.com/vram-guild/frex/blob/1.19/common/src/main/java/io/vram/frex/base/renderer/mesh/BaseQuadView.java#L261">
      * BaseQuadView.computePackedFaceTangent
      * </a>
-     * method, but i have so many questions...
-     * <p>
-     * Why {@code inverseLength} is named like that?
-     * Resulting {@code vec3(tx, ty, tz)} is almost never has length 1.0, and
-     * {@code PackedVector3f.pack(tx, ty, tz, inverted)} packs unnormalized vector, clamping components
-     * <p>
-     * Why bitangent isn't provided to shaders?
-     * Canvas assumes that tangent and bitanget are not necessarily orthogonal?
     */
     public static Pair<Vector3f, Boolean> computeTangent(
         Vector3f normal,

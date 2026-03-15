@@ -15,7 +15,7 @@ import net.minecraft.resources.Identifier;
 public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Material> spriteMap) {
 
     static MaterialMap load(JsonObject json) {
-        Material defaultMaterial = null;
+        Material defaultMaterial;
         Map<Identifier, Material> spriteMap = new HashMap<>();
 
         String defaultMaterialStr = json.get(String.class, "defaultMaterial");
@@ -60,10 +60,6 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
         }
 
         return new MaterialMap(null, spriteMap);
-    }
-
-    boolean usesMaterial(Material material) {
-        return this.defaultMaterial == material || this.spriteMap.values().contains(material);
     }
 
     Set<Material> getUsedMaterials() {

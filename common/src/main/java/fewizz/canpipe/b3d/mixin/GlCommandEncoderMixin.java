@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -47,7 +46,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     @Shadow @Final private GlDevice device;
     @Shadow private boolean inRenderPass;
 
-    @Unique private GpuTextureView[] canpipe_colorAttachements = null;
+    @Unique private GpuTextureView[] canpipe_colorAttachments = null;
     @Unique private int canpipe_clearBaseLevel = -1;
     @Unique private int canpipe_clearLevelCount = -1;
     @Unique private int canpipe_clearBaseLayer = -1;
@@ -60,14 +59,14 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         @Nullable GpuTextureView depthAttachment
     ) {
         try {
-            this.canpipe_colorAttachements = colorAttachments;
+            this.canpipe_colorAttachments = colorAttachments;
             return this.createRenderPass(
-                supplier, this.canpipe_colorAttachements.length > 0 ? this.canpipe_colorAttachements[0] : null, OptionalInt.empty(),
+                supplier, this.canpipe_colorAttachments.length > 0 ? this.canpipe_colorAttachments[0] : null, OptionalInt.empty(),
                 depthAttachment, OptionalDouble.empty()
             );
         }
         finally {
-            this.canpipe_colorAttachements = null;
+            this.canpipe_colorAttachments = null;
         }
     }
 
@@ -96,8 +95,8 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     ) {
         if (colorTextureView.get() != null) return;
 
-        if (this.canpipe_colorAttachements != null && this.canpipe_colorAttachements.length > 0) {
-            colorTextureView.set(this.canpipe_colorAttachements[0]);
+        if (this.canpipe_colorAttachments != null && this.canpipe_colorAttachments.length > 0) {
+            colorTextureView.set(this.canpipe_colorAttachments[0]);
         }
         else {
             colorTextureView.set(depthTextureView);
@@ -122,11 +121,11 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         @Local(argsOnly = true, ordinal = 1) GpuTextureView depthTextureView
     ) {
         // Replacing original `getFbo`, i.e., it won't be called from `createRenderPass`,
-        // only from `canpipe_colorAttachements` and `clearColorAndDepthTextures`
+        // only from `canpipe_colorAttachments` and `clearColorAndDepthTextures`
 
         var colorAttachments =
-            this.canpipe_colorAttachements != null ?
-            this.canpipe_colorAttachements :
+            this.canpipe_colorAttachments != null ?
+            this.canpipe_colorAttachments :
             new GpuTextureView[] {colorTextureView};
 
         Object2IntMap<List<GlTextureView>> fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
@@ -136,9 +135,9 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             fboTextureViewsStream = Stream.concat(fboTextureViewsStream, Stream.of(depthTextureView));
         }
         // Creating such object on every renderpass creation is kinda messy
-        List<GlTextureView> fboTextrureViewsKey = fboTextureViewsStream.map(tex -> (GlTextureView)tex).collect(Collectors.toUnmodifiableList());
+        List<GlTextureView> fboTextureViewsKey = fboTextureViewsStream.map(tex -> (GlTextureView)tex).toList();
 
-        return fboCache.computeIfAbsent(fboTextrureViewsKey, k -> {
+        return fboCache.computeIfAbsent(fboTextureViewsKey, k -> {
             int id = GlStateManager.glGenFramebuffers();
 
             GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, id);
@@ -153,7 +152,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
                 if ((attachment.texture().usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0) {
                     int face = attachmentExt.canpipe_baseArrayLayer() % 6;
                     int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
-                    if (layer > 0) { throw new RuntimeException("Cubemap with layer "+layer+""); }
+                    if (layer > 0) { throw new RuntimeException("Cubemap with layer "+layer); }
                     GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureID, attachment.baseMipLevel());
                 }
                 else if (attachment.texture().getDepthOrLayers() > 1 || attachmentExt.canpipe_baseArrayLayer() > 0) {

@@ -19,7 +19,7 @@ public class Hg3DConstMixin {
 
     /**
      * @author fewizz
-     * @reason
+     * @reason .
      */
     @Overwrite
     public static HgFormat format(TextureFormat original) {

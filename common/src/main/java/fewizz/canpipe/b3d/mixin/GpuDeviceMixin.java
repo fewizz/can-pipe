@@ -6,6 +6,7 @@ import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -27,7 +28,7 @@ import net.minecraft.resources.Identifier;
 @Mixin(GpuDevice.class)
 public class GpuDeviceMixin implements GpuDeviceExtended {
 
-    @Final private GpuDeviceBackend backend;
+    @Final @Shadow  private GpuDeviceBackend backend;
 
     @Override
     public GpuSampler canpipe_createSampler(

@@ -61,14 +61,14 @@ public class MercuryShaderSetMixin {
         )
     )
     String vertexShaderCompilationErrorLog(
-        String errorlog, @Local MercuryDevice device, @Local HgGraphicsPipeline.ShaderSet.CreateInfo createInfo
+        String errorLog, @Local MercuryDevice device, @Local HgGraphicsPipeline.ShaderSet.CreateInfo createInfo
     ) {
         // I know that it is wrong to access HG3DGpuDevice from here, but how else could I pass this log?
         var callback = ((MercuryDeviceAccessor) device).get_canpipe_onCompilationError();
         if (callback != null) {
-            callback.accept(errorlog, ShaderType.VERTEX, createInfo.vertexStage().right().get().vertex());
+            callback.accept(errorLog, ShaderType.VERTEX, createInfo.vertexStage().right().get().vertex());
         }
-        return errorlog;
+        return errorLog;
     }
 
     @ModifyExpressionValue(

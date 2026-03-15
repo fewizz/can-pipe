@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
@@ -18,7 +19,7 @@ import graphics.cinnabar.core.hg3d.Hg3DRenderPipeline;
 @Mixin(Hg3DRenderPipeline.class)
 public class Hg3DRenderPipelineMixin {
 
-    @Final private HgGraphicsPipeline.ShaderSet shaderSet;
+    @Final @Shadow  private HgGraphicsPipeline.ShaderSet shaderSet;
 
     @ModifyArg(
         method = "<init>",

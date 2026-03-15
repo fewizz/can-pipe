@@ -12,6 +12,7 @@ import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.jspecify.annotations.NonNull;
 
 public record Material(
     int id,
@@ -32,8 +33,8 @@ public record Material(
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
 
         var layers = materialJson.get("layers");
-        if (layers instanceof JsonArray layersArray && layersArray.size() > 0) {
-            JanksonUtils.mergeJsonObjectB2A(materialJson, (JsonObject) layersArray.get(0));
+        if (layers instanceof JsonArray layersArray && !layersArray.isEmpty()) {
+            JanksonUtils.mergeJsonObjectB2A(materialJson, (JsonObject) layersArray.getFirst());
         }
 
         String vertexShaderSource = materialJson.get(String.class, "vertexSource");
@@ -76,7 +77,7 @@ public record Material(
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return this.location.toString();
     }
 
