@@ -66,11 +66,11 @@ public class Hg3DRenderPipelineMixin {
 
         vertexShader = vertexShader.replace(
             "layout(location = 6) CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;",
-            "layout(location = 26) CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;"
+            "CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;"
         );
         vertexShader = vertexShader.replace(
             "layout(location = 7) CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;",
-            "layout(location = 27) CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;"
+            "CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;"
         );
 
         vertexShader =
@@ -88,11 +88,11 @@ public class Hg3DRenderPipelineMixin {
 
         fragmentShader = fragmentShader.replace(
             "layout(location = 6) CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;",
-            "layout(location = 26) CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;"
+            "CINNABAR_BETWEEN_STAGES flat float ChunkVisibility;"
         );
         fragmentShader = fragmentShader.replace(
             "layout(location = 7) CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;",
-            "layout(location = 27) CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;"
+            "CINNABAR_BETWEEN_STAGES flat ivec2 TextureSize;"
         );
 
         fragmentShader =
