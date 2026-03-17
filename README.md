@@ -3,13 +3,8 @@ Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader 
 
 ## What doesn't work / not implemented?
 * Some Material properties
-* Material map's `variants` properties
-* `fabulousTargets` - array of render targets
+* `fabulousTargets`
 * `material.glsl` uniforms: `frx_matEmissive`, `frx_matCutout`, `frx_matUnmipped`, `frx_matExposure`
-
-, and probably many other things.
-
-Performance is not on par with `Canvas`.
 
 ## Shaderpacks that are known to work
 * [Forget-Me-Not](https://modrinth.com/shader/forgetmenot) and
@@ -23,12 +18,6 @@ Performance is not on par with `Canvas`.
 1. Install this mod
 2. Put preferred shaderpacks into `resourcepacks` directory and activate them
 3. In video settings, click on `Pipeline: ...` to switch between available shader pipelines
-
-## Gradle run tasks
-* `fabric:runClient`
-* `fabric:runClientCinnabar`
-* `fabric:runClientCinnabarValidated`
-* `neoforge:runClient` (if subproject is included)
 
 ## Discord
 https://discord.gg/jW2UvpvFKh
