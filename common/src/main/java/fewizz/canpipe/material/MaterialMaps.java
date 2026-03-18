@@ -33,6 +33,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
+import org.jspecify.annotations.NonNull;
 
 final public class MaterialMaps implements PreparableReloadListener {
 
@@ -72,16 +73,16 @@ final public class MaterialMaps implements PreparableReloadListener {
     }
 
     @Override
-    public CompletableFuture<Void> reload(
-        PreparableReloadListener.SharedState sharedState,
-        Executor loadExecutor,
+    public @NonNull CompletableFuture<Void> reload(
+        PreparableReloadListener.@NonNull SharedState sharedState,
+        @NonNull Executor loadExecutor,
         PreparableReloadListener.PreparationBarrier preparationBarrier,
-        Executor applyExecutor
+        @NonNull Executor applyExecutor
     ) {
         return CompletableFuture
             .supplyAsync(() -> MaterialMaps.readRaw(sharedState.resourceManager()), loadExecutor)
             .thenCompose(preparationBarrier::wait)
-            .thenAcceptAsync((Map<Identifier, Resource> materialMapsJson) -> MaterialMaps.loadRaw(materialMapsJson), applyExecutor);
+            .thenAcceptAsync(MaterialMaps::loadRaw, applyExecutor);
     }
 
     public static Map<Identifier, Resource> readRaw(ResourceManager resourceManager) {

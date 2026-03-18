@@ -9,9 +9,9 @@ import com.mojang.blaze3d.opengl.GlStateManager;
 public interface GlStateManagerAccessor {
 
     @Invoker(value = "canpipe_setTextureTarget", remap = false)
-    public static void canpipe_setTextureTarget(int id, int target) {}
+    static void canpipe_setTextureTarget(int id, int target) {}
 
     @Invoker(value = "canpipe_getTextureTarget", remap = false)
-    public static int canpipe_getTextureTarget(int id) { return -1; }
+    static int canpipe_getTextureTarget(int id) { return -1; }
 
 }

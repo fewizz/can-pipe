@@ -77,7 +77,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private SubmitNodeStorage submitNodeStorage;
     @Shadow @Final private FeatureRenderDispatcher featureRenderDispatcher;
 
-    @Shadow @Final private LevelTargetBundle targets = new LevelTargetBundle();
+    @Shadow @Final private LevelTargetBundle targets;
     @Shadow @Final private RenderBuffers renderBuffers;
 
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
@@ -103,9 +103,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Stream.generate(() -> new ObjectArrayList<SectionRenderDispatcher.RenderSection>(10000))
         .limit(4).toArray(ObjectArrayList[]::new);
 
-    @Unique @Final private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSectionsSink = new ObjectArrayList<>(50);
+    @Unique private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSectionsSink = new ObjectArrayList<>(50);
 
-    @Unique @Final private PerVertexFormatBufferSource canpipe_perVertexFormetBufferSource = new PerVertexFormatBufferSource();
+    @Unique private PerVertexFormatBufferSource canpipe_perVertexFormetBufferSource = new PerVertexFormatBufferSource();
 
     @Override public boolean canpipe_getIsRenderingShadows() { return this.canpipe_isRenderingShadows; }
     @Override public int canpipe_getShadowCascade() { return this.canpipe_shadowCascade; }
@@ -323,13 +323,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     PostChain onTransparencyPostChainCreation(
         LevelRenderer instance,
-        Operation<PostChain> opration,
-        @Local RenderTargetDescriptor renderTargetDescriptor,
+        Operation<PostChain> operation,
         @Local FrameGraphBuilder frameGraphBuilder
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) {
-            return opration.call(instance);  // Initialise transparency post chain normally
+            return operation.call(instance);  // Initialise transparency post chain normally
         }
         // Don't create transparency post chain, will be handled by pipeline
 
@@ -368,7 +367,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         )
     )
     private boolean addPlayerWhenCollectingVisibleEntities(boolean original) {
-        return this.canpipe_isRenderingShadows ? true : original;
+        return original || this.canpipe_isRenderingShadows;
     }
 
     @WrapOperation(

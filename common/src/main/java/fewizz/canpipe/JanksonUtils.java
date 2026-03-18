@@ -44,7 +44,7 @@ public class JanksonUtils {
     public static List<Integer> listOfIntegers(JsonObject jsonObject, String propertyName) {
         JsonArray a = jsonObject.get(JsonArray.class, propertyName);
         if (a == null) return List.of();
-        return a.stream().map(s -> (Integer) ((JsonPrimitive)s).asInt(0)).toList();
+        return a.stream().map(s -> ((JsonPrimitive)s).asInt(0)).toList();
     }
 
     public static List<JsonObject> listOfObjects(JsonObject jsonObject, String propertyName) {
@@ -56,6 +56,22 @@ public class JanksonUtils {
     public static JsonObject objectOrEmpty(JsonObject jsonObject, String propertyName) {
         JsonObject result = jsonObject.getObject(propertyName);
         return result != null ? result : new JsonObject();
+    }
+
+    public static String stringOrThrow(JsonObject jsonObject, String propertyName) {
+        String value = jsonObject.get(String.class, propertyName);
+        if (value == null) {
+            throw new RuntimeException("Couldn't find string property \""+propertyName+"\"");
+        }
+        return value;
+    }
+
+    public static JsonObject objectOrThrow(JsonObject jsonObject, String propertyName) {
+        JsonObject value = jsonObject.getObject(propertyName);
+        if (value == null) {
+            throw new RuntimeException("Couldn't find string property \""+propertyName+"\"");
+        }
+        return value;
     }
 
 }

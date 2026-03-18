@@ -1,6 +1,5 @@
 package fewizz.canpipe.material;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.apache.commons.io.IOUtils;
@@ -29,7 +28,7 @@ public record Material(
         int id,
         Identifier location,
         JsonObject materialJson
-    ) throws FileNotFoundException, IOException {
+    ) throws IOException {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
 
         var layers = materialJson.get("layers");

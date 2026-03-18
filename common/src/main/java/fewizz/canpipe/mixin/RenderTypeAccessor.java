@@ -10,9 +10,9 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 public interface RenderTypeAccessor {
 
     @Accessor(value = "name", remap = false)
-    public String canpipe_getName();
+    String canpipe_getName();
 
     @Accessor(value = "state", remap = false)
-    public RenderSetup canpipe_getState();
+    RenderSetup canpipe_getState();
 
 }

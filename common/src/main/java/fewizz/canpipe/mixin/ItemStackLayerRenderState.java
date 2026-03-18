@@ -45,7 +45,7 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
         Item item = this.canpipe_itemStack.getItem();
 
         if (submitNodeCollector instanceof SubmitNodeCollectorExtended snce) {
-            MaterialMap materialMap = null;
+            MaterialMap materialMap;
             if (item instanceof BlockItem bi) {
                 materialMap = MaterialMaps.getForBlock(bi.getBlock());
             }

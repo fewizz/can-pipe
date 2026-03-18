@@ -1,5 +1,6 @@
 package fewizz.canpipe;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import org.joml.Matrix4f;
@@ -174,6 +175,9 @@ public class Uniforms {
         Profiler.get().push("collect");
 
         Minecraft mc = Minecraft.getInstance();
+        Objects.requireNonNull(mc.player);
+        Objects.requireNonNull(mc.level);
+
         CameraRenderState crs = mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
         Camera camera = mc.gameRenderer.getMainCamera();
         var cameraPos = camera.position();
@@ -381,7 +385,7 @@ public class Uniforms {
         }
         FRX_AMBIENT_INTENSITY.set(camera.attributeProbe().getValue(EnvironmentAttributes.SKY_LIGHT_FACTOR, pt));
         {
-            Vector4f emissiveColor = ((LightmapExtended) ((GameRendererExtended) mc.gameRenderer).canpipe_getLightmap()).canpipe_getEmissiveColor();
+            Vector4f emissiveColor = ((LightmapExtended) gre.canpipe_getLightmap()).canpipe_getEmissiveColor();
             FRX_EMISSIVE_COLOR.set(emissiveColor);
         }
         {

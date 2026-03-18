@@ -52,7 +52,7 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
             var textureViews = kv.getKey();
             var fboID = kv.getIntValue();
             for (var textureView : textureViews) {
-                if ((GlTextureView) textureView == (Object) this) {
+                if (textureView == (Object) this) {
                     GlStateManager._glDeleteFramebuffers(fboID);
                     return true;
                 }

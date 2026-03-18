@@ -3,6 +3,7 @@ package fewizz.canpipe.mixin;
 import java.util.Map;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -22,11 +23,11 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 @Mixin(ModelFeatureRenderer.class)
 public class ModelFeatureRendererMixin {
 
-    SubmitNodeCollection canpipe_nodeCollectionHolded;
+    @Unique  SubmitNodeCollection canpipe_nodeCollectionHeld;
 
     @Inject(method = "renderSolid", at = @At("HEAD"))
     void onRenderSolid(CallbackInfo ci, @Local SubmitNodeCollection nodeCollection) {
-        this.canpipe_nodeCollectionHolded = nodeCollection;
+        this.canpipe_nodeCollectionHeld = nodeCollection;
     }
 
     @Inject(method = "renderModel", at = @At("HEAD"))
@@ -38,7 +39,7 @@ public class ModelFeatureRendererMixin {
     ) {
 
         Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> extras =
-            ((SubmitNodeCollectorExtended) this.canpipe_nodeCollectionHolded).canpipe_getModelSubmitsExtras();
+            ((SubmitNodeCollectorExtended) this.canpipe_nodeCollectionHeld).canpipe_getModelSubmitsExtras();
 
         ModelSubmitExtra extra = extras.get(submit);
 

@@ -52,7 +52,7 @@ public interface VertexConsumerMixin {
     }
 
     @Inject(method = {"putBlockBakedQuad", "putBakedQuad"}, at = @At("RETURN"))
-    default void resetSpriteIndex(CallbackInfo ci, @Local(argsOnly = true) BakedQuad bakedQuad) {
+    default void resetSpriteIndex(CallbackInfo ci) {
         if (
             this instanceof VertexConsumerExtended vce &&
             vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)

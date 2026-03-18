@@ -10,9 +10,9 @@ import net.minecraft.world.entity.Entity;
 public interface CameraAccessor {
 
     @Accessor("detached")
-    public void canpipe_setDetached(boolean value);
+    void canpipe_setDetached(boolean value);
 
     @Accessor("entity")
-    public void canpipe_setEntity(Entity entity);
+    void canpipe_setEntity(Entity entity);
 
 }

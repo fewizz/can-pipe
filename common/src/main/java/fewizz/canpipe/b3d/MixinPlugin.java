@@ -144,7 +144,7 @@ public class MixinPlugin implements IMixinConfigPlugin, Opcodes {
             classInitMethod.instructions.insertBefore(
                 StreamSupport.stream(classInitMethod.instructions.spliterator(), false)
                     .filter(insn -> insn.getOpcode() == INVOKESTATIC)
-                    .findFirst().get(),  // right before callogin arrayInitMethod ($values)
+                    .findFirst().get(),  // right before calling arrayInitMethod ($values)
                 createNewEntry
             );
 

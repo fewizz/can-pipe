@@ -1,9 +1,6 @@
 package fewizz.canpipe.material;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.jspecify.annotations.Nullable;
 
@@ -30,11 +27,9 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
         JsonObject defaultMap = JanksonUtils.objectOrEmpty(json, "defaultMap");
 
         for (JsonObject spriteMapObject : JanksonUtils.listOfObjects(defaultMap, "spriteMap")) {
-            String spriteLocationStr = spriteMapObject.get(String.class, "sprite");
-            String materialLocationStr = spriteMapObject.get(String.class, "material");
             spriteMap.put(
-                Identifier.parse(spriteLocationStr),
-                Materials.get(Identifier.parse(materialLocationStr))
+                Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "sprite")),
+                Materials.get(Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "material")))
             );
         }
         return new MaterialMap(defaultMaterial, spriteMap);
@@ -44,8 +39,8 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
         Map<Identifier, Material> spriteMap = new HashMap<>();
 
         for (JsonObject entry : JanksonUtils.listOfObjects(json, "map")) {
-            JsonObject predicate = entry.getObject("predicate");
-            JsonObject materialPredicate = predicate.getObject("materialPredicate");
+            JsonObject predicate = JanksonUtils.objectOrThrow(entry, "predicate");
+            JsonObject materialPredicate = JanksonUtils.objectOrThrow(predicate, "materialPredicate");
             String textureIdStr = materialPredicate.get(String.class, "texture");
             if (textureIdStr == null) {
                 continue;
@@ -53,7 +48,7 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
             Identifier textureId = Identifier.parse(textureIdStr);
             textureId = CanPipe.upgradeResourcePath(textureId);
 
-            Identifier materialId = Identifier.parse(entry.get(String.class, "material"));
+            Identifier materialId = Identifier.parse(JanksonUtils.stringOrThrow(entry, "material"));
             Material material = Materials.get(materialId);
 
             spriteMap.put(textureId, material);

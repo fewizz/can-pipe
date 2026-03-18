@@ -2,6 +2,7 @@ package fewizz.canpipe.mixin;
 
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 @Mixin(SectionCompiler.class)
 public class SectionCompilerMixin {
 
-    ThreadLocal<MutablePair<BlockState, MaterialMap>> canpipe_capturedBlockState = new ThreadLocal<>();
+    @Unique ThreadLocal<MutablePair<BlockState, MaterialMap>> canpipe_capturedBlockState = new ThreadLocal<>();
 
     @Inject(
         method = "compile",

@@ -1,14 +1,7 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -121,14 +114,13 @@ public class Pipeline implements AutoCloseable {
                     (JsonElement program) ->
                         program instanceof JsonObject programJson &&
                         programJson.containsKey("name") &&
-                        programJson.get(String.class, "name").equals("depth_downsample")
+                        JanksonUtils.stringOrThrow(programJson, "name").equals("depth_downsample")
                 ).findFirst().ifPresent(program -> {
                     JsonObject programJson = (JsonObject) program;
                     JsonArray samplers = programJson.get(JsonArray.class, "samplers");
-                    if (samplers.size() != 1 || !(samplers.get(0) instanceof JsonPrimitive)) {
+                    if (samplers == null || samplers.size() != 1 || !(samplers.getFirst() instanceof JsonPrimitive sampler)) {
                         return;
                     }
-                    JsonPrimitive sampler = (JsonPrimitive) samplers.get(0);
                     if (sampler.asString().equals("u_depth")) {
                         CanPipe.LOGGER.warn("replacing sampler \"u_depth\" with \"u_depth_mips\" for program \"depth_downsample\"");
                         samplers.set(0, JsonPrimitive.of("u_depth_mips"));
@@ -145,14 +137,13 @@ public class Pipeline implements AutoCloseable {
                     (JsonElement program) ->
                         program instanceof JsonObject programJson &&
                         programJson.containsKey("name") &&
-                        programJson.get(String.class, "name").equals("copy")
+                        JanksonUtils.stringOrThrow(programJson, "name").equals("copy")
                 ).findFirst().ifPresent(program -> {
                     JsonObject programJson = (JsonObject) program;
                     JsonArray samplers = programJson.get(JsonArray.class, "samplers");
-                    if (samplers.size() != 1 || !(samplers.get(0) instanceof JsonPrimitive)) {
+                    if (samplers == null || samplers.size() != 1 || !(samplers.getFirst() instanceof JsonPrimitive sampler)) {
                         return;
                     }
-                    JsonPrimitive sampler = (JsonPrimitive) samplers.get(0);
                     if (sampler.asString().equals("u_composite")) {
                         CanPipe.LOGGER.warn("replacing sampler \"u_composite\" with \"u_color\" for program \"copy\"");
                         samplers.set(0, JsonPrimitive.of("u_color"));
@@ -183,7 +174,7 @@ public class Pipeline implements AutoCloseable {
         Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
             return Optional.ofNullable(this.textures.computeIfAbsent(name, _name -> {
                 List<JsonObject> textures = JanksonUtils.listOfObjects(pipelineJson, "images");
-                Optional<JsonObject> possibleJson = textures.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
+                Optional<JsonObject> possibleJson = textures.stream().filter(t -> JanksonUtils.stringOrThrow(t, "name").equals(name)).findFirst();
                 if (possibleJson.isEmpty()) {
                     return null;
                 }
@@ -223,7 +214,7 @@ public class Pipeline implements AutoCloseable {
             return Optional.ofNullable(this.framebuffers.computeIfAbsent(name, _name -> {
                 try {
                     List<JsonObject> framebuffers = JanksonUtils.listOfObjects(pipelineJson, "framebuffers");
-                    Optional<JsonObject> possibleJson = framebuffers.stream().filter(t -> t.get(String.class, "name").equals(name)).findFirst();
+                    Optional<JsonObject> possibleJson = framebuffers.stream().filter(t -> JanksonUtils.stringOrThrow(t, "name").equals(name)).findFirst();
                     if (possibleJson.isEmpty()) {
                         return null;
                     }
@@ -243,8 +234,6 @@ public class Pipeline implements AutoCloseable {
             return result.get();
         };
 
-        JsonObject targetsJson = pipelineJson.getObject("drawTargets");
-
         this.defaultFramebuffer = getOrLoadFramebuffer.apply(pipelineJson.get(String.class, "defaultFramebuffer"));
         if (this.defaultFramebuffer.colorTextures.length != 1) {
             throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" has "+this.defaultFramebuffer.colorTextures.length+" color attachments, should have only one");
@@ -253,6 +242,7 @@ public class Pipeline implements AutoCloseable {
             throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" doesn't have depth attachment");
         }
 
+        JsonObject targetsJson = JanksonUtils.objectOrThrow(pipelineJson, "drawTargets");
         this.solidFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "solidTerrain"));
         this.translucentTerrainFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentTerrain"));
         this.translucentItemEntityFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentEntity"));
@@ -323,6 +313,8 @@ public class Pipeline implements AutoCloseable {
 
         if (shadowsJson != null) {
             shadowFramebuffer = getOrLoadFramebuffer.apply(shadowsJson.get(String.class, "framebuffer"));
+            Objects.requireNonNull(shadowFramebuffer.getDepthTexture());
+            Objects.requireNonNull(shadowFramebuffer.getDepthTextureView());
         }
 
         Optional<Integer> shadowMapSize = (
@@ -331,10 +323,9 @@ public class Pipeline implements AutoCloseable {
             Optional.empty()
         );
 
-        JsonObject materialProgram = pipelineJson.getObject("materialProgram");
-
-        var materialVertexShaderLocation = Identifier.parse(materialProgram.get(String.class, "vertexSource"));
-        var materialFragmentShaderLocation = Identifier.parse(materialProgram.get(String.class, "fragmentSource"));
+        JsonObject materialProgram = JanksonUtils.objectOrThrow(pipelineJson, "materialProgram");
+        var materialVertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(materialProgram, "vertexSource"));
+        var materialFragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(materialProgram, "fragmentSource"));
 
         List<String> samplers = new ArrayList<>(JanksonUtils.listOfStrings(materialProgram, "samplers"));
         if (shadowFramebuffer != null) {
@@ -355,14 +346,20 @@ public class Pipeline implements AutoCloseable {
         Map<String, AbstractTexture> samplerToTexture = new HashMap<>();
         for (int i = 0; i < Math.min(samplers.size(), samplerImagesNames.size()); ++i) {
             String sampler = samplers.get(i);
-            var samplerImage = getOrLoadPipelineOrResourcepackTexture.apply(samplerImagesNames.get(i)).get();
-            samplerToTexture.put(sampler, samplerImage);
+            var samplerImage = getOrLoadPipelineOrResourcepackTexture.apply(samplerImagesNames.get(i));
+            if (samplerImage.isEmpty()) {
+                throw new RuntimeException("Couldn't find material program sampler image \""+samplerImagesNames.get(i)+"\"");
+            }
+            samplerToTexture.put(sampler, samplerImage.get());
         }
         if (shadowFramebuffer != null) {
             String shadowMapTextureName = shadowFramebuffer.getDepthTexture().getLabel();
-            AbstractTexture shadowMapTexture = getOrLoadPipelineOrResourcepackTexture.apply(shadowMapTextureName).get();
-            samplerToTexture.put("frxs_shadowMap", shadowMapTexture);
-            samplerToTexture.put("frxs_shadowMapTexture", shadowMapTexture);
+            Optional<AbstractTexture> shadowMapTexture = getOrLoadPipelineOrResourcepackTexture.apply(shadowMapTextureName);
+            if (shadowMapTexture.isEmpty()) {
+                throw new RuntimeException("Couldn't find material program shadowmap image \""+shadowMapTextureName+"\"");
+            }
+            samplerToTexture.put("frxs_shadowMap", shadowMapTexture.get());
+            samplerToTexture.put("frxs_shadowMapTexture", shadowMapTexture.get());
         }
         this.materialProgramSamplerTextures = samplerToTexture;
 
@@ -397,8 +394,8 @@ public class Pipeline implements AutoCloseable {
                 this.framebuffers.put(fb.name, fb);
             }
 
-            var vertexShaderLocation = Identifier.parse(shadowsJson.get(String.class, "vertexSource"));
-            var fragmentShaderLocation = Identifier.parse(shadowsJson.get(String.class, "fragmentSource"));
+            var vertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "vertexSource"));
+            var fragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "fragmentSource"));
             var materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
                 renderPipeline -> renderPipeline,
                 renderPipeline -> MaterialPrograms.load(
@@ -429,9 +426,12 @@ public class Pipeline implements AutoCloseable {
         Function<String, RenderPipeline> getOrLoadProgram = (String name) -> {
             return this.programs.computeIfAbsent(name, _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
-                JsonObject programJson = programs.stream().filter(program -> program.get(String.class, "name").equals(name)).findFirst().get();
+                Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();
+                if (programJson.isEmpty()) {
+                    throw new RuntimeException("Couldn't find program \""+name+"\"");
+                }
                 return Programs.load(
-                    programJson, location, getShaderSource, glslVersion,
+                    programJson.get(), location, getShaderSource, glslVersion,
                     options, appliedOptions, shadowMapSize
                 );
             });

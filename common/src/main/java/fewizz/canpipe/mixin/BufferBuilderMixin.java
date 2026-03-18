@@ -43,7 +43,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow private int elementsToFill;
     @Shadow @Final private VertexFormat.Mode mode;
     @Shadow @Final private ByteBufferBuilder buffer;
-    @Shadow @Final public VertexFormat format;
+    @Shadow @Final private VertexFormat format;
     @Shadow @Final private boolean fastFormat;
     @Shadow @Final private int vertexSize;
     @Shadow @Final private int[] offsetsByElement;
@@ -59,14 +59,14 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private Float canpipe_aoPending = null;
     @Unique private Identifier canpipe_textureIdentifier = null;
 
-    @Unique @Final private int canpipe_aoOffset;
-    @Unique @Final private int canpipe_uv0Offset;
-    @Unique @Final private int canpipe_positionOffset;
-    @Unique @Final private int canpipe_spriteIndexOffset;
-    @Unique @Final private int canpipe_materialIndexOffset;
-    @Unique @Final private int canpipe_materialFlagsOffset;
-    @Unique @Final private int canpipe_normalOffset;
-    @Unique @Final private int canpipe_tangentOffset;
+    @Unique private int canpipe_aoOffset;
+    @Unique private int canpipe_uv0Offset;
+    @Unique private int canpipe_positionOffset;
+    @Unique private int canpipe_spriteIndexOffset;
+    @Unique private int canpipe_materialIndexOffset;
+    @Unique private int canpipe_materialFlagsOffset;
+    @Unique private int canpipe_normalOffset;
+    @Unique private int canpipe_tangentOffset;
 
     @Override public VertexFormat canpipe_getVertexFormat() { return this.format; }
 

@@ -233,7 +233,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         method = "clearColorTexture",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V")
     )
-    public void clearNonZeroColorLayer(int mask, Operation<Void> operation, @Local GpuTexture colorTexture) {
+    public void clearNonZeroColorLayer(int mask, Operation<Void> operation, @Local(argsOnly = true) GpuTexture colorTexture) {
         if (this.canpipe_clearBaseLayer == -1) {
             operation.call(mask);
             return;
@@ -259,7 +259,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         method = "clearDepthTexture",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V")
     )
-    public void clearNonZeroDepthLayer(int mask, Operation<Void> operation, @Local GpuTexture depthTexture) {
+    public void clearNonZeroDepthLayer(int mask, Operation<Void> operation, @Local(argsOnly = true) GpuTexture depthTexture) {
         if (this.canpipe_clearBaseLayer == -1) {
             operation.call(mask);
             return;

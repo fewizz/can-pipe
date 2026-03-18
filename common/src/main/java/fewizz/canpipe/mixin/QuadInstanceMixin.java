@@ -2,6 +2,7 @@ package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -14,23 +15,21 @@ import net.minecraft.util.ARGB;
 @Mixin(QuadInstance.class)
 public class QuadInstanceMixin implements QuadInstanceExtended {
 
-    boolean canpipe_separateShade = false;
-
     @Shadow private int color0;
 	@Shadow private int color1;
 	@Shadow private int color2;
 	@Shadow private int color3;
 
-    int canpipe_separatedShade0 = -1;
-    int canpipe_separatedShade1 = -1;
-    int canpipe_separatedShade2 = -1;
-    int canpipe_separatedShade3 = -1;
+    @Unique boolean canpipe_separateShade = false;
+    @Unique int canpipe_separatedShade0 = -1;
+    @Unique int canpipe_separatedShade1 = -1;
+    @Unique int canpipe_separatedShade2 = -1;
+    @Unique int canpipe_separatedShade3 = -1;
 
     @Inject(method = "scaleColor", at = @At("HEAD"), cancellable = true)
     void onScaleColor(final float scale, CallbackInfo ci) {
         if (this.canpipe_separateShade) {
-            ci.cancel();
-            return; //  Don't shade
+            ci.cancel();  //  Don't shade
         }
     }
 

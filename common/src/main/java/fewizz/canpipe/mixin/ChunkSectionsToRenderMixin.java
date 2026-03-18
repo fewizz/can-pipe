@@ -29,7 +29,7 @@ import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 @Mixin(ChunkSectionsToRender.class)
 public class ChunkSectionsToRenderMixin {
 
-    @Shadow @Final GpuTextureView textureView;
+    @Shadow @Final private GpuTextureView textureView;
 
     @WrapOperation(
         method = "renderGroup",

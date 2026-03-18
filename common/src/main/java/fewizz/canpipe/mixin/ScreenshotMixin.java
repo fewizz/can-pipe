@@ -19,11 +19,7 @@ public class ScreenshotMixin {
     private static GpuTexture canpipe_rgba8Texture;
 
     @ModifyExpressionValue(
-        method = "Lnet/minecraft/client/Screenshot;takeScreenshot("+
-            "Lcom/mojang/blaze3d/pipeline/RenderTarget;"+
-            "I"+
-            "Ljava/util/function/Consumer;"+
-        ")V",
+        method = "takeScreenshot(Lcom/mojang/blaze3d/pipeline/RenderTarget;ILjava/util/function/Consumer;)V",
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;getColorTexture()Lcom/mojang/blaze3d/textures/GpuTexture;"
@@ -57,7 +53,7 @@ public class ScreenshotMixin {
     }
 
     @Inject(
-        method = "takeScreenshot",
+        method = "takeScreenshot*",
         at = @At("RETURN")
     )
     private static void afterTakingScreenshot(CallbackInfo ci) {

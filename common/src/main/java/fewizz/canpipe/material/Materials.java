@@ -11,10 +11,12 @@ import java.util.concurrent.Executor;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.light.Lights;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.jspecify.annotations.NonNull;
 
 final public class Materials implements PreparableReloadListener {
 
@@ -32,16 +34,16 @@ final public class Materials implements PreparableReloadListener {
     }
 
     @Override
-    public CompletableFuture<Void> reload(
-        PreparableReloadListener.SharedState sharedState,
-        Executor loadExecutor,
+    public @NonNull CompletableFuture<Void> reload(
+        PreparableReloadListener.@NonNull SharedState sharedState,
+        @NonNull Executor loadExecutor,
         PreparableReloadListener.PreparationBarrier preparationBarrier,
-        Executor applyExecutor
+        @NonNull Executor applyExecutor
     ) {
         return CompletableFuture
             .supplyAsync(() -> Materials.readRaw(sharedState.resourceManager()), loadExecutor)
             .thenCompose(preparationBarrier::wait)
-            .thenAcceptAsync((Map<Identifier, Resource> materialsJson) -> Materials.loadRaw(materialsJson), applyExecutor);
+            .thenAcceptAsync(Materials::loadRaw, applyExecutor);
     }
 
     public static Map<Identifier, Resource> readRaw(ResourceManager resourceManager) {

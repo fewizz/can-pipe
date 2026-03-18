@@ -37,10 +37,10 @@ public class UniformBufferStruct {
     }
 
     // Same as net.minecraft.client.renderer.UniformValue, but not a record
-    public static interface UniformValue {
-        abstract public void writeTo(Std140Builder std140Builder);
-        abstract public void addSize(Std140SizeCalculator std140SizeCalculator);
-    };
+    public interface UniformValue {
+        void writeTo(Std140Builder std140Builder);
+        void addSize(Std140SizeCalculator std140SizeCalculator);
+    }
 
     public static class FloatUniform implements UniformValue {
         private float value = 0.0F;

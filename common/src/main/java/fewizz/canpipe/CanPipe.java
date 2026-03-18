@@ -164,6 +164,6 @@ public class CanPipe {
             identifier = identifier.withPath(path);
         }
         return identifier;
-    };
+    }
 
 }

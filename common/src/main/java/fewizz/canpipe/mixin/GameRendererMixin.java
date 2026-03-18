@@ -38,7 +38,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 @Mixin(GameRenderer.class)
 public class GameRendererMixin implements GameRendererExtended {
 
-    @Shadow @Final Minecraft minecraft;
+    @Shadow @Final private Minecraft minecraft;
     @Shadow @Final private Camera mainCamera;
     @Shadow @Final private FogRenderer fogRenderer;
     @Shadow @Final private GameRenderState gameRenderState;

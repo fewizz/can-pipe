@@ -9,7 +9,7 @@ import fewizz.canpipe.b3d.mixin.GpuDeviceAccessor;
 
 public abstract class RealGpuDeviceProviderService {
 
-    private static ServiceLoader<RealGpuDeviceProviderService> loader = ServiceLoader.load(RealGpuDeviceProviderService.class);
+    private static final ServiceLoader<RealGpuDeviceProviderService> loader = ServiceLoader.load(RealGpuDeviceProviderService.class);
 
     public abstract GpuDeviceBackend impl_getRealGpuDeviceBackend();
 

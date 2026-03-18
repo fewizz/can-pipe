@@ -14,6 +14,6 @@ public interface RenderSystemAccessor {
     static @NonNull GpuBuffer canpipe_getQuadBuffer() { return null; }
 
     @Accessor(value = "CANPIPE_INT_0_3_UBO_BUFFERS")
-    static @NonNull GpuBuffer[] canpipe_get0to3UBOBuffers() { return null; }
+    static @NonNull GpuBuffer[] canpipe_get0to3UBOBuffers() { return new GpuBuffer[0]; }
 
 }

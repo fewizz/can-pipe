@@ -19,5 +19,7 @@ Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader 
 2. Put preferred shaderpacks into `resourcepacks` directory and activate them
 3. In video settings, click on `Pipeline: ...` to switch between available shader pipelines
 
+Additionally, you can install [Cinnabar](https://github.com/RogueLogix/Cinnabar) for Vulkan backend
+
 ## Discord
 https://discord.gg/jW2UvpvFKh

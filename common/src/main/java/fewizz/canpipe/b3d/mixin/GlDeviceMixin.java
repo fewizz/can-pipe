@@ -111,9 +111,8 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         method = "compileShader",
         at = @At(value = "CONSTANT", args = "intValue=32768")
     )
-    int extendMaxLogLength(int original, @Local(index = 0) int id) {
-        int logLength = GlStateManager.glGetShaderi(id, GL33C.GL_INFO_LOG_LENGTH);
-        return logLength;
+    int extendMaxLogLength(int original, @Local(ordinal = 0) int shaderId) {
+        return GlStateManager.glGetShaderi(shaderId, GL33C.GL_INFO_LOG_LENGTH);
     }
 
     @ModifyExpressionValue(
