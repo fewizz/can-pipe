@@ -1,7 +1,6 @@
 package fewizz.canpipe.mixin;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -145,7 +144,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             (Optional<PipelineRaw> p) -> {  // on widget value changed
                 if (Pipelines.getCurrentRaw() == p.orElse(null)) return;
 
-                Pipelines.loadAndSetPipeline(p.orElse(null), Map.of());
+                Pipelines.loadAndSetPipeline(p.orElse(null), null);
                 // update value to update label
                 // first check is to avoid recursive pipeline loading
                 canpipe_onPipelineLoaded();

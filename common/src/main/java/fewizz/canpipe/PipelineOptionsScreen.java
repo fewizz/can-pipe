@@ -8,6 +8,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
@@ -18,6 +21,7 @@ import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -35,7 +39,6 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.jspecify.annotations.NonNull;
 
 public class PipelineOptionsScreen extends OptionsSubScreen {
 
@@ -96,8 +99,8 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 this.addEntry(new CategoryEntry(Component.translatable(o.categoryKey())));
 
                 for (OptionGroup.Element<?> e : o.elements().values()) {
-                    Consumer<Object> applyOptionValue = (Object value) -> {
-                        Pipelines.loadAndSetPipeline(raw, Map.of(e, value));
+                    Consumer<Object> applyOptionValue = (@Nullable Object value) -> {
+                        Pipelines.loadAndSetPipeline(raw, Pair.of(e, value));
                         if (
                             minecraft.screen instanceof PipelineOptionsScreen &&
                             Pipelines.getCurrent() == null
@@ -179,6 +182,9 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         public class OptionEntry extends Entry {
             private final StringWidget nameWidget;
             private final AbstractWidget valueWidget;
+            private final AbstractButton resetButton;
+            private Runnable onReset;
+            private boolean handlingReset = false;  // smells
 
             static final int RIGHT_SHIFT = 0;
             static final int BUTTON_WIDTH = Button.DEFAULT_WIDTH - 25 - RIGHT_SHIFT;
@@ -189,15 +195,41 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 Consumer<Object> applyValue
             ) {
                 this.nameWidget = new StringWidget(Component.translatable(e.nameKey), minecraft.font);
+                this.resetButton = new Button.Builder(Component.literal("R"), (resetButton) -> {
+                    this.handlingReset = true;
+                    this.onReset.run();
+                    this.handlingReset = false;
+                    resetButton.visible = false;
+                })
+                    .size(20, BUTTON_HEIGHT)
+                    .build();
+
+                this.resetButton.visible = appliedValue != null;
+
+                Consumer<Object> enableResetAndApplyValue = (Object value) -> {
+                    this.resetButton.visible = true;
+                    applyValue.accept(!this.handlingReset ? value : null);
+                };
 
                 if (e instanceof OptionGroup.BooleanElement boolElement) {
                     var initialValue = appliedValue != null ? boolElement.validate(appliedValue) : boolElement.defaultValue;
-                    this.valueWidget = Checkbox.builder(Component.empty(), minecraft.font)
+
+                    var widget = Checkbox.builder(Component.empty(), minecraft.font)
                         .selected(initialValue)
                         .onValueChange((checkbox, state) -> {
-                            applyValue.accept(state);
+                            enableResetAndApplyValue.accept(state);
                         })
                         .build();
+
+                    this.valueWidget = widget;
+                    this.onReset = () -> {
+                        if (widget.selected() != boolElement.defaultValue) {
+                            widget.onPress(null);
+                        }
+                        else {
+                            enableResetAndApplyValue.accept(null);
+                        }
+                    };
                 }
                 else if (e instanceof OptionGroup.FloatElement floatElement) {
                     NumberFormat numberFormat = NumberFormat.getInstance();
@@ -210,7 +242,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                     var initialValue = appliedValue != null ? (double) appliedValue : floatElement.defaultValue;
 
-                    this.valueWidget = new AbstractSliderButton(
+                    var widget = new AbstractSliderButton(
                         0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
                         valueToComponent.apply(initialValue),
                         (initialValue - floatElement.min) / (floatElement.max - floatElement.min)
@@ -229,8 +261,16 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         public void onRelease(@NonNull MouseButtonEvent e) {
                             super.onRelease(e);
                             var value = (this.value * (floatElement.max - floatElement.min)) + floatElement.min;
-                            applyValue.accept(value);
+                            enableResetAndApplyValue.accept(value);
                         }
+
+                        @Override public void setValue(double newValue) { super.setValue(newValue); }
+                    };
+
+                    this.valueWidget = widget;
+                    this.onReset = () -> {
+                        widget.setValue((floatElement.defaultValue - floatElement.min) / (floatElement.max - floatElement.min));
+                        enableResetAndApplyValue.accept(null);
                     };
                 }
                 else if (e instanceof OptionGroup.IntegerElement intElement) {
@@ -240,7 +280,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                     var initialValue = appliedValue != null ? (long) appliedValue : intElement.defaultValue;
 
-                    this.valueWidget = new AbstractSliderButton(
+                    var widget = new AbstractSliderButton(
                         0, 0, BUTTON_WIDTH, BUTTON_HEIGHT,
                         valueToComponent.apply(initialValue),
                         (double)(initialValue - intElement.min) / (double)(intElement.max - intElement.min)
@@ -259,12 +299,22 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         public void onRelease(@NonNull MouseButtonEvent e) {
                             super.onRelease(e);
                             var value = (long)((this.value * (intElement.max - intElement.min)) + intElement.min);
-                            applyValue.accept(value);
+                            enableResetAndApplyValue.accept(value);
                         }
+
+                        @Override public void setValue(double newValue) { super.setValue(newValue); }
+
+                    };
+
+                    this.valueWidget = widget;
+
+                    this.onReset = () -> {
+                        widget.setValue((double)(intElement.defaultValue - intElement.min) / (double)(intElement.max - intElement.min));
+                        enableResetAndApplyValue.accept(null);
                     };
                 }
                 else if (e instanceof OptionGroup.EnumElement enumElement) {
-                    this.valueWidget = CycleButton.builder(
+                    var widget = CycleButton.builder(
                         (String s) -> Component.literal(
                             (s.substring(0, 1).toUpperCase() + s.substring(1)).replace("_", " ")
                         ),
@@ -277,9 +327,15 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                             BUTTON_WIDTH, BUTTON_HEIGHT,
                             Component.empty(),  // no name needed
                             (CycleButton<String> button, String choice) -> {
-                                applyValue.accept(choice);
+                                enableResetAndApplyValue.accept(choice);
                             }
                         );
+
+                    this.valueWidget = widget;
+
+                    this.onReset = () -> {
+                        widget.setValue(enumElement.defaultValue);
+                    };
                 }
                 else {
                     throw new NotImplementedException();
@@ -308,16 +364,22 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     this.getY() + (this.getHeight() - this.valueWidget.getHeight()) / 2
                 );
                 this.valueWidget.extractRenderState(graphics, mouseX, mouseY, a);
+
+                this.resetButton.setPosition(
+                    PipelineOptionsList.this.width / 2 + 5 + RIGHT_SHIFT + BUTTON_WIDTH + 5,
+                    this.getY() + (this.getHeight() - this.valueWidget.getHeight()) / 2
+                );
+                this.resetButton.extractRenderState(graphics, mouseX, mouseY, a);
             }
 
             @Override
             public @NonNull List<? extends GuiEventListener> children() {
-                return List.of(this.valueWidget);
+                return List.of(this.valueWidget, this.resetButton);
             }
 
             @Override
             public @NonNull List<? extends NarratableEntry> narratables() {
-                return ImmutableList.of(this.valueWidget);
+                return ImmutableList.of(this.valueWidget, this.resetButton);
             }
         }
     }

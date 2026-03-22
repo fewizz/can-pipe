@@ -12,8 +12,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-import org.jetbrains.annotations.Nullable;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -55,7 +56,7 @@ final public class Pipelines implements PreparableReloadListener {
     private static @Nullable Throwable loadingError = null;
     private static @Nullable Pipeline current = null;
 
-    public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Map<OptionGroup.Element<?>, Object> optionsChanges) {
+    public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Pair<OptionGroup.Element<?>, @Nullable Object> optionsChanges) {
         assert RenderSystem.isOnRenderThread();
 
         Pipelines.loadingError = null;
@@ -111,7 +112,14 @@ final public class Pipelines implements PreparableReloadListener {
                 }
             }
 
-            appliedOptions.putAll(optionsChanges);
+            if (optionsChanges != null) {
+                if (optionsChanges.getValue() != null) {
+                    appliedOptions.put(optionsChanges.getKey(), optionsChanges.getValue());
+                }
+                else {
+                    appliedOptions.remove(optionsChanges.getKey());
+                }
+            }
         }
 
         // save config
@@ -221,7 +229,7 @@ final public class Pipelines implements PreparableReloadListener {
             }
         }
 
-        loadAndSetPipeline(selected, Map.of());
+        loadAndSetPipeline(selected, null);
     }
 
     public static @Nullable Pipeline getCurrent() {

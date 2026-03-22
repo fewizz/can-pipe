@@ -84,6 +84,7 @@ loom {
             runDir "../run"
             vmArg "-XX:+UnlockDiagnosticVMOptions"
             vmArg "-XX:+DebugNonSafepoints"
+            programArg "--renderDebugLabels"
             properties([
                 "mixin.debug": "true",
             ])
