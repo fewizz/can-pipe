@@ -54,6 +54,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         super(previousScreen, Minecraft.getInstance().options, Component.empty());
         this.raw = raw;
         this.appliedOptions = appliedOptions;
+        this.layout.setHeaderHeight(0);
     }
 
     @Override
@@ -111,7 +112,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                             onClose();
                         }
                     };
-                    this.addEntry(new OptionEntry(raw, e, appliedOptions.get(e), applyOptionValue));
+                    this.addEntry(new OptionEntry(e, appliedOptions.get(e), applyOptionValue));
                 }
             }
         }
@@ -191,17 +192,18 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
             static final int BUTTON_HEIGHT = 17;
 
             OptionEntry(
-                PipelineRaw raw, OptionGroup.Element<?> e, Object appliedValue,
+                OptionGroup.Element<?> e, Object appliedValue,
                 Consumer<Object> applyValue
             ) {
                 this.nameWidget = new StringWidget(Component.translatable(e.nameKey), minecraft.font);
-                this.resetButton = new Button.Builder(Component.literal("R"), (resetButton) -> {
+                this.resetButton = new Button.Builder(Component.literal("←"), (resetButton) -> {
                     this.handlingReset = true;
                     this.onReset.run();
                     this.handlingReset = false;
                     resetButton.visible = false;
                 })
-                    .size(20, BUTTON_HEIGHT)
+                    .tooltip(Tooltip.create(Component.translatable("can-pipe.button.reset")))
+                    .size(20-4, BUTTON_HEIGHT-2)
                     .build();
 
                 this.resetButton.visible = appliedValue != null;
@@ -318,7 +320,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                         (String s) -> Component.literal(
                             (s.substring(0, 1).toUpperCase() + s.substring(1)).replace("_", " ")
                         ),
-                        enumElement.defaultValue
+                        appliedValue != null ? (String) appliedValue : enumElement.defaultValue
                     )
                         .withValues(enumElement.choices)
                         .displayOnlyValue()
@@ -367,7 +369,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                 this.resetButton.setPosition(
                     PipelineOptionsList.this.width / 2 + 5 + RIGHT_SHIFT + BUTTON_WIDTH + 5,
-                    this.getY() + (this.getHeight() - this.valueWidget.getHeight()) / 2
+                    this.getY() + (this.getHeight() - this.valueWidget.getHeight()) / 2 + 1
                 );
                 this.resetButton.extractRenderState(graphics, mouseX, mouseY, a);
             }
