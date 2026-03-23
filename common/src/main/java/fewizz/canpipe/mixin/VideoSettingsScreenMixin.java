@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import net.minecraft.network.chat.Style;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -93,7 +92,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                     return;
                 }
                 this.minecraft.setScreen(new PipelineOptionsScreen(
-                    (Screen)(Object) this,
+                    (Screen) (Object) this,
                     Pipelines.RAW_PIPELINES.get(current.location),
                     current.appliedOptions
                 ));

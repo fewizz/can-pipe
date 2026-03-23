@@ -69,7 +69,7 @@ public class Pipeline implements AutoCloseable {
     public final Map<OptionGroup.Element<?>, Object> appliedOptions;
 
     public final float defaultZenithAngle;
-    public final boolean smoothBrightnessBidirectionaly;
+    public final boolean smoothBrightnessBidirectionally;
     public final int brightnessSmoothingFrames;  // I wonder why smoothing is frame dependent, not time?
     public final int rainSmoothingFrames;
     public final int thunderSmoothingFrames;
@@ -104,55 +104,7 @@ public class Pipeline implements AutoCloseable {
 
         JsonObject pipelineJson = rawPipeline.getPipelineJson(appliedOptions);
 
-        /* Manually fixing some shaderpacks here */
-
-        // https://github.com/ambrosia13/ForgetMeNot-Shaders/commit/4eaa1e0f3bec07f265c504d760cccf2676c8fef5
-        if (this.location.getNamespace().contains("forgetmenot")) {
-            var programs = pipelineJson.get(JsonArray.class, "programs");
-            if (programs != null) {
-                programs.stream().filter(
-                    (JsonElement program) ->
-                        program instanceof JsonObject programJson &&
-                        programJson.containsKey("name") &&
-                        JanksonUtils.stringOrThrow(programJson, "name").equals("depth_downsample")
-                ).findFirst().ifPresent(program -> {
-                    JsonObject programJson = (JsonObject) program;
-                    JsonArray samplers = programJson.get(JsonArray.class, "samplers");
-                    if (samplers == null || samplers.size() != 1 || !(samplers.getFirst() instanceof JsonPrimitive sampler)) {
-                        return;
-                    }
-                    if (sampler.asString().equals("u_depth")) {
-                        CanPipe.LOGGER.warn("replacing sampler \"u_depth\" with \"u_depth_mips\" for program \"depth_downsample\"");
-                        samplers.set(0, JsonPrimitive.of("u_depth_mips"));
-                    }
-                });
-            }
-        }
-
-        // https://github.com/ambrosia13/Aerie-Shaders/pull/2
-        if (this.location.getNamespace().contains("aerie")) {
-            var programs = pipelineJson.get(JsonArray.class, "programs");
-            if (programs != null) {
-                programs.stream().filter(
-                    (JsonElement program) ->
-                        program instanceof JsonObject programJson &&
-                        programJson.containsKey("name") &&
-                        JanksonUtils.stringOrThrow(programJson, "name").equals("copy")
-                ).findFirst().ifPresent(program -> {
-                    JsonObject programJson = (JsonObject) program;
-                    JsonArray samplers = programJson.get(JsonArray.class, "samplers");
-                    if (samplers == null || samplers.size() != 1 || !(samplers.getFirst() instanceof JsonPrimitive sampler)) {
-                        return;
-                    }
-                    if (sampler.asString().equals("u_composite")) {
-                        CanPipe.LOGGER.warn("replacing sampler \"u_composite\" with \"u_color\" for program \"copy\"");
-                        samplers.set(0, JsonPrimitive.of("u_color"));
-                    }
-                });
-            }
-        }
-
-        /* End of shaderpacks fixing */
+        PipelinesFixes.fix(this.location, pipelineJson);
 
         var options = rawPipeline.options;
 
@@ -165,7 +117,7 @@ public class Pipeline implements AutoCloseable {
         };
 
         this.defaultZenithAngle = (float) Math.toRadians(JanksonUtils.objectOrEmpty(pipelineJson, "sky").getFloat("defaultZenithAngle", 0.0F));
-        this.smoothBrightnessBidirectionaly = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);
+        this.smoothBrightnessBidirectionally = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);
         this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
         this.rainSmoothingFrames = pipelineJson.getInt("rainSmoothingFrames", 500);
         this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
@@ -221,7 +173,7 @@ public class Pipeline implements AutoCloseable {
                     return Framebuffer.load(possibleJson.get(), location, getOrLoadTexture);
                 }
                 catch (Exception e) {
-                    throw new RuntimeException("Error occured when tried to load framebuffer \""+name+"\"", e);
+                    throw new RuntimeException("Error occurred when tried to load framebuffer \""+name+"\"", e);
                 }
             }));
         };
