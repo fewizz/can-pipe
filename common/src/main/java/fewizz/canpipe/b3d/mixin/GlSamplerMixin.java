@@ -19,10 +19,10 @@ import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlSampler;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 
 import fewizz.canpipe.b3d.GpuSamplerExtended;
-import fewizz.canpipe.b3d.RealGpuDeviceProviderService;
 
 @Mixin(GlSampler.class)
 public abstract class GlSamplerMixin implements GpuSamplerExtended {
@@ -39,7 +39,7 @@ public abstract class GlSamplerMixin implements GpuSamplerExtended {
         at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/GL33C;glGenSamplers()I")
     )
     void onInitBegin(CallbackInfo ci) {
-        GpuDeviceBackend device = RealGpuDeviceProviderService.getRealGpuDeviceBackend();
+        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
         this.canpipe_addressModeW = ((GlDeviceAccessor) device).get_canpipe_addressModeW();
         this.canpipe_linearMipmap = ((GlDeviceAccessor) device).get_canpipe_linearMipmap() != null ? ((GlDeviceAccessor) device).get_canpipe_linearMipmap() : true;
         if (this.canpipe_addressModeW == null) {
