@@ -25,7 +25,22 @@ public class SectionCompilerMixin {
     @Unique ThreadLocal<MutablePair<BlockState, MaterialMap>> canpipe_capturedBlockState = new ThreadLocal<>();
 
     @Inject(
-        method = "compile",
+        method = {
+            "compile("+
+                "Lnet/minecraft/core/SectionPos;"+
+                "Lnet/minecraft/client/renderer/chunk/RenderSectionRegion;"+
+                "Lcom/mojang/blaze3d/vertex/VertexSorting;"+
+                "Lnet/minecraft/client/renderer/SectionBufferBuilderPack;"+
+            ")Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;",
+            "compile("+  // NeoForge
+                "Lnet/minecraft/core/SectionPos;"+
+                "Lnet/minecraft/client/renderer/chunk/RenderSectionRegion;"+
+                "Lcom/mojang/blaze3d/vertex/VertexSorting;"+
+                "Lnet/minecraft/client/renderer/SectionBufferBuilderPack;"+
+                "Ljava/util/List;"+
+            ")Lnet/minecraft/client/renderer/chunk/SectionCompiler$Results;"
+        },
+        require = 1,
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/block/ModelBlockRenderer;tesselateBlock("+

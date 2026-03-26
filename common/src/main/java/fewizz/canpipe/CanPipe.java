@@ -16,7 +16,7 @@ import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
 import net.minecraft.resources.Identifier;
 
 public class CanPipe {
-    public static final String MOD_ID = "can-pipe";
+    public static final String MOD_ID = "canpipe";
     public static final Logger LOGGER = LoggerFactory.getLogger("can-pipe");
     public static final Jankson JANKSON = Jankson.builder().build();
     public static final KeyMapping PIPELINES_RELOAD_KEY = new KeyMapping(

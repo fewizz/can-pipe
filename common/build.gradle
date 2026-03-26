@@ -3,7 +3,7 @@ plugins {
 }
 
 loom {
-    accessWidenerPath = new File(rootDir, "fabric/src/main/resources/can-pipe.accesswidener")
+    accessWidenerPath = new File(rootDir, "fabric/src/main/resources/canpipe.accesswidener")
     runs {}
 }
 

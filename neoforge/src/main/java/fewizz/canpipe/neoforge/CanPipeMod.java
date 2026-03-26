@@ -13,7 +13,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 
-@Mod(value = "can-pipe", dist = Dist.CLIENT)
+@Mod(value = "canpipe", dist = Dist.CLIENT)
 public class CanPipeMod {
 
     public CanPipeMod(IEventBus modEventBus, ModContainer modContainer) {
