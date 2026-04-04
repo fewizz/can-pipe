@@ -1,5 +1,5 @@
 {
-	"required": false,
+	"required": true,
 	"compatibilityLevel": "JAVA_21",
 	"package": "fewizz.canpipe.compat.indigo.mixin",
 	"injectors": {
@@ -7,8 +7,8 @@
 	},
 	"plugin": "fewizz.canpipe.compat.indigo.MixinPlugin",
 	"client": [
-		"AbstractRenderContextMixin",
-		"AbstractTerrainRenderContextMixin",
+		"VanillaBlockModelPartEncoderMixin",
+		"AltModelBlockRendererImplMixin",
 		"MutableQuadViewImplMixin",
 		"QuadViewImplMixin"
 	]

@@ -2,10 +2,10 @@ package fewizz.canpipe.compat.indigo.mixin;
 
 import java.util.Arrays;
 
+import fewizz.canpipe.material.MaterialMap;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import fewizz.canpipe.compat.indigo.MutableQuadViewExtended;
@@ -17,28 +17,28 @@ import net.minecraft.client.resources.model.geometry.BakedQuad;
 @Mixin(MutableQuadViewImpl.class)
 public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin implements MutableQuadViewExtended {
 
+    @Override public void canpipe_setSprite(TextureAtlasSprite sprite) {
+        this.canpipe_atlasSprite = sprite;
+    }
+    @Override public void canpipe_setAO(int index, float value) {
+        this.canpipe_ao[index] = value;
+    }
+    @Override public void canpipe_setMaterialMap(MaterialMap materialMap) {
+        this.canpipe_materialMap = materialMap;
+    }
+
     @Inject(method = "clear", at = @At("TAIL"), remap = false)
-    void onClear(CallbackInfo ci) {
-        Arrays.fill(this.ao, 1.0F);
-        this.sprite = null;
+    void onClear(CallbackInfoReturnable<MutableQuadViewImpl> ci) {
+        Arrays.fill(this.canpipe_ao, 1.0F);
+        this.canpipe_atlasSprite = null;
     }
 
     @Inject(method = "fromBakedQuad", at = @At("HEAD"))
     private void onFromBakedQuad(BakedQuad quad, CallbackInfoReturnable<MutableQuadViewImpl> ci) {
         if (Pipelines.getCurrent() != null) {
-            Arrays.fill(this.ao, 1.0F);
-            this.sprite = quad.materialInfo().sprite();
+            Arrays.fill(this.canpipe_ao, 1.0F);
+            this.canpipe_atlasSprite = quad.materialInfo().sprite();
         }
-    }
-
-    @Override
-    public void canpipe_setSprite(TextureAtlasSprite sprite) {
-        this.sprite = sprite;
-    }
-
-    @Override
-    public void canpipe_setAO(int index, float value) {
-        this.ao[index] = value;
     }
 
 }

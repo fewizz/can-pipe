@@ -3,6 +3,7 @@ package fewizz.canpipe.material;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -69,7 +70,7 @@ final public class MaterialMaps implements PreparableReloadListener {
     }
 
     public static Collection<Material> getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer layer) {
-        return MaterialMaps.materialsUsedByLayer.get(layer);
+        return MaterialMaps.materialsUsedByLayer.getOrDefault(layer, Collections.emptySet());
     }
 
     @Override
