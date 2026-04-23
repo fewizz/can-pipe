@@ -1,12 +1,12 @@
 package fewizz.canpipe.material;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+
+import org.jspecify.annotations.NonNull;
 
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.api.SyntaxError;
@@ -15,7 +15,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.jspecify.annotations.NonNull;
 
 final public class Materials implements PreparableReloadListener {
 
@@ -26,10 +25,6 @@ final public class Materials implements PreparableReloadListener {
 
     public static Material get(Identifier location) {
         return Materials.materials.get(location);
-    }
-
-    public static Collection<Material> all() {
-        return Collections.unmodifiableCollection(Materials.materials.values());
     }
 
     @Override

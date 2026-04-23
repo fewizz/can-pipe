@@ -47,6 +47,7 @@ final public class MaterialMaps implements PreparableReloadListener {
     private static final Map<Fluid, MaterialMap> fluids = new HashMap<>();
     private static final Map<EntityType<?>, MaterialMap> entities = new HashMap<>();
 
+    private static final Set<Material> allUsedMaterials = new HashSet<>();
     private static final Map<ChunkSectionLayer, Set<Material>> materialsUsedByLayer = new EnumMap<>(ChunkSectionLayer.class);
 
     public static MaterialMap getForBlock(Block block) {
@@ -71,6 +72,10 @@ final public class MaterialMaps implements PreparableReloadListener {
 
     public static Collection<Material> getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer layer) {
         return MaterialMaps.materialsUsedByLayer.getOrDefault(layer, Collections.emptySet());
+    }
+
+    public static Collection<Material> getAllUsedMaterials() {
+        return MaterialMaps.allUsedMaterials;
     }
 
     @Override
@@ -105,6 +110,7 @@ final public class MaterialMaps implements PreparableReloadListener {
         MaterialMaps.entities.clear();
 
         MaterialMaps.materialsUsedByLayer.clear();
+        MaterialMaps.allUsedMaterials.clear();
 
         for (var entry : materialMapsJson.entrySet()) {
             Identifier materialMapId = entry.getKey();
@@ -128,6 +134,7 @@ final public class MaterialMaps implements PreparableReloadListener {
                     var entity = BuiltInRegistries.ENTITY_TYPE.get(elementId);
                     if (entity.isEmpty()) continue;
                     MaterialMaps.entities.put(entity.get().value(), materialMap);
+                    MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
                     continue;
                 }
 
@@ -137,31 +144,35 @@ final public class MaterialMaps implements PreparableReloadListener {
                     var block = BuiltInRegistries.BLOCK.get(elementId);
                     if (block.isEmpty()) continue;
                     MaterialMaps.blocks.put(block.get().value(), materialMap);
-                    var materials = materialMap.getUsedMaterials();
+                    var usedMaterials = materialMap.getUsedMaterials();
+                    MaterialMaps.allUsedMaterials.addAll(usedMaterials);
                     var layers = MaterialMaps.getLayersUsedByBlock(block.get().value());
                     for (var layer : layers) {
-                        materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(materials);
+                        materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(usedMaterials);
                     }
                 }
                 if (type.equals("block_entity")) {
                     var blockEntityType = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(elementId);
                     if (blockEntityType.isEmpty()) continue;
                     MaterialMaps.blockEntities.put(blockEntityType.get().value(), materialMap);
+                    MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
                 }
                 if (type.equals("fluid")) {
                     var fluid = BuiltInRegistries.FLUID.get(elementId);
                     if (fluid.isEmpty()) continue;
                     MaterialMaps.fluids.put(fluid.get().value(), materialMap);
-                    var materials = materialMap.getUsedMaterials();
+                    var usedMaterials = materialMap.getUsedMaterials();
+                    MaterialMaps.allUsedMaterials.addAll(usedMaterials);
                     var layers = MaterialMaps.getLayersUsedByFluid(fluid.get().value());
                     for (var layer : layers) {
-                        materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(materials);
+                        materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(usedMaterials);
                     }
                 }
                 if (type.equals("item")) {
                     var item = BuiltInRegistries.ITEM.get(elementId);
                     if (item.isEmpty()) continue;
                     MaterialMaps.items.put(item.get().value(), materialMap);
+                    MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
                 }
             } catch (IOException | SyntaxError e) {
                 CanPipe.LOGGER.error("Couldn't load material map \""+materialMapId+"\"", e);

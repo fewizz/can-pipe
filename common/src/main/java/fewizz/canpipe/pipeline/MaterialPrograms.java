@@ -25,7 +25,6 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
-import fewizz.canpipe.material.Materials;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.resources.Identifier;
@@ -537,7 +536,7 @@ public class MaterialPrograms {
         }
 
         if (renderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
-            return Materials.all();
+            return MaterialMaps.getAllUsedMaterials();
         }
 
         return Collections.emptyList();
