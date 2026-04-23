@@ -19,11 +19,9 @@ public class ChunkSectionLayerMixin {
     @ModifyReturnValue(method = "pipeline", at = @At("RETURN"))
     public RenderPipeline pipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
-
         if (p != null) {
-            renderPipeline = p.getReplaceRenderPipeline(renderPipeline);
+            renderPipeline = p.getReplacedRenderPipeline(renderPipeline);
         }
-
         return renderPipeline;
     }
 

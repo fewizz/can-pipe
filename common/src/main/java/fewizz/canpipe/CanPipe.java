@@ -62,7 +62,6 @@ public class CanPipe {
             /* 40 + 1*2 */.add("in_materialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             /* 42 + 1*1 */.add("in_ao", CanPipe.VertexFormatElements.AO)
             /* 43 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
-            /* 44 + 4*1 */.padding(4)
             .build();
 
         public static final VertexFormat ENTITY = VertexFormat.builder()
@@ -81,6 +80,7 @@ public class CanPipe {
             /* 47 + 1*1 */.padding(1)
             .build();
 
+        /* Used when rendering shadow cascades, not a circular shadow under entities */
         public static final VertexFormat ENTITY_SHADOW = VertexFormat.builder()
             /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
             /* 12 + 1*4 */.add("in_color", VertexFormatElement.COLOR)

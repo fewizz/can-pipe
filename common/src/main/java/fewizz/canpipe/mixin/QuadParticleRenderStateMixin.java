@@ -51,7 +51,7 @@ public class QuadParticleRenderStateMixin {
     RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            renderPipeline = p.getReplaceRenderPipeline(renderPipeline);
+            renderPipeline = p.getReplacedRenderPipeline(renderPipeline);
         }
         return renderPipeline;
     }
