@@ -88,7 +88,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
-    private final List<PassBase>
+    private final List<Pass>
         onInitPasses = new ArrayList<>(),
         beforeWorldRenderPasses = new ArrayList<>(),
         fabulousPasses = new ArrayList<>(),
@@ -387,11 +387,11 @@ public class Pipeline implements AutoCloseable {
         };
 
         // passes
-        BiConsumer<String, List<PassBase>> loadPasses = (name, passes) -> {
+        BiConsumer<String, List<Pass>> loadPasses = (name, passes) -> {
             JsonObject passesJson = pipelineJson.getObject(name);
             if (passesJson != null) {
                 for (var passJson : JanksonUtils.listOfObjects(passesJson, "passes")) {
-                    Pass.load(
+                    ProgramPass.load(
                         passJson, optionValueByName,
                         getOrLoadOptionalFramebuffer,
                         getOrLoadProgram,
@@ -413,11 +413,11 @@ public class Pipeline implements AutoCloseable {
 
     @Override
     public void close() {
-        this.onInitPasses.forEach(PassBase::close);
-        this.onResizePasses.forEach(PassBase::close);
-        this.beforeWorldRenderPasses.forEach(PassBase::close);
-        this.fabulousPasses.forEach(PassBase::close);
-        this.afterRenderHandPasses.forEach(PassBase::close);
+        this.onInitPasses.forEach(Pass::close);
+        this.onResizePasses.forEach(Pass::close);
+        this.beforeWorldRenderPasses.forEach(Pass::close);
+        this.fabulousPasses.forEach(Pass::close);
+        this.afterRenderHandPasses.forEach(Pass::close);
 
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
@@ -443,22 +443,22 @@ public class Pipeline implements AutoCloseable {
                 new Matrix4f()
             ).write(buffer);
             buffer.rewind();
-            commandEncoder.writeToBuffer(Pass.DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
+            commandEncoder.writeToBuffer(ProgramPass.DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
         }
 
         if (runInitPasses) {
-            for (PassBase pass : this.onInitPasses) {
+            for (Pass pass : this.onInitPasses) {
                 pass.apply(commandEncoder);
             }
         }
 
         if (runResizePasses) {
-            for (PassBase pass : this.onResizePasses) {
+            for (Pass pass : this.onResizePasses) {
                 pass.apply(commandEncoder);
             }
         }
 
-        for (PassBase pass : this.beforeWorldRenderPasses) {
+        for (Pass pass : this.beforeWorldRenderPasses) {
             pass.apply(commandEncoder);
         }
 
@@ -472,7 +472,7 @@ public class Pipeline implements AutoCloseable {
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
-        for (PassBase pass : this.fabulousPasses) {
+        for (Pass pass : this.fabulousPasses) {
             pass.apply(commandEncoder);
         }
 
@@ -486,7 +486,7 @@ public class Pipeline implements AutoCloseable {
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
-        for (PassBase pass : this.afterRenderHandPasses) {
+        for (Pass pass : this.afterRenderHandPasses) {
             pass.apply(commandEncoder);
         }
 
