@@ -38,11 +38,13 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
     public void canpipe_onPipelineLoaded() {
         assert this.list != null;
 
-        boolean pipelineIsActive = Pipelines.getCurrent() != null;
+        Pipeline p = Pipelines.getCurrent();
+        boolean pipelineIsActive = p != null;
+        boolean showPipelineSettingsButton = pipelineIsActive && !p.appliedOptions.isEmpty();
 
-        this.canpipe_pipelineSwitchButton.setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (pipelineIsActive ? 30 : 0));
+        this.canpipe_pipelineSwitchButton.setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showPipelineSettingsButton ? 30 : 0));
         this.canpipe_pipelineSwitchButton.setValue(Optional.ofNullable(Pipelines.getCurrentRaw()));
-        this.canpipe_pipelineSettingsButton.visible = pipelineIsActive;
+        this.canpipe_pipelineSettingsButton.visible = showPipelineSettingsButton;
 
         @SuppressWarnings("unchecked") var textureFilteringButton = (CycleButton<TextureFilteringMethod>) this.list.findOption(this.options.textureFiltering());
 
