@@ -1,12 +1,13 @@
 package fewizz.canpipe.b3d.mixin;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;
@@ -128,14 +129,13 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             this.canpipe_colorAttachments :
             new GpuTextureView[] {colorTextureView};
 
-        Object2IntMap<List<GlTextureView>> fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
+        Object2IntMap<Pair<List<GpuTextureView>, GpuTextureView>> fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
 
-        var fboTextureViewsStream = Stream.of(colorAttachments);
-        if (depthTextureView != null) {
-            fboTextureViewsStream = Stream.concat(fboTextureViewsStream, Stream.of(depthTextureView));
-        }
         // Creating such object on every renderpass creation is kinda messy
-        List<GlTextureView> fboTextureViewsKey = fboTextureViewsStream.map(tex -> (GlTextureView)tex).toList();
+        Pair<List<GpuTextureView>, GpuTextureView> fboTextureViewsKey = Pair.of(
+            Arrays.asList(colorAttachments),
+            depthTextureView
+        );
 
         return fboCache.computeIfAbsent(fboTextureViewsKey, k -> {
             int id = GlStateManager.glGenFramebuffers();

@@ -1,5 +1,8 @@
 package fewizz.canpipe.b3d.mixin;
 
+import java.util.List;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,6 +14,7 @@ import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 
@@ -49,13 +53,17 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
         GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
         var fboCache = ((GlDeviceAccessor) device).get_canpipe_framebufferCache();
         fboCache.object2IntEntrySet().removeIf(kv -> {
-            var textureViews = kv.getKey();
+            Pair<List<GpuTextureView>, GpuTextureView> textureViews = kv.getKey();
             var fboID = kv.getIntValue();
-            for (var textureView : textureViews) {
-                if (textureView == (Object) this) {
+            for (var colorTextureView : textureViews.getLeft()) {
+                if ((GlTextureView) colorTextureView == (Object) this) {
                     GlStateManager._glDeleteFramebuffers(fboID);
                     return true;
                 }
+            }
+            if ((GlTextureView) textureViews.getRight() == (Object) this) {
+                GlStateManager._glDeleteFramebuffers(fboID);
+                return true;
             }
             return false;
         });
