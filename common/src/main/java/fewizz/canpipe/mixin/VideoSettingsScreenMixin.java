@@ -38,18 +38,19 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
     public void canpipe_onPipelineLoaded() {
         assert this.list != null;
 
-        Pipeline p = Pipelines.getCurrent();
-        boolean pipelineIsActive = p != null;
-        boolean showPipelineSettingsButton = pipelineIsActive && !p.appliedOptions.isEmpty();
+        Pipeline pipeline = Pipelines.getCurrent();
+        PipelineRaw rawPipeline = Pipelines.getCurrentRaw();
+
+        boolean showPipelineSettingsButton = pipeline != null && !rawPipeline.options.isEmpty();
 
         this.canpipe_pipelineSwitchButton.setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showPipelineSettingsButton ? 30 : 0));
-        this.canpipe_pipelineSwitchButton.setValue(Optional.ofNullable(Pipelines.getCurrentRaw()));
+        this.canpipe_pipelineSwitchButton.setValue(Optional.ofNullable(rawPipeline));
         this.canpipe_pipelineSettingsButton.visible = showPipelineSettingsButton;
 
         @SuppressWarnings("unchecked") var textureFilteringButton = (CycleButton<TextureFilteringMethod>) this.list.findOption(this.options.textureFiltering());
 
         if (textureFilteringButton != null) {
-            if (pipelineIsActive) {
+            if (pipeline != null) {
                 textureFilteringButton.active = false;
                 textureFilteringButton.setValue(TextureFilteringMethod.NONE);
             }
@@ -62,7 +63,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         @SuppressWarnings("unchecked") var improvedTransparencyButton = (CycleButton<Boolean>) this.list.findOption(this.options.improvedTransparency());
 
         if (improvedTransparencyButton != null) {
-            if (pipelineIsActive) {
+            if (pipeline != null) {
                 improvedTransparencyButton.active = false;
                 improvedTransparencyButton.setValue(true);
             }
