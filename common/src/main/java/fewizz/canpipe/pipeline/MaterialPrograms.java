@@ -125,8 +125,26 @@ public class MaterialPrograms {
 
         var renderPipeline = renderPipelineBuilder.build();
 
-        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, terrain, enablePBR);
-        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, shadow, terrain, enablePBR);
+        Collection<Material> materials;
+
+        if (originalRenderPipeline == RenderPipelines.SOLID_TERRAIN || originalRenderPipeline == RenderPipelines.SOLID_BLOCK) {
+            materials = MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.SOLID);
+        }
+        else if (originalRenderPipeline == RenderPipelines.CUTOUT_TERRAIN || originalRenderPipeline == RenderPipelines.CUTOUT_BLOCK) {
+            materials = MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.CUTOUT);
+        }
+        else if (originalRenderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN || originalRenderPipeline == RenderPipelines.TRANSLUCENT_BLOCK) {
+            materials = MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.TRANSLUCENT);
+        }
+        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
+            materials = MaterialMaps.getAllUsedMaterials();
+        }
+        else {
+            materials = Collections.emptyList();
+        }
+
+        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
+        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
 
         Function<String, String> postprocess = (String src) -> {
             // These three ideally shouldn't be in a material shader, but it's still possible
@@ -189,6 +207,7 @@ public class MaterialPrograms {
         Function<Identifier, Optional<String>> getShaderSource,
         VertexFormat vertexFormat,
         RenderPipeline originalRenderPipeline,
+        Collection<Material> materials,
         boolean shadow,
         boolean terrain,
         boolean enablePBR
@@ -206,7 +225,7 @@ public class MaterialPrograms {
         if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
-            for (Material m : MaterialPrograms.getMaterialsUsedByRenderPipeline(originalRenderPipeline)) {
+            for (Material m : materials) {
                 String src = shadow ? m.depthVertexShaderSource() : m.vertexShaderSource();
                 if (src == null) {
                     continue;
@@ -369,6 +388,7 @@ public class MaterialPrograms {
         Function<Identifier, Optional<String>> getShaderSource,
         VertexFormat vertexFormat,
         RenderPipeline originalRenderPipeline,
+        Collection<Material> materials,
         boolean shadow,
         boolean terrain,
         boolean enablePBR
@@ -381,7 +401,7 @@ public class MaterialPrograms {
         if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
-            for (Material m : MaterialPrograms.getMaterialsUsedByRenderPipeline(originalRenderPipeline)) {
+            for (Material m : materials) {
                 String src = shadow ? m.depthFragmentShaderSource() : m.fragmentShaderSource();
                 if (src == null) {
                     continue;
@@ -522,24 +542,6 @@ public class MaterialPrograms {
         """);
 
         return fragmentSrcBuilder.toString();
-    }
-
-    public static Collection<Material> getMaterialsUsedByRenderPipeline(RenderPipeline renderPipeline) {
-        if (renderPipeline == RenderPipelines.SOLID_TERRAIN || renderPipeline == RenderPipelines.SOLID_BLOCK) {
-            return MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.SOLID);
-        }
-        if (renderPipeline == RenderPipelines.CUTOUT_TERRAIN || renderPipeline == RenderPipelines.CUTOUT_BLOCK) {
-            return MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.CUTOUT);
-        }
-        if (renderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN || renderPipeline == RenderPipelines.TRANSLUCENT_BLOCK) {
-            return MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.TRANSLUCENT);
-        }
-
-        if (renderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
-            return MaterialMaps.getAllUsedMaterials();
-        }
-
-        return Collections.emptyList();
     }
 
 }
