@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -17,11 +18,27 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.pipeline.Framebuffer;
+import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.feature.ParticleFeatureRenderer;
 
 @Mixin(ParticleFeatureRenderer.class)
 public class ParticleFeatureRendererMixin {
+
+    @ModifyExpressionValue(
+        method = "render",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
+    )
+    RenderTarget replaceRenderTarget(RenderTarget renderTarget) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            renderTarget = p.getCurrentSolidFramebuffer();
+        }
+        return renderTarget;
+    }
 
     @WrapOperation(
         method = "render",
@@ -37,7 +54,7 @@ public class ParticleFeatureRendererMixin {
             ordinal = 0
         )
     )
-    RenderPass replaceColorAttachments(
+    RenderPass replaceRenderPass(
         CommandEncoder instance, Supplier<String> nameSupplier,
         GpuTextureView colorTexture, OptionalInt clearColor,
         @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,

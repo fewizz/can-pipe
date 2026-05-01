@@ -22,7 +22,6 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -40,7 +39,6 @@ import fewizz.canpipe.mixininterface.FeatureRenderDispatcherExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRenderStateExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
-import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -242,10 +240,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         for (this.canpipe_currentShadowCascadeIdx = 0; this.canpipe_currentShadowCascadeIdx < p.shadows.cascadeRadii().size()+1; ++this.canpipe_currentShadowCascadeIdx) {
             profiler.popPush("cascade " + this.canpipe_currentShadowCascadeIdx);
 
-            RenderTarget originalMainRenderTarget = this.minecraft.getMainRenderTarget();
-
             try {
-                ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(p.shadows.framebuffers().get(this.canpipe_currentShadowCascadeIdx));
                 ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(this.canpipe_perVertexFormetBufferSource);
                 ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setCrumblingBufferSourceOverride(new NullBufferSource());
 
@@ -294,7 +289,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 profiler.pop();
 
             } finally {
-                ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(originalMainRenderTarget);
                 ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(null);
                 ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setCrumblingBufferSourceOverride(null);
             }

@@ -1,7 +1,15 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -19,6 +27,7 @@ import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -33,14 +42,16 @@ import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import fewizz.canpipe.mixin.RenderSetupAccessor;
 import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
-import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.OutputTarget;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
@@ -462,8 +473,6 @@ public class Pipeline implements AutoCloseable {
             pass.apply(commandEncoder);
         }
 
-        ((MinecraftExtended) mc).canpipe_setMainRenderTargetOverride(this.solidFramebuffer);
-
         Profiler.get().pop();
     }
 
@@ -481,8 +490,6 @@ public class Pipeline implements AutoCloseable {
 
     public void onAfterRenderHand() {
         Profiler.get().push("can-pipe after hand");
-
-        ((MinecraftExtended) Minecraft.getInstance()).canpipe_setMainRenderTargetOverride(this.defaultFramebuffer);
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
@@ -582,6 +589,29 @@ public class Pipeline implements AutoCloseable {
         }
 
         return result;
+    }
+
+    public Framebuffer getCurrentSolidFramebuffer() {
+        int cascade = ((LevelRendererExtended) Minecraft.getInstance().levelRenderer).canpipe_getCurrentShadowCascadeIdx();
+        if (cascade >= 0) {
+            assert this.shadows != null;
+            return this.shadows.framebuffers.get(cascade);
+        }
+        return this.solidFramebuffer;
+    }
+
+    public RenderTarget replaceRenderTarget(RenderTarget renderTarget, RenderSetup renderSetup) {
+        OutputTarget outputTarget = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getOutputTarget();
+        RenderPipeline originalRenderPipeline = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getPipeline();
+
+        boolean mainOutputTarget = outputTarget == OutputTarget.MAIN_TARGET;
+        boolean renderPipelineIsReplaced = this.getReplacedRenderPipeline(originalRenderPipeline) != originalRenderPipeline;
+
+        if (mainOutputTarget && renderPipelineIsReplaced) {
+            renderTarget = this.getCurrentSolidFramebuffer();
+        }
+
+        return renderTarget;
     }
 
 }

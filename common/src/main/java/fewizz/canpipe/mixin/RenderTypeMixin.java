@@ -34,14 +34,6 @@ public class RenderTypeMixin {
 
     @Shadow @Final private RenderSetup state;
 
-    private RenderPipeline canpipe_getReplacedRenderPipeline(RenderPipeline renderPipeline) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p != null) {
-            renderPipeline = p.getReplacedRenderPipeline(renderPipeline);
-        }
-        return renderPipeline;
-    }
-
     @ModifyExpressionValue(
         method = {"format", "mode", "pipeline", "draw"},
         require = 4,
@@ -52,8 +44,27 @@ public class RenderTypeMixin {
                 "Lcom/mojang/blaze3d/pipeline/RenderPipeline;"
         )
     )
-    RenderPipeline replaceRenderPipeline(RenderPipeline original) {
-        return this.canpipe_getReplacedRenderPipeline(original);
+    RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            renderPipeline = p.getReplacedRenderPipeline(renderPipeline);
+        }
+        return renderPipeline;
+    }
+
+    @ModifyExpressionValue(
+        method = "draw",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/rendertype/OutputTarget;getRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
+    )
+    RenderTarget replaceRenderTarget(RenderTarget renderTarget) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            renderTarget = p.replaceRenderTarget(renderTarget, this.state);
+        }
+        return renderTarget;
     }
 
     @WrapOperation(

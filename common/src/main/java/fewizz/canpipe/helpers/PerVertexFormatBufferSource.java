@@ -143,7 +143,9 @@ public class PerVertexFormatBufferSource extends MultiBufferSource.BufferSource 
 
                 for (var s : bufferSource.vertexBufferSlices) {
                     RenderSetup renderSetup = ((RenderTypeAccessor) s.renderType).canpipe_getState();
-                    var newRenderTarget = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getOutputTarget().getRenderTarget();
+                    RenderTarget newRenderTarget = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getOutputTarget().getRenderTarget();
+
+                    newRenderTarget = pipeline.replaceRenderTarget(newRenderTarget, renderSetup);
 
                     if (renderTarget != newRenderTarget) {
                         if (renderPass != null) {
