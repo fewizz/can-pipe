@@ -495,7 +495,7 @@ public class Pipeline implements AutoCloseable {
 
     public RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline) {
         Minecraft mc = Minecraft.getInstance();
-        if (this.shadows != null && ((LevelRendererExtended) mc.levelRenderer).canpipe_getIsRenderingShadows()) {
+        if (this.shadows != null && ((LevelRendererExtended) mc.levelRenderer).canpipe_getCurrentShadowCascadeIdx() >= 0) {
             renderPipeline = this.shadows.materialPrograms().getOrDefault(renderPipeline, renderPipeline);
         }
         else {
@@ -519,9 +519,11 @@ public class Pipeline implements AutoCloseable {
 
         Uniforms.setRenderPassFREXUniforms(renderPass);
 
-        renderPass.setUniform("frxu_ub_cascade", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[lre.canpipe_getShadowCascade()]);
         renderPass.setUniform("canpipe_ub_origin_type", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[gre.canpipe_getOriginType()]);
         renderPass.setUniform("canpipe_ub_is_rendering_hand", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[gre.canpipe_isRenderingHand() ? 1 : 0]);
+        if (lre.canpipe_getCurrentShadowCascadeIdx() >= 0) {
+            renderPass.setUniform("frxu_ub_cascade", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[lre.canpipe_getCurrentShadowCascadeIdx()]);
+        }
 
         int renderTarget = 0;
         if (framebuffer == this.translucentTerrainFramebuffer) {

@@ -33,7 +33,7 @@ public class QuadParticleRenderStateMixin {
     VertexFormat replaceVertexFormat(VertexFormat vertexFormat) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            vertexFormat = ((LevelRendererExtended) Minecraft.getInstance().levelRenderer).canpipe_getIsRenderingShadows()
+            vertexFormat = ((LevelRendererExtended) Minecraft.getInstance().levelRenderer).canpipe_getCurrentShadowCascadeIdx() >= 0
                 ? CanPipe.VertexFormats.PARTICLE_SHADOW
                 : CanPipe.VertexFormats.PARTICLE;
         }

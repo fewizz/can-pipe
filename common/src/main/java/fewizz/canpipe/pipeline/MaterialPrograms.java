@@ -90,7 +90,6 @@ public class MaterialPrograms {
                 .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
         }
 
-        renderPipelineBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("canpipe_ub_origin_type", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("canpipe_ub_is_rendering_hand", UniformType.UNIFORM_BUFFER);
@@ -101,6 +100,9 @@ public class MaterialPrograms {
         renderPipelineBuilder.withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
+        if (shadow) {
+            renderPipelineBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
+        }
 
         boolean terrain = originalRenderPipeline.getUniforms().stream().anyMatch(u -> u.name().equals("ChunkSection"));
 
@@ -151,13 +153,17 @@ public class MaterialPrograms {
             src = src.replaceAll("uniform\\s+ivec2\\s+frxu_size;", "const ivec2 frxu_size = ivec2(-1);");
             src = src.replaceAll("uniform\\s+int\\s+frxu_lod;", "const int frxu_lod = -1;");
             src = src.replaceAll("uniform\\s+int\\s+frxu_layer;", "const int frxu_layer = -1;");
-
             src = src.replaceAll("uniform\\s+int\\s+frxu_cascade;", "// uniform int frxu_cascade;");
+
+            if (shadow) {
+                src = "\n"+
+                    "layout(std140) uniform frxu_ub_cascade {\n"+
+                    "    int frxu_cascade;\n"+
+                    "};\n\n"+
+                    src;
+            }
+
             src =
-                "\n"+
-                "layout(std140) uniform frxu_ub_cascade {\n"+
-                "    int frxu_cascade;\n"+
-                "};\n\n"+
                 "layout(std140) uniform canpipe_ub_render_target {\n"+
                 "    int canpipe_renderTarget;\n"+
                 "};\n\n"+
@@ -168,6 +174,7 @@ public class MaterialPrograms {
                 "    int canpipe_isRenderingHand;\n"+
                 "};\n\n"+
                 src;
+
             return src;
         };
 
