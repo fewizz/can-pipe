@@ -33,6 +33,7 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
+import fewizz.canpipe.helpers.NullBufferSource;
 import fewizz.canpipe.helpers.PerVertexFormatBufferSource;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.FeatureRenderDispatcherExtended;
@@ -252,6 +253,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             try {
                 ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(p.shadows.framebuffers().get(this.canpipe_shadowCascade));
                 ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(this.canpipe_perVertexFormetBufferSource);
+                ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setCrumblingBufferSourceOverride(new NullBufferSource());
 
                 profiler.push("render sections");
                 ChunkSectionsToRender sections = lrse.canpipe_getChunkSectionsToRender()[this.canpipe_shadowCascade];
@@ -300,6 +302,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             } finally {
                 ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(originalMainRenderTarget);
                 ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(null);
+                ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setCrumblingBufferSourceOverride(null);
             }
         }
 
