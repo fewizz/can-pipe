@@ -72,6 +72,19 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 improvedTransparencyButton.setValue(this.options.improvedTransparency().get());
             }
         }
+
+        @SuppressWarnings("unchecked") var entityShadowsButton = (CycleButton<Boolean>) this.list.findOption(this.options.entityShadows());
+
+        if (entityShadowsButton != null) {
+            if (pipeline != null && pipeline.shadows != null) {
+                entityShadowsButton.active = false;
+                entityShadowsButton.setValue(false);
+            }
+            else {
+                entityShadowsButton.active = true;
+                entityShadowsButton.setValue(this.options.entityShadows().get());
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

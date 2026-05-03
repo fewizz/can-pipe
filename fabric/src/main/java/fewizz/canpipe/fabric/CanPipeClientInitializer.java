@@ -18,7 +18,7 @@ public class CanPipeClientInitializer implements ClientModInitializer {
         var clientResourcesLoader = ResourceLoader.get(PackType.CLIENT_RESOURCES);
 
         var materials = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "materials");
-        clientResourcesLoader.registerReloadListener(materials,Materials.INSTANCE);
+        clientResourcesLoader.registerReloadListener(materials, Materials.INSTANCE);
 
         var materialMaps = Identifier.fromNamespaceAndPath(CanPipe.MOD_ID, "material-maps");
         clientResourcesLoader.registerReloadListener(materialMaps, MaterialMaps.INSTANCE);

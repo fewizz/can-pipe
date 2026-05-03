@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -221,7 +222,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         modelViewMatrixStack.pushMatrix();
         modelViewMatrixStack.mul(viewMatrix);
 
-        boolean prevEntityShadows = this.minecraft.options.entityShadows().get();
+        boolean entityShadowsOptionValue = this.minecraft.options.entityShadows().get();
         this.minecraft.options.entityShadows().set(false);
 
         PoseStack poseStack = new PoseStack();
@@ -298,7 +299,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         modelViewMatrixStack.popMatrix();
 
-        this.minecraft.options.entityShadows().set(prevEntityShadows);
+        this.minecraft.options.entityShadows().set(entityShadowsOptionValue);
 
         profiler.pop();
     }
@@ -331,6 +332,26 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return null;
     }
 
+    @WrapMethod(method = "extractVisibleEntities")
+    void disableEntityShadows(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState output, Operation<Void> operation) {
+        Pipeline p = Pipelines.getCurrent();
+        boolean disableEntityShadows = p != null && p.shadows != null;
+
+        boolean originalEntityShadowsOptionValue = this.minecraft.options.entityShadows().get();
+
+        try {
+            if (disableEntityShadows) {
+                this.minecraft.options.entityShadows().set(false);
+            }
+            operation.call(camera, frustum, deltaTracker, output);
+        }
+        finally {
+            if (disableEntityShadows) {
+                this.minecraft.options.entityShadows().set(originalEntityShadowsOptionValue);
+            }
+        }
+    }
+
     @WrapOperation(
         method = "offsetFrustum",
         at = @At(
@@ -360,7 +381,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @WrapOperation(
-        method = {"lambda$addMainPass$0"},
+        method = "lambda$addMainPass$0",
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/systems/GpuDevice;createSampler("+

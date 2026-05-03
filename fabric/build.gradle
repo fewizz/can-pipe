@@ -104,6 +104,9 @@ loom {
             runDir "../run"
             setConfigName "Fabric Cinnabar Validated"
             properties([
+                "fabric.addMods": project.configurations.cinnabar.getFiles()
+                    .stream().map({f -> f.getAbsolutePath()})
+                    .collect(java.util.stream.Collectors.joining(File.pathSeparator)),
                 "cinnabar.vulkanValidationLayers": "true"
             ])
         }
