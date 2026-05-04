@@ -57,6 +57,10 @@ final public class Pipelines implements PreparableReloadListener {
     private static @Nullable Pipeline current = null;
 
     public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Pair<OptionGroup.Element<?>, @Nullable Object> optionsChanges) {
+        loadAndSetPipeline(raw, optionsChanges, true /* save selected pipeline, i.e. it will be selected on next game reload */);
+    }
+
+    public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Pair<OptionGroup.Element<?>, @Nullable Object> optionsChanges, boolean saveSelectedPipeline) {
         assert RenderSystem.isOnRenderThread();
 
         Pipelines.loadingError = null;
@@ -123,7 +127,9 @@ final public class Pipelines implements PreparableReloadListener {
         }
 
         // save config
-        config.put("current", raw != null ? new JsonPrimitive(raw.location.toString()) : JsonNull.INSTANCE);
+        if (saveSelectedPipeline) {
+            config.put("current", raw != null ? new JsonPrimitive(raw.location.toString()) : JsonNull.INSTANCE);
+        }
 
         if (raw != null) {
             var pipelineOptions = new JsonObject();

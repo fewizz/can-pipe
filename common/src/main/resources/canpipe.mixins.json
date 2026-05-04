@@ -39,6 +39,7 @@
         "RenderTypeMixin",
         "ScreenshotMixin",
         "SectionCompilerMixin",
+        "ShaderManagerMixin",
         "SubmitNodeCollectionMixin",
         "SubmitNodeStorageMixin",
         "TextureAtlasMixin",
