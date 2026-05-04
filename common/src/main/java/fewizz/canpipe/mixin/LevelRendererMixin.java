@@ -333,7 +333,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @WrapMethod(method = "extractVisibleEntities")
-    void disableEntityShadows(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState output, Operation<Void> operation) {
+    void suppressEntityShadows(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState output, Operation<Void> operation) {
         Pipeline p = Pipelines.getCurrent();
         boolean disableEntityShadows = p != null && p.shadows != null;
 

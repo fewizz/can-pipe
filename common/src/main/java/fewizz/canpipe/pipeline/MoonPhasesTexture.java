@@ -41,12 +41,12 @@ public class MoonPhasesTexture extends AbstractTexture {
         NativeImage nativeImage = new NativeImage(w*4, h*2, false);
         for (int y = 0; y < 2; ++y) {
             for (int x = 0; x < 4; ++x) {
-                phases.get((1-y)*4+x).copyRect(
+                phases.get(y*4+x).copyRect(
                     nativeImage,
                     0, 0,  // src x/y
                     x*w, y*h,  // dst x/y
                     w, h,
-                    false, true  // mirror y
+                    false, false  // don't mirror
                 );
             }
         }
