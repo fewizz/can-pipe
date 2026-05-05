@@ -4,12 +4,13 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import net.minecraft.resources.Identifier;
 
 class ClearPass extends Pass {
     final Framebuffer framebuffer;
 
-    ClearPass(String name, Framebuffer framebuffer) {
-        super(name);
+    ClearPass(Identifier id, Framebuffer framebuffer) {
+        super(id);
         this.framebuffer = framebuffer;
     }
 

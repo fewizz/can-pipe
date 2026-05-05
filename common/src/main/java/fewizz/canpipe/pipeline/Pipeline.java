@@ -403,6 +403,7 @@ public class Pipeline implements AutoCloseable {
             if (passesJson != null) {
                 for (var passJson : JanksonUtils.listOfObjects(passesJson, "passes")) {
                     ProgramPass.load(
+                        location,
                         passJson, optionValueByName,
                         getOrLoadOptionalFramebuffer,
                         getOrLoadProgram,

@@ -55,19 +55,19 @@ public class ProgramPass extends Pass {
     );
 
     private ProgramPass(
-        String name, Framebuffer framebuffer, RenderPipeline renderPipeline,
+        Identifier id, Framebuffer framebuffer, RenderPipeline renderPipeline,
         List<Optional<AbstractTexture>> samplerTextures,
         Vector2i extent, int lod, int layer
     ) {
-        super(name);
+        super(id);
         this.textures = new ArrayList<>();
 
         var samplers = renderPipeline.getSamplers();
         if (samplers.size() > samplerTextures.size()) {
-            CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+name+"\"");
+            CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+id+"\"");
         }
         if (samplers.size() < samplerTextures.size()) {
-            CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has less samplers than textures provided by pass \""+name+"\"");
+            CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has less samplers than textures provided by pass \""+id+"\"");
         }
         for (int i = 0; i < Math.min(samplers.size(), samplerTextures.size()); ++i) {
             String sampler = samplers.get(i);
@@ -80,7 +80,7 @@ public class ProgramPass extends Pass {
         }
 
         this.passUbo = RenderSystem.getDevice().createBuffer(
-            () -> "can-pipe \""+this.name+"\" pass UBO",
+            () -> "can-pipe \""+this.id+"\" pass UBO",
             GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
             pass.size()
         );
@@ -124,7 +124,7 @@ public class ProgramPass extends Pass {
 
         try (
             RenderPass renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(
-                () -> "can-pipe pass \""+this.name+"\"",
+                () -> "Program pass "+this.id,
                 this.framebuffer.colorTextureViews,
                 this.framebuffer.getDepthTextureView()
             )
@@ -155,6 +155,7 @@ public class ProgramPass extends Pass {
     };
 
     static Optional<Pass> load(
+        Identifier pipelineId,
         JsonObject json,
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
@@ -178,9 +179,10 @@ public class ProgramPass extends Pass {
         }
 
         String programName = json.get(String.class, "program");
+        var id = Identifier.fromNamespaceAndPath(pipelineId.getNamespace(), passName);
 
         if (programName.equals("frex_clear")) {
-            return Optional.of(new ClearPass(passName, framebuffer.get()));
+            return Optional.of(new ClearPass(id, framebuffer.get()));
         }
 
         RenderPipeline renderPipeline = getOrLoadProgram.apply(programName);
@@ -199,7 +201,7 @@ public class ProgramPass extends Pass {
         int lod = json.getInt("lod", 0);
         int layer = json.getInt("layer", 0);
 
-        return Optional.of(new ProgramPass(passName, framebuffer.get(), renderPipeline, samplerTextures, extent, lod, layer));
+        return Optional.of(new ProgramPass(id, framebuffer.get(), renderPipeline, samplerTextures, extent, lod, layer));
     }
 
 }
