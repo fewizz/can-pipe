@@ -1,5 +1,5 @@
 {
-    "can-pipe.key.categories.can-pipe": "Can-Pipe",
-    "can-pipe.key.reloadPipelines": "Reload Pipelines",
-    "can-pipe.button.reset": "Reset"
+    "key.category.canpipe.canpipe": "Can-Pipe",
+    "canpipe.key.reloadPipelines": "Reload Pipelines",
+    "canpipe.button.reset": "Reset"
 }

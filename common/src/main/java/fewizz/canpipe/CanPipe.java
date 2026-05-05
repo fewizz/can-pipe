@@ -20,9 +20,9 @@ public class CanPipe {
     public static final Logger LOGGER = LoggerFactory.getLogger("can-pipe");
     public static final Jankson JANKSON = Jankson.builder().build();
     public static final KeyMapping PIPELINES_RELOAD_KEY = new KeyMapping(
-        "can-pipe.key.reloadPipelines",
+        "canpipe.key.reloadPipelines",
         GLFW.GLFW_KEY_UNKNOWN,
-        new KeyMapping.Category(Identifier.parse("canpipe:key.categories.can-pipe"))
+        new KeyMapping.Category(Identifier.parse("canpipe:canpipe"))
     );
 
     public static Path getCompilationErrorsDirPath() {

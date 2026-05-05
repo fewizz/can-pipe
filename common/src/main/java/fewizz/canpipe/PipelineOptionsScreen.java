@@ -202,7 +202,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     this.handlingReset = false;
                     resetButton.visible = false;
                 })
-                    .tooltip(Tooltip.create(Component.translatable("can-pipe.button.reset")))
+                    .tooltip(Tooltip.create(Component.translatable("canpipe.button.reset")))
                     .size(20-4, BUTTON_HEIGHT-2)
                     .build();
 
