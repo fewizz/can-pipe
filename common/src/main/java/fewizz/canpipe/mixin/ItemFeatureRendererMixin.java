@@ -7,10 +7,10 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.material.MaterialMap;
@@ -59,31 +59,32 @@ public class ItemFeatureRendererMixin {
         }
     }
 
-    @Inject(
+    @ModifyExpressionValue(
         method = "renderItem",
         at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vertex/QuadInstance;setColor(I)V"
+            value = "FIELD",
+            target = "Lnet/minecraft/client/renderer/item/ItemStackRenderState$FoilType;NONE:Lnet/minecraft/client/renderer/item/ItemStackRenderState$FoilType;"
         )
-    )
-    private void beforeRenderItem(
-        CallbackInfo ci,
+    )  // if (foilType != FoilType.NONE) {
+    private ItemStackRenderState.FoilType beforeRenderItem(
+        ItemStackRenderState.FoilType foilTypeNone,
         @Local RenderType renderType,
-        @Local(ordinal = 0) LocalRef<ItemStackRenderState.FoilType> foilType,
+        @Local(ordinal = 0) ItemStackRenderState.FoilType foilType,
         @Local(argsOnly = true) BufferSource buffer
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) { return; }
+        if (p == null) { return foilTypeNone; }
 
         VertexConsumer vc = buffer.getBuffer(renderType);
         VertexConsumerExtended vce = (VertexConsumerExtended) vc;
 
         vce.canpipe_setScopedMaterialMap(this.canpipe_materialMap);
 
-        if (foilType.get() != ItemStackRenderState.FoilType.NONE) {
+        if (foilType != ItemStackRenderState.FoilType.NONE) {
             vce.canpipe_setScopedGlint(true);
-            foilType.set(ItemStackRenderState.FoilType.NONE);
         }
+
+        return foilType;  // foilType != foilType is always false
     }
 
     @Inject(
