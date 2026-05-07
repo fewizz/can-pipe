@@ -29,14 +29,14 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Shadow @Final private ModelFeatureRenderer.Storage modelSubmits;
 
     @Unique private MaterialMap canpipe_pendingItemSubmitMaterialMap = null;
-    @Unique private MaterialMap canpipe_scopedModelSubmitMaterialmap = null;
+    @Unique private MaterialMap canpipe_scopedModelSubmitMaterialMap = null;
     @Unique private boolean canpipe_pendingModelSubmitEntityGlint = false;
     @Unique private Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_itemSubmitsMaterialMaps;
     @Unique private Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> canpipe_modelSubmitExtras;
 
     @Override public void canpipe_setPendingItemSubmitMaterialMap(MaterialMap materialMap) { this.canpipe_pendingItemSubmitMaterialMap = materialMap; }
     @Override public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() { return this.canpipe_itemSubmitsMaterialMaps; }
-    @Override public void canpipe_setScopedModelMaterialMap(MaterialMap materialMap) { canpipe_scopedModelSubmitMaterialmap = materialMap; }
+    @Override public void canpipe_setScopedModelMaterialMap(MaterialMap materialMap) { canpipe_scopedModelSubmitMaterialMap = materialMap; }
     @Override public void canpipe_setPendingModelEntityGlint() { this.canpipe_pendingModelSubmitEntityGlint = true; }
     @Override public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() { return this.canpipe_modelSubmitExtras; }
 
@@ -57,7 +57,7 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Inject(method = "clear", at = @At("RETURN"))
     void onClear(CallbackInfo ci) {
         this.canpipe_pendingItemSubmitMaterialMap = null;  // Should be null here
-        canpipe_scopedModelSubmitMaterialmap = null;
+        canpipe_scopedModelSubmitMaterialMap = null;
 
         this.canpipe_itemSubmitsMaterialMaps.clear();
         this.canpipe_modelSubmitExtras.clear();
@@ -65,8 +65,8 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
 
     @Inject(method = "submitModel", at = @At("RETURN"))
     void onModelSubmit(CallbackInfo ci, @Local SubmitNodeStorage.ModelSubmit<?> modelSubmit) {
-        if (canpipe_scopedModelSubmitMaterialmap != null) {
-            this.canpipe_modelSubmitExtras.put(modelSubmit, new ModelSubmitExtra(this.canpipe_scopedModelSubmitMaterialmap, this.canpipe_pendingModelSubmitEntityGlint));
+        if (canpipe_scopedModelSubmitMaterialMap != null || this.canpipe_pendingModelSubmitEntityGlint) {
+            this.canpipe_modelSubmitExtras.put(modelSubmit, new ModelSubmitExtra(this.canpipe_scopedModelSubmitMaterialMap, this.canpipe_pendingModelSubmitEntityGlint));
         }
         this.canpipe_pendingModelSubmitEntityGlint = false;
     }
