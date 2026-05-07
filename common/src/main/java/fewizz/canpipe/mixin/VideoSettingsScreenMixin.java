@@ -65,7 +65,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         if (improvedTransparencyButton != null) {
             if (pipeline != null) {
                 improvedTransparencyButton.active = false;
-                improvedTransparencyButton.setValue(true);
+                improvedTransparencyButton.setValue(pipeline.fabulousTargets != null);
             }
             else {
                 improvedTransparencyButton.active = true;

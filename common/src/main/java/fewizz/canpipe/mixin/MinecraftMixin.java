@@ -18,6 +18,7 @@ import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.MinecraftExtended;
+import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -43,7 +44,8 @@ public class MinecraftMixin implements MinecraftExtended {
         at = @At("RETURN")
     )
     private static boolean useShaderTransparency(boolean original) {
-        return original || Pipelines.getCurrent() != null;
+        Pipeline p = Pipelines.getCurrent();
+        return original || (p != null && p.fabulousTargets != null);
     }
 
     @Inject(method = "handleKeybinds", at = @At("RETURN"))

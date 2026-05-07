@@ -322,12 +322,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         }
         // Don't create transparency post chain, will be handled by pipeline
 
-        this.targets.main = frameGraphBuilder.importExternal("main", p.solidFramebuffer);
-        this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.translucentTerrainFramebuffer);
-        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.translucentItemEntityFramebuffer);
-        this.targets.particles = frameGraphBuilder.importExternal("particles", p.particlesFramebuffer);
-        this.targets.weather = frameGraphBuilder.importExternal("weather", p.weatherFramebuffer);
-        this.targets.clouds = frameGraphBuilder.importExternal("clouds", p.cloudsFramebuffer);
+        // this.targets.main = ...
+        this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.fabulousTargets.translucentTerrainFramebuffer());
+        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.fabulousTargets.translucentItemEntityFramebuffer());
+        this.targets.particles = frameGraphBuilder.importExternal("particles", p.fabulousTargets.translucentParticlesFramebuffer());
+        this.targets.weather = frameGraphBuilder.importExternal("weather", p.fabulousTargets.weatherFramebuffer());
+        this.targets.clouds = frameGraphBuilder.importExternal("clouds", p.fabulousTargets.cloudsFramebuffer());
 
         return null;
     }

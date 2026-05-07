@@ -20,10 +20,25 @@ public class ChunkSectionLayerGroupMixin {
             target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
         )
     )
-    RenderTarget replaceOutputTarget(RenderTarget renderTarget) {
+    RenderTarget replaceMainOutputTarget(RenderTarget renderTarget) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            renderTarget = p.getCurrentSolidFramebuffer();
+            renderTarget = p.shadowFramebufferOr(p.solidFramebuffer);
+        }
+        return renderTarget;
+    }
+
+    @ModifyExpressionValue(
+        method = "outputTarget",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;getTranslucentTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
+    )
+    RenderTarget replaceTranslucentOutputTarget(RenderTarget renderTarget) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            renderTarget = p.shadowFramebufferOr(p.translucentTerrainFramebuffer);
         }
         return renderTarget;
     }

@@ -3,7 +3,6 @@ Minecraft Mod for loading [Canvas](https://github.com/vram-guild/canvas) shader 
 
 ## What doesn't work / not implemented?
 * Some Material properties
-* `fabulousTargets`
 * `material.glsl` uniforms: `frx_matEmissive`, `frx_matCutout`, `frx_matUnmipped`, `frx_matExposure`
 
 ## Shaderpacks that are known to work

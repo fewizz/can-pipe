@@ -73,6 +73,14 @@ public class Pipeline implements AutoCloseable {
         boolean allowParticles  // isn't used in canvas
     ) {}
 
+    public static record FabulousTargets(
+        Framebuffer translucentTerrainFramebuffer,
+		Framebuffer translucentItemEntityFramebuffer,
+        Framebuffer translucentParticlesFramebuffer,
+		Framebuffer weatherFramebuffer,
+		Framebuffer cloudsFramebuffer
+    ) {}
+
     public final Identifier location;
     public final Map<OptionGroup.Element<?>, Object> appliedOptions;
 
@@ -86,11 +94,12 @@ public class Pipeline implements AutoCloseable {
     public final Framebuffer solidFramebuffer;
     public final Framebuffer translucentTerrainFramebuffer;
     public final Framebuffer translucentItemEntityFramebuffer;
-    public final Framebuffer particlesFramebuffer;
+    public final Framebuffer translucentParticlesFramebuffer;
     public final Framebuffer weatherFramebuffer;
     public final Framebuffer cloudsFramebuffer;
 
     public final @Nullable Shadows shadows;
+    public final @Nullable FabulousTargets fabulousTargets;
 
     private final Map<RenderPipeline, RenderPipeline> materialPrograms;
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
@@ -206,9 +215,21 @@ public class Pipeline implements AutoCloseable {
         this.solidFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "solidTerrain"));
         this.translucentTerrainFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentTerrain"));
         this.translucentItemEntityFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentEntity"));
-        this.particlesFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentParticles"));
+        this.translucentParticlesFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentParticles"));
         this.weatherFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "weather"));
         this.cloudsFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "clouds"));
+
+        JsonObject fabulousTargetsJson = pipelineJson.getObject("fabulousTargets");
+        this.fabulousTargets = fabulousTargetsJson == null ? null : new FabulousTargets(
+            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "translucent")),
+            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "entity")),
+            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "particles")),
+            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "weather")),
+            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "clouds"))
+        );
+        if (pipelineJson.containsKey("fabulous") && this.fabulousTargets == null) {
+            throw new RuntimeException("To use \"fabulous\" passes, \"fabulousTargets\" should be defined");
+        }
 
         Map<Identifier, String> shaderSourceCache = new HashMap<>();
 
@@ -540,7 +561,7 @@ public class Pipeline implements AutoCloseable {
         if (framebuffer == this.translucentItemEntityFramebuffer) {
             renderTarget = 2;
         }
-        if (framebuffer == this.particlesFramebuffer) {
+        if (framebuffer == this.translucentParticlesFramebuffer) {
             renderTarget = 3;
         }
 
@@ -592,24 +613,29 @@ public class Pipeline implements AutoCloseable {
         return result;
     }
 
-    public Framebuffer getCurrentSolidFramebuffer() {
+    public Framebuffer shadowFramebufferOr(Framebuffer or) {
         int cascade = ((LevelRendererExtended) Minecraft.getInstance().levelRenderer).canpipe_getCurrentShadowCascadeIdx();
-        if (cascade >= 0) {
-            assert this.shadows != null;
-            return this.shadows.framebuffers.get(cascade);
-        }
-        return this.solidFramebuffer;
+        return cascade >= 0 ? this.shadows.framebuffers.get(cascade) : or;
     }
 
     public RenderTarget replaceRenderTarget(RenderTarget renderTarget, RenderSetup renderSetup) {
-        OutputTarget outputTarget = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getOutputTarget();
         RenderPipeline originalRenderPipeline = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getPipeline();
-
-        boolean mainOutputTarget = outputTarget == OutputTarget.MAIN_TARGET;
         boolean renderPipelineIsReplaced = this.getReplacedRenderPipeline(originalRenderPipeline) != originalRenderPipeline;
 
-        if (mainOutputTarget && renderPipelineIsReplaced) {
-            renderTarget = this.getCurrentSolidFramebuffer();
+        if (renderPipelineIsReplaced) {
+            OutputTarget outputTarget = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getOutputTarget();
+            if (outputTarget == OutputTarget.MAIN_TARGET) {
+                renderTarget = this.shadowFramebufferOr(this.solidFramebuffer);
+            }
+            else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
+                renderTarget = this.shadowFramebufferOr(this.translucentItemEntityFramebuffer);
+            }
+            else if (outputTarget == OutputTarget.WEATHER_TARGET) {
+                renderTarget = this.shadowFramebufferOr(this.weatherFramebuffer);
+            }
+            else {
+                throw new RuntimeException("Unexpected output target: "+outputTarget);
+            }
         }
 
         return renderTarget;

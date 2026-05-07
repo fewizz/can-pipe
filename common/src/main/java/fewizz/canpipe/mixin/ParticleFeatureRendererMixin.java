@@ -32,10 +32,25 @@ public class ParticleFeatureRendererMixin {
             target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
         )
     )
-    RenderTarget replaceRenderTarget(RenderTarget renderTarget) {
+    RenderTarget replaceMainRenderTarget(RenderTarget renderTarget) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            renderTarget = p.getCurrentSolidFramebuffer();
+            renderTarget = p.shadowFramebufferOr(p.solidFramebuffer);
+        }
+        return renderTarget;
+    }
+
+    @ModifyExpressionValue(
+        method = "render",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;getParticlesTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
+    )
+    RenderTarget replaceParticlesRenderTarget(RenderTarget renderTarget) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            renderTarget = p.shadowFramebufferOr(p.translucentParticlesFramebuffer);
         }
         return renderTarget;
     }
