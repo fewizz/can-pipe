@@ -48,6 +48,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 
 public class Uniforms {
@@ -218,16 +219,18 @@ public class Uniforms {
             int result = 0;
 
             BlockPos cameraBlockPos = BlockPos.containing(camera.position());
-            Iterable<TagKey<Fluid>> fluidTags = () -> {
-                return mc.level.getFluidState(cameraBlockPos).tags().iterator();
-            };
-            for (var tag : fluidTags) {
-                result |= 1 << 0;  // frx_cameraInFluid
-                if (tag.equals(FluidTags.WATER)) {
-                    result |= 1 << 1;
-                }
-                if (tag.equals(FluidTags.LAVA)) {
-                    result |= 1 << 2;
+            FluidState fluidState = mc.level.getFluidState(cameraBlockPos);
+
+            if (camera.position().y < cameraBlockPos.getY() + fluidState.getHeight(mc.level, cameraBlockPos)) {
+                Iterable<TagKey<Fluid>> fluidTags = () -> fluidState.tags().iterator();
+                for (var tag : fluidTags) {
+                    result |= 1 << 0;  // frx_cameraInFluid
+                    if (tag.equals(FluidTags.WATER)) {
+                        result |= 1 << 1;
+                    }
+                    if (tag.equals(FluidTags.LAVA)) {
+                        result |= 1 << 2;
+                    }
                 }
             }
 
