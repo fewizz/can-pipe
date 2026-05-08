@@ -154,6 +154,7 @@ public class CanPipe {
 
                 // Was changed in resource pack format v13
                 case "textures/misc/enchanted_item_glint.png" -> ItemFeatureRenderer.ENCHANTED_GLINT_ITEM.getPath();
+                case "textures/misc/enchanted_glint_entity.png" -> ItemFeatureRenderer.ENCHANTED_GLINT_ARMOR.getPath();
 
                 // Was changed in MC 1.21.11
                 case "textures/environment/sun.png" -> "textures/environment/celestial/sun.png";
