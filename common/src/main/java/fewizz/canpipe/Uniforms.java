@@ -157,7 +157,8 @@ public class Uniforms {
     // fog
     private static final UniformBufferStruct FOG = new UniformBufferStruct();
     private static final Vec4Uniform FRX_FOG_COLOR = FOG.add(new Vec4Uniform() {{ set(1.0F); }});
-    private static final IntUniform FRX_FOG_ENABLED = FOG.add(new IntUniform());
+    private static final FloatUniform FRX_FOG_START = FOG.add(new FloatUniform());
+    private static final FloatUniform FRX_FOG_END = FOG.add(new FloatUniform());
 
     private static final GpuBuffer FOG_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe fog UBO",
@@ -421,21 +422,10 @@ public class Uniforms {
         FRX_VANILLA_CLEAR_COLOR.set(mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState.fogData.color);
 
         // fog.glsl
-        if (ticks == 0 && !mc.level.dimensionType().hasSkyLight()) {
-            FRX_FOG_COLOR.set(1.0F);
-        }
-        else {
-            FRX_FOG_COLOR.set(
-                gre.canpipe_getFogRenderer().setupFog(
-                    mc.gameRenderer.getMainCamera(),
-                    mc.options.getEffectiveRenderDistance(),
-                    mc.getDeltaTracker(),
-                    mc.gameRenderer.getBossOverlayWorldDarkening(pt),
-                    mc.level
-                ).color
-            );
-        }
-        FRX_FOG_ENABLED.set(1);
+        var fogData = mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState.fogData;
+        FRX_FOG_COLOR.set(fogData.color);
+        FRX_FOG_START.set(Math.min(fogData.environmentalStart, fogData.renderDistanceStart));  // Should be slose enough (:pray:)
+        FRX_FOG_END.set(Math.min(fogData.environmentalEnd, fogData.renderDistanceEnd));
 
         Profiler.get().popPush("upload");
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {

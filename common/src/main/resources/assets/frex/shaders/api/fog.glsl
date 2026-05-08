@@ -2,10 +2,8 @@
 
 layout(std140) uniform frx_ub_fog {
     vec4 frx_fogColor;
-    // float frx_fogStart;
-    // float frx_fogEnd;
-    int frx_fogEnabled;
+    float frx_fogStart;
+    float frx_fogEnd;
 };
 
-#define frx_fogStart FogRenderDistanceStart
-#define frx_fogEnd FogRenderDistanceEnd
+#define frx_fogEnabled 1
