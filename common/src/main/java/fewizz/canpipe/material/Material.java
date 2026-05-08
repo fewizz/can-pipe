@@ -21,7 +21,9 @@ public record Material(
     @Nullable String depthVertexShaderSource,
     @Nullable String depthFragmentShaderSource,
     boolean disableAO,
-    boolean disableDiffuse
+    boolean disableDiffuse,
+    boolean disableColorIndex,
+    boolean emissive
 ) {
 
     static Material load(
@@ -66,12 +68,14 @@ public record Material(
 
         boolean disableAO = materialJson.getBoolean("disableAo", false);
         boolean disableDiffuse = materialJson.getBoolean("disableDiffuse", false);
+        boolean disableColorIndex = materialJson.getBoolean("disableColorIndex", false);
+        boolean emissive = materialJson.getBoolean("emissive", false);
 
         return new Material(
             id, location,
             vertexShaderSource, fragmentShaderSource,
             depthVertexShaderSource, depthFragmentShaderSource,
-            disableAO, disableDiffuse
+            disableAO, disableDiffuse, disableColorIndex, emissive
         );
     }
 

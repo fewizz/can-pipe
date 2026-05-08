@@ -240,6 +240,12 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             if (material != null && material.disableDiffuse()) { this.canpipe_materialFlags |= 1 << 3; }
             else  { this.canpipe_materialFlags &= ~(1 << 3); }
 
+            if (material != null && material.disableColorIndex()) { this.canpipe_materialFlags |= 1 << 4; }
+            else  { this.canpipe_materialFlags &= ~(1 << 4); }
+
+            if (material != null && material.emissive()) { this.canpipe_materialFlags |= 1 << 5; }
+            else  { this.canpipe_materialFlags &= ~(1 << 5); }
+
             for (int i = offsetToFirstVertex; i <= 0; ++i) {
                 MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) materialIndex);
                 MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, this.canpipe_materialFlags);

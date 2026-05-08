@@ -313,6 +313,7 @@ public class MaterialPrograms {
 
         #include frex:shaders/api/vertex.glsl
         #include frex:shaders/api/sampler.glsl
+        #include frex:shaders/api/material.glsl
         #include frex:shaders/api/view.glsl
         #include frex:shaders/api/header.glsl
 
@@ -353,7 +354,8 @@ public class MaterialPrograms {
                     frx_texcoord = in_uv;
                 }
             #endif
-            frx_vertexColor = in_color;
+
+            frx_vertexColor = canpipe_disableColorIndex == 0 ? in_color : vec4(1.0);
 
             #if !defined DEPTH_PASS
                 frx_vertexNormal = in_normal;

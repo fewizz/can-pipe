@@ -117,7 +117,7 @@ final public class MaterialMaps implements PreparableReloadListener {
             Identifier elementId = materialMapId.withPath(
                 materialMapId.getPath()
                 .substring("materialmaps/".length())
-                .replace(".json", "").replace(".json5", "")
+                .replace(".json5", "").replace(".json", "")
             );
 
             elementId = CanPipe.upgradeResourcePath(elementId);

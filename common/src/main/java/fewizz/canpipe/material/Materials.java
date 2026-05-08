@@ -62,7 +62,7 @@ final public class Materials implements PreparableReloadListener {
             Identifier fullLocation = entry.getKey();
             Identifier location = fullLocation.withPath(
                 fullLocation.getPath().substring("materials/".length())
-                .replace(".json", "").replace(".json5", "")
+                .replace(".json5", "").replace(".json", "")
             );
 
             try {
