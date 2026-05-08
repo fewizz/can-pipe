@@ -14,13 +14,24 @@ import net.minecraft.client.renderer.WeatherEffectRenderer;
 public class WeatherEffectRendererMixin {
 
     @ModifyExpressionValue(
-        method = "render",
+        method = {
+            "render("+
+                "Lnet/minecraft/world/phys/Vec3;"+
+                "Lnet/minecraft/client/renderer/state/level/WeatherRenderState;"+
+            ")V",
+            "render("+  // NEO
+                "Lnet/minecraft/world/phys/Vec3;"+
+                "Lnet/minecraft/client/renderer/state/level/WeatherRenderState;"+
+                "Lnet/minecraft/client/renderer/state/level/LevelRenderState;"+
+            ")V"
+        },
+        require = 1,
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/rendertype/OutputTarget;getRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
         )
     )
-    RenderTarget replaceCloudRenderTarget(RenderTarget renderTarget) {
+    RenderTarget replaceWeatherRenderTarget(RenderTarget renderTarget) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             renderTarget = p.shadowFramebufferOr(p.weatherFramebuffer);
