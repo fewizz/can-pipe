@@ -86,7 +86,7 @@ loom {
             // vmArg "-XX:+DebugNonSafepoints"
             // vmArg "-XX:-Inline"
             programArg "--renderDebugLabels"
-            // properties(["mixin.debug": "true",])
+            properties(["mixin.debug": "true",])
             appendProjectPathToConfigName = false
         }
         clientCinnabar {

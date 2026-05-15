@@ -27,27 +27,18 @@ public class ParticleFeatureRendererMixin {
 
     @ModifyExpressionValue(
         method = "render",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
-        )
-    )
-    RenderTarget replaceMainRenderTarget(RenderTarget renderTarget) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p != null) {
-            renderTarget = p.shadowFramebufferOr(p.solidFramebuffer);
+        at = {
+            @At(
+                value = "INVOKE",
+                target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+            ),
+            @At(
+                value = "INVOKE",
+                target = "Lnet/minecraft/client/renderer/LevelRenderer;getParticlesTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+            )
         }
-        return renderTarget;
-    }
-
-    @ModifyExpressionValue(
-        method = "render",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;getParticlesTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
-        )
     )
-    RenderTarget replaceParticlesRenderTarget(RenderTarget renderTarget) {
+    RenderTarget replaceRenderTargets(RenderTarget renderTarget) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             renderTarget = p.shadowFramebufferOr(p.translucentParticlesFramebuffer);
@@ -74,9 +65,9 @@ public class ParticleFeatureRendererMixin {
         GpuTextureView colorTexture, OptionalInt clearColor,
         @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
-        @Local(ordinal = 0) RenderTarget renderTargetMain
+        @Local(ordinal = 0) RenderTarget renderTarget  // Doesn't matter which one, replacing both `mainTarget` and `particleTarget`
     ) {
-        if (renderTargetMain instanceof Framebuffer framebuffer) {
+        if (renderTarget instanceof Framebuffer framebuffer) {
             return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
