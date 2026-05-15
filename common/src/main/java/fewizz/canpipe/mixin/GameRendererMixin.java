@@ -10,8 +10,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -64,9 +64,10 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override public FogRenderer canpipe_getFogRenderer() { return this.fogRenderer; }
     @Override public Matrix4f canpipe_worldViewMatrix() { return this.canpipe_viewMatrix; }
     @Override public Matrix4f canpipe_worldProjectionMatrix() { return this.canpipe_projectionMatrix; }
-    @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
     @Override public boolean canpipe_isRenderingHand() { return this.canpipe_isRenderingHand; }
     @Override public Lightmap canpipe_getLightmap() { return this.lightmap; }
+    @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
+    @Override public void canpipe_setOriginType(int originType) { this.canpipe_originType = originType; }
 
     @Override
     public void canpipe_onPipelineActivated() {
@@ -298,11 +299,6 @@ public class GameRendererMixin implements GameRendererExtended {
         )
     )
     void afterRenderLevel(DeltaTracker deltaTracker, CallbackInfo ci) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p == null) { return; }
-
-        this.canpipe_originType = 2;  // camera
-        p.onAfterWorldRender();
         this.canpipe_isRenderingHand = true;
     }
 

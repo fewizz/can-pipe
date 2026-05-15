@@ -23,6 +23,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
+import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -450,6 +451,30 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return ((LevelRenderStateExtended) this.levelRenderState).canpipe_getEntityRenderStates()[this.canpipe_currentShadowCascadeIdx];
         }
         return entityRenderStates;
+    }
+
+    @Inject(
+        method = "renderLevel",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;addLateDebugPass("+
+                "Lcom/mojang/blaze3d/framegraph/FrameGraphBuilder;"+
+                "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
+                "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
+                "Lorg/joml/Matrix4fc;"+
+            ")V"
+        )
+    )
+    void beforeLateDebugPass(CallbackInfo ci, @Local FrameGraphBuilder frame) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) { return; }
+
+        FramePass pass = frame.addPass("can-pipe fabulous passes");
+        this.targets.main = pass.readsAndWrites(this.targets.main);
+        pass.executes(() -> {
+            ((GameRendererExtended) this.minecraft.gameRenderer).canpipe_setOriginType(2);  // camera
+            p.onAfterWorldRender();
+        });
     }
 
 }
