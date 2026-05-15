@@ -168,8 +168,9 @@ public class ShadowFrustum extends Frustum {
             (float) (aabb.minZ - this.getCamZ()),
             (float) (aabb.maxX - this.getCamX()),
             (float) (aabb.maxY - this.getCamY()),
-            (float) (aabb.maxZ - this.getCamZ())
-        );
+            (float) (aabb.maxZ - this.getCamZ()),
+            false
+        ) != FrustumIntersection.OUTSIDE;
     }
 
     @Override
@@ -177,26 +178,30 @@ public class ShadowFrustum extends Frustum {
         int result = super.cubeInFrustum(bb);
         if (result == FrustumIntersection.OUTSIDE) { return FrustumIntersection.OUTSIDE; }
 
-        return this.check(  // Can't (?) use FrustumIntersection.INSIDE for faster occlusion graph traversal
+        return this.check(
             (float) (bb.minX() - this.getCamX()),
             (float) (bb.minY() - this.getCamY()),
             (float) (bb.minZ() - this.getCamZ()),
             (float) (bb.maxX() + 1 - this.getCamX()),
             (float) (bb.maxY() + 1 - this.getCamY()),
-            (float) (bb.maxZ() + 1 - this.getCamZ())
-        ) ? FrustumIntersection.INTERSECT : FrustumIntersection.OUTSIDE;
+            (float) (bb.maxZ() + 1 - this.getCamZ()),
+            true  // Also check for FrustumIntersection.INSIDE
+        );
     }
 
-    final private boolean check(
-        float minX, float minY, float minZ, float maxX, float maxY, float maxZ
+    final private int check(
+        float minX, float minY, float minZ, float maxX, float maxY, float maxZ,
+        boolean checkIfFullyInside
     ) {
         if (!(  // Takes care of some false positives
             maxX >= projectedFrustumMin.x && minX <= projectedFrustumMax.x &&
             maxY >= projectedFrustumMin.y && minY <= projectedFrustumMax.y &&
             maxZ >= projectedFrustumMin.z && minZ <= projectedFrustumMax.z
         )) {
-            return false;
+            return FrustumIntersection.OUTSIDE;
         }
+
+        boolean fullyInside = true;
 
         for (Plane plane : this.planes) {
             // Check if farthest AABB point is still in "inner" side of plane
@@ -205,11 +210,20 @@ public class ShadowFrustum extends Frustum {
                 plane.normal.y > 0 ? maxY : minY,
                 plane.normal.z > 0 ? maxZ : minZ
             )) {
-                return false;
+                return FrustumIntersection.OUTSIDE;
+            }
+
+            // Now check closest point, if checkIfFullyInside is true
+            if (checkIfFullyInside && !plane.pointIsInside(
+                plane.normal.x > 0 ? minX : maxX,
+                plane.normal.y > 0 ? minY : maxY,
+                plane.normal.z > 0 ? minZ : maxZ
+            )) {
+                fullyInside = false;
             }
         }
 
-        return true;
+        return checkIfFullyInside && fullyInside ? FrustumIntersection.INSIDE : FrustumIntersection.INTERSECT;
     }
 
 }

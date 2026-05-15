@@ -142,8 +142,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
                 ShadowFrustum frustum = ((GameRendererExtended) this.minecraft.gameRenderer).canpipe_getShadowFrustums()[this.canpipe_currentShadowCascadeIdx];
 
-                profiler.push("prepare chunk sections to render");
+                profiler.push("apply frustum");
                 applyFrustum(gre.canpipe_getShadowFrustums()[this.canpipe_currentShadowCascadeIdx]);
+
+                profiler.push("prepare chunk sections to render");
                 lrse.canpipe_getChunkSectionsToRender()[this.canpipe_currentShadowCascadeIdx] = (prepareChunkRenders(viewMatrix));
 
                 profiler.popPush("shadowed entities");
