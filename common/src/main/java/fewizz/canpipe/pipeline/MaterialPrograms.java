@@ -278,16 +278,16 @@ public class MaterialPrograms {
             vertexSrcBuilder.append("#define CANPIPE_HAS_OVERLAY_POS\n");
             vertexSrcBuilder.append("in ivec2 in_overlayPos;  // UV1\n");
         }
+        if (hasMaterialFlags) {
+            vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
+            vertexSrcBuilder.append("in int in_materialFlags;\n");
+        }
         vertexSrcBuilder.append("in ivec2 in_lightmap;  // UV2\n");
         vertexSrcBuilder.append(
             vertexFormat.contains(VertexFormatElement.NORMAL) ?
             "in vec3 in_normal; // Normal\n" :
             "const vec3 in_normal = vec3(0.0, 1.0, 0.0);  // Normal\n"
         );
-        if (hasMaterialFlags) {
-            vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
-            vertexSrcBuilder.append("in int in_materialFlags;\n");
-        }
         vertexSrcBuilder.append(
             vertexFormat.contains(CanPipe.VertexFormatElements.AO) ?
             "in float in_ao;\n" :

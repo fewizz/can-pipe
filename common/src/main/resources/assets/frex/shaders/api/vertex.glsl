@@ -18,8 +18,9 @@
 
     flat out int canpipe_spriteIndex;
     flat out int canpipe_materialIndex;
-    flat out int canpipe_materialFlags;
-
+    #if defined CANPIPE_HAS_MATERIAL_FLAGS
+        flat out int canpipe_materialFlags;
+    #endif
     #if defined CANPIPE_HAS_OVERLAY_POS
         flat out ivec2 canpipe_overlayPos;
     #endif
