@@ -19,11 +19,12 @@ import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderSetup.TextureBinding;
 
 @Mixin(ModelFeatureRenderer.class)
 public class ModelFeatureRendererMixin {
 
-    @Unique  SubmitNodeCollection canpipe_nodeCollectionHeld;
+    @Unique SubmitNodeCollection canpipe_nodeCollectionHeld;
 
     @Inject(method = "renderSolid", at = @At("HEAD"))
     void onRenderSolid(CallbackInfo ci, @Local SubmitNodeCollection nodeCollection) {
@@ -45,8 +46,10 @@ public class ModelFeatureRendererMixin {
 
         if (submit.sprite() == null) {
             RenderSetup renderSetup = ((RenderTypeAccessor) renderType).canpipe_getState();
-            var tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
-            ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(tex.location());
+            TextureBinding tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
+            if (tex != null) {
+                ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(tex.location());
+            }
         }
         else {
             ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(() -> submit.sprite());
