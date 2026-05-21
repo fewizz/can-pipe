@@ -27,14 +27,7 @@ layout(std140) uniform frx_ub_world {
 
 #define frx_skyLightAtmosphericColor canpipe_sunriseOrSunsetColor
 
-#define frx_skyLightTransitionFactor ( \
-    frx_worldHasSkylight == 1 ? \
-    min(1.0, min( /* https://www.desmos.com/calculator/a6ouxizdbp */  \
-        abs(canpipe_fixedOrDayTime*24.0-13.0), \
-        abs(canpipe_fixedOrDayTime*24.0-23.0) \
-    )) : \
-    1.0 \
-)
+#define frx_skyLightTransitionFactor canpipe_getSkyLightTransitionFactor()
 
 #define frx_rainGradient            (canpipe_weatherGradients.x)
 #define frx_thunderGradient         (canpipe_weatherGradients.y)
@@ -50,3 +43,16 @@ layout(std140) uniform frx_ub_world {
 #define frx_worldIsEnd       int(((canpipe_worldFlags >> 4) & 3) == 2)
 
 #define frx_worldIsMoonlit float(frx_worldHasSkylight == 1 && canpipe_fixedOrDayTime > 13.0/24.0 && canpipe_fixedOrDayTime < 23.0/24.0)
+
+float canpipe_getSkyLightTransitionFactor() {
+    if (frx_worldHasSkylight == 1) {
+        return min(
+            1.0,
+            min( /* https://www.desmos.com/calculator/a6ouxizdbp */
+                abs(canpipe_fixedOrDayTime*24.0-13.0),
+                abs(canpipe_fixedOrDayTime*24.0-23.0)
+            )
+        );
+    }
+    return 1.0;
+}

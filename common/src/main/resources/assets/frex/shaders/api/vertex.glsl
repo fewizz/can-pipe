@@ -30,9 +30,9 @@
     #else
 
         out vec3 frx_vertexNormal;
+        out vec4 frx_vertexTangent;
         out vec3 frx_vertexLight;
         out float frx_distance;
-        out vec4 frx_vertexTangent;
 
         out vec4 frx_var0;
         out vec4 frx_var1;

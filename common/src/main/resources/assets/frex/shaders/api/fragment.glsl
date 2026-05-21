@@ -36,10 +36,11 @@
     float frx_fragEmissive = 0.0;
 
     #if !defined DEPTH_PASS
-        in vec3 frx_vertexLight;
+
         in vec3 frx_vertexNormal;
-        in float frx_distance;
         in vec4 frx_vertexTangent;
+        in vec3 frx_vertexLight;
+        in float frx_distance;
 
         in vec4 frx_var0;
         in vec4 frx_var1;

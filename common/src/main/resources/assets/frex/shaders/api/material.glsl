@@ -2,7 +2,7 @@ const int frx_matCutout = 0;  // TODO define
 const int frx_matUnmipped = 0;  // TODO define
 const float frx_matExposure = 0.0;  // unused?
 
-#ifdef CANPIPE_HAS_MATERIAL_FLAGS
+#if defined CANPIPE_HAS_MATERIAL_FLAGS
     #define frx_matDisableAo ((canpipe_materialFlags >> 2) & 1)
     #define frx_matDisableDiffuse ((canpipe_materialFlags >> 3) & 1)
     #define canpipe_disableColorIndex ((canpipe_materialFlags >> 4) & 1)

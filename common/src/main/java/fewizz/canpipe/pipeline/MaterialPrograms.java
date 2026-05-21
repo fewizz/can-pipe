@@ -224,6 +224,7 @@ public class MaterialPrograms {
         boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
         boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
         boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
+        boolean hasLightmapPos = vertexFormat.contains(VertexFormatElement.UV2);
         boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
 
         StringBuilder materialsFunctionsSrc = new StringBuilder();
@@ -278,11 +279,14 @@ public class MaterialPrograms {
             vertexSrcBuilder.append("#define CANPIPE_HAS_OVERLAY_POS\n");
             vertexSrcBuilder.append("in ivec2 in_overlayPos;  // UV1\n");
         }
+        if (hasLightmapPos) {
+            vertexSrcBuilder.append("#define CANPIPE_HAS_LIGHTMAP_POS\n");
+            vertexSrcBuilder.append("in ivec2 in_lightmapPos;  // UV2\n");
+        }
         if (hasMaterialFlags) {
             vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
             vertexSrcBuilder.append("in int in_materialFlags;\n");
         }
-        vertexSrcBuilder.append("in ivec2 in_lightmap;  // UV2\n");
         vertexSrcBuilder.append(
             vertexFormat.contains(VertexFormatElement.NORMAL) ?
             "in vec3 in_normal; // Normal\n" :
@@ -359,15 +363,12 @@ public class MaterialPrograms {
 
             #if !defined DEPTH_PASS
                 frx_vertexNormal = in_normal;
-                frx_vertexLight = vec3(
-                    clamp(
-                        in_lightmap / 256.0,
-                        vec2(0.5 / 16.0),
-                        vec2(15.5 / 16.0)
-                    ),
-                    in_ao
-                );
                 frx_vertexTangent = in_tangent;
+                #if defined CANPIPE_HAS_LIGHTMAP_POS
+                    frx_vertexLight = vec3(clamp(in_lightmapPos / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)), in_ao);
+                #else
+                    frx_vertexLight = vec3(1.0);
+                #endif
             #endif
 
             #if defined CANPIPE_HAS_OVERLAY_POS
