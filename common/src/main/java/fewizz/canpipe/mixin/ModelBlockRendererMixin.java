@@ -16,7 +16,7 @@ import net.minecraft.client.renderer.block.ModelBlockRenderer;
 @Mixin(ModelBlockRenderer.class)
 public class ModelBlockRendererMixin {
 
-    @Shadow @Final private QuadInstance quadInstance = new QuadInstance();
+    @Shadow @Final private QuadInstance quadInstance;
 
     @Inject(method = "tesselateBlock", at = @At("HEAD"))
     void beforeTesselatingBlock(CallbackInfo ci) {

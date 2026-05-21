@@ -10,6 +10,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
@@ -22,6 +25,8 @@ public class RenderSystemMixin {
 
     @SuppressWarnings("unused") private static GpuBuffer CANPIPE_QUAD_VERTEX_UV_BUFFER;
     @SuppressWarnings("unused") private static GpuBuffer[] CANPIPE_INT_0_3_UBO_BUFFERS;
+    @SuppressWarnings("unused") private static GpuTexture CANPIPE_WHITE_TEXTURE;
+    @SuppressWarnings("unused") private static GpuTextureView CANPIPE_WHITE_TEXTURE_VIEW;
 
     @Shadow public static GpuDevice getDevice() { return null; }
 
@@ -65,6 +70,14 @@ public class RenderSystemMixin {
                 MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 3))
             )
         };
+
+        CANPIPE_WHITE_TEXTURE = RenderSystem.getDevice().createTexture(
+            "can-pipe white", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8,
+            1, 1, 1, 1
+        );
+        RenderSystem.getDevice().createCommandEncoder().clearColorTexture(CANPIPE_WHITE_TEXTURE, 0xFFFFFFFF);
+
+        CANPIPE_WHITE_TEXTURE_VIEW = RenderSystem.getDevice().createTextureView(CANPIPE_WHITE_TEXTURE);
     }
 
 }

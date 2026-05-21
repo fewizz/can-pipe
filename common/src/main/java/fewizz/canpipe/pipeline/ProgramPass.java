@@ -72,9 +72,11 @@ public class ProgramPass extends Pass {
         for (int i = 0; i < Math.min(samplers.size(), samplerTextures.size()); ++i) {
             String sampler = samplers.get(i);
             var samplerTexture = samplerTextures.get(i).orElseGet(() -> {
-                CanPipe.LOGGER.warn("Couldn't find texture for sampler \""+sampler +"\", \"barrier\" texture will be used instead");
-                Minecraft mc = Minecraft.getInstance();
-                return mc.getTextureManager().getTexture(Identifier.withDefaultNamespace("textures/item/barrier.png"));
+                CanPipe.LOGGER.warn("Couldn't find texture for sampler \""+sampler +"\", using \"white\" texture instead");
+                return new AbstractTexture() {{
+                    this.texture = RenderSystemAccessor.canpipe_getWhiteTexture();
+                    this.textureView = RenderSystemAccessor.canpipe_getWhiteTextureView();
+                }};
             });
             this.textures.add(samplerTexture);
         }
