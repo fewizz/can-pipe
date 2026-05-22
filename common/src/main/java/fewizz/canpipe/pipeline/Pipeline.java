@@ -43,7 +43,6 @@ import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixin.RenderSetupAccessor;
-import fewizz.canpipe.mixin.RenderSystemAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
@@ -548,10 +547,10 @@ public class Pipeline implements AutoCloseable {
 
         Uniforms.setRenderPassFREXUniforms(renderPass);
 
-        renderPass.setUniform("canpipe_ub_origin_type", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[gre.canpipe_getOriginType()]);
-        renderPass.setUniform("canpipe_ub_is_rendering_hand", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[gre.canpipe_isRenderingHand() ? 1 : 0]);
+        renderPass.setUniform("canpipe_ub_origin_type", CanPipe.get0to3UBOBuffers()[gre.canpipe_getOriginType()]);
+        renderPass.setUniform("canpipe_ub_is_rendering_hand", CanPipe.get0to3UBOBuffers()[gre.canpipe_isRenderingHand() ? 1 : 0]);
         if (lre.canpipe_getCurrentShadowCascadeIdx() >= 0) {
-            renderPass.setUniform("frxu_ub_cascade", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[lre.canpipe_getCurrentShadowCascadeIdx()]);
+            renderPass.setUniform("frxu_ub_cascade", CanPipe.get0to3UBOBuffers()[lre.canpipe_getCurrentShadowCascadeIdx()]);
         }
 
         int renderTarget = 0;
@@ -565,10 +564,10 @@ public class Pipeline implements AutoCloseable {
             renderTarget = 3;
         }
 
-        renderPass.setUniform("canpipe_ub_render_target", RenderSystemAccessor.canpipe_get0to3UBOBuffers()[renderTarget]);
+        renderPass.setUniform("canpipe_ub_render_target", CanPipe.get0to3UBOBuffers()[renderTarget]);
 
         // We don't know yet which render pipeline will be used
-        renderPass.bindTexture("Sampler0", RenderSystemAccessor.canpipe_getWhiteTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+        renderPass.bindTexture("Sampler0", CanPipe.getWhiteTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
         renderPass.bindTexture("Sampler1", Minecraft.getInstance().gameRenderer.overlayTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
         renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 

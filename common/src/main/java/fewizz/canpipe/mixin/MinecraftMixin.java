@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -37,6 +38,29 @@ public class MinecraftMixin implements MinecraftExtended {
     @Override
     public void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget) {
         this.canpipe_mainRenderTargetOverride = renderTarget;
+    }
+
+    @Inject(
+        method = "<init>",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/systems/RenderSystem;initRenderer(Lcom/mojang/blaze3d/systems/GpuDevice;)V",
+            shift = Shift.AFTER
+        )
+    )
+    void afterRendererInit(CallbackInfo ci) {
+        CanPipe.afterRendererInit();
+    }
+
+    @Inject(
+        method = "close",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/systems/SamplerCache;close()V"
+        )
+    )
+    void beforeRendererClose(CallbackInfo ci) {
+        CanPipe.beforeRendererClose();
     }
 
     @ModifyReturnValue(

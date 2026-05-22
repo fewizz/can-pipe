@@ -171,6 +171,10 @@ final public class Pipelines implements PreparableReloadListener {
         }
 
         // "set" part
+        Pipelines.setLoadedPipeline(loadedPipeline);
+    }
+
+    public static void setLoadedPipeline(Pipeline loadedPipeline) {
         Minecraft mc = Minecraft.getInstance();
 
         ((MinecraftExtended) mc).canpipe_setMainRenderTargetOverride(

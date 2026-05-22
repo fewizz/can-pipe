@@ -2,14 +2,27 @@ package fewizz.canpipe;
 
 import java.nio.file.Path;
 
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import blue.endless.jankson.Jankson;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
@@ -17,13 +30,21 @@ import net.minecraft.resources.Identifier;
 
 public class CanPipe {
     public static final String MOD_ID = "canpipe";
+
     public static final Logger LOGGER = LoggerFactory.getLogger("can-pipe");
+
     public static final Jankson JANKSON = Jankson.builder().build();
+
     public static final KeyMapping PIPELINES_RELOAD_KEY = new KeyMapping(
         "canpipe.key.reloadPipelines",
         GLFW.GLFW_KEY_UNKNOWN,
         new KeyMapping.Category(Identifier.parse("canpipe:canpipe"))
     );
+
+    private static GpuBuffer quadVertexUvBuffer;
+    private static GpuBuffer[] int0to3UBOBuffers;
+    private static GpuTexture whiteTexture;
+    private static GpuTextureView whiteTextureView;
 
     public static Path getCompilationErrorsDirPath() {
         Minecraft mc = Minecraft.getInstance();
@@ -34,6 +55,44 @@ public class CanPipe {
         Minecraft mc = Minecraft.getInstance();
         return mc.gameDirectory.toPath().resolve("config/can-pipe.json");
     }
+
+    public static void afterRendererInit() {
+        GpuDevice device = RenderSystem.getDevice();
+
+        try (ByteBufferBuilder byteBufferBuilder = new ByteBufferBuilder(CanPipe.VertexFormats.POSITION_TEX.getVertexSize() * 4)) {
+            BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, VertexFormat.Mode.QUADS, CanPipe.VertexFormats.POSITION_TEX);
+            bufferBuilder.addVertex(0.0F, 0.0F, 0.0F).setUv(0.0F, 0.0F);
+            bufferBuilder.addVertex(1.0F, 0.0F, 0.0F).setUv(1.0F, 0.0F);
+            bufferBuilder.addVertex(1.0F, 1.0F, 0.0F).setUv(1.0F, 1.0F);
+            bufferBuilder.addVertex(0.0F, 1.0F, 0.0F).setUv(0.0F, 1.0F);
+
+            try (MeshData meshData = bufferBuilder.buildOrThrow()) {
+                CanPipe.quadVertexUvBuffer = device.createBuffer(() -> "can-pipe quad", GpuBuffer.USAGE_VERTEX, meshData.vertexBuffer());
+            }
+        }
+
+        CanPipe.int0to3UBOBuffers = new GpuBuffer[] {
+            device.createBuffer(() -> "can-pipe 0", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 0))),
+            device.createBuffer(() -> "can-pipe 1", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 1))),
+            device.createBuffer(() -> "can-pipe 2", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 2))),
+            device.createBuffer(() -> "can-pipe 3", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 3)))
+        };
+
+        CanPipe.whiteTexture = device.createTexture("can-pipe white", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8, 1, 1, 1, 1);
+        NativeImage whitePixel = new NativeImage(1, 1, false);
+        whitePixel.setPixel(0, 0, 0xFFFFFFFF);
+        device.createCommandEncoder().writeToTexture(whiteTexture, whitePixel);
+        CanPipe.whiteTextureView = device.createTextureView(whiteTexture);
+    }
+
+    public static void beforeRendererClose() {
+        Pipelines.setLoadedPipeline(null);
+    }
+
+    public static @NonNull GpuBuffer getQuadBuffer() { return CanPipe.quadVertexUvBuffer; }
+    public static @NonNull GpuBuffer[] get0to3UBOBuffers() { return CanPipe.int0to3UBOBuffers; }
+    public static @NonNull GpuTexture getWhiteTexture() { return CanPipe.whiteTexture; }
+    public static @NonNull GpuTextureView getWhiteTextureView() { return CanPipe.whiteTextureView; }
 
     public static class VertexFormatElements {
 

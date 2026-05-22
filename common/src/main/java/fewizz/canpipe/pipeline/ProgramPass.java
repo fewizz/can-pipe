@@ -26,7 +26,6 @@ import fewizz.canpipe.UniformBufferStruct.IntUniform;
 import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.mixin.RenderSystemAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -74,8 +73,8 @@ public class ProgramPass extends Pass {
             var samplerTexture = samplerTextures.get(i).orElseGet(() -> {
                 CanPipe.LOGGER.warn("Couldn't find texture for sampler \""+sampler +"\", using \"white\" texture instead");
                 return new AbstractTexture() {{
-                    this.texture = RenderSystemAccessor.canpipe_getWhiteTexture();
-                    this.textureView = RenderSystemAccessor.canpipe_getWhiteTextureView();
+                    this.texture = CanPipe.getWhiteTexture();
+                    this.textureView = CanPipe.getWhiteTextureView();
                 }};
             });
             this.textures.add(samplerTexture);
@@ -111,7 +110,7 @@ public class ProgramPass extends Pass {
 
         var autoStorageIndexBuffer = RenderSystem.getSequentialBuffer(Mode.QUADS);
         var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
-        var vertexBuffer = RenderSystemAccessor.canpipe_getQuadBuffer();
+        var vertexBuffer = CanPipe.getQuadBuffer();
 
         if (this.frxSizeUniform.x != w || this.frxSizeUniform.y != h) {
             this.frxSizeUniform.set(w, h);
