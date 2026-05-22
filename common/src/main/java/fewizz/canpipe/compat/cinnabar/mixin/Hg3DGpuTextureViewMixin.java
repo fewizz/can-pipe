@@ -1,10 +1,17 @@
 package fewizz.canpipe.compat.cinnabar.mixin;
 
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
@@ -12,13 +19,17 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.b3d.mixin.GpuDeviceAccessor;
+import graphics.cinnabar.api.hg.HgFramebuffer;
 import graphics.cinnabar.api.hg.HgImage;
+import graphics.cinnabar.core.hg3d.Hg3DGpuDevice;
 import graphics.cinnabar.core.hg3d.Hg3DGpuTexture;
 import graphics.cinnabar.core.hg3d.Hg3DGpuTextureView;
 
 @Mixin(Hg3DGpuTextureView.class)
 public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
-    @Final @Shadow private HgImage.View imageView;
+
+    @Shadow @Final private Hg3DGpuTexture texture;
+    @Shadow @Final private HgImage.View imageView;
 
     @Override
     public int canpipe_baseArrayLayer() {
@@ -45,7 +56,7 @@ public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
     HgImage.View.Type overrideViewType(HgImage.View.Type viewType, @Local Hg3DGpuTexture texture) {
         boolean cubemap = (texture.usage() & Hg3DGpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0;
 
-        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+        Hg3DGpuDevice device = this.texture.device();
         int layerCountOverride = ((Hg3DGpuDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount();
 
         viewType = HgImage.View.Type.TYPE_2D;
@@ -73,7 +84,7 @@ public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
         index = 4
     )
     int overrideBaseLayer(int baseLayer) {
-        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+        Hg3DGpuDevice device = this.texture.device();
         int baseLayerOverride = ((Hg3DGpuDeviceAccessor) device).get_canpipe_pendingTextureViewBaseLayer();
         if (baseLayerOverride != -1) {
             baseLayer = baseLayerOverride;
@@ -100,6 +111,35 @@ public class Hg3DGpuTextureViewMixin implements GpuTextureViewExtended {
             layerCount = layerCountOverride;
         }
         return layerCount;
+    }
+
+    @Inject(
+        method = "close",
+        at = @At(
+            value = "INVOKE",
+            target = "Lgraphics/cinnabar/core/hg3d/Hg3DGpuTexture;removeView()V",
+            shift = Shift.AFTER
+        )
+    )
+    void afterTextureRemoveViews(CallbackInfo ci) {
+        Hg3DGpuDevice device = this.texture.device();
+        Map<Pair<List<HgImage.View>, HgImage.View>, HgFramebuffer> canpipe_framebuffers = ((Hg3DGpuDeviceAccessor) device).get_canpipe_framebuffers();
+
+        canpipe_framebuffers.entrySet().removeIf(kv -> {
+            Pair<List<HgImage.View>, HgImage.View> textureViews = kv.getKey();
+            var framebuffer = kv.getValue();
+            for (var colorTextureView : textureViews.getLeft()) {
+                if (colorTextureView == this.imageView) {
+                    device.destroyEndOfFrameAsync(framebuffer);
+                    return true;
+                }
+            }
+            if (textureViews.getRight() == this.imageView) {
+                device.destroyEndOfFrameAsync(framebuffer);
+                return true;
+            }
+            return false;
+        });
     }
 
 }
