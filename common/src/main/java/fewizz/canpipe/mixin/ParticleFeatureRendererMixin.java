@@ -27,18 +27,27 @@ public class ParticleFeatureRendererMixin {
 
     @ModifyExpressionValue(
         method = "render",
-        at = {
-            @At(
-                value = "INVOKE",
-                target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
-            ),
-            @At(
-                value = "INVOKE",
-                target = "Lnet/minecraft/client/renderer/LevelRenderer;getParticlesTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
-            )
-        }
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
     )
-    RenderTarget replaceRenderTargets(RenderTarget renderTarget) {
+    RenderTarget replaceMainRenderTargets(RenderTarget renderTarget) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            renderTarget = p.shadowFramebufferOr(p.solidFramebuffer);
+        }
+        return renderTarget;
+    }
+
+    @ModifyExpressionValue(
+        method = "render",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;getParticlesTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
+    )
+    RenderTarget replaceTranslucentRenderTargets(RenderTarget renderTarget) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             renderTarget = p.shadowFramebufferOr(p.translucentParticlesFramebuffer);
@@ -65,8 +74,11 @@ public class ParticleFeatureRendererMixin {
         GpuTextureView colorTexture, OptionalInt clearColor,
         @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
-        @Local(ordinal = 0) RenderTarget renderTarget  // Doesn't matter which one, replacing both `mainTarget` and `particleTarget`
+        @Local(ordinal = 0) RenderTarget mainTarget,
+        @Local(ordinal = 1) RenderTarget particleTarget,
+        @Local(ordinal = 0, argsOnly = true) boolean translucent
     ) {
+        RenderTarget renderTarget = translucent ? particleTarget : mainTarget;
         if (renderTarget instanceof Framebuffer framebuffer) {
             return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
         }
