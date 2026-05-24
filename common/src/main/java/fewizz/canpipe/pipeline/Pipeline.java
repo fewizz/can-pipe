@@ -146,7 +146,11 @@ public class Pipeline implements AutoCloseable {
                 if (possibleJson.isEmpty()) {
                     return null;
                 }
-                return Texture.load(possibleJson.get(), location);
+                try {
+                    return Texture.load(possibleJson.get(), location);
+                } catch(Exception e) {
+                    throw new RuntimeException("Couldn't load texture \""+name+"\"", e);
+                }
             }));
         };
 
@@ -189,7 +193,7 @@ public class Pipeline implements AutoCloseable {
                     return Framebuffer.load(possibleJson.get(), location, getOrLoadTexture);
                 }
                 catch (Exception e) {
-                    throw new RuntimeException("Error occurred when tried to load framebuffer \""+name+"\"", e);
+                    throw new RuntimeException("Couldn't load framebuffer \""+name+"\"", e);
                 }
             }));
         };
@@ -410,10 +414,14 @@ public class Pipeline implements AutoCloseable {
                 if (programJson.isEmpty()) {
                     throw new RuntimeException("Couldn't find program \""+name+"\"");
                 }
-                return Programs.load(
-                    programJson.get(), location, getShaderSource, glslVersion,
-                    options, appliedOptions, shadowMapSize
-                );
+                try {
+                    return Programs.load(
+                        programJson.get(), location, getShaderSource, glslVersion,
+                        options, appliedOptions, shadowMapSize
+                    );
+                } catch (Exception e) {
+                    throw new RuntimeException("Couldn't load program \""+name+"\"", e);
+                }
             });
         };
 

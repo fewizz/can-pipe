@@ -41,21 +41,27 @@ public class PipelineRaw {
         Map<String, JsonObject> includes = new HashMap<>();
 
         class ProcessIncludes { private static void doProcess(
+            Identifier id,
             JsonObject object,
             Map<String, JsonObject> includes,
             ResourceManager manager
         ) throws IOException, SyntaxError {
-            for (var path : JanksonUtils.listOfStrings(object, "include")) {
-                JsonObject toInclude = includes.getOrDefault(path, null);
+            for (var pathToInclude : JanksonUtils.listOfStrings(object, "include")) {
+                JsonObject toInclude = includes.getOrDefault(pathToInclude, null);
                 if (toInclude == null) {
-                    toInclude = CanPipe.JANKSON.load(manager.open(Identifier.parse(path)));
-                    doProcess(toInclude, includes, manager);
-                    includes.put(path, toInclude);
+                    try {
+                        Identifier idToInclude = Identifier.parse(pathToInclude);
+                        toInclude = CanPipe.JANKSON.load(manager.open(idToInclude));
+                        doProcess(idToInclude, toInclude, includes, manager);
+                        includes.put(pathToInclude, toInclude);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Couldn't include \""+pathToInclude+"\" to \""+id+"\"", e);
+                    }
                 }
                 JanksonUtils.mergeJsonObjectB2A(object, toInclude);
             }
         }};
-        ProcessIncludes.doProcess(pipelineJson, includes, resourceManager);
+        ProcessIncludes.doProcess(pipelineLocation, pipelineJson, includes, resourceManager);
 
         Map<Identifier, OptionGroup> options = new LinkedHashMap<>();
 
