@@ -35,6 +35,7 @@ neoForge {
             client()
             ideName = "NeoForge"
             gameDirectory = new File(project.rootDir, "/run")
+            systemProperty("mixin.debug", "true")
         }
     }
 

@@ -19,6 +19,9 @@
         "GlTextureViewMixin",
         "GpuDeviceAccessor",
         "GpuDeviceMixin",
+        "RenderPipelineAccessor",
+        "RenderPipelineBuilderMixin",
+        "RenderPipelineMixin",
         "TextureFormatMixin"
     ]
 }

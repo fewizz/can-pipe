@@ -3,6 +3,8 @@ package fewizz.canpipe.b3d.mixin;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.OptionalDouble;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
@@ -12,6 +14,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -19,6 +22,7 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.opengl.GlDevice;
+import com.mojang.blaze3d.opengl.GlProgram;
 import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
@@ -33,6 +37,7 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
+import fewizz.canpipe.b3d.RenderPipelineExtended;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.renderer.ShaderDefines;
@@ -137,6 +142,29 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
             this.canpipe_onCompilationError.accept(this.canpipe_compilationLog, key.id(), source);
         }
         return module;
+    }
+
+    @ModifyArg(
+        method = "compileProgram",
+        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlProgram;setupUniforms(Ljava/util/List;Ljava/util/List;)V"),
+        index = 1
+    )
+    List<String> dontPassOptionalUnusedSamplers(
+        List<String> samplers,
+        @Local RenderPipeline pipeline,
+        @Local GlProgram program
+    ) {
+        if (pipeline instanceof RenderPipelineExtended rpe) {
+            Set<String> optionalSamplers = rpe.canpipe_getOptionalSamplers();
+            if (optionalSamplers != null) {
+                Predicate<String> ifNotOptionalAndUnused = (String sampler) -> !(
+                    optionalSamplers.contains(sampler) &&
+                    GlStateManager._glGetUniformLocation(program.getProgramId(), sampler) == -1
+                );
+                samplers = samplers.stream().filter(ifNotOptionalAndUnused).toList();
+            }
+        }
+        return samplers;
     }
 
     @Inject(

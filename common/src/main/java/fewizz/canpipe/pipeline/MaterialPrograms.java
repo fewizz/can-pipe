@@ -23,6 +23,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -115,9 +116,9 @@ public class MaterialPrograms {
         renderPipelineBuilder.withUniform("Projection", UniformType.UNIFORM_BUFFER);
         renderPipelineBuilder.withUniform("Fog", UniformType.UNIFORM_BUFFER);
 
-        renderPipelineBuilder.withSampler("Sampler0");
-        renderPipelineBuilder.withSampler("Sampler1");
-        renderPipelineBuilder.withSampler("Sampler2");
+        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler0");
+        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler1");
+        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler2");
 
         renderPipelineBuilder.withUniform("canpipe_spritesExtents", UniformType.TEXEL_BUFFER, TextureFormat.valueOf("RGBA16_UNORM"));
 
