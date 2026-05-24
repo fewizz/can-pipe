@@ -21,8 +21,6 @@
     flat in int canpipe_materialIndex;
     #if defined CANPIPE_HAS_MATERIAL_FLAGS
         flat in int canpipe_materialFlags;
-    #else
-        const int canpipe_materialFlags = 0;
     #endif
     #if defined CANPIPE_HAS_OVERLAY_POS
         flat in ivec2 canpipe_overlayPos;

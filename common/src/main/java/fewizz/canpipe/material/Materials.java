@@ -1,19 +1,18 @@
 package fewizz.canpipe.material;
 
-import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 import org.jspecify.annotations.NonNull;
 
+import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
-import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 final public class Materials implements PreparableReloadListener {
@@ -40,38 +39,46 @@ final public class Materials implements PreparableReloadListener {
             .thenAcceptAsync(Materials::loadRaw, applyExecutor);
     }
 
-    public static Map<Identifier, Resource> readRaw(ResourceManager resourceManager) {
-        return resourceManager.listResources(
+    public static Map<Identifier, JsonObject> readRaw(ResourceManager resourceManager) {
+        Map<Identifier, JsonObject> jsons = new LinkedHashMap<>();
+        resourceManager.listResources(
             "materials",
             (Identifier rl) -> {
                 String pathStr = rl.getPath();
                 return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
             }
-        );
+        ).forEach((id, resource) -> {
+            JsonObject materialJson;
+            try {
+                materialJson = Jankson.builder().build().load(resource.open());
+            } catch (Exception e) {
+                CanPipe.LOGGER.error("Couldn't parse material json file \""+id+"\"", e);
+                return;
+            }
+            id = id.withPath(id.getPath().substring("materials/".length()).replace(".json5", "").replace(".json", ""));
+            jsons.put(id, materialJson);
+        });
+        return jsons;
     }
 
-    public static void loadRaw(Map<Identifier, Resource> materialsJson) {
+    public static void loadRaw(Map<Identifier, JsonObject> materialsJson) {
         Materials.materials.clear();
 
-        int id = 0;
+        int index = 0;
         for (var entry : materialsJson.entrySet()) {
-            if (id == Short.MAX_VALUE) {
+            if (index == Short.MAX_VALUE) {
                 throw new RuntimeException("Material index exceeded "+Short.MAX_VALUE);
             }
 
-            Identifier fullLocation = entry.getKey();
-            Identifier location = fullLocation.withPath(
-                fullLocation.getPath().substring("materials/".length())
-                .replace(".json5", "").replace(".json", "")
-            );
+            JsonObject materialJson = entry.getValue();
+            Identifier id = entry.getKey();
 
             try {
-                JsonObject materialJson = CanPipe.JANKSON.load(entry.getValue().open());
-                Material material = Material.load(id, location, materialJson);
-                Materials.materials.put(location, material);
-                ++id;
-            } catch (IOException | SyntaxError e) {
-                CanPipe.LOGGER.error("Couldn't load material \""+fullLocation+"\"", e);
+                Material material = Material.load(index, id, materialJson);
+                Materials.materials.put(entry.getKey(), material);
+                ++index;
+            } catch (Exception e) {
+                CanPipe.LOGGER.error("Couldn't load material \""+id+"\"", e);
             }
         }
     }

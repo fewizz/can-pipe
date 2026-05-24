@@ -19,6 +19,7 @@ import org.jspecify.annotations.Nullable;
 import com.mojang.blaze3d.buffers.GpuFence;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonNull;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
@@ -92,7 +93,7 @@ final public class Pipelines implements PreparableReloadListener {
         // read config
         if (Files.exists(CanPipe.getConfigurationFilePath())) {
             try {
-                config = CanPipe.JANKSON.load(Files.newInputStream(CanPipe.getConfigurationFilePath()));
+                config = Jankson.builder().build().load(Files.newInputStream(CanPipe.getConfigurationFilePath()));
             } catch (IOException | SyntaxError e) {
                 CanPipe.LOGGER.error("Couldn't load configuration file \""+CanPipe.getConfigurationFilePath()+"\"", e);
             }
@@ -212,8 +213,8 @@ final public class Pipelines implements PreparableReloadListener {
             }
         ).forEach((location, pipelineJson) -> {
             try {
-                JsonObject o = CanPipe.JANKSON.load(pipelineJson.open());
-                rawPipelines.put(location, PipelineRaw.load(o, location, resourceManager));
+                JsonObject json = Jankson.builder().build().load(pipelineJson.open());
+                rawPipelines.put(location, PipelineRaw.load(json, location, resourceManager));
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't parse pipeline json file \""+location+"\"", e);
             }
@@ -227,7 +228,7 @@ final public class Pipelines implements PreparableReloadListener {
         PipelineRaw selected = null;
         if (Files.exists(CanPipe.getConfigurationFilePath())) {
             try {
-                JsonObject readOptions = CanPipe.JANKSON.load(
+                JsonObject readOptions = Jankson.builder().build().load(
                     Files.newInputStream(CanPipe.getConfigurationFilePath())
                 );
                 String currentLocationStr = readOptions.get(String.class, "current");

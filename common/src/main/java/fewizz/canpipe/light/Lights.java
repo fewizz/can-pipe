@@ -1,17 +1,19 @@
 package fewizz.canpipe.light;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import org.jspecify.annotations.NonNull;
+
+import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.jspecify.annotations.NonNull;
 
 final public class Lights implements PreparableReloadListener {
 
@@ -37,31 +39,38 @@ final public class Lights implements PreparableReloadListener {
             .thenAcceptAsync(Lights::loadRaw, applyExecutor);
     }
 
-    public static Map<Identifier, Resource> readRaw(ResourceManager resourceManager) {
-        return resourceManager.listResources(
+    public static Map<Identifier, JsonObject> readRaw(ResourceManager resourceManager) {
+        Map<Identifier, JsonObject> jsons = new LinkedHashMap<>();
+        resourceManager.listResources(
             "lights/item",
             (Identifier rl) -> {
                 String pathStr = rl.getPath();
                 return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
             }
-        );
+        ).forEach((id, resource) -> {
+            JsonObject json;
+            try {
+                json = Jankson.builder().build().load(resource.open());
+            } catch (Exception e) {
+                CanPipe.LOGGER.error("Couldn't parse light json file \""+id+"\"");
+                return;
+            }
+            id = id.withPath(id.getPath().substring("lights/item/".length()).replace(".json5", "").replace(".json", ""));
+            jsons.put(id, json);
+        });
+        return jsons;
     }
 
-    public static void loadRaw(Map<Identifier, Resource> lightJsons) {
+    public static void loadRaw(Map<Identifier, JsonObject> lightJsons) {
         Lights.lights.clear();
 
         for (var entry : lightJsons.entrySet()) {
-            Identifier fullLocation = entry.getKey();
-            Identifier location = fullLocation.withPath(
-                fullLocation.getPath().substring("lights/item/".length())
-                .replace(".json5", "").replace(".json", "")
-            );
-
+            JsonObject json = entry.getValue();
+            Identifier id = entry.getKey();
             try {
-                JsonObject json = CanPipe.JANKSON.load(entry.getValue().open());
-                Lights.lights.put(location, new Light(json));
+                Lights.lights.put(id, new Light(json));
             } catch (Exception e) {
-                CanPipe.LOGGER.error("Couldn't load light \""+location+"\"");
+                CanPipe.LOGGER.error("Couldn't load light \""+id+"\"");
             }
         }
     }

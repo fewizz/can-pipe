@@ -3,19 +3,19 @@ const int frx_matUnmipped = 0;  // TODO define
 const float frx_matExposure = 0.0;  // unused?
 
 #if defined CANPIPE_HAS_MATERIAL_FLAGS
+    #define frx_matGlint (((canpipe_materialFlags >> 0) & 1) | frx_matGlintEntity)
+    #define frx_matGlintEntity ((canpipe_materialFlags >> 1) & 1)
     #define frx_matDisableAo ((canpipe_materialFlags >> 2) & 1)
     #define frx_matDisableDiffuse ((canpipe_materialFlags >> 3) & 1)
     #define canpipe_disableColorIndex ((canpipe_materialFlags >> 4) & 1)
     #define frx_matEmissive ((canpipe_materialFlags >> 5) & 1)
-    #define frx_matGlint (((canpipe_materialFlags >> 0) & 1) | frx_matGlintEntity)
-    #define frx_matGlintEntity ((canpipe_materialFlags >> 1) & 1)
 #else
+    #define frx_matGlint 0
+    #define frx_matGlintEntity 0
     #define frx_matDisableAo 0
     #define frx_matDisableDiffuse 0
     #define canpipe_disableColorIndex 0
     #define frx_matEmissive 0
-    #define frx_matGlint 0
-    #define frx_matGlintEntity 0
 #endif
 
 #if defined CANPIPE_HAS_OVERLAY_POS

@@ -21,7 +21,6 @@ import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 
-import blue.endless.jankson.Jankson;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -32,8 +31,6 @@ public class CanPipe {
     public static final String MOD_ID = "canpipe";
 
     public static final Logger LOGGER = LoggerFactory.getLogger("can-pipe");
-
-    public static final Jankson JANKSON = Jankson.builder().build();
 
     public static final KeyMapping PIPELINES_RELOAD_KEY = new KeyMapping(
         "canpipe.key.reloadPipelines",

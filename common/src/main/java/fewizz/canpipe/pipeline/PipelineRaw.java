@@ -10,12 +10,12 @@ import java.util.function.Function;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 
+import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -51,7 +51,7 @@ public class PipelineRaw {
                 if (toInclude == null) {
                     try {
                         Identifier idToInclude = Identifier.parse(pathToInclude);
-                        toInclude = CanPipe.JANKSON.load(manager.open(idToInclude));
+                        toInclude = Jankson.builder().build().load(manager.open(idToInclude));
                         doProcess(idToInclude, toInclude, includes, manager);
                         includes.put(pathToInclude, toInclude);
                     } catch (Exception e) {
