@@ -1,0 +1,6 @@
+{
+    "transform": true,
+    "emissive": true,
+    "disableAo": true,
+    "disableDiffuse": false
+}

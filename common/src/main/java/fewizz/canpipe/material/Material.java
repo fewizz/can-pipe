@@ -15,7 +15,7 @@ import org.jspecify.annotations.NonNull;
 
 
 public record Material(
-    int id,
+    short id,
     Identifier location,
     @Nullable String vertexShaderSource,
     @Nullable String fragmentShaderSource,
@@ -28,7 +28,7 @@ public record Material(
 ) {
 
     static Material load(
-        int id,
+        short id,
         Identifier location,
         JsonObject materialJson
     ) throws IOException {

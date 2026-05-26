@@ -25,6 +25,7 @@ import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -47,8 +48,10 @@ final public class MaterialMaps implements PreparableReloadListener {
     private static final Map<Item, MaterialMap> items = new HashMap<>();
     private static final Map<Fluid, MaterialMap> fluids = new HashMap<>();
     private static final Map<EntityType<?>, MaterialMap> entities = new HashMap<>();
+    private static final Map<ParticleType<?>, MaterialMap> particles = new HashMap<>();
 
     private static final Set<Material> allUsedMaterials = new HashSet<>();
+    private static final Set<Material> materialsUsedByParticles = new HashSet<>();
     private static final Map<ChunkSectionLayer, Set<Material>> materialsUsedByLayer = new EnumMap<>(ChunkSectionLayer.class);
 
     public static MaterialMap getForBlock(Block block) {
@@ -71,12 +74,20 @@ final public class MaterialMaps implements PreparableReloadListener {
         return MaterialMaps.entities.get(entityType);
     }
 
+    public static MaterialMap getForParticle(ParticleType<?> particleType) {
+        return MaterialMaps.particles.get(particleType);
+    }
+
     public static Collection<Material> getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer layer) {
         return MaterialMaps.materialsUsedByLayer.getOrDefault(layer, Collections.emptySet());
     }
 
     public static Collection<Material> getAllUsedMaterials() {
         return MaterialMaps.allUsedMaterials;
+    }
+
+    public static Collection<Material> getMaterialsUsedByParticles() {
+        return MaterialMaps.materialsUsedByParticles;
     }
 
     @Override
@@ -121,8 +132,10 @@ final public class MaterialMaps implements PreparableReloadListener {
         MaterialMaps.fluids.clear();
         MaterialMaps.items.clear();
         MaterialMaps.entities.clear();
+        MaterialMaps.particles.clear();
 
         MaterialMaps.materialsUsedByLayer.clear();
+        MaterialMaps.materialsUsedByParticles.clear();
         MaterialMaps.allUsedMaterials.clear();
 
         // https://github.com/vram-guild/frex/blob/dbfb312dd1ed25b4d3cd1c75c1eb1c77c4087ead/common/src/main/java/io/vram/frex/impl/model/FluidModelImpl.java#L66
@@ -156,6 +169,18 @@ final public class MaterialMaps implements PreparableReloadListener {
                     continue;
                 }
 
+                if (type.equals("particle")) {
+                    var particle = BuiltInRegistries.PARTICLE_TYPE.get(id);
+                    if (particle.isEmpty()) continue;
+                    MaterialMap materialMap = MaterialMap.loadParticle(materialMapJson);
+                    if (materialMap == null) continue;
+                    var usedMaterials = materialMap.getUsedMaterials();
+                    MaterialMaps.allUsedMaterials.addAll(usedMaterials);
+                    MaterialMaps.materialsUsedByParticles.addAll(usedMaterials);
+                    MaterialMaps.particles.put(particle.get().value(), materialMap);
+                    continue;
+                }
+
                 MaterialMap materialMap = MaterialMap.load(materialMapJson);
 
                 if (type.equals("block")) {
@@ -176,7 +201,6 @@ final public class MaterialMaps implements PreparableReloadListener {
                     MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
                 }
                 if (type.equals("fluid")) {
-                    System.out.println(id);
                     var fluid = BuiltInRegistries.FLUID.get(id);
                     if (fluid.isEmpty()) {
                         continue;

@@ -53,7 +53,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow private static byte normalIntValue(float f) { return 0; }
 
     @Unique private MaterialMap canpipe_materialMap = null;
-    @Unique private byte canpipe_materialFlags = 0;
+    @Unique private Material canpipe_material = null;  // If material is set, material map will be ignored
+    @Unique private boolean canpipe_glint = false;
+    @Unique private boolean canpipe_entityGlint = false;
     @Unique private Supplier<TextureAtlasSprite> canpipe_spriteSupplier = null;
     @Unique private boolean canpipe_recomputeNormal = false;
     @Unique private Float canpipe_aoPending = null;
@@ -203,9 +205,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
 
         if (materialIndexPtr != -1) {
-            Material material = null;
+            Material material = this.canpipe_material;
 
-            if (this.canpipe_materialMap != null) {
+            if (material == null && this.canpipe_materialMap != null) {
                 if (this.canpipe_textureIdentifier != null) {
                     material = this.canpipe_materialMap.spriteMap().get(this.canpipe_textureIdentifier);
                 }
@@ -232,23 +234,20 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 }
             }
 
-            int materialIndex = material != null ? material.id() : -1;
-
-            if (material != null && material.disableAO()) { this.canpipe_materialFlags |= 1 << 2; }
-            else  { this.canpipe_materialFlags &= ~(1 << 2); }
-
-            if (material != null && material.disableDiffuse()) { this.canpipe_materialFlags |= 1 << 3; }
-            else  { this.canpipe_materialFlags &= ~(1 << 3); }
-
-            if (material != null && material.disableColorIndex()) { this.canpipe_materialFlags |= 1 << 4; }
-            else  { this.canpipe_materialFlags &= ~(1 << 4); }
-
-            if (material != null && material.emissive()) { this.canpipe_materialFlags |= 1 << 5; }
-            else  { this.canpipe_materialFlags &= ~(1 << 5); }
+            short materialIndex = material != null ? material.id() : -1;
+            byte materialFlags = (byte) 0;
+            if (material != null) {
+                materialFlags |= (byte) (this.canpipe_glint ? 1 : 0) << 0;
+                materialFlags |= (byte) (this.canpipe_entityGlint ? 1 : 0) << 1;
+                materialFlags |= (byte) (material.disableAO() ? 1 : 0) << 2;
+                materialFlags |= (byte) (material.disableDiffuse() ? 1 : 0) << 3;
+                materialFlags |= (byte) (material.disableColorIndex() ? 1 : 0) << 4;
+                materialFlags |= (byte) (material.emissive() ? 1 : 0) << 5;
+            }
 
             for (int i = offsetToFirstVertex; i <= 0; ++i) {
-                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, (short) materialIndex);
-                MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, this.canpipe_materialFlags);
+                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, materialIndex);
+                MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, materialFlags);
             }
         }
     }
@@ -372,15 +371,18 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
+    public void canpipe_setScopedMaterial(Material material) {
+        this.canpipe_material = material;
+    }
+
+    @Override
     public void canpipe_setScopedGlint(boolean glint) {
-        if (glint) { this.canpipe_materialFlags |=   1 << 0;  }
-        else       { this.canpipe_materialFlags &= ~(1 << 0); }
+        this.canpipe_glint = glint;
     }
 
     @Override
     public void canpipe_setScopedEntityGlint(boolean glint) {
-        if (glint) { this.canpipe_materialFlags |=   1 << 1;  }
-        else       { this.canpipe_materialFlags &= ~(1 << 1); }
+        this.canpipe_entityGlint = glint;
     }
 
     @Override

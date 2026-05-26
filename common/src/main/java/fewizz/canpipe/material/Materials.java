@@ -11,6 +11,8 @@ import org.jspecify.annotations.NonNull;
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
+import it.unimi.dsi.fastutil.shorts.Short2ObjectMap;
+import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -21,9 +23,14 @@ final public class Materials implements PreparableReloadListener {
     private Materials() {}
 
     static private final Map<Identifier, Material> materials = new HashMap<>();
+    static private final Short2ObjectMap<Material> materialByIndex = new Short2ObjectOpenHashMap<>();
 
     public static Material get(Identifier location) {
         return Materials.materials.get(location);
+    }
+
+    public static Material get(short index) {
+        return Materials.materialByIndex.get(index);
     }
 
     @Override
@@ -63,10 +70,11 @@ final public class Materials implements PreparableReloadListener {
 
     public static void loadRaw(Map<Identifier, JsonObject> materialsJson) {
         Materials.materials.clear();
+        Materials.materialByIndex.clear();
 
-        int index = 0;
+        int indexInt = 0;
         for (var entry : materialsJson.entrySet()) {
-            if (index == Short.MAX_VALUE) {
+            if (indexInt > Short.MAX_VALUE) {
                 throw new RuntimeException("Material index exceeded "+Short.MAX_VALUE);
             }
 
@@ -74,9 +82,10 @@ final public class Materials implements PreparableReloadListener {
             Identifier id = entry.getKey();
 
             try {
-                Material material = Material.load(index, id, materialJson);
+                Material material = Material.load((short) indexInt, id, materialJson);
                 Materials.materials.put(entry.getKey(), material);
-                ++index;
+                Materials.materialByIndex.put((short) indexInt, material);
+                ++indexInt;
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't load material \""+id+"\"", e);
             }

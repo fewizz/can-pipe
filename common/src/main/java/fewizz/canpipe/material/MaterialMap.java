@@ -57,6 +57,19 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
         return new MaterialMap(null, spriteMap);
     }
 
+    static @Nullable  MaterialMap loadParticle(JsonObject json) {
+        String materialLocationString = json.get(String.class, "material");
+        if (materialLocationString == null) {
+            return null;
+        }
+        Identifier materialLocation = Identifier.parse(materialLocationString);
+        Material material = Materials.get(materialLocation);
+        if  (material == null) {
+            return null;
+        }
+        return new MaterialMap(material, Map.of());
+    }
+
     Set<Material> getUsedMaterials() {
         Set<Material> result = new HashSet<>();
         if (this.defaultMaterial != null) {

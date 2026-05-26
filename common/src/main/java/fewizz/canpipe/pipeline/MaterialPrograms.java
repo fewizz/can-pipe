@@ -142,6 +142,9 @@ public class MaterialPrograms {
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
             materials = MaterialMaps.getAllUsedMaterials();
         }
+        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE) {
+            materials = MaterialMaps.getMaterialsUsedByParticles();
+        }
         else {
             materials = Collections.emptyList();
         }
