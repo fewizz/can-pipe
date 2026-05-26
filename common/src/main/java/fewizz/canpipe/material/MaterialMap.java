@@ -12,20 +12,16 @@ import net.minecraft.resources.Identifier;
 public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Material> spriteMap) {
 
     static MaterialMap load(JsonObject json) {
-        Material defaultMaterial;
-        Map<Identifier, Material> spriteMap = new HashMap<>();
-
+        Material defaultMaterial = null;
         String defaultMaterialStr = json.get(String.class, "defaultMaterial");
         if (defaultMaterialStr != null) {
             Identifier materialLocation = Identifier.parse(defaultMaterialStr);
             defaultMaterial = Materials.get(materialLocation);
         }
-        else {
-            defaultMaterial = null;
-        }
 
         JsonObject defaultMap = JanksonUtils.objectOrEmpty(json, "defaultMap");
 
+        Map<Identifier, Material> spriteMap = new HashMap<>();
         for (JsonObject spriteMapObject : JanksonUtils.listOfObjects(defaultMap, "spriteMap")) {
             spriteMap.put(
                 Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "sprite")),
@@ -36,6 +32,14 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
     }
 
     static MaterialMap loadEntity(JsonObject json) {
+        Material defaultMaterial = null;
+        String defaultMaterialStr = json.get(String.class, "defaultMaterial");
+        // TODO check for identity transform
+        if (defaultMaterialStr != null) {
+            Identifier materialLocation = Identifier.parse(defaultMaterialStr);
+            defaultMaterial = Materials.get(materialLocation);
+        }
+
         Map<Identifier, Material> spriteMap = new HashMap<>();
 
         for (JsonObject entry : JanksonUtils.listOfObjects(json, "map")) {
@@ -54,7 +58,7 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
             spriteMap.put(textureId, material);
         }
 
-        return new MaterialMap(null, spriteMap);
+        return new MaterialMap(defaultMaterial, spriteMap);
     }
 
     static @Nullable  MaterialMap loadParticle(JsonObject json) {
