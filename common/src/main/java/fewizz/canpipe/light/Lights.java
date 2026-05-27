@@ -11,6 +11,7 @@ import org.jspecify.annotations.NonNull;
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.JanksonUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -43,20 +44,20 @@ final public class Lights implements PreparableReloadListener {
         Map<Identifier, JsonObject> jsons = new LinkedHashMap<>();
         resourceManager.listResources(
             "lights/item",
-            (Identifier rl) -> {
-                String pathStr = rl.getPath();
+            (Identifier id) -> {
+                String pathStr = id.getPath();
                 return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
             }
         ).forEach((id, resource) -> {
-            JsonObject json;
+            JsonObject result = new JsonObject();
             try {
-                json = Jankson.builder().build().load(resource.open());
+                result = Jankson.builder().build().load(resource.open());
             } catch (Exception e) {
-                CanPipe.LOGGER.error("Couldn't parse light json file \""+id+"\"");
+                CanPipe.LOGGER.error("Couldn't parse light json file \""+id+"\" from pack \""+resource.sourcePackId()+"\"", e);
                 return;
             }
             id = id.withPath(id.getPath().substring("lights/item/".length()).replace(".json5", "").replace(".json", ""));
-            jsons.put(id, json);
+            jsons.put(id, result);
         });
         return jsons;
     }

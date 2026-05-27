@@ -50,20 +50,20 @@ final public class Materials implements PreparableReloadListener {
         Map<Identifier, JsonObject> jsons = new LinkedHashMap<>();
         resourceManager.listResources(
             "materials",
-            (Identifier rl) -> {
-                String pathStr = rl.getPath();
+            (Identifier id) -> {
+                String pathStr = id.getPath();
                 return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
             }
         ).forEach((id, resource) -> {
-            JsonObject materialJson;
+            JsonObject result;
             try {
-                materialJson = Jankson.builder().build().load(resource.open());
+                result = Jankson.builder().build().load(resource.open());
             } catch (Exception e) {
-                CanPipe.LOGGER.error("Couldn't parse material json file \""+id+"\"", e);
+                CanPipe.LOGGER.error("Couldn't parse material json file \""+id+"\" from pack \""+resource.sourcePackId()+"\"", e);
                 return;
             }
             id = id.withPath(id.getPath().substring("materials/".length()).replace(".json5", "").replace(".json", ""));
-            jsons.put(id, materialJson);
+            jsons.put(id, result);
         });
         return jsons;
     }

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 import org.jspecify.annotations.NonNull;
 
@@ -20,6 +21,7 @@ import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -29,6 +31,7 @@ import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
@@ -103,29 +106,94 @@ final public class MaterialMaps implements PreparableReloadListener {
             .thenAcceptAsync(MaterialMaps::loadRaw, applyExecutor);
     }
 
-    public static Map<Identifier, JsonObject> readRaw(ResourceManager resourceManager) {
-        Map<Identifier, JsonObject> jsons = new LinkedHashMap<>();
-        resourceManager.listResources(
+    record MaterialMapsJsons(
+        Map<Identifier, JsonObject> blockEntities,
+        Map<Identifier, JsonObject> blocks,
+        Map<Identifier, JsonObject> fluids,
+        Map<Identifier, JsonObject> items,
+        Map<Identifier, JsonObject> entities,
+        Map<Identifier, JsonObject> particles
+    ) {}
+
+    public static MaterialMapsJsons readRaw(ResourceManager resourceManager) {
+        MaterialMapsJsons allJsons = new MaterialMapsJsons(
+            new LinkedHashMap<>(), new LinkedHashMap<>(), new LinkedHashMap<>(),
+            new LinkedHashMap<>(), new LinkedHashMap<>(), new LinkedHashMap<>()
+        );
+
+        resourceManager.listResourceStacks(
             "materialmaps",
             (Identifier id) -> {
                 String pathStr = id.getPath();
                 return pathStr.endsWith(".json") || pathStr.endsWith(".json5");
             }
-        ).forEach((id, resource) -> {
-            JsonObject materialMapJson;
-            try {
-                materialMapJson = Jankson.builder().build().load(resource.open());
-            } catch (Exception e) {
-                CanPipe.LOGGER.error("Couldn't parse material map json file \""+id+"\"", e);
-                return;
+        ).forEach((id, resources) -> {
+            Identifier idNormalized;
+            String type;
+
+            {
+                Identifier _idNormalized = id.withPath(id.getPath().substring("materialmaps/".length()).replace(".json5", "").replace(".json", ""));
+                _idNormalized = CanPipe.upgradeResourcePath(_idNormalized);
+
+                int slashIdx = _idNormalized.getPath().indexOf("/");
+                type = _idNormalized.getPath().substring(0, slashIdx);
+
+                idNormalized = _idNormalized.withPath(_idNormalized.getPath().substring(slashIdx+1));
             }
-            id = id.withPath(id.getPath().substring("materialmaps/".length()).replace(".json5", "").replace(".json", ""));
-            jsons.put(id, materialMapJson);
+
+            Consumer<Map<Identifier, JsonObject>> parse = (Map<Identifier, JsonObject> jsons) -> {
+                Resource resource = resources.getLast();
+                JsonObject result = new JsonObject();
+                try {
+                    result = Jankson.builder().build().load(resource.open());
+                } catch (Exception e) {
+                    CanPipe.LOGGER.error("Couldn't parse material map json file \""+id+"\" from pack \""+resource.sourcePackId()+"\"", e);
+                    return;
+                }
+                jsons.put(idNormalized, result);
+            };
+
+            Consumer<Map<Identifier, JsonObject>> parseStacked = (Map<Identifier, JsonObject> jsons) -> {
+                JsonObject result = new JsonObject();
+                for (var resource : resources) {
+                    try {
+                        JsonObject json = Jankson.builder().build().load(resource.open());
+                        JanksonUtils.mergeJsonObjectB2A(result, json);
+                    } catch (Exception e) {
+                        CanPipe.LOGGER.error("Couldn't parse material map json file \""+id+"\" from pack \""+resource.sourcePackId()+"\"", e);
+                    }
+                }
+                if (result.isEmpty()) {
+                    return;
+                }
+                JanksonUtils.mergeJsonObjectB2A(jsons.computeIfAbsent(idNormalized, _id -> new JsonObject()), result);
+            };
+
+            switch (type) {
+                // entity and block entity material maps are stacked between packs
+                case "block_entity":  // https://github.com/vram-guild/frex/blob/dbfb312dd1ed25b4d3cd1c75c1eb1c77c4087ead/common/src/main/java/io/vram/frex/impl/material/map/MaterialMapLoader.java#L207
+                    parseStacked.accept(allJsons.blockEntities); break;
+                case "entity":  // https://github.com/vram-guild/frex/blob/dbfb312dd1ed25b4d3cd1c75c1eb1c77c4087ead/common/src/main/java/io/vram/frex/impl/material/map/MaterialMapLoader.java#L222
+                    parseStacked.accept(allJsons.entities); break;
+
+                case "particle":
+                    parse.accept(allJsons.particles); break;
+                case "block":
+                    parse.accept(allJsons.blocks); break;
+                case "fluid":
+                    parse.accept(allJsons.fluids); break;
+                case "item":
+                    parse.accept(allJsons.items); break;
+
+                default:
+                    break;
+            }
         });
-        return jsons;
+
+        return allJsons;
     }
 
-    public static void loadRaw(Map<Identifier, JsonObject> materialMapsJson) {
+    public static void loadRaw(MaterialMapsJsons allJsons) {
         MaterialMaps.blocks.clear();
 
         MaterialMaps.blockEntities.clear();
@@ -142,85 +210,94 @@ final public class MaterialMaps implements PreparableReloadListener {
         final JsonObject builtinWaterMaterialMap = new JsonObject() {{ put("defaultMaterial", new JsonPrimitive("can-pipe:water")); }};
         final JsonObject builtinLavaMaterialMap = new JsonObject() {{ put("defaultMaterial", new JsonPrimitive("can-pipe:lava")); }};
 
-        materialMapsJson.computeIfAbsent(Identifier.parse("minecraft:fluid/water"), (Identifier id) -> builtinWaterMaterialMap);
-        materialMapsJson.computeIfAbsent(Identifier.parse("minecraft:fluid/flowing_water"), (Identifier id) -> builtinWaterMaterialMap);
+        allJsons.fluids.computeIfAbsent(Identifier.parse("minecraft:water"), (Identifier id) -> builtinWaterMaterialMap);
+        allJsons.fluids.computeIfAbsent(Identifier.parse("minecraft:flowing_water"), (Identifier id) -> builtinWaterMaterialMap);
 
-        materialMapsJson.computeIfAbsent(Identifier.parse("minecraft:fluid/lava"), (Identifier id) -> builtinLavaMaterialMap);
-        materialMapsJson.computeIfAbsent(Identifier.parse("minecraft:fluid/flowing_lava"), (Identifier id) -> builtinLavaMaterialMap);
+        allJsons.fluids.computeIfAbsent(Identifier.parse("minecraft:lava"), (Identifier id) -> builtinLavaMaterialMap);
+        allJsons.fluids.computeIfAbsent(Identifier.parse("minecraft:flowing_lava"), (Identifier id) -> builtinLavaMaterialMap);
 
-        for (var entry : materialMapsJson.entrySet()) {
-            Identifier id = entry.getKey();
-
-            id = CanPipe.upgradeResourcePath(id);
-
-            int slashIdx = id.getPath().indexOf("/");
-            String type = id.getPath().substring(0, slashIdx);
-            id = id.withPath(id.getPath().substring(slashIdx+1));
-
+        for (var entry : allJsons.blockEntities.entrySet()) {
             try {
-                JsonObject materialMapJson = entry.getValue();
+                var blockEntityType = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(entry.getKey());
+                if (blockEntityType.isEmpty()) continue;
+                MaterialMap materialMap = MaterialMap.load(entry.getValue());
+                MaterialMaps.blockEntities.put(blockEntityType.get().value(), materialMap);
+                MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
+            } catch (Exception e) {
+                CanPipe.LOGGER.error("Couldn't load block entity material map \""+entry.getKey()+"\"", e);
+            }
+        }
 
-                if (type.equals("entity")) {
-                    MaterialMap materialMap = MaterialMap.loadEntity(materialMapJson);
-                    var entity = BuiltInRegistries.ENTITY_TYPE.get(id);
-                    if (entity.isEmpty()) continue;
-                    MaterialMaps.entities.put(entity.get().value(), materialMap);
-                    MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
-                    continue;
-                }
+        for (var entry : allJsons.entities.entrySet()) {
+            try {
+                var entity = BuiltInRegistries.ENTITY_TYPE.get(entry.getKey());
+                if (entity.isEmpty()) continue;
+                MaterialMap materialMap = MaterialMap.loadEntity(entry.getValue());
+                MaterialMaps.entities.put(entity.get().value(), materialMap);
+                MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
+            } catch (Exception e) {
+                CanPipe.LOGGER.error("Couldn't load entity material map \""+entry.getKey()+"\"", e);
+            }
+        }
 
-                if (type.equals("particle")) {
-                    var particle = BuiltInRegistries.PARTICLE_TYPE.get(id);
-                    if (particle.isEmpty()) continue;
-                    MaterialMap materialMap = MaterialMap.loadParticle(materialMapJson);
-                    if (materialMap == null) continue;
-                    var usedMaterials = materialMap.getUsedMaterials();
-                    MaterialMaps.allUsedMaterials.addAll(usedMaterials);
-                    MaterialMaps.materialsUsedByParticles.addAll(usedMaterials);
-                    MaterialMaps.particles.put(particle.get().value(), materialMap);
-                    continue;
-                }
+        for (var entry : allJsons.particles.entrySet()) {
+            try {
+                var particle = BuiltInRegistries.PARTICLE_TYPE.get(entry.getKey());
+                if (particle.isEmpty()) continue;
+                MaterialMap materialMap = MaterialMap.loadParticle(entry.getValue());
+                if (materialMap == null) continue;
+                var usedMaterials = materialMap.getUsedMaterials();
+                MaterialMaps.allUsedMaterials.addAll(usedMaterials);
+                MaterialMaps.materialsUsedByParticles.addAll(usedMaterials);
+                MaterialMaps.particles.put(particle.get().value(), materialMap);
+            } catch (Exception e) {
+                CanPipe.LOGGER.error("Couldn't load particle material map \""+entry.getKey()+"\"", e);
+            }
+        }
 
-                MaterialMap materialMap = MaterialMap.load(materialMapJson);
-
-                if (type.equals("block")) {
-                    var block = BuiltInRegistries.BLOCK.get(id);
-                    if (block.isEmpty()) continue;
-                    MaterialMaps.blocks.put(block.get().value(), materialMap);
-                    var usedMaterials = materialMap.getUsedMaterials();
-                    MaterialMaps.allUsedMaterials.addAll(usedMaterials);
-                    var layers = MaterialMaps.getLayersUsedByBlock(block.get().value());
-                    for (var layer : layers) {
-                        materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(usedMaterials);
-                    }
-                }
-                if (type.equals("block_entity")) {
-                    var blockEntityType = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(id);
-                    if (blockEntityType.isEmpty()) continue;
-                    MaterialMaps.blockEntities.put(blockEntityType.get().value(), materialMap);
-                    MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
-                }
-                if (type.equals("fluid")) {
-                    var fluid = BuiltInRegistries.FLUID.get(id);
-                    if (fluid.isEmpty()) {
-                        continue;
-                    }
-                    MaterialMaps.fluids.put(fluid.get().value(), materialMap);
-                    var usedMaterials = materialMap.getUsedMaterials();
-                    MaterialMaps.allUsedMaterials.addAll(usedMaterials);
-                    var layers = MaterialMaps.getLayersUsedByFluid(fluid.get().value());
-                    for (var layer : layers) {
-                        materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(usedMaterials);
-                    }
-                }
-                if (type.equals("item")) {
-                    var item = BuiltInRegistries.ITEM.get(id);
-                    if (item.isEmpty()) continue;
-                    MaterialMaps.items.put(item.get().value(), materialMap);
-                    MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
+        for (var entry : allJsons.blocks.entrySet()) {
+            try {
+                var block = BuiltInRegistries.BLOCK.get(entry.getKey());
+                if (block.isEmpty()) continue;
+                MaterialMap materialMap = MaterialMap.load(entry.getValue());
+                MaterialMaps.blocks.put(block.get().value(), materialMap);
+                var usedMaterials = materialMap.getUsedMaterials();
+                MaterialMaps.allUsedMaterials.addAll(usedMaterials);
+                var layers = MaterialMaps.getLayersUsedByBlock(block.get().value());
+                for (var layer : layers) {
+                    materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(usedMaterials);
                 }
             } catch (Exception e) {
-                CanPipe.LOGGER.error("Couldn't load material map \""+id+"\"", e);
+                CanPipe.LOGGER.error("Couldn't load block material map \""+entry.getKey()+"\"", e);
+            }
+        }
+
+        for (var entry : allJsons.fluids.entrySet()) {
+            try {
+                var fluid = BuiltInRegistries.FLUID.get(entry.getKey());
+                if (fluid.isEmpty()) {continue;}
+                MaterialMap materialMap = MaterialMap.load(entry.getValue());
+                MaterialMaps.fluids.put(fluid.get().value(), materialMap);
+                var usedMaterials = materialMap.getUsedMaterials();
+                MaterialMaps.allUsedMaterials.addAll(usedMaterials);
+                var layers = MaterialMaps.getLayersUsedByFluid(fluid.get().value());
+                for (var layer : layers) {
+                    materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(usedMaterials);
+                }
+            } catch (Exception e) {
+                CanPipe.LOGGER.error("Couldn't load fluid material map \""+entry.getKey()+"\"", e);
+            }
+        }
+
+        for (var entry : allJsons.items.entrySet()) {
+            try {
+                var item = BuiltInRegistries.ITEM.get(entry.getKey());
+                if (item.isEmpty()) continue;
+                MaterialMap materialMap = MaterialMap.load(entry.getValue());
+                MaterialMaps.items.put(item.get().value(), materialMap);
+                MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
+            } catch (Exception e) {
+                CanPipe.LOGGER.error("Couldn't load item material map \""+entry.getKey()+"\"", e);
             }
         }
     }
