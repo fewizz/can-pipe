@@ -132,7 +132,7 @@ public class QuadParticleRenderStateMixin implements QuadParticleRenderStateExte
     void beforeRenderRotatedQuad(CallbackInfo ci, @Local(argsOnly = true) BufferBuilder bb) {
         if (bb instanceof VertexConsumerExtended vce) {
             Material material = Materials.get(this.canpipe_materialsIndices[this.canpipe_forEachParticleIndex]);
-            vce.canpipe_setScopedMaterial(material);
+            vce.canpipe_setScopedMaterialSupplier(_ -> material);
             ++this.canpipe_forEachParticleIndex;
         }
     }
@@ -147,7 +147,7 @@ public class QuadParticleRenderStateMixin implements QuadParticleRenderStateExte
     )
     void afterRenderRotatedQuad(CallbackInfo ci, @Local(argsOnly = true) BufferBuilder bb) {
         if (bb instanceof VertexConsumerExtended vce) {
-            vce.canpipe_setScopedMaterial(null);
+            vce.canpipe_setScopedMaterialSupplier(null);
         }
     }
 

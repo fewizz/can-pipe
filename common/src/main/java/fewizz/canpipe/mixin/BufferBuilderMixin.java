@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -27,7 +28,6 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.helpers.NormalAndTangent;
 import fewizz.canpipe.material.Material;
-import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -48,8 +48,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow private long beginElement(VertexFormatElement vertexFormatElement) { return -1; }
     @Shadow private static byte normalIntValue(float f) { return 0; }
 
-    @Unique private MaterialMap canpipe_materialMap = null;
-    @Unique private Material canpipe_material = null;  // If material is set, material map will be ignored
+    @Unique private Function<TextureAtlasSprite, Material> canpipe_materialSupplier = null;
     @Unique private boolean canpipe_glint = false;
     @Unique private boolean canpipe_entityGlint = false;
     @Unique private Supplier<TextureAtlasSprite> canpipe_spriteSupplier = null;
@@ -200,11 +199,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
 
         if (materialIndexPtr != -1) {
-            Material material = this.canpipe_material;
-
-            if (material == null && this.canpipe_materialMap != null) {
-                material = this.canpipe_materialMap.getMaterial(sprite);
-            }
+            Material material = this.canpipe_materialSupplier != null ? this.canpipe_materialSupplier.apply(sprite) : null;
 
             short materialIndex = material != null ? material.id() : -1;
 
@@ -341,13 +336,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
-    public void canpipe_setScopedMaterialMap(MaterialMap materialmap) {
-        this.canpipe_materialMap = materialmap;
-    }
-
-    @Override
-    public void canpipe_setScopedMaterial(Material material) {
-        this.canpipe_material = material;
+    public void canpipe_setScopedMaterialSupplier(Function<TextureAtlasSprite, Material> materialSupplier) {
+        this.canpipe_materialSupplier = materialSupplier;
     }
 
     @Override

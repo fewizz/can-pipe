@@ -78,7 +78,9 @@ public class ItemFeatureRendererMixin {
         VertexConsumer vc = buffer.getBuffer(renderType);
         VertexConsumerExtended vce = (VertexConsumerExtended) vc;
 
-        vce.canpipe_setScopedMaterialMap(this.canpipe_materialMap);
+        if (this.canpipe_materialMap != null) {
+            vce.canpipe_setScopedMaterialSupplier(sprite -> this.canpipe_materialMap.getMaterial(sprite));
+        }
 
         if (foilType != ItemStackRenderState.FoilType.NONE) {
             vce.canpipe_setScopedGlint(true);
@@ -107,7 +109,7 @@ public class ItemFeatureRendererMixin {
         VertexConsumer vc = buffer.getBuffer(renderType);
         VertexConsumerExtended vce = (VertexConsumerExtended) vc;
         vce.canpipe_setScopedGlint(false);
-        vce.canpipe_setScopedMaterialMap(null);
+        vce.canpipe_setScopedMaterialSupplier(null);
     }
 
 }

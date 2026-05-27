@@ -76,7 +76,7 @@ public class SectionCompilerMixin {
                 blockStateAndMaterialMap.right = MaterialMaps.getForBlock(blockStateAndMaterialMap.left.getBlock());
             }
 
-            ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialMap(blockStateAndMaterialMap.right);
+            ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialSupplier(sprite -> blockStateAndMaterialMap.right.getMaterial(sprite));
             ((VertexConsumerExtended) bufferBuilder).canpipe_forceNormalRecomputation(true);
         }
     }
@@ -95,7 +95,7 @@ public class SectionCompilerMixin {
     )
     void afterPuttingQuad(CallbackInfo ci, @Local BufferBuilder bufferBuilder) {
         if (((VertexConsumerExtended) bufferBuilder).canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
-            ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialMap(null);
+            ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialSupplier(null);
         }
     }
 

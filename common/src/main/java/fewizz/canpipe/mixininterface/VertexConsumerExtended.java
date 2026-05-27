@@ -1,12 +1,12 @@
 package fewizz.canpipe.mixininterface;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.material.Material;
-import fewizz.canpipe.material.MaterialMap;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 public interface VertexConsumerExtended extends VertexConsumer {
@@ -28,8 +28,7 @@ public interface VertexConsumerExtended extends VertexConsumer {
 
     void canpipe_setScopedSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier);
 
-    void canpipe_setScopedMaterialMap(MaterialMap materialMap);
-    void canpipe_setScopedMaterial(Material material);  // If material is set, material map will be ignored
+    void canpipe_setScopedMaterialSupplier(Function<TextureAtlasSprite, Material> materialSupplier);
 
     void canpipe_setScopedGlint(boolean glint);
     void canpipe_setScopedEntityGlint(boolean glint);

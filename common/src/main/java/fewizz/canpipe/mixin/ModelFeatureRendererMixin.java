@@ -58,19 +58,23 @@ public class ModelFeatureRendererMixin {
             Identifier textureIdentifier = tex != null ? tex.location() : null;
 
             MaterialMap materialMap = extra.materialMap();
-            Material material = materialMap.spriteMap().get(textureIdentifier);
-            if (material == null) {
-                material = materialMap.getMaterial(sprite);
+            Material material;
+            {
+                Material _material = materialMap.spriteMap().get(textureIdentifier);
+                if (_material == null) {
+                    _material = materialMap.getMaterial(sprite);
+                }
+                material = _material;
             }
 
-            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterial(material);
+            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(_ -> material);
             ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(extra.entityGlint());
         }
     }
 
     @Inject(method = "renderModel", at = @At("RETURN"))
     void afterRenderModel(CallbackInfo ci, @Local(ordinal = 0) VertexConsumer buffer) {
-        ((VertexConsumerExtended) buffer).canpipe_setScopedMaterial(null);
+        ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(null);
         ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(false);
         ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(null);
     }

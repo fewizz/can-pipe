@@ -60,15 +60,18 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
 
     @Inject(method = "buffer", at = @At("HEAD"))
     void beforeBuffer(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
+        MaterialMap materialMap = ((QuadViewExtended) this).canpipe_getMaterialMap();
+        if (materialMap != null) {
+            ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
+        }
         ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedSpriteSupplier(() -> ((QuadViewExtended) this).canpipe_getSprite());
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedMaterialMap(((QuadViewExtended) this).canpipe_getMaterialMap());
         ((VertexConsumerExtended) vertexConsumer).canpipe_forceNormalRecomputation(true);
     }
 
     @Inject(method = "buffer", at = @At("RETURN"))
     void afterBuffer(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
         ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedSpriteSupplier(null);
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedMaterialMap(null);
+        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedMaterialSupplier(null);
         ((VertexConsumerExtended) vertexConsumer).canpipe_forceNormalRecomputation(false);
     }
 
