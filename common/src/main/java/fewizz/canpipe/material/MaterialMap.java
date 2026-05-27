@@ -2,11 +2,15 @@ package fewizz.canpipe.material;
 
 import java.util.*;
 
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.jspecify.annotations.Nullable;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 
 public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Material> spriteMap) {
@@ -85,6 +89,33 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
             }
         }
         return result;
+    }
+
+    public Material getMaterial(Identifier textureIdentifier, TextureAtlasSprite atlasSprite) {
+        Material material = this.spriteMap.get(textureIdentifier);
+
+        if (material == null && this.spriteMap != null && atlasSprite != null) {
+            Minecraft mc = Minecraft.getInstance();
+
+            MutableObject<TextureAtlas> atlas = new MutableObject<>();
+            mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
+                if (atlas.get() == null && possibleAtlas.location().equals(atlasSprite.atlasLocation())) {
+                    atlas.setValue(possibleAtlas);
+                }
+            });
+
+            for (var kv : this.spriteMap.entrySet()) {
+                if (atlas.get().getSprite(kv.getKey()) == atlasSprite) {
+                    material = kv.getValue();
+                }
+            }
+        }
+
+        if (material == null) {
+            material = this.defaultMaterial;
+        }
+
+        return material;
     }
 
 }

@@ -2,7 +2,6 @@ package fewizz.canpipe.mixin;
 
 import java.util.function.Supplier;
 
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
@@ -31,8 +30,6 @@ import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 
@@ -208,30 +205,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             Material material = this.canpipe_material;
 
             if (material == null && this.canpipe_materialMap != null) {
-                if (this.canpipe_textureIdentifier != null) {
-                    material = this.canpipe_materialMap.spriteMap().get(this.canpipe_textureIdentifier);
-                }
-
-                if (material == null && this.canpipe_materialMap.spriteMap() != null && sprite != null) {
-                    Minecraft mc = Minecraft.getInstance();
-
-                    MutableObject<TextureAtlas> atlas = new MutableObject<>();
-                    mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
-                        if (atlas.get() == null && possibleAtlas.location().equals(sprite.atlasLocation())) {
-                            atlas.setValue(possibleAtlas);
-                        }
-                    });
-
-                    for (var kv : this.canpipe_materialMap.spriteMap().entrySet()) {
-                        if (atlas.get().getSprite(kv.getKey()) == sprite) {
-                            material = kv.getValue();
-                        }
-                    }
-                }
-
-                if (material == null) {
-                    material = canpipe_materialMap.defaultMaterial();
-                }
+                material = this.canpipe_materialMap.getMaterial(this.canpipe_textureIdentifier, sprite);
             }
 
             short materialIndex = material != null ? material.id() : -1;

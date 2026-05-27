@@ -25,6 +25,26 @@ public record Material(
     boolean disableDiffuse,
     boolean disableColorIndex,
     boolean emissive
+    // Not implemented:
+    // blendMode
+    // preset (solid, cutout, cutout_mipped, translucent, default)
+    // blur
+    // cull
+    // cutout (cutout_half, cutout_tenth, cutout_zero, cutout_alpha, cutout_none)
+    // decal (polygon_offset, view_offset, none)
+    // depthTest (always, equal, lequal, disable)
+    // discardsTexture
+    // flashOverlay
+    // fog
+    // hurtOverlay
+    // lines
+    // sorted
+    // target (main, outline, translucent, particles, weather, clouds, entities)
+    // texture
+    // transparency (none, additive, lightning, glint, crumbling, translucent, default)
+    // unmipped
+    // writeMask (color, depth, color_depth)
+    // castShadows
 ) {
 
     static Material load(

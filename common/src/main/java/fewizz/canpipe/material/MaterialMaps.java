@@ -195,7 +195,6 @@ final public class MaterialMaps implements PreparableReloadListener {
 
     public static void loadRaw(MaterialMapsJsons allJsons) {
         MaterialMaps.blocks.clear();
-
         MaterialMaps.blockEntities.clear();
         MaterialMaps.fluids.clear();
         MaterialMaps.items.clear();
