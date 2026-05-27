@@ -12,6 +12,8 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.helpers.ModelSubmitExtra;
+import fewizz.canpipe.material.Material;
+import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
@@ -20,6 +22,8 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderSetup.TextureBinding;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.resources.Identifier;
 
 @Mixin(ModelFeatureRenderer.class)
 public class ModelFeatureRendererMixin {
@@ -38,35 +42,37 @@ public class ModelFeatureRendererMixin {
         @Local(ordinal = 0) VertexConsumer buffer,
         @Local RenderType renderType
     ) {
+        TextureAtlasSprite sprite = submit.sprite();
+
+        if (sprite != null) {
+            ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(() -> sprite);
+        }
 
         Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> extras =
             ((SubmitNodeCollectorExtended) this.canpipe_nodeCollectionHeld).canpipe_getModelSubmitsExtras();
-
         ModelSubmitExtra extra = extras.get(submit);
 
-        if (submit.sprite() == null) {
+        if (extra != null) {
             RenderSetup renderSetup = ((RenderTypeAccessor) renderType).canpipe_getState();
             TextureBinding tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
-            if (tex != null) {
-                ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(tex.location());
-            }
-        }
-        else {
-            ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(() -> submit.sprite());
-        }
+            Identifier textureIdentifier = tex != null ? tex.location() : null;
 
-        if (extra != null) {
-            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(extra.materialMap());
+            MaterialMap materialMap = extra.materialMap();
+            Material material = materialMap.spriteMap().get(textureIdentifier);
+            if (material == null) {
+                material = materialMap.getMaterial(sprite);
+            }
+
+            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterial(material);
             ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(extra.entityGlint());
         }
     }
 
     @Inject(method = "renderModel", at = @At("RETURN"))
     void afterRenderModel(CallbackInfo ci, @Local(ordinal = 0) VertexConsumer buffer) {
-        ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialMap(null);
+        ((VertexConsumerExtended) buffer).canpipe_setScopedMaterial(null);
         ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(false);
         ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(null);
-        ((VertexConsumerExtended) buffer).canpipe_setScopedTextureIdentifier(null);
     }
 
 }

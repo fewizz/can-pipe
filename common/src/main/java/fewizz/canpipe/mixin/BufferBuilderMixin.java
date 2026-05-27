@@ -31,7 +31,6 @@ import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.resources.Identifier;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
@@ -56,7 +55,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private Supplier<TextureAtlasSprite> canpipe_spriteSupplier = null;
     @Unique private boolean canpipe_recomputeNormal = false;
     @Unique private Float canpipe_aoPending = null;
-    @Unique private Identifier canpipe_textureIdentifier = null;
 
     @Unique private int canpipe_aoOffset;
     @Unique private int canpipe_uv0Offset;
@@ -205,14 +203,17 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             Material material = this.canpipe_material;
 
             if (material == null && this.canpipe_materialMap != null) {
-                material = this.canpipe_materialMap.getMaterial(this.canpipe_textureIdentifier, sprite);
+                material = this.canpipe_materialMap.getMaterial(sprite);
             }
 
             short materialIndex = material != null ? material.id() : -1;
+
             byte materialFlags = (byte) 0;
+
+            materialFlags |= (byte) (this.canpipe_glint ? 1 : 0) << 0;
+            materialFlags |= (byte) (this.canpipe_entityGlint ? 1 : 0) << 1;
+
             if (material != null) {
-                materialFlags |= (byte) (this.canpipe_glint ? 1 : 0) << 0;
-                materialFlags |= (byte) (this.canpipe_entityGlint ? 1 : 0) << 1;
                 materialFlags |= (byte) (material.disableAO() ? 1 : 0) << 2;
                 materialFlags |= (byte) (material.disableDiffuse() ? 1 : 0) << 3;
                 materialFlags |= (byte) (material.disableColorIndex() ? 1 : 0) << 4;
@@ -362,11 +363,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Override
     public void canpipe_forceNormalRecomputation(boolean recompute) {
         this.canpipe_recomputeNormal = recompute;
-    }
-
-    @Override
-    public void canpipe_setScopedTextureIdentifier(Identifier textureIdentifier) {
-        this.canpipe_textureIdentifier = textureIdentifier;
     }
 
     @Override public float canpipe_getU(int vertexOffset) {

@@ -8,7 +8,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMap;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.resources.Identifier;
 
 public interface VertexConsumerExtended extends VertexConsumer {
 
@@ -31,8 +30,6 @@ public interface VertexConsumerExtended extends VertexConsumer {
 
     void canpipe_setScopedMaterialMap(MaterialMap materialMap);
     void canpipe_setScopedMaterial(Material material);  // If material is set, material map will be ignored
-
-    void canpipe_setScopedTextureIdentifier(Identifier textureIdentifier);
 
     void canpipe_setScopedGlint(boolean glint);
     void canpipe_setScopedEntityGlint(boolean glint);

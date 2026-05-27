@@ -91,10 +91,10 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
         return result;
     }
 
-    public Material getMaterial(Identifier textureIdentifier, TextureAtlasSprite atlasSprite) {
-        Material material = this.spriteMap.get(textureIdentifier);
+    public Material getMaterial(@Nullable TextureAtlasSprite atlasSprite) {
+        Material material = null;
 
-        if (material == null && this.spriteMap != null && atlasSprite != null) {
+        if (this.spriteMap != null && atlasSprite != null) {
             Minecraft mc = Minecraft.getInstance();
 
             MutableObject<TextureAtlas> atlas = new MutableObject<>();
@@ -107,6 +107,7 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
             for (var kv : this.spriteMap.entrySet()) {
                 if (atlas.get().getSprite(kv.getKey()) == atlasSprite) {
                     material = kv.getValue();
+                    break;
                 }
             }
         }
