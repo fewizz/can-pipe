@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 
 import fewizz.canpipe.helpers.ModelSubmitExtra;
+import fewizz.canpipe.material.EntityMaterialMap;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
@@ -25,7 +26,7 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
 
     @Shadow public SubmitNodeCollection order(final int order) { return null; }
 
-    @Unique private MaterialMap canpipe_modelSubmitMaterialMap = null;
+    @Unique private EntityMaterialMap canpipe_modelSubmitMaterialMap = null;
 
     @ModifyReturnValue(method = "lambda$order$0", at = @At("RETURN"))
     SubmitNodeCollection onSubmitNodeCollectionInit(SubmitNodeCollection snc) {
@@ -44,7 +45,7 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
     }
 
     @Override
-    public void canpipe_setScopedModelMaterialMap(MaterialMap materialMap) {
+    public void canpipe_setScopedModelMaterialMap(EntityMaterialMap materialMap) {
         this.canpipe_modelSubmitMaterialMap = materialMap;
         for (SubmitNodeCollection snc : this.submitsPerOrder.values()) {
             ((SubmitNodeCollectorExtended) snc).canpipe_setScopedModelMaterialMap(materialMap);

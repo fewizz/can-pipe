@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import fewizz.canpipe.helpers.ModelSubmitExtra;
+import fewizz.canpipe.material.EntityMaterialMap;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
@@ -29,14 +30,14 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Shadow @Final private ModelFeatureRenderer.Storage modelSubmits;
 
     @Unique private MaterialMap canpipe_pendingItemSubmitMaterialMap = null;
-    @Unique private MaterialMap canpipe_scopedModelSubmitMaterialMap = null;
+    @Unique private EntityMaterialMap canpipe_scopedModelSubmitMaterialMap = null;
     @Unique private boolean canpipe_pendingModelSubmitEntityGlint = false;
     @Unique private Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_itemSubmitsMaterialMaps;
     @Unique private Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> canpipe_modelSubmitExtras;
 
     @Override public void canpipe_setPendingItemSubmitMaterialMap(MaterialMap materialMap) { this.canpipe_pendingItemSubmitMaterialMap = materialMap; }
     @Override public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() { return this.canpipe_itemSubmitsMaterialMaps; }
-    @Override public void canpipe_setScopedModelMaterialMap(MaterialMap materialMap) { canpipe_scopedModelSubmitMaterialMap = materialMap; }
+    @Override public void canpipe_setScopedModelMaterialMap(EntityMaterialMap materialMap) { canpipe_scopedModelSubmitMaterialMap = materialMap; }
     @Override public void canpipe_setPendingModelEntityGlint() { this.canpipe_pendingModelSubmitEntityGlint = true; }
     @Override public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() { return this.canpipe_modelSubmitExtras; }
 

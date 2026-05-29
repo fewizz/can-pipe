@@ -3,6 +3,7 @@ package fewizz.canpipe.mixininterface;
 import java.util.Map;
 
 import fewizz.canpipe.helpers.ModelSubmitExtra;
+import fewizz.canpipe.material.EntityMaterialMap;
 import fewizz.canpipe.material.MaterialMap;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 
@@ -12,7 +13,7 @@ public interface SubmitNodeCollectorExtended /*extends OrderedSubmitNodeCollecto
 
     Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps();
 
-    void canpipe_setScopedModelMaterialMap(MaterialMap materialMap);
+    void canpipe_setScopedModelMaterialMap(EntityMaterialMap materialMap);
     void canpipe_setPendingModelEntityGlint();
 
     Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras();

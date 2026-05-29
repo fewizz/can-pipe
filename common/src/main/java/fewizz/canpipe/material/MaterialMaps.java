@@ -47,10 +47,10 @@ final public class MaterialMaps implements PreparableReloadListener {
     private MaterialMaps() {}
 
     private static final Map<Block, MaterialMap> blocks = new HashMap<>();
-    private static final Map<BlockEntityType<?>, MaterialMap> blockEntities = new HashMap<>();
+    private static final Map<BlockEntityType<?>, EntityMaterialMap> blockEntities = new HashMap<>();
     private static final Map<Item, MaterialMap> items = new HashMap<>();
     private static final Map<Fluid, MaterialMap> fluids = new HashMap<>();
-    private static final Map<EntityType<?>, MaterialMap> entities = new HashMap<>();
+    private static final Map<EntityType<?>, EntityMaterialMap> entities = new HashMap<>();
     private static final Map<ParticleType<?>, MaterialMap> particles = new HashMap<>();
 
     private static final Set<Material> allUsedMaterials = new HashSet<>();
@@ -61,7 +61,7 @@ final public class MaterialMaps implements PreparableReloadListener {
         return MaterialMaps.blocks.get(block);
     }
 
-    public static MaterialMap getForBlockEntity(BlockEntityType<?> blockEntityType) {
+    public static EntityMaterialMap getForBlockEntity(BlockEntityType<?> blockEntityType) {
         return MaterialMaps.blockEntities.get(blockEntityType);
     }
 
@@ -73,7 +73,7 @@ final public class MaterialMaps implements PreparableReloadListener {
         return MaterialMaps.fluids.get(fluid);
     }
 
-    public static MaterialMap getForEntity(EntityType<?> entityType) {
+    public static EntityMaterialMap getForEntity(EntityType<?> entityType) {
         return MaterialMaps.entities.get(entityType);
     }
 
@@ -219,7 +219,7 @@ final public class MaterialMaps implements PreparableReloadListener {
             try {
                 var blockEntityType = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(entry.getKey());
                 if (blockEntityType.isEmpty()) continue;
-                MaterialMap materialMap = MaterialMap.load(entry.getValue());
+                EntityMaterialMap materialMap = EntityMaterialMap.load(entry.getKey(), entry.getValue());
                 MaterialMaps.blockEntities.put(blockEntityType.get().value(), materialMap);
                 MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
             } catch (Exception e) {
@@ -231,7 +231,7 @@ final public class MaterialMaps implements PreparableReloadListener {
             try {
                 var entity = BuiltInRegistries.ENTITY_TYPE.get(entry.getKey());
                 if (entity.isEmpty()) continue;
-                MaterialMap materialMap = MaterialMap.loadEntity(entry.getValue());
+                EntityMaterialMap materialMap = EntityMaterialMap.load(entry.getKey(), entry.getValue());
                 MaterialMaps.entities.put(entity.get().value(), materialMap);
                 MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
             } catch (Exception e) {

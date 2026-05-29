@@ -7,7 +7,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import fewizz.canpipe.material.MaterialMap;
+import fewizz.canpipe.material.EntityMaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -40,7 +40,7 @@ public class EntityRenderDispatcherMixin {
         Operation<Void> operation
     ) {
         try {
-            MaterialMap materialMap = MaterialMaps.getForEntity(state.entityType);
+            EntityMaterialMap materialMap = MaterialMaps.getForEntity(state.entityType);
             ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setScopedModelMaterialMap(materialMap);
             operation.call(instance, state, poseStack, submitNodeCollector, camera);
         } finally {

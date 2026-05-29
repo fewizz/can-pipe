@@ -1,12 +1,14 @@
 package fewizz.canpipe.material;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.jspecify.annotations.Nullable;
 
 import blue.endless.jankson.JsonObject;
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -32,36 +34,6 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
                 Materials.get(Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "material")))
             );
         }
-        return new MaterialMap(defaultMaterial, spriteMap);
-    }
-
-    static MaterialMap loadEntity(JsonObject json) {
-        Material defaultMaterial = null;
-        String defaultMaterialStr = json.get(String.class, "defaultMaterial");
-        // TODO check for identity transform
-        if (defaultMaterialStr != null) {
-            Identifier materialLocation = Identifier.parse(defaultMaterialStr);
-            defaultMaterial = Materials.get(materialLocation);
-        }
-
-        Map<Identifier, Material> spriteMap = new HashMap<>();
-
-        for (JsonObject entry : JanksonUtils.listOfObjects(json, "map")) {
-            JsonObject predicate = JanksonUtils.objectOrThrow(entry, "predicate");
-            JsonObject materialPredicate = JanksonUtils.objectOrThrow(predicate, "materialPredicate");
-            String textureIdStr = materialPredicate.get(String.class, "texture");
-            if (textureIdStr == null) {
-                continue;
-            }
-            Identifier textureId = Identifier.parse(textureIdStr);
-            textureId = CanPipe.upgradeResourcePath(textureId);
-
-            Identifier materialId = Identifier.parse(JanksonUtils.stringOrThrow(entry, "material"));
-            Material material = Materials.get(materialId);
-
-            spriteMap.put(textureId, material);
-        }
-
         return new MaterialMap(defaultMaterial, spriteMap);
     }
 

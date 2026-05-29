@@ -12,18 +12,17 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.helpers.ModelSubmitExtra;
+import fewizz.canpipe.material.EntityMaterialMap;
 import fewizz.canpipe.material.Material;
-import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderSetup.TextureBinding;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.resources.Identifier;
 
 @Mixin(ModelFeatureRenderer.class)
 public class ModelFeatureRendererMixin {
@@ -55,19 +54,31 @@ public class ModelFeatureRendererMixin {
         if (extra != null) {
             RenderSetup renderSetup = ((RenderTypeAccessor) renderType).canpipe_getState();
             TextureBinding tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
-            Identifier textureIdentifier = tex != null ? tex.location() : null;
 
-            MaterialMap materialMap = extra.materialMap();
+            var predicateCtx = new EntityMaterialMap.MaterialPedicateContext(
+                /* textureID */ tex != null ? tex.location() : null,
+                /* renderLayerName */ ((RenderTypeAccessor) renderType).canpipe_getName().toLowerCase()
+            );
+
+            EntityMaterialMap materialMap = extra.materialMap();
             Material material;
-            {
-                Material _material = materialMap.spriteMap().get(textureIdentifier);
-                if (_material == null) {
-                    _material = materialMap.getMaterial(sprite);
+
+            if (materialMap == null) {
+                material = null;
+            }
+            else {
+                Material foundMaterial = null;
+                for (var materialByPredicates : materialMap.materialsByPredicates()) {
+                    boolean allTrue = materialByPredicates.predicates().stream().allMatch(p -> p.test(predicateCtx));
+                    if (allTrue) {
+                        foundMaterial = materialByPredicates.material();
+                        break;
+                    }
                 }
-                material = _material;
+                material = foundMaterial != null ? foundMaterial : materialMap.defaultMaterial();;
             }
 
-            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(_ -> material);
+            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(_sprite -> material);
             ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(extra.entityGlint());
         }
     }
