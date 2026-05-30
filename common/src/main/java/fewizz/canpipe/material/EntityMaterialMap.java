@@ -32,21 +32,29 @@ public record EntityMaterialMap(
         Material material
     ) {}
 
-    static EntityMaterialMap load(Identifier id, JsonObject json) {
+    static EntityMaterialMap load(Identifier id, List<JsonObject> jsons) {
         Material defaultMaterial = null;
-        String defaultMaterialStr = json.get(String.class, "defaultMaterial");
 
-        if (defaultMaterialStr != null) {
-            Identifier materialLocation = Identifier.parse(defaultMaterialStr);
-            defaultMaterial = Materials.get(materialLocation);
+        // from top to bottom https://github.com/vram-guild/frex/blob/dbfb312dd1ed25b4d3cd1c75c1eb1c77c4087ead/common/src/main/java/io/vram/frex/impl/material/map/EntityMaterialMapDeserializer.java#L68
+        for (var json : jsons.reversed()) {
+            String defaultMaterialStr = json.get(String.class, "defaultMaterial");
+            if (defaultMaterialStr == null) { continue; }
+
+            defaultMaterial = Materials.get(Identifier.parse(defaultMaterialStr));
+
+            if (defaultMaterial != null) {
+                break;
+            }
         }
 
         List<MaterialPredicates> materialsByPredicate = new ArrayList<>();
 
-        for (JsonObject entry : JanksonUtils.listOfObjects(json, "map")) {
-            MaterialPredicates materialPredicates = tryLoadMaterialPredicates(id, entry);
-            if (materialPredicates != null) {
-                materialsByPredicate.add(materialPredicates);
+        for (var json : jsons) {
+            for (JsonObject entry : JanksonUtils.listOfObjects(json, "map")) {
+                MaterialPredicates materialPredicates = tryLoadMaterialPredicates(id, entry);
+                if (materialPredicates != null) {
+                    materialsByPredicate.add(materialPredicates);
+                }
             }
         }
 

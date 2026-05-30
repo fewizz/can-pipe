@@ -107,11 +107,11 @@ final public class MaterialMaps implements PreparableReloadListener {
     }
 
     record MaterialMapsJsons(
-        Map<Identifier, JsonObject> blockEntities,
+        Map<Identifier, List<JsonObject>> blockEntities,
+        Map<Identifier, List<JsonObject>> entities,
         Map<Identifier, JsonObject> blocks,
         Map<Identifier, JsonObject> fluids,
         Map<Identifier, JsonObject> items,
-        Map<Identifier, JsonObject> entities,
         Map<Identifier, JsonObject> particles
     ) {}
 
@@ -153,12 +153,11 @@ final public class MaterialMaps implements PreparableReloadListener {
                 jsons.put(idNormalized, result);
             };
 
-            Consumer<Map<Identifier, JsonObject>> parseStacked = (Map<Identifier, JsonObject> jsons) -> {
-                JsonObject result = new JsonObject();
+            Consumer<Map<Identifier, List<JsonObject>>> parseStacked = (Map<Identifier, List<JsonObject>> jsons) -> {
+                List<JsonObject> result = new ArrayList<JsonObject>();
                 for (var resource : resources) {
                     try {
-                        JsonObject json = Jankson.builder().build().load(resource.open());
-                        JanksonUtils.mergeJsonObjectB2A(result, json);
+                        result.add(Jankson.builder().build().load(resource.open()));
                     } catch (Exception e) {
                         CanPipe.LOGGER.error("Couldn't parse material map json file \""+id+"\" from pack \""+resource.sourcePackId()+"\"", e);
                     }
@@ -166,7 +165,7 @@ final public class MaterialMaps implements PreparableReloadListener {
                 if (result.isEmpty()) {
                     return;
                 }
-                JanksonUtils.mergeJsonObjectB2A(jsons.computeIfAbsent(idNormalized, _id -> new JsonObject()), result);
+                jsons.put(idNormalized, result);
             };
 
             switch (type) {

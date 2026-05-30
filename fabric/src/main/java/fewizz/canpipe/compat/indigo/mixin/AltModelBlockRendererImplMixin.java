@@ -58,7 +58,7 @@ public class AltModelBlockRendererImplMixin {
     )
     void shadeQuad(CallbackInfo ci, @Local MutableQuadViewImpl quad) {
         if (Pipelines.getCurrent() != null) {
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < 4; ++i) {  // AO is handled by pipeline
                 ((MutableQuadViewExtended) quad).canpipe_setAO(i, this.aoCalc.ao[i]);
                 this.aoCalc.ao[i] = 1.0F;
             }
