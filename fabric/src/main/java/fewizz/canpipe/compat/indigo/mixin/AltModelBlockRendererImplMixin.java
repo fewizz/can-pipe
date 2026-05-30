@@ -30,7 +30,7 @@ public class AltModelBlockRendererImplMixin {
         )
     )
     void beforeEmitQuads(CallbackInfo ci, @Local QuadEmitter output, @Local BlockState blockState) {
-        ((MutableQuadViewExtended) output).canpipe_setMaterialMap(MaterialMaps.getForBlock(blockState.getBlock()));
+        ((MutableQuadViewExtended) output).canpipe_setMaterialMap(MaterialMaps.getForBlockState(blockState));
     }
 
     @Inject(

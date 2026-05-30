@@ -73,7 +73,7 @@ public class SectionCompilerMixin {
         if (((VertexConsumerExtended) bufferBuilder).canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             var blockStateAndMaterialMap = this.canpipe_capturedBlockState.get();
             if (blockStateAndMaterialMap.right == null) {
-                blockStateAndMaterialMap.right = MaterialMaps.getForBlock(blockStateAndMaterialMap.left.getBlock());
+                blockStateAndMaterialMap.right = MaterialMaps.getForBlockState(blockStateAndMaterialMap.left);
             }
 
             ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialSupplier(sprite -> blockStateAndMaterialMap.right.getMaterial(sprite));

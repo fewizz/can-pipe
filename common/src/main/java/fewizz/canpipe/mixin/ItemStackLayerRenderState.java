@@ -47,7 +47,7 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
         if (submitNodeCollector instanceof SubmitNodeCollectorExtended snce) {
             MaterialMap materialMap;
             if (item instanceof BlockItem bi) {
-                materialMap = MaterialMaps.getForBlock(bi.getBlock());
+                materialMap = MaterialMaps.getForBlockState(bi.getBlock().defaultBlockState());
             }
             else {
                 materialMap = MaterialMaps.getForItem(item);

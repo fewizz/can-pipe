@@ -21,7 +21,6 @@ import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -39,26 +38,32 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 
 final public class MaterialMaps implements PreparableReloadListener {
 
     public static final MaterialMaps INSTANCE = new MaterialMaps();
     private MaterialMaps() {}
 
-    private static final Map<Block, MaterialMap> blocks = new HashMap<>();
+    private static final Map<BlockState, MaterialMap> blocks = new HashMap<>();
+    private static final Map<FluidState, MaterialMap> fluids = new HashMap<>();
     private static final Map<BlockEntityType<?>, EntityMaterialMap> blockEntities = new HashMap<>();
-    private static final Map<Item, MaterialMap> items = new HashMap<>();
-    private static final Map<Fluid, MaterialMap> fluids = new HashMap<>();
     private static final Map<EntityType<?>, EntityMaterialMap> entities = new HashMap<>();
+    private static final Map<Item, MaterialMap> items = new HashMap<>();
     private static final Map<ParticleType<?>, MaterialMap> particles = new HashMap<>();
 
     private static final Set<Material> allUsedMaterials = new HashSet<>();
     private static final Set<Material> materialsUsedByParticles = new HashSet<>();
     private static final Map<ChunkSectionLayer, Set<Material>> materialsUsedByLayer = new EnumMap<>(ChunkSectionLayer.class);
 
-    public static MaterialMap getForBlock(Block block) {
-        return MaterialMaps.blocks.get(block);
+    public static MaterialMap getForBlockState(BlockState blockState) {
+        return MaterialMaps.blocks.get(blockState);
+    }
+
+    public static MaterialMap getForFluidState(FluidState fluidState) {
+        return MaterialMaps.fluids.get(fluidState);
     }
 
     public static EntityMaterialMap getForBlockEntity(BlockEntityType<?> blockEntityType) {
@@ -67,10 +72,6 @@ final public class MaterialMaps implements PreparableReloadListener {
 
     public static MaterialMap getForItem(Item item) {
         return MaterialMaps.items.get(item);
-    }
-
-    public static MaterialMap getForFluid(Fluid fluid) {
-        return MaterialMaps.fluids.get(fluid);
     }
 
     public static EntityMaterialMap getForEntity(EntityType<?> entityType) {
@@ -240,14 +241,15 @@ final public class MaterialMaps implements PreparableReloadListener {
 
         for (var entry : allJsons.particles.entrySet()) {
             try {
-                var particle = BuiltInRegistries.PARTICLE_TYPE.get(entry.getKey());
-                if (particle.isEmpty()) continue;
+                var possibleParticle = BuiltInRegistries.PARTICLE_TYPE.get(entry.getKey());
+                if (possibleParticle.isEmpty()) continue;
+                ParticleType<?> particle = possibleParticle.get().value();
                 MaterialMap materialMap = MaterialMap.loadParticle(entry.getValue());
                 if (materialMap == null) continue;
                 var usedMaterials = materialMap.getUsedMaterials();
                 MaterialMaps.allUsedMaterials.addAll(usedMaterials);
                 MaterialMaps.materialsUsedByParticles.addAll(usedMaterials);
-                MaterialMaps.particles.put(particle.get().value(), materialMap);
+                MaterialMaps.particles.put(particle, materialMap);
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't load particle material map \""+entry.getKey()+"\"", e);
             }
@@ -255,13 +257,20 @@ final public class MaterialMaps implements PreparableReloadListener {
 
         for (var entry : allJsons.blocks.entrySet()) {
             try {
-                var block = BuiltInRegistries.BLOCK.get(entry.getKey());
-                if (block.isEmpty()) continue;
-                MaterialMap materialMap = MaterialMap.load(entry.getValue());
-                MaterialMaps.blocks.put(block.get().value(), materialMap);
-                var usedMaterials = materialMap.getUsedMaterials();
+                var possibleBlock = BuiltInRegistries.BLOCK.get(entry.getKey());
+                if (possibleBlock.isEmpty()) continue;
+                Block block = possibleBlock.get().value();
+
+                VariantsMaterialMap<BlockState> blockMaterialMap = VariantsMaterialMap.load(entry.getValue(), block.getStateDefinition().getPossibleStates());
+
+                if (blockMaterialMap.defaultMap() != null) {
+                    MaterialMaps.blocks.put(block.defaultBlockState(), blockMaterialMap.defaultMap());
+                }
+                MaterialMaps.blocks.putAll(blockMaterialMap.variants());
+
+                var usedMaterials = blockMaterialMap.getUsedMaterials();
                 MaterialMaps.allUsedMaterials.addAll(usedMaterials);
-                var layers = MaterialMaps.getLayersUsedByBlock(block.get().value());
+                var layers = MaterialMaps.getLayersUsedByBlock(block);
                 for (var layer : layers) {
                     materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(usedMaterials);
                 }
@@ -272,13 +281,20 @@ final public class MaterialMaps implements PreparableReloadListener {
 
         for (var entry : allJsons.fluids.entrySet()) {
             try {
-                var fluid = BuiltInRegistries.FLUID.get(entry.getKey());
-                if (fluid.isEmpty()) {continue;}
-                MaterialMap materialMap = MaterialMap.load(entry.getValue());
-                MaterialMaps.fluids.put(fluid.get().value(), materialMap);
-                var usedMaterials = materialMap.getUsedMaterials();
+                var possibleFluid = BuiltInRegistries.FLUID.get(entry.getKey());
+                if (possibleFluid.isEmpty()) {continue;}
+                Fluid fluid = possibleFluid.get().value();
+
+                VariantsMaterialMap<FluidState> fluidMaterialMap = VariantsMaterialMap.load(entry.getValue(), fluid.getStateDefinition().getPossibleStates());
+
+                if (fluidMaterialMap.defaultMap() != null) {
+                    MaterialMaps.fluids.put(fluid.defaultFluidState(), fluidMaterialMap.defaultMap());
+                }
+                MaterialMaps.fluids.putAll(fluidMaterialMap.variants());
+
+                var usedMaterials = fluidMaterialMap.getUsedMaterials();
                 MaterialMaps.allUsedMaterials.addAll(usedMaterials);
-                var layers = MaterialMaps.getLayersUsedByFluid(fluid.get().value());
+                var layers = MaterialMaps.getLayersUsedByFluid(fluid);
                 for (var layer : layers) {
                     materialsUsedByLayer.computeIfAbsent(layer, l -> new HashSet<>()).addAll(usedMaterials);
                 }
@@ -289,10 +305,11 @@ final public class MaterialMaps implements PreparableReloadListener {
 
         for (var entry : allJsons.items.entrySet()) {
             try {
-                var item = BuiltInRegistries.ITEM.get(entry.getKey());
-                if (item.isEmpty()) continue;
+                var possibleItem = BuiltInRegistries.ITEM.get(entry.getKey());
+                if (possibleItem.isEmpty()) continue;
+                Item item = possibleItem.get().value();
                 MaterialMap materialMap = MaterialMap.load(entry.getValue());
-                MaterialMaps.items.put(item.get().value(), materialMap);
+                MaterialMaps.items.put(item, materialMap);
                 MaterialMaps.allUsedMaterials.addAll(materialMap.getUsedMaterials());
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't load item material map \""+entry.getKey()+"\"", e);

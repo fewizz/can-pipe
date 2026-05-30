@@ -76,8 +76,10 @@ public class FluidRendererMixin {
                 return null;
             });
 
-            MaterialMap materialMap = MaterialMaps.getForFluid(fs.getType());
-            vce.canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
+            MaterialMap materialMap = MaterialMaps.getForFluidState(fs);
+            if (materialMap != null) {
+                vce.canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
+            }
 
             vce.canpipe_forceNormalRecomputation(true);
         }
