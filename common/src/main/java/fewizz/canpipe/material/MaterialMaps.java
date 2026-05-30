@@ -16,6 +16,7 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
@@ -58,27 +59,27 @@ final public class MaterialMaps implements PreparableReloadListener {
     private static final Set<Material> materialsUsedByParticles = new HashSet<>();
     private static final Map<ChunkSectionLayer, Set<Material>> materialsUsedByLayer = new EnumMap<>(ChunkSectionLayer.class);
 
-    public static MaterialMap getForBlockState(BlockState blockState) {
+    public static @Nullable MaterialMap getForBlockState(BlockState blockState) {
         return MaterialMaps.blocks.get(blockState);
     }
 
-    public static MaterialMap getForFluidState(FluidState fluidState) {
+    public static @Nullable MaterialMap getForFluidState(FluidState fluidState) {
         return MaterialMaps.fluids.get(fluidState);
     }
 
-    public static EntityMaterialMap getForBlockEntity(BlockEntityType<?> blockEntityType) {
+    public static @Nullable EntityMaterialMap getForBlockEntity(BlockEntityType<?> blockEntityType) {
         return MaterialMaps.blockEntities.get(blockEntityType);
     }
 
-    public static MaterialMap getForItem(Item item) {
+    public static @Nullable MaterialMap getForItem(Item item) {
         return MaterialMaps.items.get(item);
     }
 
-    public static EntityMaterialMap getForEntity(EntityType<?> entityType) {
+    public static @Nullable EntityMaterialMap getForEntity(EntityType<?> entityType) {
         return MaterialMaps.entities.get(entityType);
     }
 
-    public static MaterialMap getForParticle(ParticleType<?> particleType) {
+    public static @Nullable MaterialMap getForParticle(ParticleType<?> particleType) {
         return MaterialMaps.particles.get(particleType);
     }
 

@@ -76,7 +76,10 @@ public class SectionCompilerMixin {
                 blockStateAndMaterialMap.right = MaterialMaps.getForBlockState(blockStateAndMaterialMap.left);
             }
 
-            ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialSupplier(sprite -> blockStateAndMaterialMap.right.getMaterial(sprite));
+            if (blockStateAndMaterialMap.right != null) {
+                ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialSupplier(sprite -> blockStateAndMaterialMap.right.getMaterial(sprite));
+            }
+
             ((VertexConsumerExtended) bufferBuilder).canpipe_forceNormalRecomputation(true);
         }
     }

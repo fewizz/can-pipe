@@ -76,12 +76,6 @@ public class MaterialPrograms {
                 .withLocation(location)
                 .withVertexShader(vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh"))
                 .withFragmentShader(fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh"))
-                .withDepthStencilState(new DepthStencilState(
-                    originalRenderPipeline.getDepthStencilState().depthTest(),
-                    originalRenderPipeline.getDepthStencilState().writeDepth(),
-                    !shadow ? originalRenderPipeline.getDepthStencilState().depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
-                    !shadow ? originalRenderPipeline.getDepthStencilState().depthBiasConstant() : shadowsOffsetBiasUnits
-                ))
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow ? originalRenderPipeline.isCull() : false)
                 .withColorTargetState(new ColorTargetState(
@@ -89,6 +83,16 @@ public class MaterialPrograms {
                     originalRenderPipeline.getColorTargetState().writeMask()
                 ))
                 .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
+
+            var dsState = originalRenderPipeline.getDepthStencilState();
+            if (dsState != null) {
+                renderPipelineBuilder.withDepthStencilState(new DepthStencilState(
+                    dsState.depthTest(),
+                    dsState.writeDepth(),
+                    !shadow ? dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
+                    !shadow ? dsState.depthBiasConstant() : shadowsOffsetBiasUnits
+                ));
+            }
         }
 
         renderPipelineBuilder.withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER);
