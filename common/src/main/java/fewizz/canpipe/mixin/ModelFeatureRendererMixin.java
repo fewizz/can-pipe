@@ -30,7 +30,12 @@ public class ModelFeatureRendererMixin {
     @Unique SubmitNodeCollection canpipe_nodeCollectionHeld;
 
     @Inject(method = "renderSolid", at = @At("HEAD"))
-    void onRenderSolid(CallbackInfo ci, @Local SubmitNodeCollection nodeCollection) {
+    void onRenderSolid(CallbackInfo ci, @Local(argsOnly = true) SubmitNodeCollection nodeCollection) {
+        this.canpipe_nodeCollectionHeld = nodeCollection;
+    }
+
+    @Inject(method = "renderTranslucent", at = @At("HEAD"))
+    void onRenderTranslucent(CallbackInfo ci, @Local(argsOnly = true) SubmitNodeCollection nodeCollection) {
         this.canpipe_nodeCollectionHeld = nodeCollection;
     }
 
