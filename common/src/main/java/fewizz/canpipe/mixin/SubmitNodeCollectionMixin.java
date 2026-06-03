@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.SubmitNodeStorage.ModelSubmit;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.resources.model.sprite.SpriteId;
 
 @Mixin(SubmitNodeCollection.class)
 public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
@@ -34,12 +35,14 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Unique private boolean canpipe_pendingModelSubmitEntityGlint = false;
     @Unique private Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_itemSubmitsMaterialMaps;
     @Unique private Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> canpipe_modelSubmitExtras;
+    @Unique private SpriteId canpipe_pendingSpriteId;
 
     @Override public void canpipe_setPendingItemSubmitMaterialMap(MaterialMap materialMap) { this.canpipe_pendingItemSubmitMaterialMap = materialMap; }
     @Override public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() { return this.canpipe_itemSubmitsMaterialMaps; }
     @Override public void canpipe_setScopedModelMaterialMap(EntityMaterialMap materialMap) { canpipe_scopedModelSubmitMaterialMap = materialMap; }
     @Override public void canpipe_setPendingModelEntityGlint() { this.canpipe_pendingModelSubmitEntityGlint = true; }
     @Override public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() { return this.canpipe_modelSubmitExtras; }
+    @Override public void canpipe_setPendingSpriteID(SpriteId pendingSpriteId) { this.canpipe_pendingSpriteId = pendingSpriteId; }
 
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
@@ -58,7 +61,7 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Inject(method = "clear", at = @At("RETURN"))
     void onClear(CallbackInfo ci) {
         this.canpipe_pendingItemSubmitMaterialMap = null;  // Should be null here
-        canpipe_scopedModelSubmitMaterialMap = null;
+        this.canpipe_scopedModelSubmitMaterialMap = null;
 
         this.canpipe_itemSubmitsMaterialMaps.clear();
         this.canpipe_modelSubmitExtras.clear();
@@ -66,10 +69,15 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
 
     @Inject(method = "submitModel", at = @At("RETURN"))
     void onModelSubmit(CallbackInfo ci, @Local SubmitNodeStorage.ModelSubmit<?> modelSubmit) {
-        if (canpipe_scopedModelSubmitMaterialMap != null || this.canpipe_pendingModelSubmitEntityGlint) {
-            this.canpipe_modelSubmitExtras.put(modelSubmit, new ModelSubmitExtra(this.canpipe_scopedModelSubmitMaterialMap, this.canpipe_pendingModelSubmitEntityGlint));
+        if (this.canpipe_scopedModelSubmitMaterialMap != null || this.canpipe_pendingModelSubmitEntityGlint) {
+            this.canpipe_modelSubmitExtras.put(modelSubmit, new ModelSubmitExtra(
+                this.canpipe_scopedModelSubmitMaterialMap,
+                this.canpipe_pendingSpriteId,
+                this.canpipe_pendingModelSubmitEntityGlint
+            ));
         }
         this.canpipe_pendingModelSubmitEntityGlint = false;
+        this.canpipe_pendingSpriteId = null;
     }
 
 }

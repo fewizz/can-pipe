@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.FilenameUtils;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -13,7 +14,6 @@ import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.mixin.RenderTypeAccessor;
-import net.minecraft.client.renderer.rendertype.RenderSetup.TextureBinding;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 
@@ -23,7 +23,8 @@ public record EntityMaterialMap(
 ) {
 
     public record MaterialPedicateContext(
-        @Nullable TextureBinding textureBinding,
+        @Nullable Identifier textureID,
+        @Nullable Identifier spriteTextureID,
         RenderType renderType
     ) {}
 
@@ -96,9 +97,13 @@ public record EntityMaterialMap(
             switch (predicateName) {
                 case "texture" -> {
                     Identifier textureID = Identifier.parse(predicateValue.asString());
+                    // Sprite ID's don't specify '.png' extension and 'textures' directory
+                    Identifier spriteID = textureID.withPath(FilenameUtils.removeExtension(textureID.getPath().replaceFirst("^textures/", "")));
                     predicates.add(ctx -> {
-                        TextureBinding tex = ctx.textureBinding;
-                        return tex != null ? tex.location().equals(textureID) : false;
+                        if (ctx.spriteTextureID != null) {
+                            return spriteID.equals(ctx.spriteTextureID);
+                        }
+                        return ctx.textureID != null ? ctx.textureID.equals(textureID) : false;
                     });
                 }
                 case "renderLayerName" -> {

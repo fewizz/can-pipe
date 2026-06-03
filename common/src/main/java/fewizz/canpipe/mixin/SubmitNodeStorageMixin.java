@@ -18,6 +18,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.SubmitNodeStorage.ModelSubmit;
+import net.minecraft.client.resources.model.sprite.SpriteId;
 
 @Mixin(SubmitNodeStorage.class)
 public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
@@ -55,6 +56,11 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
     @Override
     public void canpipe_setPendingModelEntityGlint() {
         ((SubmitNodeCollectorExtended) this.order(0)).canpipe_setPendingModelEntityGlint();
+    }
+
+    @Override
+    public void canpipe_setPendingSpriteID(SpriteId spriteId) {
+        ((SubmitNodeCollectorExtended) this.order(0)).canpipe_setPendingSpriteID(spriteId);
     }
 
     @Override
