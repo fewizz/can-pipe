@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
@@ -25,7 +26,7 @@ final public class Materials implements PreparableReloadListener {
     static private final Map<Identifier, Material> materials = new HashMap<>();
     static private final Short2ObjectMap<Material> materialByIndex = new Short2ObjectOpenHashMap<>();
 
-    public static Material get(Identifier location) {
+    public static @Nullable Material get(Identifier location) {
         return Materials.materials.get(location);
     }
 

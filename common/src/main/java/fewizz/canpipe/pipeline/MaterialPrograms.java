@@ -347,7 +347,7 @@ public class MaterialPrograms {
             #endif
 
             canpipe_spriteIndex = in_spriteIndex;
-            #if defined CANPIPE_HAS_METERIAL_INDEX
+            #if defined CANPIPE_HAS_MATERIAL_INDEX
                 canpipe_materialIndex = in_materialIndex;
             #endif
             #if defined CANPIPE_HAS_MATERIAL_FLAGS

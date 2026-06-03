@@ -5,12 +5,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.mixin.RenderTypeAccessor;
+import net.minecraft.client.renderer.rendertype.RenderSetup.TextureBinding;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 
 public record EntityMaterialMap(
@@ -19,8 +23,8 @@ public record EntityMaterialMap(
 ) {
 
     public record MaterialPedicateContext(
-        Identifier textureID,
-        String renderLayerName
+        @Nullable TextureBinding textureBinding,
+        RenderType renderType
     ) {}
 
     public interface MaterialPredicate {
@@ -28,8 +32,8 @@ public record EntityMaterialMap(
     }
 
     public record MaterialPredicates(
-        List<MaterialPredicate> predicates,
-        Material material
+        @NonNull List<MaterialPredicate> predicates,
+        @NonNull Material material
     ) {}
 
     static EntityMaterialMap load(Identifier id, List<JsonObject> jsons) {
@@ -76,6 +80,14 @@ public record EntityMaterialMap(
             return null;
         }
 
+        Identifier materialId = Identifier.parse(JanksonUtils.stringOrThrow(entry, "material"));
+        Material material = Materials.get(materialId);
+
+        if (material == null) {
+            CanPipe.LOGGER.warn("Entity material map \""+id+"\": couldn't find material \""+materialId+"\"");
+            return null;
+        }
+
         List<MaterialPredicate> predicates = new ArrayList<>();
 
         for (var kv : materialPredicateJson.entrySet()) {
@@ -84,11 +96,17 @@ public record EntityMaterialMap(
             switch (predicateName) {
                 case "texture" -> {
                     Identifier textureID = Identifier.parse(predicateValue.asString());
-                    predicates.add(ctx -> ctx.textureID.equals(textureID));
+                    predicates.add(ctx -> {
+                        TextureBinding tex = ctx.textureBinding;
+                        return tex != null ? tex.location().equals(textureID) : false;
+                    });
                 }
                 case "renderLayerName" -> {
                     String expectedRenderLayerName = predicateValue.asString();
-                    predicates.add(ctx -> expectedRenderLayerName.equals(ctx.renderLayerName));
+                    predicates.add(ctx -> {
+                        String renderLayerName = ((RenderTypeAccessor) ctx.renderType).canpipe_getName().toLowerCase();
+                        return expectedRenderLayerName.equals(renderLayerName);
+                    });
                 }
                 default -> {
                     CanPipe.LOGGER.warn("Entity material map \""+id+"\": unsupported predicate \""+predicateName+"\"");
@@ -96,9 +114,6 @@ public record EntityMaterialMap(
                 }
             }
         }
-
-        Identifier materialId = Identifier.parse(JanksonUtils.stringOrThrow(entry, "material"));
-        Material material = Materials.get(materialId);
 
         return new MaterialPredicates(predicates, material);
     }
