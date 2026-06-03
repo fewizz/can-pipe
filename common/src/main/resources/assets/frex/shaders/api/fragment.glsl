@@ -18,7 +18,9 @@
     in vec4 frx_vertexColor;
 
     flat in int canpipe_spriteIndex;
-    flat in int canpipe_materialIndex;
+    #if defined CANPIPE_HAS_MATERIAL_INDEX
+        flat in int canpipe_materialIndex;
+    #endif
     #if defined CANPIPE_HAS_MATERIAL_FLAGS
         flat in int canpipe_materialFlags;
     #endif

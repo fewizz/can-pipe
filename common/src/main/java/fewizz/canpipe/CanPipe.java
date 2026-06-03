@@ -174,6 +174,16 @@ public class CanPipe {
             /* 16 + 2*2 */.add("in_lightmapPos", VertexFormatElement.UV2)
             .build();
 
+        public static final VertexFormat POSITION_COLOR_TEX_LIGHTMAP = VertexFormat.builder()
+            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
+            /* 12 + 4*1 */.add("in_color", VertexFormatElement.COLOR)
+            /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
+            /* 24 + 2*2 */.add("in_lightmapPos", VertexFormatElement.UV2)
+            /* 28 + 2*1 */.add("in_materialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            /* 30 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+            /* 31 + 1*1 */.padding(1)
+            .build();
+
         public static final VertexFormat POSITION_TEX = VertexFormat.builder()
             /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
             /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)

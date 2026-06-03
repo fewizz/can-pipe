@@ -62,6 +62,9 @@ public class MaterialPrograms {
         else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
             vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_LIGHTMAP;
         }
+        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
+            vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_TEX_LIGHTMAP;
+        }
         else {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormat().toString());
         }
@@ -234,11 +237,12 @@ public class MaterialPrograms {
         boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
         boolean hasLightmapPos = vertexFormat.contains(VertexFormatElement.UV2);
         boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
+        boolean hasMaterialIndex = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX);
 
         StringBuilder materialsFunctionsSrc = new StringBuilder();
         StringBuilder materialsSwitchSrc = new StringBuilder();
 
-        if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
+        if (hasMaterialIndex) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
             for (Material m : materials) {
@@ -274,8 +278,6 @@ public class MaterialPrograms {
             vertexSrcBuilder.append("#define CANPIPE_FLAT_VERTEX_COLOR\n");
         }
         vertexSrcBuilder.append("\n");
-        vertexSrcBuilder.append("#include frex:shaders/api/view.glsl\n");
-        vertexSrcBuilder.append("#include frex:shaders/api/world.glsl\n");
         vertexSrcBuilder.append("\n");
         vertexSrcBuilder.append("in vec3 in_vertex;  // Position\n");
         vertexSrcBuilder.append("in vec4 in_color;  // Color\n");
@@ -295,6 +297,10 @@ public class MaterialPrograms {
             vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
             vertexSrcBuilder.append("in int in_materialFlags;\n");
         }
+        if (hasMaterialIndex) {
+            vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_INDEX\n");
+            vertexSrcBuilder.append("in int in_materialIndex;\n");
+        }
         vertexSrcBuilder.append(
             vertexFormat.contains(VertexFormatElement.NORMAL) ?
             "in vec3 in_normal; // Normal\n" :
@@ -308,12 +314,7 @@ public class MaterialPrograms {
         vertexSrcBuilder.append(
             vertexFormat.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ?
             "in int in_spriteIndex;\n" :
-            "const int in_spriteIndex = -1\n;"
-        );
-        vertexSrcBuilder.append(
-            vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX) ?
-            "in int in_materialIndex;\n" :
-            "const int in_materialIndex = -1;\n"
+            "const int in_spriteIndex = -1;\n"
         );
         vertexSrcBuilder.append(
             vertexFormat.contains(CanPipe.VertexFormatElements.TANGENT) ?
@@ -328,6 +329,7 @@ public class MaterialPrograms {
         #include frex:shaders/api/material.glsl
         #include frex:shaders/api/view.glsl
         #include frex:shaders/api/header.glsl
+        #include frex:shaders/api/world.glsl
 
         """
         );
@@ -345,7 +347,9 @@ public class MaterialPrograms {
             #endif
 
             canpipe_spriteIndex = in_spriteIndex;
-            canpipe_materialIndex = in_materialIndex;
+            #if defined CANPIPE_HAS_METERIAL_INDEX
+                canpipe_materialIndex = in_materialIndex;
+            #endif
             #if defined CANPIPE_HAS_MATERIAL_FLAGS
                 canpipe_materialFlags = in_materialFlags;
             #endif
@@ -416,7 +420,13 @@ public class MaterialPrograms {
         StringBuilder materialsFunctionsSrc = new StringBuilder();
         StringBuilder materialsSwitchSrc = new StringBuilder();
 
-        if (vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
+        boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
+        boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
+        boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
+        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
+        boolean hasMaterialIndex = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX);
+
+        if (hasMaterialIndex) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
 
             for (Material m : materials) {
@@ -470,7 +480,10 @@ public class MaterialPrograms {
 
             originalRenderPipeline == RenderPipelines.END_CRYSTAL_BEAM ||
             originalRenderPipeline == RenderPipelines.BREEZE_WIND ||
-            originalRenderPipeline == RenderPipelines.ENERGY_SWIRL
+            originalRenderPipeline == RenderPipelines.ENERGY_SWIRL ||
+            originalRenderPipeline == RenderPipelines.TEXT ||
+            originalRenderPipeline == RenderPipelines.TEXT_BACKGROUND ||
+            originalRenderPipeline == RenderPipelines.TEXT_POLYGON_OFFSET
         ) {
             alphaCutout = 0.1F;
         }
@@ -480,11 +493,6 @@ public class MaterialPrograms {
         ) {
             alphaCutout = 0.5F;
         }
-
-        boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
-        boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
-        boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
-        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
 
         var fragmentSrcBuilder = new StringBuilder();
 
@@ -512,6 +520,9 @@ public class MaterialPrograms {
         }
         if (hasMaterialFlags) {
             fragmentSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
+        }
+        if (hasMaterialIndex) {
+            fragmentSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_INDEX\n");
         }
         fragmentSrcBuilder.append(
         """

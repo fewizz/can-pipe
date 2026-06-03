@@ -55,10 +55,7 @@ public class ModelFeatureRendererMixin {
             RenderSetup renderSetup = ((RenderTypeAccessor) renderType).canpipe_getState();
             TextureBinding tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
 
-            var predicateCtx = new EntityMaterialMap.MaterialPedicateContext(
-                /* textureID */ tex != null ? tex.location() : null,
-                /* renderLayerName */ ((RenderTypeAccessor) renderType).canpipe_getName().toLowerCase()
-            );
+            var predicateCtx = new EntityMaterialMap.MaterialPedicateContext(tex, renderType);
 
             EntityMaterialMap materialMap = extra.materialMap();
             Material material;
@@ -75,7 +72,7 @@ public class ModelFeatureRendererMixin {
                         break;
                     }
                 }
-                material = foundMaterial != null ? foundMaterial : materialMap.defaultMaterial();;
+                material = foundMaterial != null ? foundMaterial : materialMap.defaultMaterial();
             }
 
             ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(_sprite -> material);

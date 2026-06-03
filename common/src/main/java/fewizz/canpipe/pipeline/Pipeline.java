@@ -289,7 +289,11 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.LEASH,
 
             RenderPipelines.OPAQUE_PARTICLE,
-            RenderPipelines.TRANSLUCENT_PARTICLE
+            RenderPipelines.TRANSLUCENT_PARTICLE,
+
+            RenderPipelines.TEXT,
+            RenderPipelines.TEXT_BACKGROUND,
+            RenderPipelines.TEXT_POLYGON_OFFSET
         };
 
         Framebuffer shadowFramebuffer = null;
