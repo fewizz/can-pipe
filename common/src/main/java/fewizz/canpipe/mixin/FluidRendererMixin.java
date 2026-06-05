@@ -42,7 +42,7 @@ public class FluidRendererMixin {
     )
     VertexConsumer wrapVertexConsumerIfNeeded(
         VertexConsumer vc,
-        @Local(argsOnly = true) FluidState fs
+        @Local(argsOnly = true) FluidState fluidState
     ) {
         if (
             vc instanceof VertexConsumerExtended vce &&
@@ -76,7 +76,7 @@ public class FluidRendererMixin {
                 return null;
             });
 
-            MaterialMap materialMap = MaterialMaps.getForFluidState(fs);
+            MaterialMap materialMap = MaterialMaps.getForFluidState(fluidState);
             if (materialMap != null) {
                 vce.canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
             }

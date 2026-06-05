@@ -6,6 +6,7 @@ import java.util.OptionalInt;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -39,9 +40,10 @@ public class RenderTypeMixin {
         require = 4,
         at = @At(
             value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/rendertype/RenderSetup;"+
-                "pipeline:"+
-                "Lcom/mojang/blaze3d/pipeline/RenderPipeline;"
+            target = "Lnet/minecraft/client/renderer/rendertype/RenderSetup;" +
+                    "pipeline:" +
+                    "Lcom/mojang/blaze3d/pipeline/RenderPipeline;",
+            opcode = Opcodes.GETFIELD
         )
     )
     RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline) {
@@ -81,16 +83,16 @@ public class RenderTypeMixin {
         )
     )
     RenderPass onCreateRenderPass(
-        CommandEncoder instance, Supplier<String> nameSupplier,
+        CommandEncoder instance, Supplier<String> label,
         GpuTextureView colorTexture, OptionalInt clearColor,
         @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
     ) {
         if (renderTarget instanceof Framebuffer framebuffer) {
-            return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
+            return Pipelines.getCurrent().createRenderPass(instance, label, framebuffer);
         }
-        return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
+        return operation.call(instance, label, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
     @Inject(

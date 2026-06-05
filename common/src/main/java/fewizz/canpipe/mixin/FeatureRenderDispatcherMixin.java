@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin;
 
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -25,7 +26,8 @@ public class FeatureRenderDispatcherMixin implements FeatureRenderDispatcherExte
         method = {"renderSolidFeatures", "renderTranslucentFeatures"},
         at = @At(
             value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher;bufferSource:Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;"
+            target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher;bufferSource:Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;",
+            opcode = Opcodes.GETFIELD
         )
     )
     MultiBufferSource.BufferSource replaceBufferSource(MultiBufferSource.BufferSource original) {
@@ -40,7 +42,8 @@ public class FeatureRenderDispatcherMixin implements FeatureRenderDispatcherExte
         method = {"renderSolidFeatures", "renderTranslucentFeatures"},
         at = @At(
             value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher;crumblingBufferSource:Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;"
+            target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher;crumblingBufferSource:Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;",
+            opcode = Opcodes.GETFIELD
         )
     )
     MultiBufferSource.BufferSource replaceCrumblingBufferSource(MultiBufferSource.BufferSource original) {

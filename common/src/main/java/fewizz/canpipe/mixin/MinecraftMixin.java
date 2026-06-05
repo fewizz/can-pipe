@@ -1,6 +1,7 @@
 package fewizz.canpipe.mixin;
 
 import org.jetbrains.annotations.Nullable;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,7 +32,7 @@ public class MinecraftMixin implements MinecraftExtended {
     @Shadow @Final private RenderTarget mainRenderTarget;
     @Shadow @Final private ReloadableResourceManager resourceManager;
 
-    @Shadow public void setScreen(@Nullable Screen guiScreen) {}
+    @Shadow public void setScreen(@Nullable Screen screen) {}
 
     @Unique private RenderTarget canpipe_mainRenderTargetOverride;
 
@@ -94,7 +95,8 @@ public class MinecraftMixin implements MinecraftExtended {
         method = "renderFrame",
         at = @At(
             value = "FIELD",
-            target = "Lnet/minecraft/client/Minecraft;mainRenderTarget:Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+            target = "Lnet/minecraft/client/Minecraft;mainRenderTarget:Lcom/mojang/blaze3d/pipeline/RenderTarget;",
+            opcode = Opcodes.GETFIELD
         )
     )
     RenderTarget getGetOverridenMainRenderTarget(RenderTarget renderTarget) {

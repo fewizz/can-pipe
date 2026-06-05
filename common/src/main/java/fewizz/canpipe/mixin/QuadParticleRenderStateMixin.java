@@ -2,6 +2,7 @@ package fewizz.canpipe.mixin;
 
 import java.util.Map;
 
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -60,7 +61,8 @@ public class QuadParticleRenderStateMixin implements QuadParticleRenderStateExte
         method = "prepare",
         at = @At(
             value = "FIELD",
-            target = "Lcom/mojang/blaze3d/vertex/DefaultVertexFormat;PARTICLE:Lcom/mojang/blaze3d/vertex/VertexFormat;"
+            target = "Lcom/mojang/blaze3d/vertex/DefaultVertexFormat;PARTICLE:Lcom/mojang/blaze3d/vertex/VertexFormat;",
+            opcode = Opcodes.GETSTATIC
         )
     )
     VertexFormat replaceVertexFormat(VertexFormat vertexFormat) {

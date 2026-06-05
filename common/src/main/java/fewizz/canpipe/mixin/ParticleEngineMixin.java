@@ -25,8 +25,8 @@ public class ParticleEngineMixin {
             ")Lnet/minecraft/client/particle/Particle;"
         )
     )
-    Particle onParticleCreated(Particle particle, @Local ParticleOptions particleOptions) {
-        ((ParticleAccessor) particle).canpipe_setParticleType(particleOptions.getType());
+    Particle onParticleCreated(Particle particle, @Local ParticleOptions options) {
+        ((ParticleAccessor) particle).canpipe_setParticleType(options.getType());
         return particle;
     }
 

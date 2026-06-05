@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.ShaderManager;
 public class ShaderManagerMixin {
 
     @Inject(
-        method = "apply",
+        method = "apply(Lnet/minecraft/client/renderer/ShaderManager$Configs;Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/util/profiling/ProfilerFiller;)V",
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/systems/GpuDevice;clearPipelineCache()V"

@@ -69,18 +69,18 @@ public class SectionCompilerMixin {
             ")V"
         )
     )
-    void beforePuttingQuad(CallbackInfo ci, @Local BufferBuilder bufferBuilder) {
-        if (((VertexConsumerExtended) bufferBuilder).canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
+    void beforePuttingQuad(CallbackInfo ci, @Local BufferBuilder builder) {
+        if (((VertexConsumerExtended) builder).canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
             var blockStateAndMaterialMap = this.canpipe_capturedBlockState.get();
             if (blockStateAndMaterialMap.right == null) {
                 blockStateAndMaterialMap.right = MaterialMaps.getForBlockState(blockStateAndMaterialMap.left);
             }
 
             if (blockStateAndMaterialMap.right != null) {
-                ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialSupplier(sprite -> blockStateAndMaterialMap.right.getMaterial(sprite));
+                ((VertexConsumerExtended) builder).canpipe_setScopedMaterialSupplier(sprite -> blockStateAndMaterialMap.right.getMaterial(sprite));
             }
 
-            ((VertexConsumerExtended) bufferBuilder).canpipe_forceNormalRecomputation(true);
+            ((VertexConsumerExtended) builder).canpipe_forceNormalRecomputation(true);
         }
     }
 
@@ -96,9 +96,9 @@ public class SectionCompilerMixin {
             shift = Shift.AFTER
         )
     )
-    void afterPuttingQuad(CallbackInfo ci, @Local BufferBuilder bufferBuilder) {
-        if (((VertexConsumerExtended) bufferBuilder).canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
-            ((VertexConsumerExtended) bufferBuilder).canpipe_setScopedMaterialSupplier(null);
+    void afterPuttingQuad(CallbackInfo ci, @Local BufferBuilder builder) {
+        if (((VertexConsumerExtended) builder).canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.MATERIAL_INDEX)) {
+            ((VertexConsumerExtended) builder).canpipe_setScopedMaterialSupplier(null);
         }
     }
 

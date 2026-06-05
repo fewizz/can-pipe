@@ -1,6 +1,7 @@
 package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -16,7 +17,7 @@ import net.minecraft.client.Screenshot;
 @Mixin(Screenshot.class)
 public class ScreenshotMixin {
 
-    private static GpuTexture canpipe_rgba8Texture;
+    @Unique private static GpuTexture canpipe_rgba8Texture;
 
     @ModifyExpressionValue(
         method = "takeScreenshot(Lcom/mojang/blaze3d/pipeline/RenderTarget;ILjava/util/function/Consumer;)V",

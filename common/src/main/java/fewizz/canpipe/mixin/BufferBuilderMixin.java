@@ -66,6 +66,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Override public VertexFormat canpipe_getVertexFormat() { return this.format; }
 
+    @Unique
     private static byte canpipe_normalIntValueWithoutClamp(float value) {
         return (byte) Math.fma(value, 127.5F, -1.0F / 255.0F);
     }
@@ -90,6 +91,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
     }
 
+    @Unique
     private void canpipe_setNormalAndTangent(long normalPtr, float normalX, float normalY, float normalZ, long tangentPtr) {
         if (normalPtr == -1 && tangentPtr == -1) { return; }
 
@@ -184,6 +186,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
     }
 
+    @Unique
     private void canpipe_setSpriteAndMaterial(long spriteIndexPtr, long materialIndexPtr, long materialFlagsPtr) {
         if (spriteIndexPtr == -1 && materialIndexPtr == -1 && materialFlagsPtr == -1) { return; }
 

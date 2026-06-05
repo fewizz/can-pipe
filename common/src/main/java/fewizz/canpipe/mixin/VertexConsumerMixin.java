@@ -21,12 +21,12 @@ public interface VertexConsumerMixin {
     @Inject(method = {"putBlockBakedQuad", "putBakedQuad"}, at = @At("HEAD"))
     default void setSpriteIndex(
         CallbackInfo ci,
-        @Local(argsOnly = true) BakedQuad bakedQuad,
+        @Local(argsOnly = true) BakedQuad quad,
         @Local(argsOnly = true) QuadInstance instance
     ) {
         if (this instanceof VertexConsumerExtended vce) {
             if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
-                vce.canpipe_setScopedSpriteSupplier(() -> bakedQuad.materialInfo().sprite());
+                vce.canpipe_setScopedSpriteSupplier(() -> quad.materialInfo().sprite());
             }
             // if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)) {
             //     vce.canpipe_setPendingAO(((QuadInstanceExtended) instance).canpipe_getSeparatedShade(vertexIndex));

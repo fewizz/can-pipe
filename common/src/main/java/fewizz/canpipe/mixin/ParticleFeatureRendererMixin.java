@@ -70,7 +70,7 @@ public class ParticleFeatureRendererMixin {
         )
     )
     RenderPass replaceRenderPass(
-        CommandEncoder instance, Supplier<String> nameSupplier,
+        CommandEncoder instance, Supplier<String> label,
         GpuTextureView colorTexture, OptionalInt clearColor,
         @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
@@ -80,9 +80,9 @@ public class ParticleFeatureRendererMixin {
     ) {
         RenderTarget renderTarget = translucent ? particleTarget : mainTarget;
         if (renderTarget instanceof Framebuffer framebuffer) {
-            return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
+            return Pipelines.getCurrent().createRenderPass(instance, label, framebuffer);
         }
-        return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
+        return operation.call(instance, label, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
 }

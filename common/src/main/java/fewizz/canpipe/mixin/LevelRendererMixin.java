@@ -8,6 +8,7 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Matrix4fc;
 import org.joml.Vector4f;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -317,7 +318,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     PostChain onTransparencyPostChainCreation(
         LevelRenderer instance,
         Operation<PostChain> operation,
-        @Local FrameGraphBuilder frameGraphBuilder
+        @Local FrameGraphBuilder frame
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) {
@@ -326,11 +327,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         // Don't create transparency post chain, will be handled by pipeline
 
         // this.targets.main = ...
-        this.targets.translucent = frameGraphBuilder.importExternal("translucent", p.fabulousTargets.translucentTerrainFramebuffer());
-        this.targets.itemEntity = frameGraphBuilder.importExternal("item_entity", p.fabulousTargets.translucentItemEntityFramebuffer());
-        this.targets.particles = frameGraphBuilder.importExternal("particles", p.fabulousTargets.translucentParticlesFramebuffer());
-        this.targets.weather = frameGraphBuilder.importExternal("weather", p.fabulousTargets.weatherFramebuffer());
-        this.targets.clouds = frameGraphBuilder.importExternal("clouds", p.fabulousTargets.cloudsFramebuffer());
+        this.targets.translucent = frame.importExternal("translucent", p.fabulousTargets.translucentTerrainFramebuffer());
+        this.targets.itemEntity = frame.importExternal("item_entity", p.fabulousTargets.translucentItemEntityFramebuffer());
+        this.targets.particles = frame.importExternal("particles", p.fabulousTargets.translucentParticlesFramebuffer());
+        this.targets.weather = frame.importExternal("weather", p.fabulousTargets.weatherFramebuffer());
+        this.targets.clouds = frame.importExternal("clouds", p.fabulousTargets.cloudsFramebuffer());
 
         return null;
     }
@@ -412,8 +413,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         method = {"clearVisibleSections", "applyFrustum", "prepareChunkRenders"},
         require = 3,
         at = @At(
-            value= "FIELD",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;visibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;"
+            value = "FIELD",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;visibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;",
+            opcode = Opcodes.GETFIELD
         )
     )
     ObjectArrayList<SectionRenderDispatcher.RenderSection> replaceVisibleSections(ObjectArrayList<SectionRenderDispatcher.RenderSection> original) {
@@ -427,8 +429,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         method = {"clearVisibleSections", "applyFrustum"},
         require = 2,
         at = @At(
-            value= "FIELD",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;nearbyVisibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;"
+            value = "FIELD",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;nearbyVisibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;",
+            opcode = Opcodes.GETFIELD
         )
     )
     ObjectArrayList<SectionRenderDispatcher.RenderSection> replaceNearbyVisibleSections(ObjectArrayList<SectionRenderDispatcher.RenderSection> original) {
@@ -443,7 +446,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         require = 2,
         at = @At(
             value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/state/level/LevelRenderState;entityRenderStates:Ljava/util/List;"
+            target = "Lnet/minecraft/client/renderer/state/level/LevelRenderState;entityRenderStates:Ljava/util/List;",
+            opcode = Opcodes.GETFIELD
         )
     )
     List<EntityRenderState> replaceEntityRenderStates(List<EntityRenderState> entityRenderStates) {
