@@ -68,4 +68,8 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
         return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getModelSubmitsExtras();
     }
 
+    @Override public Map<SubmitNodeStorage.BlockModelSubmit, EntityMaterialMap> canpipe_getBlockSubmitsMaterialMaps() {
+        return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getBlockSubmitsMaterialMaps();
+    }
+
 }

@@ -60,12 +60,6 @@ public class ModelFeatureRendererMixin {
             RenderSetup renderSetup = ((RenderTypeAccessor) renderType).canpipe_getState();
             TextureBinding tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
 
-            var predicateCtx = new EntityMaterialMap.MaterialPedicateContext(
-                tex != null ? tex.location() : null,
-                extra.spriteId() != null ? extra.spriteId().texture() : null,
-                renderType
-            );
-
             EntityMaterialMap materialMap = extra.materialMap();
             Material material;
 
@@ -73,6 +67,11 @@ public class ModelFeatureRendererMixin {
                 material = null;
             }
             else {
+                var predicateCtx = new EntityMaterialMap.MaterialPedicateContext(
+                    tex != null ? tex.location() : null,
+                    extra.spriteId() != null ? extra.spriteId().texture() : null,
+                    renderType
+                );
                 Material foundMaterial = null;
                 for (var materialByPredicates : materialMap.materialsByPredicates()) {
                     boolean allTrue = materialByPredicates.predicates().stream().allMatch(p -> p.test(predicateCtx));

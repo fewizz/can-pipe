@@ -21,4 +21,6 @@ public interface SubmitNodeCollectorExtended /*extends OrderedSubmitNodeCollecto
 
     void canpipe_setPendingSpriteID(SpriteId spriteId);
 
+    Map<SubmitNodeStorage.BlockModelSubmit, EntityMaterialMap> canpipe_getBlockSubmitsMaterialMaps();
+
 }

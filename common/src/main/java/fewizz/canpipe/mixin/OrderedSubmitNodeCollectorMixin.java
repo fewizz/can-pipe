@@ -15,7 +15,7 @@ import net.minecraft.client.resources.model.sprite.SpriteId;
 public interface OrderedSubmitNodeCollectorMixin {
 
     @Inject(
-        method = "Lnet/minecraft/client/renderer/OrderedSubmitNodeCollector;submitModel("+
+        method = "submitModel("+
             "Lnet/minecraft/client/model/Model;"+
             "Ljava/lang/Object;"+
             "Lcom/mojang/blaze3d/vertex/PoseStack;"+

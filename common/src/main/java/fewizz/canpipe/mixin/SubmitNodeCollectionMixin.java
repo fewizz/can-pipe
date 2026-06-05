@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.sugar.Local;
@@ -34,6 +35,7 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Unique private EntityMaterialMap canpipe_scopedModelSubmitMaterialMap = null;
     @Unique private boolean canpipe_pendingModelSubmitEntityGlint = false;
     @Unique private Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_itemSubmitsMaterialMaps;
+    @Unique private Map<SubmitNodeStorage.BlockModelSubmit, EntityMaterialMap> canpipe_blockSubmitsMaterialMaps;
     @Unique private Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> canpipe_modelSubmitExtras;
     @Unique private SpriteId canpipe_pendingSpriteId;
 
@@ -43,11 +45,13 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     @Override public void canpipe_setPendingModelEntityGlint() { this.canpipe_pendingModelSubmitEntityGlint = true; }
     @Override public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() { return this.canpipe_modelSubmitExtras; }
     @Override public void canpipe_setPendingSpriteID(SpriteId pendingSpriteId) { this.canpipe_pendingSpriteId = pendingSpriteId; }
+    @Override public Map<SubmitNodeStorage.BlockModelSubmit, EntityMaterialMap> canpipe_getBlockSubmitsMaterialMaps() { return this.canpipe_blockSubmitsMaterialMaps; }
 
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
         this.canpipe_itemSubmitsMaterialMaps = new HashMap<>();
         this.canpipe_modelSubmitExtras = new HashMap<>();
+        this.canpipe_blockSubmitsMaterialMaps = new HashMap<>();
     }
 
     @Inject(method = "submitItem", at = @At("RETURN"))
@@ -64,6 +68,7 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
         this.canpipe_scopedModelSubmitMaterialMap = null;
 
         this.canpipe_itemSubmitsMaterialMaps.clear();
+        this.canpipe_blockSubmitsMaterialMaps.clear();
         this.canpipe_modelSubmitExtras.clear();
     }
 
@@ -78,6 +83,22 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
         }
         this.canpipe_pendingModelSubmitEntityGlint = false;
         this.canpipe_pendingSpriteId = null;
+    }
+
+    @ModifyArg(
+        method = "submitBlockModel",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/util/List;add(Ljava/lang/Object;)Z"
+        ),
+        index = 0
+    )
+    Object onBlockModelSubmit(Object blockModelSubmit) {
+        var submit = (SubmitNodeStorage.BlockModelSubmit) blockModelSubmit;
+        if (this.canpipe_scopedModelSubmitMaterialMap != null) {
+            this.canpipe_blockSubmitsMaterialMaps.put(submit, this.canpipe_scopedModelSubmitMaterialMap);
+        }
+        return blockModelSubmit;
     }
 
 }
