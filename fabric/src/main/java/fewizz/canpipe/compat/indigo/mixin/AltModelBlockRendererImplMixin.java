@@ -2,6 +2,7 @@ package fewizz.canpipe.compat.indigo.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import fewizz.canpipe.compat.indigo.MutableQuadViewExtended;
+import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
@@ -30,7 +31,8 @@ public class AltModelBlockRendererImplMixin {
         )
     )
     void beforeEmitQuads(CallbackInfo ci, @Local QuadEmitter output, @Local BlockState blockState) {
-        ((MutableQuadViewExtended) output).canpipe_setMaterialMap(MaterialMaps.getForBlockState(blockState));
+        MaterialMap materialMap = MaterialMaps.getForBlockState(blockState);
+        ((MutableQuadViewExtended) output).canpipe_setMaterialSupplier(sprite -> materialMap != null ? materialMap.getMaterial(sprite) : null);
     }
 
     @Inject(
@@ -42,7 +44,7 @@ public class AltModelBlockRendererImplMixin {
         )
     )
     void afterEmitQuads(CallbackInfo ci, @Local QuadEmitter output, @Local BlockState blockState) {
-        ((MutableQuadViewExtended) output).canpipe_setMaterialMap(null);
+        ((MutableQuadViewExtended) output).canpipe_setMaterialSupplier(null);
     }
 
     @Inject(

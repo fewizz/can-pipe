@@ -1,14 +1,15 @@
 package fewizz.canpipe.compat.indigo.mixin;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
-import fewizz.canpipe.material.MaterialMap;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import fewizz.canpipe.compat.indigo.MutableQuadViewExtended;
+import fewizz.canpipe.material.Material;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -17,14 +18,19 @@ import net.minecraft.client.resources.model.geometry.BakedQuad;
 @Mixin(MutableQuadViewImpl.class)
 public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin implements MutableQuadViewExtended {
 
-    @Override public void canpipe_setSprite(TextureAtlasSprite sprite) {
+    @Override
+    public void canpipe_setSprite(TextureAtlasSprite sprite) {
         this.canpipe_atlasSprite = sprite;
     }
-    @Override public void canpipe_setAO(int index, float value) {
+
+    @Override
+    public void canpipe_setAO(int index, float value) {
         this.canpipe_ao[index] = value;
     }
-    @Override public void canpipe_setMaterialMap(MaterialMap materialMap) {
-        this.canpipe_materialMap = materialMap;
+
+    @Override
+    public void canpipe_setMaterialSupplier(Function<TextureAtlasSprite, Material> materialSupplier) {
+        this.canpipe_materialSupplier = materialSupplier;
     }
 
     @Inject(method = "clear", at = @At("TAIL"), remap = false)
