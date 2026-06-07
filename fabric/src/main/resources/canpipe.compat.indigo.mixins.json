@@ -7,9 +7,11 @@
 	},
 	"plugin": "fewizz.canpipe.compat.indigo.MixinPlugin",
 	"client": [
-		"VanillaBlockModelPartEncoderMixin",
+		"AltItemRendererEmitterMixin",
 		"AltModelBlockRendererImplMixin",
+		"IndigoRendererQuadEmitterMixin",
 		"MutableQuadViewImplMixin",
-		"QuadViewImplMixin"
+		"QuadViewImplMixin",
+		"VanillaBlockModelPartEncoderMixin"
 	]
 }

@@ -19,6 +19,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
@@ -33,6 +35,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
     @Shadow private int height;
 
     @Unique GpuBuffer canpipe_spritesExtentsBuffer;
+    @Unique Int2ObjectMap<TextureAtlasSprite> canpipe_texturesByIndex = new Int2ObjectOpenHashMap<>();
 
     @Inject(method = "upload", at = @At("TAIL"))
     void onUploadEnd(CallbackInfo ci) {
@@ -51,6 +54,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
                 int index = 0;
                 for (TextureAtlasSprite s : texturesByName.values()) {
                     ((TextureAtlasSpriteExtended) s).canpipe_setIndex(index);
+                    this.canpipe_texturesByIndex.put(index, s);
                     shortBuff.put(index*4+0, (short) Mth.floor(s.getU0() * 0xFFFF));
                     shortBuff.put(index*4+1, (short) Mth.floor(s.getV0() * 0xFFFF));
                     shortBuff.put(index*4+2, (short) Mth.floor(s.getU1() * 0xFFFF));
@@ -71,6 +75,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
 
     @Inject(method = "clearTextureData", at = @At("TAIL"))
     public void onClearTextureData(CallbackInfo ci) {
+        canpipe_texturesByIndex.clear();
         if (this.canpipe_spritesExtentsBuffer != null) {
             this.canpipe_spritesExtentsBuffer.close();
         }
@@ -84,6 +89,11 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
     @Override
     public Map<Identifier, TextureAtlasSprite> canpipe_getSprites() {
         return texturesByName;
+    }
+
+    @Override
+    public TextureAtlasSprite canpipe_getSpriteById(int id) {
+        return this.canpipe_texturesByIndex.get(id);
     }
 
 }

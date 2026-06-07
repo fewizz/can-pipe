@@ -11,5 +11,6 @@ public interface TextureAtlasExtended {
 
     GpuBuffer canpipe_getSpritesExtentsBuffer();
     Map<Identifier, TextureAtlasSprite> canpipe_getSprites();
+    TextureAtlasSprite canpipe_getSpriteById(int id);
 
 }
