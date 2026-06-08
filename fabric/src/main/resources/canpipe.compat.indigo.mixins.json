@@ -9,6 +9,7 @@
 	"client": [
 		"AltItemRendererEmitterMixin",
 		"AltModelBlockRendererImplMixin",
+		"BlockStateModelWrapperMixin",
 		"IndigoRendererQuadEmitterMixin",
 		"MeshViewImplMixin",
 		"MutableMeshImplMixin",

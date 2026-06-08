@@ -8,6 +8,9 @@
     "client": [
         "BlockEntityRenderDispatcherMixin",
         "BlockFeatureRendererMixin",
+        "BlockModelRenderStateAccessor",
+        "BlockModelRenderStateMixin",
+        "BlockStateModelWrapperMixin",
         "BufferBuilderMixin",
         "ByteBufferBuilderAccessor",
         "CameraAccessor",

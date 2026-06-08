@@ -1,6 +1,7 @@
 package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,6 +21,8 @@ import net.minecraft.world.item.ItemStack;
 
 @Mixin(ItemStackRenderState.LayerRenderState.class)
 public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExtended {
+
+    @Shadow private boolean usesBlockLight;
 
     @Unique ItemStack canpipe_itemStack = null;
 
@@ -46,7 +49,7 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
 
         if (submitNodeCollector instanceof SubmitNodeCollectorExtended snce) {
             MaterialMap materialMap;
-            if (item instanceof BlockItem bi) {
+            if (item instanceof BlockItem bi && this.usesBlockLight) {
                 materialMap = MaterialMaps.getForBlockState(bi.getBlock().defaultBlockState());
             }
             else {

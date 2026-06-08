@@ -9,8 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.material.EntityMaterialMap;
-import fewizz.canpipe.material.Material;
+import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
@@ -21,7 +20,7 @@ import net.minecraft.client.resources.model.geometry.BakedQuad;
 @Mixin(BlockFeatureRenderer.class)
 public class BlockFeatureRendererMixin {
 
-    @Unique private static /* !!! */ EntityMaterialMap canpipe_materialMap = null;
+    @Unique private static /* !!! */ MaterialMap canpipe_materialMap = null;
     // @Unique private static SubmitNodeStorage.BlockModelSubmit canpipe_submit = null;
 
     @Inject(
@@ -52,8 +51,10 @@ public class BlockFeatureRendererMixin {
         at = @At("HEAD")
     )
     private static void onPutQuad(CallbackInfo ci, @Local(ordinal = 0) VertexConsumer buffer, @Local BakedQuad quad) {
-        Material material = canpipe_materialMap != null ? canpipe_materialMap.defaultMaterial() : null;
-        ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(_sprite -> material);
+        if (canpipe_materialMap != null) {
+            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(sprite -> canpipe_materialMap != null ? canpipe_materialMap.getMaterial(sprite) : null);
+        }
+
     }
 
 }

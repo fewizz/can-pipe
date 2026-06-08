@@ -41,8 +41,17 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
     }
 
     @Override
+    public void canpipe_setPendingBlockSubmitMaterialMap(MaterialMap materialMap) {
+        ((SubmitNodeCollectorExtended) this.order(0)).canpipe_setPendingBlockSubmitMaterialMap(materialMap);
+    }
+
+    @Override
     public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() {
         return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getItemSubmitsMaterialMaps();
+    }
+
+    @Override public Map<SubmitNodeStorage.BlockModelSubmit, MaterialMap> canpipe_getBlockSubmitsMaterialMaps() {
+        return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getBlockSubmitsMaterialMaps();
     }
 
     @Override
@@ -66,10 +75,6 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
     @Override
     public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() {
         return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getModelSubmitsExtras();
-    }
-
-    @Override public Map<SubmitNodeStorage.BlockModelSubmit, EntityMaterialMap> canpipe_getBlockSubmitsMaterialMaps() {
-        return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getBlockSubmitsMaterialMaps();
     }
 
 }
