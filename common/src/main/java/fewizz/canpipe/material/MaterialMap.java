@@ -69,15 +69,10 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
         if (this.spriteMap != null && atlasSprite != null) {
             Minecraft mc = Minecraft.getInstance();
 
-            MutableObject<TextureAtlas> atlas = new MutableObject<>();
-            mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
-                if (atlas.get() == null && possibleAtlas.location().equals(atlasSprite.atlasLocation())) {
-                    atlas.setValue(possibleAtlas);
-                }
-            });
+            TextureAtlas atlas = (TextureAtlas) mc.getTextureManager().getTexture(atlasSprite.atlasLocation());
 
             for (var kv : this.spriteMap.entrySet()) {
-                if (atlas.get().getSprite(kv.getKey()) == atlasSprite) {
+                if (atlas.getSprite(kv.getKey()) == atlasSprite) {
                     material = kv.getValue();
                     break;
                 }

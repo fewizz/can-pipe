@@ -21,7 +21,6 @@ import net.minecraft.client.resources.model.geometry.BakedQuad;
 public class BlockFeatureRendererMixin {
 
     @Unique private static /* !!! */ MaterialMap canpipe_materialMap = null;
-    // @Unique private static SubmitNodeStorage.BlockModelSubmit canpipe_submit = null;
 
     @Inject(
         method = "renderBlockModelSubmits",
@@ -36,7 +35,6 @@ public class BlockFeatureRendererMixin {
         @Local SubmitNodeStorage.BlockModelSubmit submit
     ) {
         canpipe_materialMap = ((SubmitNodeCollectorExtended) nodeCollection).canpipe_getBlockSubmitsMaterialMaps().get(submit);
-        // canpipe_submit = submit;
     }
 
     @Inject(

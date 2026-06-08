@@ -35,7 +35,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
     @Shadow private int height;
 
     @Unique GpuBuffer canpipe_spritesExtentsBuffer;
-    @Unique Int2ObjectMap<TextureAtlasSprite> canpipe_texturesByIndex = new Int2ObjectOpenHashMap<>();
+    @Unique Int2ObjectMap<TextureAtlasSprite> canpipe_spriteByIndex = new Int2ObjectOpenHashMap<>();
 
     @Inject(method = "upload", at = @At("TAIL"))
     void onUploadEnd(CallbackInfo ci) {
@@ -54,7 +54,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
                 int index = 0;
                 for (TextureAtlasSprite s : texturesByName.values()) {
                     ((TextureAtlasSpriteExtended) s).canpipe_setIndex(index);
-                    this.canpipe_texturesByIndex.put(index, s);
+                    this.canpipe_spriteByIndex.put(index, s);
                     shortBuff.put(index*4+0, (short) Mth.floor(s.getU0() * 0xFFFF));
                     shortBuff.put(index*4+1, (short) Mth.floor(s.getV0() * 0xFFFF));
                     shortBuff.put(index*4+2, (short) Mth.floor(s.getU1() * 0xFFFF));
@@ -75,7 +75,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
 
     @Inject(method = "clearTextureData", at = @At("TAIL"))
     public void onClearTextureData(CallbackInfo ci) {
-        canpipe_texturesByIndex.clear();
+        canpipe_spriteByIndex.clear();
         if (this.canpipe_spritesExtentsBuffer != null) {
             this.canpipe_spritesExtentsBuffer.close();
         }
@@ -93,7 +93,7 @@ public class TextureAtlasMixin implements TextureAtlasExtended {
 
     @Override
     public TextureAtlasSprite canpipe_getSpriteById(int id) {
-        return this.canpipe_texturesByIndex.get(id);
+        return this.canpipe_spriteByIndex.get(id);
     }
 
 }

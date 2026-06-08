@@ -65,29 +65,13 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
         ((VertexConsumerExtended) vertexConsumer).canpipe_setPendingAO(ao / 255.0F);
     }
 
-    /*@Inject(
-        method = "buffer(ILcom/mojang/blaze3d/vertex/PoseStack$Pose;Lcom/mojang/blaze3d/vertex/VertexConsumer;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex(FFFIFFIIFFF)V"
-        )
-    )
-    void beforeAddingVertexWithPose(
-        CallbackInfo ci,
-        @Local VertexConsumer vertexConsumer,
-        @Local(name = "i") int vertexIndex
-    ) {
-        int i = this.baseIndex / EncodingFormat.TOTAL_STRIDE * CANPIPE_DATA_STRIDE_INTS;
-        int ao = (this.canpipe_extraData[i+2] >>> (vertexIndex * 8)) & 0xFF;
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setPendingAO(ao / 255.0F);
-    }*/
-
     @Inject(method = "buffer*", at = @At("HEAD"))
     void beforeBuffer(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
         int i = this.baseIndex / EncodingFormat.TOTAL_STRIDE * CANPIPE_DATA_STRIDE_INTS;
         int spriteIndex = this.canpipe_extraData[i+0];
         int materialIndex = this.canpipe_extraData[i+1] & 0xFFFF;
 
+        // TODO: sloooooooooow
         TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(this.atlas().getId());
         TextureAtlasSprite sprite = ((TextureAtlasExtended) atlas).canpipe_getSpriteById(spriteIndex);
         Material material = Materials.get((short) materialIndex);
