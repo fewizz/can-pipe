@@ -50,7 +50,7 @@ public class BlockFeatureRendererMixin {
     )
     private static void onPutQuad(CallbackInfo ci, @Local(ordinal = 0) VertexConsumer buffer, @Local BakedQuad quad) {
         if (canpipe_materialMap != null) {
-            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(sprite -> canpipe_materialMap != null ? canpipe_materialMap.getMaterial(sprite) : null);
+            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(sprite -> canpipe_materialMap.getMaterial(sprite));
         }
 
     }

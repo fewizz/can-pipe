@@ -134,22 +134,10 @@ public class QuadParticleRenderStateMixin implements QuadParticleRenderStateExte
     void beforeRenderRotatedQuad(CallbackInfo ci, @Local(argsOnly = true) BufferBuilder bb) {
         if (bb instanceof VertexConsumerExtended vce) {
             Material material = Materials.get(this.canpipe_materialsIndices[this.canpipe_forEachParticleIndex]);
-            vce.canpipe_setScopedMaterialSupplier(_ -> material);
+            if (material != null) {
+                vce.canpipe_setPendingMaterialIndex(material.index());
+            }
             ++this.canpipe_forEachParticleIndex;
-        }
-    }
-
-    @Inject(
-        method = "lambda$prepare$0",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/state/level/QuadParticleRenderState;renderRotatedQuad(Lcom/mojang/blaze3d/vertex/VertexConsumer;FFFFFFFFFFFFII)V",
-            shift = Shift.AFTER
-        )
-    )
-    void afterRenderRotatedQuad(CallbackInfo ci, @Local(argsOnly = true) BufferBuilder bb) {
-        if (bb instanceof VertexConsumerExtended vce) {
-            vce.canpipe_setScopedMaterialSupplier(null);
         }
     }
 

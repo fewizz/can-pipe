@@ -28,6 +28,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.helpers.NormalAndTangent;
 import fewizz.canpipe.material.Material;
+import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -48,9 +49,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow private long beginElement(VertexFormatElement vertexFormatElement) { return -1; }
     @Shadow private static byte normalIntValue(float f) { return 0; }
 
+    @Unique private short canpipe_pendingMaterialIndex = -1;
     @Unique private Function<TextureAtlasSprite, Material> canpipe_materialSupplier = null;
     @Unique private boolean canpipe_glint = false;
     @Unique private boolean canpipe_entityGlint = false;
+    @Unique private int canpipe_pendingSpriteIndex = -1;
     @Unique private Supplier<TextureAtlasSprite> canpipe_spriteSupplier = null;
     @Unique private boolean canpipe_recomputeNormal = false;
     @Unique private Float canpipe_aoPending = null;
@@ -195,16 +198,27 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         TextureAtlasSprite sprite = this.canpipe_spriteSupplier != null ? this.canpipe_spriteSupplier.get() : null;
 
         if (spriteIndexPtr != -1) {
-            int index = sprite != null ? ((TextureAtlasSpriteExtended) sprite).canpipe_getIndex() : -1;
-            for (int i = offsetToFirstVertex; i <= 0; ++i) {
-                MemoryUtil.memPutInt(spriteIndexPtr + i*this.vertexSize, index);
+            if (this.canpipe_pendingSpriteIndex == -1 && sprite != null) {
+                this.canpipe_pendingSpriteIndex = ((TextureAtlasSpriteExtended) sprite).canpipe_getIndex();
             }
+            for (int i = offsetToFirstVertex; i <= 0; ++i) {
+                MemoryUtil.memPutInt(spriteIndexPtr + i*this.vertexSize, this.canpipe_pendingSpriteIndex);
+            }
+            this.canpipe_pendingSpriteIndex = -1;
         }
 
         if (materialIndexPtr != -1) {
-            Material material = this.canpipe_materialSupplier != null ? this.canpipe_materialSupplier.apply(sprite) : null;
+            Material material = null;
 
-            short materialIndex = material != null ? material.id() : -1;
+            if (this.canpipe_pendingMaterialIndex != -1) {
+                material = Materials.get(canpipe_pendingMaterialIndex);
+            }
+            else if (this.canpipe_materialSupplier != null) {
+                material = this.canpipe_materialSupplier.apply(sprite);
+                if (material != null) {
+                    this.canpipe_pendingMaterialIndex = material.index();
+                }
+            }
 
             byte materialFlags = (byte) 0;
 
@@ -219,9 +233,11 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             }
 
             for (int i = offsetToFirstVertex; i <= 0; ++i) {
-                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, materialIndex);
+                MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, this.canpipe_pendingMaterialIndex);
                 MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, materialFlags);
             }
+
+            this.canpipe_pendingMaterialIndex = -1;
         }
     }
 
@@ -334,8 +350,18 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Override
+    public void canpipe_setPendingSpriteIndex(int spriteIndex) {
+        this.canpipe_pendingSpriteIndex = spriteIndex;
+    }
+
+    @Override
     public void canpipe_setScopedSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier) {
         this.canpipe_spriteSupplier = spriteSupplier;
+    }
+
+    @Override
+    public void canpipe_setPendingMaterialIndex(short materialIndex) {
+        this.canpipe_pendingMaterialIndex = materialIndex;
     }
 
     @Override

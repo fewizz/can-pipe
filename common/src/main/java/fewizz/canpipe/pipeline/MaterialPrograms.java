@@ -250,11 +250,11 @@ public class MaterialPrograms {
                 if (src == null) {
                     continue;
                 }
-                src = src.replace("frx_materialFragment", "_material_"+m.id());
+                src = src.replace("frx_materialFragment", "_material_"+m.index());
 
-                String materialFunctionName = "_material_"+m.id();
+                String materialFunctionName = "_material_"+m.index();
 
-                materialsSwitchSrc.append("        case "+m.id()+": "+materialFunctionName+"(); break;\n");
+                materialsSwitchSrc.append("        case "+m.index()+": "+materialFunctionName+"(); break;\n");
                 materialsFunctionsSrc.append(src.replace("frx_materialVertex", materialFunctionName) + "\n\n");
             }
 
@@ -434,11 +434,11 @@ public class MaterialPrograms {
                 if (src == null) {
                     continue;
                 }
-                src = src.replace("frx_materialFragment", "_material_"+m.id());
+                src = src.replace("frx_materialFragment", "_material_"+m.index());
 
-                String materialFunctionName = "_material_"+m.id();
+                String materialFunctionName = "_material_"+m.index();
 
-                materialsSwitchSrc.append("        case "+m.id()+": "+materialFunctionName+"(); break;\n");
+                materialsSwitchSrc.append("        case "+m.index()+": "+materialFunctionName+"(); break;\n");
                 materialsFunctionsSrc.append(src.replace("frx_materialFragment", materialFunctionName) + "\n\n");
             }
 

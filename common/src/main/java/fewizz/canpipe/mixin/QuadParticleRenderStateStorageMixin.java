@@ -34,7 +34,7 @@ public class QuadParticleRenderStateStorageMixin implements QuadParticleRenderSt
 
     @Override
     public void canpipe_alsoAddMaterial(@Nullable Material material) {
-        short index = material != null ? material.id() : -1;
+        short index = material != null ? material.index() : -1;
         this.canpipe_materialValues[this.currentParticleIndex-1] = index;
     }
 

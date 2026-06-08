@@ -26,9 +26,17 @@ public interface VertexConsumerExtended extends VertexConsumer {
      */
     void canpipe_forceNormalRecomputation(boolean recompute);
 
+    /**
+     * Used if pending sprite index is not set for current primitive by `canpipe_setPendingSpriteIndex`
+     */
     void canpipe_setScopedSpriteSupplier(Supplier<TextureAtlasSprite> spriteSupplier);
+    void canpipe_setPendingSpriteIndex(int spriteIndex);
 
+    /**
+     * Used if pending material index is not set for current primitive by `canpipe_setPendingMaterialIndex`
+     */
     void canpipe_setScopedMaterialSupplier(Function<TextureAtlasSprite, Material> materialSupplier);
+    void canpipe_setPendingMaterialIndex(short materialIndex);
 
     void canpipe_setScopedGlint(boolean glint);
     void canpipe_setScopedEntityGlint(boolean glint);

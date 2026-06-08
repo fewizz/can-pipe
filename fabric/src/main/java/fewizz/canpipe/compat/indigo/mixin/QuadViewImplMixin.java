@@ -15,14 +15,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.compat.indigo.QuadViewExtended;
 import fewizz.canpipe.material.Material;
-import fewizz.canpipe.material.Materials;
-import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.EncodingFormat;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.QuadViewImpl;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 @Mixin(value = QuadViewImpl.class, remap = false, priority = 1000)
@@ -69,22 +65,15 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
     void beforeBuffer(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
         int i = this.baseIndex / EncodingFormat.TOTAL_STRIDE * CANPIPE_DATA_STRIDE_INTS;
         int spriteIndex = this.canpipe_extraData[i+0];
-        int materialIndex = this.canpipe_extraData[i+1] & 0xFFFF;
+        short materialIndex = (short) (this.canpipe_extraData[i+1] & 0xFFFF);
 
-        // TODO: sloooooooooow
-        TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(this.atlas().getId());
-        TextureAtlasSprite sprite = ((TextureAtlasExtended) atlas).canpipe_getSpriteById(spriteIndex);
-        Material material = Materials.get((short) materialIndex);
-
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedMaterialSupplier(_ -> material);
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedSpriteSupplier(() -> sprite);
+        ((VertexConsumerExtended) vertexConsumer).canpipe_setPendingSpriteIndex(spriteIndex);
+        ((VertexConsumerExtended) vertexConsumer).canpipe_setPendingMaterialIndex(materialIndex);
         ((VertexConsumerExtended) vertexConsumer).canpipe_forceNormalRecomputation(true);
     }
 
     @Inject(method = "buffer*", at = @At("RETURN"))
     void afterBuffer(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedSpriteSupplier(null);
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setScopedMaterialSupplier(null);
         ((VertexConsumerExtended) vertexConsumer).canpipe_forceNormalRecomputation(false);
     }
 

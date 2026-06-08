@@ -53,7 +53,7 @@ public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin impleme
         Material material = this.canpipe_materialSupplier.apply(sprite);
 
         if (material != null) {
-            this.canpipe_extraData[i+1] = material.id();
+            this.canpipe_extraData[i+1] = material.index();
         }
     }
 

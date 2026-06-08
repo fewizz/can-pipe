@@ -15,8 +15,8 @@ import org.jspecify.annotations.NonNull;
 
 
 public record Material(
-    short id,
-    Identifier location,
+    short index,
+    Identifier id,
     @Nullable String vertexShaderSource,
     @Nullable String fragmentShaderSource,
     @Nullable String depthVertexShaderSource,
@@ -48,8 +48,8 @@ public record Material(
 ) {
 
     static Material load(
-        short id,
-        Identifier location,
+        short index,
+        Identifier id,
         JsonObject materialJson
     ) throws IOException {
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
@@ -93,7 +93,7 @@ public record Material(
         boolean emissive = materialJson.getBoolean("emissive", false);
 
         return new Material(
-            id, location,
+            index, id,
             vertexShaderSource, fragmentShaderSource,
             depthVertexShaderSource, depthFragmentShaderSource,
             disableAO, disableDiffuse, disableColorIndex, emissive
@@ -102,7 +102,7 @@ public record Material(
 
     @Override
     public @NonNull String toString() {
-        return this.location.toString();
+        return this.id.toString();
     }
 
 }
