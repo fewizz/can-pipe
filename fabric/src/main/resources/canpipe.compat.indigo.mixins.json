@@ -10,6 +10,8 @@
 		"AltItemRendererEmitterMixin",
 		"AltModelBlockRendererImplMixin",
 		"IndigoRendererQuadEmitterMixin",
+		"MeshViewImplMixin",
+		"MutableMeshImplMixin",
 		"MutableQuadViewImplMixin",
 		"QuadViewImplMixin",
 		"VanillaBlockModelPartEncoderMixin"

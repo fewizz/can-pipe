@@ -19,7 +19,7 @@ public abstract class IndigoRendererQuadEmitterMixin extends MutableQuadViewImpl
         )
     )
     void onInit(CallbackInfo ci) {
-        ((QuadViewExtended) this).canpipe_setQuadData(new int[QuadViewImplMixin.CANPIPE_DATA_STRIDE_INTS]);
+        ((QuadViewExtended) this).canpipe_setExtraData(new int[QuadViewImplMixin.CANPIPE_DATA_STRIDE_INTS]);
     }
 
 }

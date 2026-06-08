@@ -28,15 +28,16 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 @Mixin(value = QuadViewImpl.class, remap = false, priority = 1000)
 public abstract class QuadViewImplMixin implements QuadViewExtended {
 
-    protected int[] canpipe_quadData;
+    @Shadow protected int[] data;
+    @Shadow protected int baseIndex = 0;
 
-    @Unique protected TextureAtlasSprite canpipe_atlasSprite;
+    @Unique protected int[] canpipe_extraData;
+
     @Unique protected Function<TextureAtlasSprite, Material> canpipe_materialSupplier;
 
-    @Override public int[] canpipe_getQuadData() { return this.canpipe_quadData; }
-    @Override public void canpipe_setQuadData(int[] data) { this.canpipe_quadData = data; }
-
-    @Shadow protected int baseIndex = 0;
+    @Override public int canpipe_getBaseIndex() { return this.baseIndex; }
+    @Override public int[] canpipe_getExtraData() { return this.canpipe_extraData; }
+    @Override public void canpipe_setExtraData(int[] data) { this.canpipe_extraData = data; }
 
     @ModifyReturnValue(method = "diffuseShade", at = @At("RETURN"))
     boolean hasShade(boolean original) {
@@ -59,15 +60,16 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
         @Local VertexConsumer vertexConsumer,
         @Local(ordinal = 1) int vertexIndex
     ) {
-        int i = (baseIndex / EncodingFormat.TOTAL_STRIDE) * CANPIPE_DATA_STRIDE_INTS + 2;
-        int ao = (this.canpipe_quadData[i] >>> (vertexIndex * 8)) & 0xFF;
+        int i = this.baseIndex / EncodingFormat.TOTAL_STRIDE * CANPIPE_DATA_STRIDE_INTS;
+        int ao = (this.canpipe_extraData[i+2] >>> (vertexIndex * 8)) & 0xFF;
         ((VertexConsumerExtended) vertexConsumer).canpipe_setPendingAO(ao / 255.0F);
     }
 
     @Inject(method = "buffer", at = @At("HEAD"))
     void beforeBuffer(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
-        int spriteIndex = this.canpipe_quadData[(baseIndex / EncodingFormat.TOTAL_STRIDE) * CANPIPE_DATA_STRIDE_INTS + 0];
-        int materialIndex = this.canpipe_quadData[(baseIndex / EncodingFormat.TOTAL_STRIDE) * CANPIPE_DATA_STRIDE_INTS + 1] & 0xFFFF;
+        int i = this.baseIndex / EncodingFormat.TOTAL_STRIDE * CANPIPE_DATA_STRIDE_INTS;
+        int spriteIndex = this.canpipe_extraData[i+0];
+        int materialIndex = this.canpipe_extraData[i+1] & 0xFFFF;
 
         TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(this.atlas().getId());
         TextureAtlasSprite sprite = ((TextureAtlasExtended) atlas).canpipe_getSpriteById(spriteIndex);

@@ -16,8 +16,10 @@ public interface QuadViewExtended extends QuadView {
     //      11..12 - ao 3
     public static final int CANPIPE_DATA_STRIDE_INTS = 3;
 
-    int[] canpipe_getQuadData();
+    int canpipe_getBaseIndex();
 
-    void canpipe_setQuadData(int[] data);
+    int[] canpipe_getExtraData();
+
+    void canpipe_setExtraData(int[] data);
 
 }
