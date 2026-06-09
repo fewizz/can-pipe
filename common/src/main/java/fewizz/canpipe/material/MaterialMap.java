@@ -24,10 +24,8 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
             defaultMaterial = Materials.get(materialLocation);
         }
 
-        JsonObject defaultMap = JanksonUtils.objectOrEmpty(json, "defaultMap");
-
         Map<Identifier, Material> spriteMap = new HashMap<>();
-        for (JsonObject spriteMapObject : JanksonUtils.listOfObjects(defaultMap, "spriteMap")) {
+        for (JsonObject spriteMapObject : JanksonUtils.listOfObjects(json, "spriteMap")) {
             spriteMap.put(
                 Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "sprite")),
                 Materials.get(Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "material")))
@@ -36,7 +34,7 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
         return new MaterialMap(defaultMaterial, spriteMap);
     }
 
-    static @Nullable  MaterialMap loadParticle(JsonObject json) {
+    static @Nullable MaterialMap loadParticle(JsonObject json) {
         String materialLocationString = json.get(String.class, "material");
         if (materialLocationString == null) {
             return null;
@@ -67,7 +65,6 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
 
         if (this.spriteMap != null && atlasSprite != null) {
             Minecraft mc = Minecraft.getInstance();
-
             TextureAtlas atlas = (TextureAtlas) mc.getTextureManager().getTexture(atlasSprite.atlasLocation());
 
             for (var kv : this.spriteMap.entrySet()) {

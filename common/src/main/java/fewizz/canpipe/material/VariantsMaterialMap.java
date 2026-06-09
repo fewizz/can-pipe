@@ -32,9 +32,9 @@ public record VariantsMaterialMap<S extends StateHolder<?, ?>>(
             defaultMap = new MaterialMap(defaultMaterial, Map.of());
         }
 
-        String defaultMapStr = json.get(String.class, "defaultMap");
-        if (defaultMapStr != null) {
-            MaterialMap possibleDefaultMap = MaterialMap.load(json);
+        JsonObject defaultMapJson = json.getObject("defaultMap");
+        if (defaultMapJson != null) {
+            MaterialMap possibleDefaultMap = MaterialMap.load(defaultMapJson);
             if (possibleDefaultMap != null) {
                 defaultMap = possibleDefaultMap;
             }
