@@ -67,16 +67,16 @@ public class ItemFeatureRendererMixin {
         )
     )  // if (foilType != FoilType.NONE) {
     private ItemStackRenderState.FoilType beforeRenderItem(
-        ItemStackRenderState.FoilType foilTypeNone,
+        ItemStackRenderState.FoilType original,  // NONE
         @Local RenderType renderType,
         @Local(ordinal = 0) ItemStackRenderState.FoilType foilType,
         @Local(argsOnly = true) BufferSource buffer
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) { return foilTypeNone; }
+        if (p == null) { return original; }
 
         VertexConsumer vc = buffer.getBuffer(renderType);
-        VertexConsumerExtended vce = (VertexConsumerExtended) vc;
+        if (!(vc instanceof VertexConsumerExtended vce)) { return original; }
 
         if (this.canpipe_materialMap != null) {
             vce.canpipe_setScopedMaterialSupplier(sprite -> this.canpipe_materialMap.getMaterial(sprite));
@@ -107,9 +107,10 @@ public class ItemFeatureRendererMixin {
         @Local(argsOnly = true) BufferSource buffer
     ) {
         VertexConsumer vc = buffer.getBuffer(renderType);
-        VertexConsumerExtended vce = (VertexConsumerExtended) vc;
-        vce.canpipe_setScopedGlint(false);
-        vce.canpipe_setScopedMaterialSupplier(null);
+        if (vc instanceof VertexConsumerExtended vce) {
+            vce.canpipe_setScopedGlint(false);
+            vce.canpipe_setScopedMaterialSupplier(null);
+        }
     }
 
 }

@@ -46,10 +46,12 @@ public class ModelFeatureRendererMixin {
         @Local(ordinal = 0) VertexConsumer buffer,
         @Local RenderType renderType
     ) {
+        if (!(buffer instanceof VertexConsumerExtended vce)) { return; }
+
         TextureAtlasSprite sprite = submit.sprite();
 
         if (sprite != null) {
-            ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(() -> sprite);
+            vce.canpipe_setScopedSpriteSupplier(() -> sprite);
         }
 
         Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> extras =
@@ -83,16 +85,18 @@ public class ModelFeatureRendererMixin {
                 material = foundMaterial != null ? foundMaterial : materialMap.defaultMaterial();
             }
 
-            ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(_sprite -> material);
-            ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(extra.entityGlint());
+            vce.canpipe_setScopedMaterialSupplier(_sprite -> material);
+            vce.canpipe_setScopedEntityGlint(extra.entityGlint());
         }
     }
 
     @Inject(method = "renderModel", at = @At("RETURN"))
     void afterRenderModel(CallbackInfo ci, @Local(ordinal = 0) VertexConsumer buffer) {
-        ((VertexConsumerExtended) buffer).canpipe_setScopedMaterialSupplier(null);
-        ((VertexConsumerExtended) buffer).canpipe_setScopedEntityGlint(false);
-        ((VertexConsumerExtended) buffer).canpipe_setScopedSpriteSupplier(null);
+        if (buffer instanceof VertexConsumerExtended vce) {
+            vce.canpipe_setScopedMaterialSupplier(null);
+            vce.canpipe_setScopedEntityGlint(false);
+            vce.canpipe_setScopedSpriteSupplier(null);
+        }
     }
 
 }

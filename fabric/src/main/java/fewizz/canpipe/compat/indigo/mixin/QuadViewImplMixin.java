@@ -56,25 +56,31 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
         @Local VertexConsumer vertexConsumer,
         @Local(name = "i") int vertexIndex
     ) {
+        if (!(vertexConsumer instanceof VertexConsumerExtended vce)) { return; }
+
         int i = this.baseIndex / EncodingFormat.TOTAL_STRIDE * CANPIPE_DATA_STRIDE_INTS;
         int ao = (this.canpipe_extraData[i+2] >>> (vertexIndex * 8)) & 0xFF;
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setPendingAO(ao / 255.0F);
+        vce.canpipe_setPendingAO(ao / 255.0F);
     }
 
     @Inject(method = "buffer*", at = @At("HEAD"))
     void beforeBuffer(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
+        if (!(vertexConsumer instanceof VertexConsumerExtended vce)) { return; }
+
         int i = this.baseIndex / EncodingFormat.TOTAL_STRIDE * CANPIPE_DATA_STRIDE_INTS;
         int spriteIndex = this.canpipe_extraData[i+0];
         short materialIndex = (short) (this.canpipe_extraData[i+1] & 0xFFFF);
 
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setPendingSpriteIndex(spriteIndex);
-        ((VertexConsumerExtended) vertexConsumer).canpipe_setPendingMaterialIndex(materialIndex);
-        ((VertexConsumerExtended) vertexConsumer).canpipe_forceNormalRecomputation(true);
+        vce.canpipe_setPendingSpriteIndex(spriteIndex);
+        vce.canpipe_setPendingMaterialIndex(materialIndex);
+        vce.canpipe_forceNormalRecomputation(true);
     }
 
     @Inject(method = "buffer*", at = @At("RETURN"))
     void afterBuffer(CallbackInfo ci, @Local VertexConsumer vertexConsumer) {
-        ((VertexConsumerExtended) vertexConsumer).canpipe_forceNormalRecomputation(false);
+        if (vertexConsumer instanceof VertexConsumerExtended vce) {
+            vce.canpipe_forceNormalRecomputation(false);
+        }
     }
 
 }
