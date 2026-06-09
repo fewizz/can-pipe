@@ -166,7 +166,7 @@ public class Pipeline implements AutoCloseable {
             AbstractTexture texture = null;
             if (name.contains(":")) {
                 var mc = Minecraft.getInstance();
-                var id = CanPipe.upgradeResourcePath(Identifier.parse(name));
+                var id = CanPipe.upgradeIdentifier(Identifier.parse(name));
 
                 if (id.equals(Identifier.withDefaultNamespace("textures/environment/moon_phases.png"))) {
                     texture = new MoonPhasesTexture();

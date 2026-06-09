@@ -96,7 +96,7 @@ public record EntityMaterialMap(
             JsonPrimitive predicateValue = (JsonPrimitive) kv.getValue();
             switch (predicateName) {
                 case "texture" -> {
-                    Identifier textureID = Identifier.parse(predicateValue.asString());
+                    Identifier textureID = CanPipe.upgradeIdentifier(Identifier.parse(predicateValue.asString()));
                     // Sprite ID's don't specify '.png' extension and 'textures' directory
                     Identifier spriteID = textureID.withPath(FilenameUtils.removeExtension(textureID.getPath().replaceFirst("^textures/", "")));
                     predicates.add(ctx -> {

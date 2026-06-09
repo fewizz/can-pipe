@@ -191,10 +191,9 @@ public class CanPipe {
 
     }
 
-    public static Identifier upgradeResourcePath(Identifier identifier) {
-        String path = identifier.getPath();
-
-        if (identifier.getNamespace().equals("minecraft")) {
+    public static Identifier upgradeIdentifier(Identifier id) {
+        if (id.getNamespace().equals("minecraft")) {
+            String path = id.getPath();
             path = switch (path) {
                 case "block/grass" -> "block/short_grass";
 
@@ -202,22 +201,22 @@ public class CanPipe {
                 case "textures/models/armor/chainmail_layer_2.png" -> "textures/entity/equipment/humanoid_leggings/chainmail.png";
 
                 case "textures/models/armor/gold_layer_1.png" -> "textures/entity/equipment/humanoid/gold.png";
-                case "textures/models/armor/gold_layer_2.png" -> "textures/entity/equipment/humanoid_legging/gold.png";
+                case "textures/models/armor/gold_layer_2.png" -> "textures/entity/equipment/humanoid_leggings/gold.png";
 
                 case "textures/models/armor/iron_layer_1.png" -> "textures/entity/equipment/humanoid/iron.png";
-                case "textures/models/armor/iron_layer_2.png" -> "textures/entity/equipment/humanoid_legging/iron.png";
+                case "textures/models/armor/iron_layer_2.png" -> "textures/entity/equipment/humanoid_leggings/iron.png";
 
                 case "textures/models/armor/netherite_layer_1.png" -> "textures/entity/equipment/humanoid/netherite.png";
-                case "textures/models/armor/netherite_layer_2.png" -> "textures/entity/equipment/humanoid_legging/netherite.png";
+                case "textures/models/armor/netherite_layer_2.png" -> "textures/entity/equipment/humanoid_leggings/netherite.png";
 
                 case "textures/models/armor/leather_layer_1.png" -> "textures/entity/equipment/humanoid/leather.png";
-                case "textures/models/armor/leather_layer_2.png" -> "textures/entity/equipment/humanoid_legging/leather.png";
+                case "textures/models/armor/leather_layer_2.png" -> "textures/entity/equipment/humanoid_leggings/leather.png";
 
                 case "textures/models/armor/leather_layer_1_overlay.png" -> "textures/entity/equipment/humanoid/leather_overlay.png";
-                case "textures/models/armor/leather_layer_2_overlay.png" -> "textures/entity/equipment/humanoid_legging/leather_overlay.png";
+                case "textures/models/armor/leather_layer_2_overlay.png" -> "textures/entity/equipment/humanoid_leggings/leather_overlay.png";
 
                 case "textures/models/armor/diamond_layer_1.png" -> "textures/entity/equipment/humanoid/diamond.png";
-                case "textures/models/armor/diamond_layer_2.png" -> "textures/entity/equipment/humanoid_legging/diamond.png";
+                case "textures/models/armor/diamond_layer_2.png" -> "textures/entity/equipment/humanoid_leggings/diamond.png";
 
                 // Was changed in resource pack format v13
                 case "textures/misc/enchanted_item_glint.png" -> ItemFeatureRenderer.ENCHANTED_GLINT_ITEM.getPath();
@@ -229,9 +228,9 @@ public class CanPipe {
 
                 default -> path;
             };
-            identifier = identifier.withPath(path);
+            id = id.withPath(path);
         }
-        return identifier;
+        return id;
     }
 
 }

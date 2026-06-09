@@ -26,10 +26,9 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
 
         Map<Identifier, Material> spriteMap = new HashMap<>();
         for (JsonObject spriteMapObject : JanksonUtils.listOfObjects(json, "spriteMap")) {
-            spriteMap.put(
-                Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "sprite")),
-                Materials.get(Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "material")))
-            );
+            Identifier spriteId = Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "sprite"));
+            Identifier materialId = Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "material"));
+            spriteMap.put(spriteId, Materials.get(materialId));
         }
         return new MaterialMap(defaultMaterial, spriteMap);
     }
