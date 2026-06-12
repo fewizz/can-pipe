@@ -10,11 +10,10 @@ import org.jspecify.annotations.Nullable;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 
-public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Material> spriteMap) {
+public record MaterialMap(@Nullable Material defaultMaterial, Map<TextureAtlasSprite, Material> spriteMap) {
 
     static MaterialMap load(JsonObject json) {
         Material defaultMaterial = null;
@@ -24,11 +23,20 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
             defaultMaterial = Materials.get(materialLocation);
         }
 
-        Map<Identifier, Material> spriteMap = new HashMap<>();
+        Map<TextureAtlasSprite, Material> spriteMap = new HashMap<>();
         for (JsonObject spriteMapObject : JanksonUtils.listOfObjects(json, "spriteMap")) {
             Identifier spriteId = Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "sprite"));
             Identifier materialId = Identifier.parse(JanksonUtils.stringOrThrow(spriteMapObject, "material"));
-            spriteMap.put(spriteId, Materials.get(materialId));
+
+            Material material = Materials.get(materialId);
+
+            var mc = Minecraft.getInstance();
+            mc.getAtlasManager().forEach((id, atlas) -> {
+                var sprite = atlas.getSprite(spriteId);
+                if (sprite != null) {
+                    spriteMap.put(sprite, material);
+                }
+            });
         }
         return new MaterialMap(defaultMaterial, spriteMap);
     }
@@ -60,19 +68,7 @@ public record MaterialMap(@Nullable Material defaultMaterial, Map<Identifier, Ma
     }
 
     public Material getMaterial(@Nullable TextureAtlasSprite atlasSprite) {
-        Material material = null;
-
-        if (this.spriteMap != null && atlasSprite != null) {
-            Minecraft mc = Minecraft.getInstance();
-            TextureAtlas atlas = (TextureAtlas) mc.getTextureManager().getTexture(atlasSprite.atlasLocation());
-
-            for (var kv : this.spriteMap.entrySet()) {
-                if (atlas.getSprite(kv.getKey()) == atlasSprite) {
-                    material = kv.getValue();
-                    break;
-                }
-            }
-        }
+        Material material = this.spriteMap.get(atlasSprite);
 
         if (material == null) {
             material = this.defaultMaterial;
