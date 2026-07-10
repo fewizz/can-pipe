@@ -16,10 +16,6 @@ repositories {
         name = "Terraformers"
         url = "https://maven.terraformersmc.com"
     }
-    maven {
-        name= "RogueLogix"
-        url = "https://maven.logix.dev/snapshots"
-    }
     exclusiveContent {
         forRepository {
             maven {
@@ -31,11 +27,6 @@ repositories {
             includeGroup("maven.modrinth")
         }
     }
-}
-
-configurations {
-    cinnabar
-    compileOnly.extendsFrom cinnabar
 }
 
 dependencies {
@@ -56,8 +47,6 @@ dependencies {
 
     implementation "blue.endless:jankson:1.2.3"
     include "blue.endless:jankson:1.2.3"
-
-    cinnabar "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
 }
 
 compileJava.source project(":common").sourceSets.main.allSource
@@ -87,28 +76,6 @@ loom {
             // vmArg "-XX:-Inline"
             programArg "--renderDebugLabels"
             properties(["mixin.debug": "true",])
-            appendProjectPathToConfigName = false
-        }
-        clientCinnabar {
-            inherit client
-            runDir "../run"
-            setConfigName "Fabric Cinnabar"
-            properties([
-                "fabric.addMods": project.configurations.cinnabar.getFiles()
-                    .stream().map({f -> f.getAbsolutePath()})
-                    .collect(java.util.stream.Collectors.joining(File.pathSeparator))
-            ])
-        }
-        clientCinnabarValidated {
-            inherit client
-            runDir "../run"
-            setConfigName "Fabric Cinnabar Validated"
-            properties([
-                "fabric.addMods": project.configurations.cinnabar.getFiles()
-                    .stream().map({f -> f.getAbsolutePath()})
-                    .collect(java.util.stream.Collectors.joining(File.pathSeparator)),
-                "cinnabar.vulkanValidationLayers": "true"
-            ])
         }
     }
 }
