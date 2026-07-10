@@ -103,7 +103,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     Consumer<Object> applyOptionValue = (@Nullable Object value) -> {
                         Pipelines.loadAndSetPipeline(raw, Pair.of(e, value));
                         if (
-                            minecraft.screen instanceof PipelineOptionsScreen &&
+                            minecraft.gui.screen() instanceof PipelineOptionsScreen &&
                             Pipelines.getCurrent() == null
                         ) {
                             if (lastScreen instanceof VideoSettingsScreenExtended vss) {

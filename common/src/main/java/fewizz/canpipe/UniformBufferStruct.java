@@ -11,9 +11,6 @@ import org.joml.Vector4f;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.buffers.Std140SizeCalculator;
-import com.mojang.blaze3d.systems.RenderSystem;
-
-import net.minecraft.util.Mth;
 
 public class UniformBufferStruct {
     final List<UniformValue> uniformValues = new ArrayList<>();
@@ -29,11 +26,10 @@ public class UniformBufferStruct {
         for (var uniformValue : this.uniformValues) {
             uniformValue.writeTo(std140Builder);
         }
-        std140Builder.align(RenderSystem.getDevice().getUniformOffsetAlignment());
     }
 
     public int size() {
-        return Mth.roundToward(this.sizeCalculator.get(), RenderSystem.getDevice().getUniformOffsetAlignment());
+        return this.sizeCalculator.get();
     }
 
     // Same as net.minecraft.client.renderer.UniformValue, but not a record

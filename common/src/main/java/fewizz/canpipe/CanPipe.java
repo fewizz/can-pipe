@@ -8,18 +8,19 @@ import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.KeyMapping;
@@ -57,7 +58,7 @@ public class CanPipe {
         GpuDevice device = RenderSystem.getDevice();
 
         try (ByteBufferBuilder byteBufferBuilder = new ByteBufferBuilder(CanPipe.VertexFormats.POSITION_TEX.getVertexSize() * 4)) {
-            BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, VertexFormat.Mode.QUADS, CanPipe.VertexFormats.POSITION_TEX);
+            BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, PrimitiveTopology.QUADS, CanPipe.VertexFormats.POSITION_TEX);
             bufferBuilder.addVertex(0.0F, 0.0F, 0.0F).setUv(0.0F, 0.0F);
             bufferBuilder.addVertex(1.0F, 0.0F, 0.0F).setUv(1.0F, 0.0F);
             bufferBuilder.addVertex(1.0F, 1.0F, 0.0F).setUv(1.0F, 1.0F);
@@ -75,7 +76,7 @@ public class CanPipe {
             device.createBuffer(() -> "can-pipe 3", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 3)))
         };
 
-        CanPipe.whiteTexture = device.createTexture("can-pipe white", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8, 1, 1, 1, 1);
+        CanPipe.whiteTexture = device.createTexture("can-pipe white", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, 1, 1, 1, 1);
         NativeImage whitePixel = new NativeImage(1, 1, false);
         whitePixel.setPixel(0, 0, 0xFFFFFFFF);
         device.createCommandEncoder().writeToTexture(whiteTexture, whitePixel);
@@ -91,102 +92,90 @@ public class CanPipe {
     public static @NonNull GpuTexture getWhiteTexture() { return CanPipe.whiteTexture; }
     public static @NonNull GpuTextureView getWhiteTextureView() { return CanPipe.whiteTextureView; }
 
-    public static class VertexFormatElements {
-
-        public static final VertexFormatElement
-            MATERIAL_FLAGS = VertexFormatElement.register(7, 0, VertexFormatElement.Type.BYTE, false, 1),  // UV, because it uses vertexAttrib *I* Pointer in this case
-            SPRITE_INDEX = VertexFormatElement.register(8, 0, VertexFormatElement.Type.INT, false, 1),  // UV, because it uses vertexAttrib *I* Pointer in this case
-            MATERIAL_INDEX = VertexFormatElement.register(9, 0, VertexFormatElement.Type.SHORT, false, 1),
-            TANGENT = VertexFormatElement.register(10, 0, VertexFormatElement.Type.BYTE, true, 4),
-            AO = VertexFormatElement.register(11, 0, VertexFormatElement.Type.UBYTE, true, 1);
-
-    }
-
     public static class VertexFormats {
 
-        /* size % 4 should be == 0, for quads sorting */
-        public static final VertexFormat BLOCK = VertexFormat.builder()
-            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
-            /* 12 + 1*4 */.add("in_color", VertexFormatElement.COLOR)
-            /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
-            /* 24 + 2*2 */.add("in_lightmapPos", VertexFormatElement.UV2)
-            /* 28 + 3*1 */.add("in_normal", VertexFormatElement.NORMAL)
-            /* 31 + 1*1 */.padding(1)
+        public static final String
+            MATERIAL_FlAGS_ATTRIBUTE_NAME = "in_materialFlags",
+            SPRITE_INDEX_ATTRIBUTE_NAME = "in_spriteIndex",
+            MATERIAL_INDEX_ATTRIBUTE_NAME = "in_materialIndex",
+            TANGENT_ATTRIBUTE_NAME = "in_tangent",
+            AO_ATTRIBUTE_NAME = "in_ao";
 
-            /* 32 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
-            /* 36 + 4*1 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
-            /* 40 + 1*2 */.add("in_materialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
-            /* 42 + 1*1 */.add("in_ao", CanPipe.VertexFormatElements.AO)
-            /* 43 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+        private static final GpuFormat
+            MATERIAL_FLAGS_FORMAT = GpuFormat.R8_UINT,
+            SPRITE_INDEX_FORMAT = GpuFormat.R32_SINT,
+            MATERIAL_INDEX_FORMAT = GpuFormat.R16_SINT,
+            TANGENT_FORMAT = GpuFormat.RGBA8_SNORM,
+            AO_FORMAT = GpuFormat.R8_UNORM;
+
+        /* size % 4 should be == 0, for quads sorting */
+        public static final VertexFormat BLOCK = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 1*4 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
+            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
+            /* 28 + 4*1 */.addAttribute(DefaultVertexFormat.NORMAL_SEMANTIC_NAME, DefaultVertexFormat.NORMAL_FORMAT)
+
+            /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
+            /* 36 + 4*1 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
+            /* 40 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
+            /* 42 + 1*1 */.addAttribute(AO_ATTRIBUTE_NAME, AO_FORMAT)
+            /* 43 + 1*1 */.addAttribute(MATERIAL_FlAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
             .build();
 
-        public static final VertexFormat ENTITY = VertexFormat.builder()
-            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
-            /* 12 + 1*4 */.add("in_color", VertexFormatElement.COLOR)
-            /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
-            /* 24 + 2*2 */.add("in_overlayPos", VertexFormatElement.UV1)
-            /* 28 + 2*2 */.add("in_lightmapPos", VertexFormatElement.UV2)
-            /* 32 + 3*1 */.add("in_normal", VertexFormatElement.NORMAL)
-            /* 35 + 1*1 */.padding(1)
+        public static final VertexFormat ENTITY = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 1*4 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
+            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV1_SEMANTIC_NAME, DefaultVertexFormat.UV1_FORMAT)
+            /* 28 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
+            /* 32 + 4*1 */.addAttribute(DefaultVertexFormat.NORMAL_SEMANTIC_NAME, DefaultVertexFormat.NORMAL_FORMAT)
 
-            /* 36 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
-            /* 40 + 1*4 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
-            /* 44 + 1*2 */.add("in_materialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
-            /* 46 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
-            /* 47 + 1*1 */.padding(1)
+            /* 36 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
+            /* 40 + 1*4 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
+            /* 44 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
+            /* 46 + 2*1 */.addAttribute(MATERIAL_FlAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
             .build();
 
         /* Used when rendering shadow cascades, not a circular shadow under entities */
-        public static final VertexFormat ENTITY_SHADOW = VertexFormat.builder()
-            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
-            /* 12 + 1*4 */.add("in_color", VertexFormatElement.COLOR)
-            /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
-            /* 24 + 2*2 */.add("in_overlayPos", VertexFormatElement.UV1)
-            /* 28 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
+        public static final VertexFormat ENTITY_SHADOW = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 1*4 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
+            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV1_SEMANTIC_NAME, DefaultVertexFormat.UV1_FORMAT)
+            /* 28 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
             .build();
 
-        public static final VertexFormat PARTICLE = VertexFormat.builder()
-            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
-            /* 12 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
-            /* 20 + 4*1 */.add("in_color", VertexFormatElement.COLOR)
-            /* 24 + 2*2 */.add("in_lightmapPos", VertexFormatElement.UV2)
+        public static final VertexFormat PARTICLE = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
+            /* 20 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
 
-            /* 28 + 3*1 */.add("in_normal", VertexFormatElement.NORMAL)
-            /* 31 + 1*1 */.padding(1)
-            /* 32 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
-            /* 36 + 4*1 */.add("in_tangent", CanPipe.VertexFormatElements.TANGENT)
-            /* 38 + 2*1 */.add("in_materialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
-            /* 40 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
-            /* 41 + 1*1 */.padding(1)
+            /* 28 + 4*1 */.addAttribute(DefaultVertexFormat.NORMAL_SEMANTIC_NAME, DefaultVertexFormat.NORMAL_FORMAT)
+            // .add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
+            /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
+            // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
+            /* 36 + 4*1 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
             .build();
 
-        public static final VertexFormat PARTICLE_SHADOW = VertexFormat.builder()
-            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
-            /* 12 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
-            /* 20 + 4*1 */.add("in_color", VertexFormatElement.COLOR)
-            /* 24 + 2*2 */.add("in_lightmapPos", VertexFormatElement.UV2)
-            /* 28 + 1*4 */.add("in_spriteIndex", CanPipe.VertexFormatElements.SPRITE_INDEX)
+        public static final VertexFormat PARTICLE_SHADOW = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
+            /* 20 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
+            /* 28 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
             .build();
 
-        public static final VertexFormat POSITION_COLOR_LIGHTMAP = VertexFormat.builder()
-            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
-            /* 12 + 4*1 */.add("in_color", VertexFormatElement.COLOR)
-            /* 16 + 2*2 */.add("in_lightmapPos", VertexFormatElement.UV2)
+        public static final VertexFormat POSITION_COLOR_LIGHTMAP = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 16 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
             .build();
 
-        public static final VertexFormat POSITION_COLOR_TEX_LIGHTMAP = VertexFormat.builder()
-            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
-            /* 12 + 4*1 */.add("in_color", VertexFormatElement.COLOR)
-            /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
-            /* 24 + 2*2 */.add("in_lightmapPos", VertexFormatElement.UV2)
-            /* 28 + 2*1 */.add("in_materialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
-            /* 30 + 1*1 */.add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
-            /* 31 + 1*1 */.padding(1)
-            .build();
-
-        public static final VertexFormat POSITION_TEX = VertexFormat.builder()
-            /* 0  + 3*4 */.add("in_vertex", VertexFormatElement.POSITION)
-            /* 16 + 2*4 */.add("in_uv", VertexFormatElement.UV0)
+        public static final VertexFormat POSITION_TEX = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
             .build();
 
     }

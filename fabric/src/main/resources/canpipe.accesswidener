@@ -10,3 +10,11 @@ accessible  class   com/mojang/blaze3d/opengl/GlStateManager$TextureState
 accessible  class   net/minecraft/client/renderer/rendertype/RenderSetup$TextureBinding
 
 accessible  class   net/minecraft/client/renderer/state/level/QuadParticleRenderState$Storage
+
+accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  POSITION_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  COLOR_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  UV0_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  UV1_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  UV2_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  NORMAL_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  LINE_WIDTH_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
