@@ -1,13 +1,7 @@
 package fewizz.canpipe.b3d.mixin;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
@@ -24,20 +18,16 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.llamalad7.mixinextras.sugar.ref.LocalRef;
-import com.mojang.blaze3d.opengl.DirectStateAccess;
 import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
-import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.systems.RenderPassBackend;
+import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
-import fewizz.canpipe.b3d.GpuTextureViewExtended;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 @Mixin(GlCommandEncoder.class)
 public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExtended {
@@ -46,7 +36,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     @Shadow @Final private int drawFbo;
     @Shadow @Final private static Logger LOGGER;
     @Shadow @Final private GlDevice device;
-    @Shadow private boolean inRenderPass;
 
     @Unique private GpuTextureView[] canpipe_colorAttachments = null;
     @Unique private int canpipe_clearBaseLevel = -1;
@@ -83,36 +72,29 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
 
     @Inject(
         method = "createRenderPass("+
-            "Ljava/util/function/Supplier;"+
-            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-            "Ljava/util/OptionalInt;"+
-            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-            "Ljava/util/OptionalDouble;"+
+            "Lcom/mojang/blaze3d/systems/RenderPassDescriptor;"+
         ")Lcom/mojang/blaze3d/systems/RenderPassBackend;",
         at = @At("HEAD")
     )
     void replaceTextureViewIfNull(
-        CallbackInfoReturnable<Void> ci,
-        @Local(argsOnly = true, ordinal = 0) LocalRef<GpuTextureView> colorTextureView,
-        @Local(argsOnly = true, ordinal = 1) GpuTextureView depthTextureView
+        RenderPassDescriptor renderPassDescriptor,
+        CallbackInfoReturnable<Void> ci
     ) {
-        if (colorTextureView.get() != null) return;
+        // TODO
+        /*if (renderPassDescriptor.colorAttachments.get() != null) return;
 
         if (this.canpipe_colorAttachments != null && this.canpipe_colorAttachments.length > 0) {
             colorTextureView.set(this.canpipe_colorAttachments[0]);
         }
         else {
             colorTextureView.set(depthTextureView);
-        }
+        }*/
     }
 
-    @WrapOperation(
+    // TODO
+    /*@WrapOperation(
         method = "createRenderPass("+
-            "Ljava/util/function/Supplier;"+
-            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-            "Ljava/util/OptionalInt;"+
-            "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-            "Ljava/util/OptionalDouble;"+
+            "Lcom/mojang/blaze3d/systems/RenderPassDescriptor;"+
         ")Lcom/mojang/blaze3d/systems/RenderPassBackend;",
         at = @At(
             value = "INVOKE",
@@ -177,7 +159,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             }
             return id;
         });
-    }
+    }*/
 
     @Override
     public void canpipe_clearDepthTexture(

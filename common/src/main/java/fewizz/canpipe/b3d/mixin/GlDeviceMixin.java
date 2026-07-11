@@ -143,7 +143,7 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         }
         return module;
     }
-
+/* // TODO
     @ModifyArg(
         method = "compileProgram",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlProgram;setupUniforms(Ljava/util/List;Ljava/util/List;)V"),
@@ -166,10 +166,10 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         }
         return samplers;
     }
-
+*/
     @Inject(
         method = "createTexture("+
-            "Ljava/lang/String;ILcom/mojang/blaze3d/textures/TextureFormat;IIII"+
+            "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+
         ")Lcom/mojang/blaze3d/textures/GpuTexture;",
         at = @At(
             value = "INVOKE",
@@ -178,22 +178,22 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
     )
     void beforeBindingTexture2D(
         CallbackInfoReturnable<Void> ci,
-        @Local(argsOnly = true, ordinal = 3) int layers,
+        @Local(argsOnly = true, ordinal = 3) int depthOrLayers,
         @Local(ordinal = 5) int id
     ) {
-        if (layers > 1) {
+        if (depthOrLayers > 1) {
             GlStateManagerAccessor.canpipe_setTextureTarget(id, GL33C.GL_TEXTURE_2D_ARRAY);
         }
     }
 
     @ModifyExpressionValue(
         method = "createTexture("+
-            "Ljava/lang/String;ILcom/mojang/blaze3d/textures/TextureFormat;IIII"+
+            "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+
         ")Lcom/mojang/blaze3d/textures/GpuTexture;",
         at = @At(value = "CONSTANT", args = "intValue=3553")  // GL_TEXTURE_2D
     )
-    int changeTarget(int target, @Local(argsOnly = true, ordinal = 3) int layers) {
-        if (layers > 1) {
+    int changeTarget(int target, @Local(argsOnly = true, ordinal = 3) int depthOrLayers) {
+        if (depthOrLayers > 1) {
             target = GL33C.GL_TEXTURE_2D_ARRAY;
         }
         return target;
@@ -201,7 +201,7 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
 
     @WrapWithCondition(
         method = "createTexture("+
-            "Ljava/lang/String;ILcom/mojang/blaze3d/textures/TextureFormat;IIII"+
+            "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+
         ")Lcom/mojang/blaze3d/textures/GpuTexture;",
         at = @At(
             value = "INVOKE",
@@ -211,10 +211,10 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
     )
     boolean texImage3DIfLayerGreaterThanOne(
         int target, int level, int internalFormat, int width, int height, int border, int format, int type, ByteBuffer pixels,
-        @Local(argsOnly = true, ordinal = 3) int layers
+        @Local(argsOnly = true, ordinal = 3) int depthOrLayers
     ) {
-        if (layers > 1) {
-            GL33C.glTexImage3D(GL33C.GL_TEXTURE_2D_ARRAY, level, internalFormat, width, height, layers, 0, format, type, pixels);
+        if (depthOrLayers > 1) {
+            GL33C.glTexImage3D(GL33C.GL_TEXTURE_2D_ARRAY, level, internalFormat, width, height, depthOrLayers, 0, format, type, pixels);
             return false;
         }
         return true;

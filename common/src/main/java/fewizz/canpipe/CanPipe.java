@@ -157,7 +157,7 @@ public class CanPipe {
             /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
             /* 36 + 4*1 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
             /* 40 + 2*1 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
-            /* 42 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
+            /* 42 + 2*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
             .build();
 
         public static final VertexFormat PARTICLE_SHADOW = VertexFormat.builder(0)
@@ -180,7 +180,7 @@ public class CanPipe {
             /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
             /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
             /* 28 + 2*1 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
-            /* 30 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
+            /* 30 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
             .build();
 
         public static final VertexFormat POSITION_TEX = VertexFormat.builder(0)

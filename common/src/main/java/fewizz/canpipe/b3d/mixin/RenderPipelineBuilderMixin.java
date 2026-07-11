@@ -17,9 +17,9 @@ import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 @Mixin(RenderPipeline.Builder.class)
 public abstract class RenderPipelineBuilderMixin implements RenderPipelineBuilderExtended {
 
-    @Shadow public abstract RenderPipeline.Builder withSampler(final String sampler);
+    // @Shadow public abstract RenderPipeline.Builder withSampler(final String sampler);
 
-    private Optional<Set<String>> canpipe_optionalSamplers = Optional.empty();
+    /*private Optional<Set<String>> canpipe_optionalSamplers = Optional.empty();
 
     @Override
     public RenderPipeline.Builder canpipe_withOptionalSampler(String sampler) {
@@ -36,6 +36,6 @@ public abstract class RenderPipelineBuilderMixin implements RenderPipelineBuilde
         Set<String> optionalSamplers = this.canpipe_optionalSamplers.orElse(Set.of());
         ((RenderPipelineAccessor) pipeline).canpipe_setOptionalSamplers(Set.copyOf(optionalSamplers));
         return pipeline;
-    }
+    }*/
 
 }

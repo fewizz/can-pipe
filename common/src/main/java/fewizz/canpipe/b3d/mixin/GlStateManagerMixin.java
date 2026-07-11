@@ -67,7 +67,7 @@ public class GlStateManagerMixin {
         method = "_bindTexture",
         at = @At(
             value = "INVOKE",
-            target = "org.lwjgl.opengl.GL11.glBindTexture(II)V"
+            target = "org.lwjgl.opengl.GL33C.glBindTexture(II)V"
         ),
         index = 0
     )
