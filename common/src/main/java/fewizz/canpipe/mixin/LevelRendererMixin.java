@@ -71,7 +71,6 @@ import net.minecraft.world.level.LightLayer;
 @Mixin(value = LevelRenderer.class, priority = 1001)
 public abstract class LevelRendererMixin implements LevelRendererExtended {
 
-    @Shadow @Final private Minecraft minecraft;
     @Shadow @Final private LevelRenderState levelRenderState;
     @Shadow @Final private SubmitNodeStorage submitNodeStorage;
     @Shadow @Final private FeatureRenderDispatcher featureRenderDispatcher;
@@ -80,12 +79,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private RenderBuffers renderBuffers;
 
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
-    @Shadow private void cullTerrain(Camera camera, Frustum frustum, boolean spectator) {}
-    @Shadow private void extractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState levelRenderState) {}
-    @Shadow private void extractVisibleBlockEntities(Camera camera, float dt, LevelRenderState levelRenderState) {}
-    @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeStorage submitNodeStorage) {}
+    // @Shadow private void cullTerrain(Camera camera, Frustum frustum, boolean spectator) {}
+    // @Shadow private void extractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState levelRenderState) {}
+    // @Shadow private void extractVisibleBlockEntities(Camera camera, float dt, LevelRenderState levelRenderState) {}
+    // @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeStorage submitNodeStorage) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
-    @Shadow private void applyFrustum(Frustum frustum) {}
+    // @Shadow private void applyFrustum(Frustum frustum) {}
     @Shadow public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix) { return null; }
 
     @Unique private int canpipe_currentShadowCascadeIdx = -1;
@@ -112,7 +111,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Override public float canpipe_getSmoothedEyeSkyLight() { return this.canpipe_smoothedEyeSkyLight; }
     @Override public float canpipe_getSmoothedRainGradient() { return this.canpipe_smoothedRainGradient; }
     @Override public float canpipe_getSmoothedThunderGradient() { return this.canpipe_smoothedThunderGradient; }
-
+/*
     @Inject(
         method = "extractLevel",
         at = @At(
@@ -164,8 +163,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             this.canpipe_currentShadowCascadeIdx = -1;
         }
     }
-
-    @Inject(method = "renderLevel", at = @At(value = "HEAD"))
+*/
+    @Inject(method = "render", at = @At(value = "HEAD"))
     void renderShadows(
         final GraphicsResourceAllocator resourceAllocator,
         final DeltaTracker deltaTracker,
@@ -175,19 +174,19 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         final GpuBufferSlice terrainFog,
         final Vector4f fogColor,
         final boolean shouldRenderSky,
-        final ChunkSectionsToRender chunkSectionsToRender,
         CallbackInfo ci
     ) throws Exception {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
+        final Minecraft mc = Minecraft.getInstance();
         final ProfilerFiller profiler = Profiler.get();
         float pt = deltaTracker.getGameTimeDeltaPartialTick(false);
 
-        var eyePosBlockPos = BlockPos.containing(this.minecraft.player.getEyePosition());
-        int blockLight = this.minecraft.level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(eyePosBlockPos);
-        int skyLight = this.minecraft.level.getLightEngine().getLayerListener(LightLayer.SKY).getLightValue(eyePosBlockPos);
-        skyLight = Math.max(0, skyLight - this.minecraft.level.getSkyDarken());
+        var eyePosBlockPos = BlockPos.containing(mc.player.getEyePosition());
+        int blockLight = mc.level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(eyePosBlockPos);
+        int skyLight = mc.level.getLightEngine().getLayerListener(LightLayer.SKY).getLightValue(eyePosBlockPos);
+        skyLight = Math.max(0, skyLight - mc.level.getSkyDarken());
 
         this.canpipe_eyeBlockLight = blockLight / 15.0F;
         this.canpipe_eyeSkyLight = skyLight / 15.0F;
@@ -206,10 +205,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             ? this.canpipe_eyeSkyLight
             : Mth.lerp(brightnessDelta, this.canpipe_smoothedEyeSkyLight, this.canpipe_eyeSkyLight);
 
-        this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, this.minecraft.level.getRainLevel(pt));
-        this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, this.minecraft.level.getThunderLevel(pt));
+        this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(pt));
+        this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(pt));
 
-        if (p.shadows == null || !this.minecraft.level.dimensionType().hasSkyLight()) {
+        if (p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
             return;
         }
 /*
@@ -307,7 +306,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @WrapOperation(
-        method = "renderLevel",
+        method = "render",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/LevelRenderer;getTransparencyChain()Lnet/minecraft/client/renderer/PostChain;"
@@ -334,27 +333,30 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return null;
     }
 
-    @WrapMethod(method = "extractVisibleEntities")
+    // TODO
+    /*@WrapMethod(method = "extractVisibleEntities")
     void suppressEntityShadows(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState output, Operation<Void> operation) {
         Pipeline p = Pipelines.getCurrent();
         boolean disableEntityShadows = p != null && p.shadows != null;
 
-        boolean originalEntityShadowsOptionValue = this.minecraft.options.entityShadows().get();
+        Minecraft mc = Minecraft.getInstance();
+        boolean originalEntityShadowsOptionValue = mc.options.entityShadows().get();
 
         try {
             if (disableEntityShadows) {
-                this.minecraft.options.entityShadows().set(false);
+                mc.options.entityShadows().set(false);
             }
             operation.call(camera, frustum, deltaTracker, output);
         }
         finally {
             if (disableEntityShadows) {
-                this.minecraft.options.entityShadows().set(originalEntityShadowsOptionValue);
+                mc.options.entityShadows().set(originalEntityShadowsOptionValue);
             }
         }
-    }
+    }*/
 
-    @WrapOperation(
+    // TODO
+    /*@WrapOperation(
         method = "offsetFrustum",
         at = @At(
             value = "INVOKE",
@@ -369,9 +371,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return frustum;
         }
         return operation.call(frustum, size);
-    }
+    }*/
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = "extractVisibleEntities",
         at = @At(
             value = "INVOKE",
@@ -380,7 +383,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     private boolean addPlayerWhenCollectingVisibleEntities(boolean original) {
         return original || this.canpipe_currentShadowCascadeIdx >= 0;
-    }
+    }*/
 
     @WrapOperation(
         method = "lambda$addMainPass$0",
@@ -407,7 +410,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return operation.call(device, u, v, min, mag, maxAnisotropy, maxLod);
     }
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = {"clearVisibleSections", "applyFrustum", "prepareChunkRenders"},
         require = 3,
         at = @At(
@@ -421,9 +425,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return this.canpipe_visibleSections[this.canpipe_currentShadowCascadeIdx];
         }
         return original;
-    }
+    }*/
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = {"clearVisibleSections", "applyFrustum"},
         require = 2,
         at = @At(
@@ -437,9 +442,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return this.canpipe_nearbyVisibleSectionsSink;
         }
         return original;
-    }
+    }*/
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = {"extractVisibleEntities", "submitEntities"},
         require = 2,
         at = @At(
@@ -453,30 +459,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return ((LevelRenderStateExtended) this.levelRenderState).canpipe_getEntityRenderStates()[this.canpipe_currentShadowCascadeIdx];
         }
         return entityRenderStates;
-    }
-
-    @Inject(
-        method = "renderLevel",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;addLateDebugPass("+
-                "Lcom/mojang/blaze3d/framegraph/FrameGraphBuilder;"+
-                "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
-                "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
-                "Lorg/joml/Matrix4fc;"+
-            ")V"
-        )
-    )
-    void beforeLateDebugPass(CallbackInfo ci, @Local FrameGraphBuilder frame) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p == null) { return; }
-
-        FramePass pass = frame.addPass("can-pipe fabulous passes");
-        this.targets.main = pass.readsAndWrites(this.targets.main);
-        pass.executes(() -> {
-            ((GameRendererExtended) this.minecraft.gameRenderer).canpipe_setOriginType(2);  // camera
-            p.onAfterWorldRender();
-        });
-    }
+    }*/
 
 }

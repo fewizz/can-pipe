@@ -43,7 +43,7 @@ public class LightmapMixin implements LightmapExtended {
             target = "Lcom/mojang/blaze3d/systems/GpuDevice;createTexture("+
                 "Ljava/lang/String;"+
                 "I"+
-                "Lcom/mojang/blaze3d/textures/TextureFormat;"+
+                "Lcom/mojang/blaze3d/GpuFormat;"+
                 "IIII"+
             ")Lcom/mojang/blaze3d/textures/GpuTexture;"
         ),

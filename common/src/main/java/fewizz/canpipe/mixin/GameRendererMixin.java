@@ -10,11 +10,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -23,7 +22,6 @@ import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.CameraExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
-import fewizz.canpipe.mixininterface.MinecraftExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
@@ -109,7 +107,7 @@ public class GameRendererMixin implements GameRendererExtended {
         method = "extract",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;extractLevel("+
+            target = "Lnet/minecraft/client/renderer/extract/LevelExtractor;extract("+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Lnet/minecraft/client/Camera;"+
                 "F"+
@@ -237,7 +235,7 @@ public class GameRendererMixin implements GameRendererExtended {
         at = @At(
             value = "INVOKE",
             target =
-            "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel("+
+            "Lnet/minecraft/client/renderer/LevelRenderer;render("+
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
@@ -246,7 +244,6 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
                 "Z"+
-                "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"+
             ")V"
         )
     )
@@ -288,7 +285,7 @@ public class GameRendererMixin implements GameRendererExtended {
         method = "renderLevel",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;renderLevel("+
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;render("+
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
                 "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
@@ -297,13 +294,30 @@ public class GameRendererMixin implements GameRendererExtended {
                 "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
                 "Z"+
-                "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"+
             ")V",
             shift = Shift.AFTER
         )
     )
     void afterRenderLevel(DeltaTracker deltaTracker, CallbackInfo ci) {
         this.canpipe_isRenderingHand = true;
+    }
+
+    @Inject(
+        method = "renderLevel",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher;renderAllFeatures("+
+                "Lnet/minecraft/client/renderer/SubmitNodeStorage;"+
+            ")V"
+        )
+    )
+    void beforeLateDebugPass(CallbackInfo ci, @Local ProfilerFiller profiler) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) { return; }
+
+        profiler.popPush("can-pipe fabulous passes");
+        this.canpipe_originType = 2;  // camera
+        p.onAfterWorldRender();
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
@@ -323,24 +337,7 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_lastCameraPos = this.mainCamera.position().toVector3f();
     }
 
-    @ModifyExpressionValue(
-        method = "resize",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
-        )
-    )
-    RenderTarget useOriginalMainRenderTargetOnResize(RenderTarget mainRenderTarget) {
-        if (Pipelines.getCurrent() != null) {
-            RenderTarget mainRenderTargetOverride = mainRenderTarget;
-            this.canpipe_mainRenderTargetOverride = null;
-            mainRenderTarget = this.minecraft.gameRenderer.mainRenderTarget();
-            this.canpipe_mainRenderTargetOverride = mainRenderTargetOverride;
-        }
-        return mainRenderTarget;
-    }
-
-    @ModifyReturnValue(method = "getMainRenderTarget", at = @At("RETURN"))
+    @ModifyReturnValue(method = "mainRenderTarget", at = @At("RETURN"))
     RenderTarget onGetMainTarget(RenderTarget original) {
         if (this.canpipe_mainRenderTargetOverride != null) {
             original = this.canpipe_mainRenderTargetOverride;

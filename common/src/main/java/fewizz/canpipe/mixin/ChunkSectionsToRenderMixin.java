@@ -1,10 +1,12 @@
 package fewizz.canpipe.mixin;
 
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -38,7 +40,7 @@ public class ChunkSectionsToRenderMixin {
             target = "Lcom/mojang/blaze3d/systems/CommandEncoder;createRenderPass("+
                 "Ljava/util/function/Supplier;"+
                 "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-                "Ljava/util/OptionalInt;"+
+                "Ljava/util/Optional;"+
                 "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
                 "Ljava/util/OptionalDouble;"+
             ")Lcom/mojang/blaze3d/systems/RenderPass;"
@@ -46,7 +48,7 @@ public class ChunkSectionsToRenderMixin {
     )
     RenderPass replaceColorAttachments(
         CommandEncoder instance, Supplier<String> nameSupplier,
-        GpuTextureView colorTexture, OptionalInt clearColor,
+        GpuTextureView colorTexture, Optional<Vector4f> clearColor,
         @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
@@ -64,7 +66,7 @@ public class ChunkSectionsToRenderMixin {
             target = "Lcom/mojang/blaze3d/systems/RenderPass;drawMultipleIndexed("+
                 "Ljava/util/Collection;"+
                 "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
-                "Lcom/mojang/blaze3d/vertex/VertexFormat$IndexType;"+
+                "Lcom/mojang/blaze3d/IndexType;"+
                 "Ljava/util/Collection;"+
                 "Ljava/lang/Object;"+
             ")V"

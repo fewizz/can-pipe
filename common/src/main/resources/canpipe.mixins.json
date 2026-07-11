@@ -17,7 +17,6 @@
         "ChunkSectionLayerGroupMixin",
         "ChunkSectionLayerMixin",
         "ChunkSectionsToRenderMixin",
-        "CloudRendererMixin",
         "CuboidItemModelWrapperMixin",
         "DebugEntrySimplePerformanceImpactorsMixin",
         "EntityRenderDispatcherMixin",

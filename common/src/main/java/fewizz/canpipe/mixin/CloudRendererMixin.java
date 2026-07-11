@@ -10,9 +10,10 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.CloudRenderer;
 
-@Mixin(CloudRenderer.class)
+// TODO
+//@Mixin(CloudRenderer.class)
 public class CloudRendererMixin {
-
+/*
     @ModifyExpressionValue(
         method = "render",
         at = @At(
@@ -27,5 +28,5 @@ public class CloudRendererMixin {
         }
         return renderTarget;
     }
-
+*/
 }
