@@ -18,3 +18,11 @@ accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  UV1_FORMAT  L
 accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  UV2_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
 accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  NORMAL_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
 accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  LINE_WIDTH_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+
+accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  POSITION_SEMANTIC_ID  I
+accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  COLOR_SEMANTIC_ID  I
+accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  UV0_SEMANTIC_ID  I
+accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  UV1_SEMANTIC_ID  I
+accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  UV2_SEMANTIC_ID  I
+accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  NORMAL_SEMANTIC_ID  I
+accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  LINE_WIDTH_SEMANTIC_ID  I
