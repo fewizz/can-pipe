@@ -180,8 +180,8 @@ public class Uniforms {
         Objects.requireNonNull(mc.player);
         Objects.requireNonNull(mc.level);
 
-        CameraRenderState crs = mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState;
-        Camera camera = mc.gameRenderer.getMainCamera();
+        CameraRenderState crs = mc.gameRenderer.gameRenderState().levelRenderState.cameraRenderState;
+        Camera camera = mc.gameRenderer.mainCamera();
         var cameraPos = camera.position();
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
         Pipeline p = Pipelines.getCurrent();
@@ -259,7 +259,7 @@ public class Uniforms {
         {
             float effectModifier = 0.0F;
             if (mc.player.hasEffect(MobEffects.NIGHT_VISION)) {
-                effectModifier = GameRenderer.getNightVisionScale(mc.player, 0.0F);
+                effectModifier = GameRenderer.nightVisionScale(mc.player, 0.0F);
             }
             else if (mc.player.hasEffect(MobEffects.CONDUIT_POWER)) {
                 effectModifier = mc.player.getWaterVision();
@@ -267,7 +267,7 @@ public class Uniforms {
             FRX_EFFECT_MODIFIER.set(effectModifier);
         }
         {
-            float darknessScale = mc.gameRenderer.getGameRenderState().lightmapRenderState.darknessEffectScale;
+            float darknessScale = mc.gameRenderer.gameRenderState().lightmapRenderState.darknessEffectScale;
             CANPIPE_DARKNESS_FACTOR.set(Mth.clamp(1.0f - darknessScale / 0.45f, 0.0f, 1.0f));
         }
         FRX_EYE_POS.set(eyePosition.toVector3f());
@@ -371,12 +371,12 @@ public class Uniforms {
         CANPIPE_FIXED_OR_DAY_TIME.set((ticks % 24000L) / 24000.0F);
         FRX_WORLD_DAY.set((float) ((ticks / 24000L) % 2147483647L));
         FRX_WORLD_TIME.set((ticks % 24000L) / 24000.0F);
-        FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.moonPhase.index()]);
+        FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.moonPhase.index()]);
         FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
-        FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.sunAngle);
+        FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunAngle);
         {
             var result = new Vector3f(0.0F);
-            int color = mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.sunriseAndSunsetColor;
+            int color = mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunriseAndSunsetColor;
             if (mc.level.dimensionType().hasSkyLight()) {
                 result.set((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
                 result.div(255.0F);
@@ -384,7 +384,7 @@ public class Uniforms {
             CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
         }
         {
-            float skyFlashStrength = mc.gameRenderer.getGameRenderState().levelRenderState.skyRenderState.endFlashIntensity;
+            float skyFlashStrength = mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.endFlashIntensity;
             FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);
         }
         FRX_AMBIENT_INTENSITY.set(camera.attributeProbe().getValue(EnvironmentAttributes.SKY_LIGHT_FACTOR, pt));
@@ -419,10 +419,10 @@ public class Uniforms {
             lre.canpipe_getSmoothedRainGradient(),
             lre.canpipe_getSmoothedThunderGradient()
         );
-        FRX_VANILLA_CLEAR_COLOR.set(mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState.fogData.color);
+        FRX_VANILLA_CLEAR_COLOR.set(mc.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.fogData.color);
 
         // fog.glsl
-        var fogData = mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState.fogData;
+        var fogData = mc.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.fogData;
         FRX_FOG_COLOR.set(fogData.color);
         FRX_FOG_START.set(Math.min(fogData.environmentalStart, fogData.renderDistanceStart));  // Should be slose enough (:pray:)
         FRX_FOG_END.set(Math.min(fogData.environmentalEnd, fogData.renderDistanceEnd));
