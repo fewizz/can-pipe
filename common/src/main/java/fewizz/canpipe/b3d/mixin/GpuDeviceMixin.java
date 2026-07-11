@@ -13,6 +13,7 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderSource;
+import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.textures.AddressMode;
@@ -51,7 +52,7 @@ public class GpuDeviceMixin implements GpuDeviceExtended {
         );
     }
 
-    @Override
+    /*@Override
     public void canpipe_precompilePipelineShaderModules(
         RenderPipeline pipeline,
         ShaderSource shaderSource,
@@ -60,6 +61,13 @@ public class GpuDeviceMixin implements GpuDeviceExtended {
         ((GpuDeviceBackendExtended) this.backend).canpipe_precompilePipelineShaderModules(
             pipeline, shaderSource, onCompilationError
         );
+    }*/
+    @Override
+    public void canpipe_precompilePipelineModule(
+        Identifier id, String shaderSource, ShaderType shaderType,
+        TriConsumer<String, Identifier, String> onCompilationError
+    ) {
+        throw new UnsupportedOperationException("Unimplemented method 'canpipe_precompilePipelineModule'");
     }
 
     @ModifyExpressionValue(

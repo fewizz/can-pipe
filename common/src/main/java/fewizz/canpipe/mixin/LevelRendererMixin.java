@@ -35,8 +35,6 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.helpers.NullBufferSource;
-import fewizz.canpipe.helpers.PerVertexFormatBufferSource;
 import fewizz.canpipe.helpers.ShadowFrustum;
 import fewizz.canpipe.mixininterface.FeatureRenderDispatcherExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
@@ -105,7 +103,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Unique private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSectionsSink = new ObjectArrayList<>(50);
 
-    @Unique private PerVertexFormatBufferSource canpipe_perVertexFormetBufferSource = new PerVertexFormatBufferSource();
+    // @Unique private PerVertexFormatBufferSource canpipe_perVertexFormetBufferSource = new PerVertexFormatBufferSource();
 
     @Override public int canpipe_getCurrentShadowCascadeIdx() { return this.canpipe_currentShadowCascadeIdx; }
     @Override public float canpipe_getEyeBlockLight() { return this.canpipe_eyeBlockLight; }
@@ -214,7 +212,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (p.shadows == null || !this.minecraft.level.dimensionType().hasSkyLight()) {
             return;
         }
-
+/*
         profiler.popPush("can-pipe shadows");
         profiler.push("preparations");
 
@@ -305,7 +303,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         this.minecraft.options.entityShadows().set(entityShadowsOptionValue);
 
-        profiler.pop();
+        profiler.pop();*/
     }
 
     @WrapOperation(

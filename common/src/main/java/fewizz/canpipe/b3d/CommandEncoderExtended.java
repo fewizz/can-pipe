@@ -2,6 +2,7 @@ package fewizz.canpipe.b3d;
 
 import java.util.function.Supplier;
 
+import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.systems.RenderPass;
@@ -20,7 +21,7 @@ public interface CommandEncoderExtended {
     );
 
     void canpipe_clearColorTexture(
-        GpuTexture texture, int color,
+        GpuTexture texture, Vector4f color,
         int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount  // added
     );
 

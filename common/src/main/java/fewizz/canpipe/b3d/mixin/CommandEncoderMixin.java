@@ -2,6 +2,7 @@ package fewizz.canpipe.b3d.mixin;
 
 import java.util.function.Supplier;
 
+import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,7 +28,8 @@ public class CommandEncoderMixin implements CommandEncoderExtended {
     @Override
     public RenderPass canpipe_createRenderPass(Supplier<String> supplier, GpuTextureView[] colorAttachments, @Nullable GpuTextureView depthAttachment) {
         RenderPassBackend renderPassBackend = ((CommandEncoderBackendExtended) this.backend).canpipe_createRenderPass(supplier, colorAttachments, depthAttachment);
-        return new RenderPass(renderPassBackend, this.device);
+        //TODO
+        return null; // new RenderPass(renderPassBackend, this.device);
     }
 
     @Override
@@ -36,7 +38,7 @@ public class CommandEncoderMixin implements CommandEncoderExtended {
     }
 
     @Override
-    public void canpipe_clearColorTexture(GpuTexture texture, int color, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount) {
+    public void canpipe_clearColorTexture(GpuTexture texture, Vector4f color, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount) {
         ((CommandEncoderBackendExtended) this.backend).canpipe_clearColorTexture(texture, color, baseMipLevel, levelCount, baseArrayLayer, layerCount);
     }
 

@@ -330,7 +330,7 @@ public class GameRendererMixin implements GameRendererExtended {
         if (Pipelines.getCurrent() != null) {
             RenderTarget mainRenderTargetOverride = mainRenderTarget;
             ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(null);
-            mainRenderTarget = this.minecraft.getMainRenderTarget();
+            mainRenderTarget = this.minecraft.gameRenderer.mainRenderTarget();
             ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(mainRenderTargetOverride);
         }
         return mainRenderTarget;

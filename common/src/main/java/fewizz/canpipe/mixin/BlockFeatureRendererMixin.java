@@ -14,14 +14,14 @@ import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.feature.BlockFeatureRenderer;
+import net.minecraft.client.renderer.feature.BlockModelFeatureRenderer;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 
-@Mixin(BlockFeatureRenderer.class)
+// @Mixin(BlockFeatureRenderer.class)
 public class BlockFeatureRendererMixin {
 
     @Unique private static /* !!! */ MaterialMap canpipe_materialMap = null;
-
+/*
     @Inject(
         method = "renderBlockModelSubmits",
         at = @At(
@@ -54,5 +54,5 @@ public class BlockFeatureRendererMixin {
         }
 
     }
-
+*/
 }

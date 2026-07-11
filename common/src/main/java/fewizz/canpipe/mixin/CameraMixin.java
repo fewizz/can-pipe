@@ -42,7 +42,7 @@ public class CameraMixin implements CameraExtended {
             (float) this.minecraft.getWindow().getWidth() / this.minecraft.getWindow().getHeight(),
             0.05F,
             depthFar,
-            RenderSystem.getDevice().isZZeroToOne()
+            RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()
         );
     }
 

@@ -18,8 +18,6 @@ import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
-import net.minecraft.client.renderer.OutlineBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
@@ -28,7 +26,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 
 @Mixin(ItemFeatureRenderer.class)
 public class ItemFeatureRendererMixin {
-
+/*
     @Unique private MaterialMap canpipe_materialMap = null;
 
     @WrapOperation(
@@ -112,5 +110,5 @@ public class ItemFeatureRendererMixin {
             vce.canpipe_setScopedMaterialSupplier(null);
         }
     }
-
+*/
 }

@@ -25,7 +25,7 @@ public interface VertexConsumerMixin {
         @Local(argsOnly = true) QuadInstance instance
     ) {
         if (this instanceof VertexConsumerExtended vce) {
-            if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)) {
+            if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME)) {
                 vce.canpipe_setScopedSpriteSupplier(() -> quad.materialInfo().sprite());
             }
             // if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)) {
@@ -44,7 +44,7 @@ public interface VertexConsumerMixin {
     )
     default int setAO(int vertexIndex, @Local(argsOnly = true) QuadInstance instance) {
         if (this instanceof VertexConsumerExtended vce) {
-            if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)) {
+            if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.AO_ATTRIBUTE_NAME)) {
                 vce.canpipe_setPendingAO(((QuadInstanceExtended) instance).canpipe_getSeparatedShade(vertexIndex));
             }
         }
@@ -55,7 +55,7 @@ public interface VertexConsumerMixin {
     default void resetSpriteIndex(CallbackInfo ci) {
         if (
             this instanceof VertexConsumerExtended vce &&
-            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME)
         ) {
             vce.canpipe_setScopedSpriteSupplier(null);
         }

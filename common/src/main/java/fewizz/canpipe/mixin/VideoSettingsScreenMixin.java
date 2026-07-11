@@ -107,7 +107,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 if (current == null) {
                     return;
                 }
-                this.minecraft.setScreen(new PipelineOptionsScreen(
+                this.minecraft.gui.setScreen(new PipelineOptionsScreen(
                     (Screen) (Object) this,
                     Pipelines.RAW_PIPELINES.get(current.location),
                     current.appliedOptions

@@ -17,12 +17,11 @@ import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.SubmitNodeStorage.ModelSubmit;
 import net.minecraft.client.resources.model.sprite.SpriteId;
 
 @Mixin(SubmitNodeStorage.class)
-public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
-
+public class SubmitNodeStorageMixin /* implements SubmitNodeCollectorExtended */ {
+/*
     @Shadow @Final private Int2ObjectAVLTreeMap<SubmitNodeCollection> submitsPerOrder;
 
     @Shadow public SubmitNodeCollection order(final int order) { return null; }
@@ -76,5 +75,5 @@ public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
     public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() {
         return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getModelSubmitsExtras();
     }
-
+*/
 }

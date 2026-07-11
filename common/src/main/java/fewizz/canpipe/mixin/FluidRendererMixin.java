@@ -28,7 +28,7 @@ import net.minecraft.world.level.material.FluidState;
 
 @Mixin(FluidRenderer.class)
 public class FluidRendererMixin {
-
+/*
     @Shadow @Final private FluidStateModelSet fluidModels;
 
     @ModifyExpressionValue(
@@ -109,5 +109,5 @@ public class FluidRendererMixin {
             sprite.getU0() <= u && u <= sprite.getU1() &&
             sprite.getV0() <= v && v <= sprite.getV1();
     }
-
+*/
 }

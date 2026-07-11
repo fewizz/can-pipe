@@ -8,13 +8,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 
 import fewizz.canpipe.mixininterface.FeatureRenderDispatcherExtended;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 
 @Mixin(FeatureRenderDispatcher.class)
-public class FeatureRenderDispatcherMixin implements FeatureRenderDispatcherExtended {
-
+public class FeatureRenderDispatcherMixin/* implements FeatureRenderDispatcherExtended */{
+/*
     @Unique private MultiBufferSource.BufferSource canpipe_bufferSourceOverride = null;
     @Unique private MultiBufferSource.BufferSource canpipe_crumblingBufferSourceOverride = null;
     // TODO: Should I something with outlineBufferSource?
@@ -53,5 +51,5 @@ public class FeatureRenderDispatcherMixin implements FeatureRenderDispatcherExte
 
         return original;
     }
-
+*/
 }

@@ -20,11 +20,10 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.renderer.feature.ParticleFeatureRenderer;
 
-@Mixin(ParticleFeatureRenderer.class)
+/*@Mixin(ParticleFeatureRenderer.class)*/
 public class ParticleFeatureRendererMixin {
-
+/*
     @ModifyExpressionValue(
         method = "render",
         at = @At(
@@ -84,5 +83,5 @@ public class ParticleFeatureRendererMixin {
         }
         return operation.call(instance, label, colorTexture, clearColor, depthTexture, clearDepth);
     }
-
+*/
 }

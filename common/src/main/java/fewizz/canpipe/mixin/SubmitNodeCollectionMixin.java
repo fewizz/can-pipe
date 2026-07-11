@@ -21,13 +21,12 @@ import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.SubmitNodeStorage.ModelSubmit;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.resources.model.sprite.SpriteId;
 
 @Mixin(SubmitNodeCollection.class)
-public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
-
+public class SubmitNodeCollectionMixin/* implements SubmitNodeCollectorExtended */{
+/*
     @Shadow @Final private List<SubmitNodeStorage.ItemSubmit> itemSubmits;
     @Shadow @Final private ModelFeatureRenderer.Storage modelSubmits;
 
@@ -103,5 +102,5 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
         this.canpipe_pendingModelSubmitEntityGlint = false;
         this.canpipe_pendingSpriteId = null;
     }
-
+*/
 }

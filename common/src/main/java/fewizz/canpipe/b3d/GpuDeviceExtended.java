@@ -5,7 +5,6 @@ import java.util.OptionalDouble;
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.AddressMode;

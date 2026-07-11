@@ -32,7 +32,7 @@ public class LightmapMixin implements LightmapExtended {
         canpipe_emissiveColorReadGpuBuffer = RenderSystem.getDevice().createBuffer(
             () -> "can-pipe light texture read buffer",
             GpuBuffer.USAGE_MAP_READ | GpuBuffer.USAGE_COPY_DST,
-            this.texture.getWidth(0)*this.texture.getHeight(0)*this.texture.getFormat().pixelSize()
+            this.texture.getWidth(0)*this.texture.getHeight(0)*this.texture.getFormat().blockSize()
         );
     }
 
@@ -75,12 +75,12 @@ public class LightmapMixin implements LightmapExtended {
             this.canpipe_emissiveColorReadGpuBuffer,
             0,  // offset
             () -> {  // Past one frame, but anyway...
-                try (var readView = RenderSystem.getDevice().createCommandEncoder().mapBuffer(this.canpipe_emissiveColorReadGpuBuffer, true, false)) {
-                    int pos = this.texture.getFormat().pixelSize()*this.texture.getHeight(0)*(this.texture.getWidth(0) - 1);
-                    this.canpipe_emissiveColor.x = Byte.toUnsignedInt(readView.data().get(pos+0)) / 255.0F;
-                    this.canpipe_emissiveColor.y = Byte.toUnsignedInt(readView.data().get(pos+1)) / 255.0F;
-                    this.canpipe_emissiveColor.z = Byte.toUnsignedInt(readView.data().get(pos+2)) / 255.0F;
-                    this.canpipe_emissiveColor.w = Byte.toUnsignedInt(readView.data().get(pos+3)) / 255.0F;
+                try (var mappedView = this.canpipe_emissiveColorReadGpuBuffer.map(true, false)) {
+                    int pos = this.texture.getFormat().blockSize()*this.texture.getHeight(0)*(this.texture.getWidth(0) - 1);
+                    this.canpipe_emissiveColor.x = Byte.toUnsignedInt(mappedView.data().get(pos+0)) / 255.0F;
+                    this.canpipe_emissiveColor.y = Byte.toUnsignedInt(mappedView.data().get(pos+1)) / 255.0F;
+                    this.canpipe_emissiveColor.z = Byte.toUnsignedInt(mappedView.data().get(pos+2)) / 255.0F;
+                    this.canpipe_emissiveColor.w = Byte.toUnsignedInt(mappedView.data().get(pos+3)) / 255.0F;
                 }
             },
             0  // level

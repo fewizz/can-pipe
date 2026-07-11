@@ -7,9 +7,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.TextureFormat;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
 import net.minecraft.client.Screenshot;
@@ -33,11 +33,11 @@ public class ScreenshotMixin {
             canpipe_rgba8Texture.close();
         }
 
-        if (texture.getFormat() != TextureFormat.RGBA8) {
+        if (texture.getFormat() != GpuFormat.RGBA8_UNORM) {
             canpipe_rgba8Texture = RenderSystem.getDevice().createTexture(
                 () -> "RGBA8 Screenshot",
                 GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_COPY_DST,
-                TextureFormat.RGBA8,
+                GpuFormat.RGBA8_UNORM,
                 texture.getWidth(0), texture.getHeight(0),
                 1, 1
             );

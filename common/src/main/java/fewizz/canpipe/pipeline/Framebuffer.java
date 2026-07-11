@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector4f;
 
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -34,7 +35,7 @@ public class Framebuffer extends RenderTarget {
 
     public final GpuTexture[] colorTextures;
     public final GpuTextureView[] colorTextureViews;
-    public final int[] colorTextureClearColors;
+    public final Vector4f[] colorTextureClearColors;
 
     public @Nullable final Double depthTextureClearDepth;
 
@@ -44,7 +45,7 @@ public class Framebuffer extends RenderTarget {
         Identifier pipelineLocation,
         String name,
         IntFunction<Pair<GpuTexture, GpuTextureView>> colorTextureSupplier,
-        int[] colorClearColors,
+        Vector4f[] colorClearColors,
         Supplier<Pair<GpuTexture, GpuTextureView>> depthTextureSupplier,
         @Nullable Double depthClearDepth
     ) {
@@ -159,7 +160,7 @@ public class Framebuffer extends RenderTarget {
         String name = framebufferJson.get(String.class, "name");
         var colorAttachmentJsons = JanksonUtils.listOfObjects(framebufferJson, "colorAttachments");
 
-        int[] colorTextureClearColors = new int[colorAttachmentJsons.size()];
+        Vector4f[] colorTextureClearColors = new Vector4f[colorAttachmentJsons.size()];
 
         for (int i = 0; i < colorTextureClearColors.length; ++i) {
             int clearColor = 0x00000000;
@@ -173,7 +174,12 @@ public class Framebuffer extends RenderTarget {
                     throw new NotImplementedException(clearColorRaw.getClass().getName());
                 }
             }
-            colorTextureClearColors[i] = clearColor;
+            colorTextureClearColors[i] = new Vector4f(
+                (clearColor >> 24) & 0xFF,
+                (clearColor >> 16) & 0xFF,
+                (clearColor >> 8)  & 0xFF,
+                (clearColor >> 0)  & 0xFF
+            );
         }
 
         Double depthClearDepth = null;

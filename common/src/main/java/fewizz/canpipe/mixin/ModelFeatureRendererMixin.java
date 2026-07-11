@@ -26,7 +26,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 @Mixin(ModelFeatureRenderer.class)
 public class ModelFeatureRendererMixin {
-
+/*
     @Unique SubmitNodeCollection canpipe_nodeCollectionHeld;
 
     @Inject(method = "renderSolid", at = @At("HEAD"))
@@ -98,5 +98,5 @@ public class ModelFeatureRendererMixin {
             vce.canpipe_setScopedSpriteSupplier(null);
         }
     }
-
+*/
 }

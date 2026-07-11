@@ -9,6 +9,7 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -61,10 +62,11 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     ) {
         try {
             this.canpipe_colorAttachments = colorAttachments;
-            return this.createRenderPass(
+            // TODO
+            return null;/*this.createRenderPass(
                 supplier, this.canpipe_colorAttachments.length > 0 ? this.canpipe_colorAttachments[0] : null, OptionalInt.empty(),
                 depthAttachment, OptionalDouble.empty()
-            );
+            );*/
         }
         finally {
             this.canpipe_colorAttachments = null;
@@ -198,7 +200,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
 
     @Override
     public void canpipe_clearColorTexture(
-        GpuTexture texture, int color, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
+        GpuTexture texture, Vector4f color, int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount
     ) {
         try {
             this.canpipe_clearBaseLevel = baseMipLevel;

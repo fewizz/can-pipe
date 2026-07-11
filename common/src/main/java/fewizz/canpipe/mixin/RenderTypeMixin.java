@@ -32,7 +32,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 
 @Mixin(RenderType.class)
 public class RenderTypeMixin {
-
+/*
     @Shadow @Final private RenderSetup state;
 
     @ModifyExpressionValue(
@@ -116,5 +116,5 @@ public class RenderTypeMixin {
         }
 
     }
-
+*/
 }
