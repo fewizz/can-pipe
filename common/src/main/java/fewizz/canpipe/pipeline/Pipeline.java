@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -30,7 +31,9 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.RenderPass.RenderArea;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
@@ -106,6 +109,8 @@ public class Pipeline implements AutoCloseable {
     private final Map<String, RenderPipeline> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
+
+    public final Map<Pair<List<GpuFormat>, RenderPipeline>, RenderPipeline> replacedRenderPipelines = new HashMap<>();
 
     private final List<Pass>
         onInitPasses = new ArrayList<>(),
@@ -562,11 +567,16 @@ public class Pipeline implements AutoCloseable {
         RenderPass renderPass;
         // For example, when rendering gui items
         if (RenderSystem.outputColorTextureOverride != null && RenderSystem.outputDepthTextureOverride != null) {
-            renderPass = null; // TODO
-            // renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, OptionalInt.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
+            renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, Optional.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
         }
         else {
-            renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(name, framebuffer.colorTextureViews, framebuffer.getDepthTextureView());
+            var descriptor = RenderPassDescriptor.create(name);
+            for (var colorAttachment : framebuffer.colorTextureViews) {
+                descriptor.withColorAttachment(colorAttachment);
+            }
+            descriptor.withDepthAttachment(framebuffer.getDepthTextureView());
+            descriptor.withRenderArea(new RenderArea(0, 0, framebuffer.width, framebuffer.height));
+            renderPass = commandEncoder.createRenderPass(descriptor);
         }
 
         Uniforms.setRenderPassFREXUniforms(renderPass);

@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin;
 
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -18,12 +19,14 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 @Mixin(ChunkSectionLayer.class)
 public class ChunkSectionLayerMixin {
 
+    @Final private boolean translucent;
+
     @ModifyReturnValue(method = "pipeline", at = @At("RETURN"))
     public RenderPipeline pipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(renderPipeline);
-            Framebuffer fb = p.shadowFramebufferOr(p.solidFramebuffer);
+            Framebuffer fb = p.shadowFramebufferOr(this.translucent ? p.translucentTerrainFramebuffer : p.solidFramebuffer);
             var formats = fb.getFormats();
             renderPipeline = loader.getOrCompileRenderPipeline(formats);
         }

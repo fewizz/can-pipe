@@ -18,7 +18,9 @@ import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.systems.RenderPass.RenderArea;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
@@ -126,12 +128,17 @@ public class ProgramPass extends Pass {
             }
         }
 
+        RenderPassDescriptor renderPassDescriptor = RenderPassDescriptor.create(() -> "Program pass "+this.id);
+        for (var colorAttachment : this.framebuffer.colorTextureViews) {
+            renderPassDescriptor.withColorAttachment(colorAttachment);
+        }
+        if (this.framebuffer.getDepthTextureView() != null) {
+            renderPassDescriptor.withDepthAttachment(this.framebuffer.getDepthTextureView());
+        }
+        renderPassDescriptor.withRenderArea(new RenderArea(0, 0, w, h));
+
         try (
-            RenderPass renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(
-                () -> "Program pass "+this.id,
-                this.framebuffer.colorTextureViews,
-                this.framebuffer.getDepthTextureView()
-            )
+            RenderPass renderPass = commandEncoder.createRenderPass(renderPassDescriptor)
         ) {
             renderPass.setPipeline(this.renderPipeline);
 

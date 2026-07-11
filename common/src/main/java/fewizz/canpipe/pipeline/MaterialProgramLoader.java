@@ -1,5 +1,6 @@
 package fewizz.canpipe.pipeline;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,17 +15,20 @@ import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 
 public class MaterialProgramLoader {
 
-    RenderPipeline.Builder pipelineBuilder;
-    RenderPipeline originalRenderPipeline;
-    Map<Pair<List<GpuFormat>, GpuFormat>, RenderPipeline> renderPipelinesPerFormat;
+    private final RenderPipeline.Builder pipelineBuilder;
+    private final RenderPipeline originalRenderPipeline;
+    private final Map<Pair<List<GpuFormat>, GpuFormat>, RenderPipeline> renderPipelinesPerFormat = new HashMap<>();
+
+    MaterialProgramLoader(RenderPipeline.Builder pipelineBuilder, RenderPipeline originalRenderPipeline) {
+        this.pipelineBuilder = pipelineBuilder;
+        this.originalRenderPipeline = originalRenderPipeline;
+    }
 
     public RenderPipeline getOrCompileRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
-        RenderPipeline result = this.renderPipelinesPerFormat.get(formats);
-
-        if (result == null) {
+        return this.renderPipelinesPerFormat.computeIfAbsent(formats, (_formats) -> {
             ((RenderPipelineBuilderExtended) this.pipelineBuilder).canpipe_resetActiveColorTargetStateCount();
             var colorFormats = formats.getLeft();
-            // var deothFormat = formats.getRight();
+            // var depthFormat = formats.getRight();
 
             var originalBlendFunction = this.originalRenderPipeline.getColorTargetState().blendFunction();
             var originalDSState = originalRenderPipeline.getDepthStencilState();
@@ -39,12 +43,8 @@ public class MaterialProgramLoader {
                 originalDSState.depthBiasConstant()
             ));
 
-            result = pipelineBuilder.build();
-
-            this.renderPipelinesPerFormat.put(formats, result);
-        }
-
-        return result;
+            return pipelineBuilder.build();
+        });
     }
 
 }

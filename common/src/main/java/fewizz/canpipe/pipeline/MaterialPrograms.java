@@ -85,7 +85,8 @@ public class MaterialPrograms {
                 .withFragmentShader(fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh"))
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow ? originalRenderPipeline.isCull() : false)
-                .withVertexBinding(0, vertexFormat);
+                .withVertexBinding(0, vertexFormat)
+                .withPrimitiveTopology(originalRenderPipeline.getPrimitiveTopology());
 
             var dsState = originalRenderPipeline.getDepthStencilState();
             if (dsState != null) {
@@ -228,9 +229,7 @@ public class MaterialPrograms {
             onCompilationError
         );
 
-        return new MaterialProgramLoader(
-
-        );
+        return new MaterialProgramLoader(renderPipelineBuilder, originalRenderPipeline);
     }
 
     private static String getVertexSrc(

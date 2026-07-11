@@ -40,6 +40,7 @@
         "QuadInstanceMixin",
         "QuadParticleRenderStateMixin",
         "QuadParticleRenderStateStorageMixin",
+        "RenderPassMixin",
         "RenderSetupAccessor",
         "RenderTypeAccessor",
         "RenderTypeMixin",
