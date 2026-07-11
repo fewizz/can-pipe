@@ -21,6 +21,7 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.KeyMapping;
@@ -95,7 +96,7 @@ public class CanPipe {
     public static class VertexFormats {
 
         public static final String
-            MATERIAL_FlAGS_ATTRIBUTE_NAME = "in_materialFlags",
+            MATERIAL_FLAGS_ATTRIBUTE_NAME = "in_materialFlags",
             SPRITE_INDEX_ATTRIBUTE_NAME = "in_spriteIndex",
             MATERIAL_INDEX_ATTRIBUTE_NAME = "in_materialIndex",
             TANGENT_ATTRIBUTE_NAME = "in_tangent",
@@ -120,7 +121,7 @@ public class CanPipe {
             /* 36 + 4*1 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
             /* 40 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
             /* 42 + 1*1 */.addAttribute(AO_ATTRIBUTE_NAME, AO_FORMAT)
-            /* 43 + 1*1 */.addAttribute(MATERIAL_FlAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
+            /* 43 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
             .build();
 
         public static final VertexFormat ENTITY = VertexFormat.builder(0)
@@ -134,7 +135,7 @@ public class CanPipe {
             /* 36 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
             /* 40 + 1*4 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
             /* 44 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
-            /* 46 + 2*1 */.addAttribute(MATERIAL_FlAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
+            /* 46 + 2*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
             .build();
 
         /* Used when rendering shadow cascades, not a circular shadow under entities */
@@ -153,10 +154,10 @@ public class CanPipe {
             /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
 
             /* 28 + 4*1 */.addAttribute(DefaultVertexFormat.NORMAL_SEMANTIC_NAME, DefaultVertexFormat.NORMAL_FORMAT)
-            // .add("in_materialFlags", CanPipe.VertexFormatElements.MATERIAL_FLAGS)
             /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
-            // .add("MaterialIndex", CanPipe.VertexFormatElements.MATERIAL_INDEX)
             /* 36 + 4*1 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
+            /* 40 + 2*1 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
+            /* 42 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
             .build();
 
         public static final VertexFormat PARTICLE_SHADOW = VertexFormat.builder(0)
@@ -171,6 +172,15 @@ public class CanPipe {
             /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
             /* 12 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
             /* 16 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
+            .build();
+
+        public static final VertexFormat POSITION_COLOR_TEX_LIGHTMAP = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
+            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
+            /* 28 + 2*1 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
+            /* 30 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
             .build();
 
         public static final VertexFormat POSITION_TEX = VertexFormat.builder(0)

@@ -45,7 +45,7 @@ public class Framebuffer extends RenderTarget {
         Supplier<Pair<GpuTexture, GpuTextureView>> depthTextureSupplier,
         @Nullable Double depthClearDepth
     ) {
-        super(name, depthClearDepth != null);
+        super(name, depthClearDepth != null, null /* don't care about color's `this.format` */);
 
         this.name = name;
         this.colorAttachmentsSupplier = colorTextureSupplier;

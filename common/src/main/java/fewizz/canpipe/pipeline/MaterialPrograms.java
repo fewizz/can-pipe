@@ -16,7 +16,6 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -50,23 +49,23 @@ public class MaterialPrograms {
         float shadowsOffsetBiasUnits
     ) {
         VertexFormat vertexFormat;
-        if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.BLOCK) {
+        if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.BLOCK) {
             vertexFormat = CanPipe.VertexFormats.BLOCK;
         }
-        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY) {
             vertexFormat = !shadow ? CanPipe.VertexFormats.ENTITY : CanPipe.VertexFormats.ENTITY_SHADOW;
         }
-        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE) {
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.PARTICLE) {
             vertexFormat = !shadow ? CanPipe.VertexFormats.PARTICLE : CanPipe.VertexFormats.PARTICLE_SHADOW;
         }
-        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
             vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_LIGHTMAP;
         }
-        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
             vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_TEX_LIGHTMAP;
         }
         else {
-            throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormat().toString());
+            throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormatBinding(0).toString());
         }
 
         var renderPipelineBuilder = RenderPipeline.builder();
@@ -146,10 +145,10 @@ public class MaterialPrograms {
         else if (originalRenderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN || originalRenderPipeline == RenderPipelines.TRANSLUCENT_BLOCK) {
             materials = MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.TRANSLUCENT);
         }
-        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.ENTITY) {
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY) {
             materials = MaterialMaps.getAllUsedMaterials();
         }
-        else if (originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE) {
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.PARTICLE) {
             materials = MaterialMaps.getMaterialsUsedByParticles();
         }
         else {

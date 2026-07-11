@@ -2,11 +2,11 @@ package fewizz.canpipe.pipeline;
 
 import java.util.List;
 
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.TextureFormat;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -54,7 +54,7 @@ public class MoonPhasesTexture extends AbstractTexture {
         this.texture = gpuDevice.createTexture(
             "can-pipe: moon phases",
             GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
-            TextureFormat.RGBA8,
+            GpuFormat.RGBA8_UNORM,
             w * 4, h * 2,
             1, 1
         );
