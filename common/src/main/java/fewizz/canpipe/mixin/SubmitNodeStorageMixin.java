@@ -20,19 +20,19 @@ import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.resources.model.sprite.SpriteId;
 
 @Mixin(SubmitNodeStorage.class)
-public class SubmitNodeStorageMixin /* implements SubmitNodeCollectorExtended */ {
-/*
+public class SubmitNodeStorageMixin implements SubmitNodeCollectorExtended {
+
     @Shadow @Final private Int2ObjectAVLTreeMap<SubmitNodeCollection> submitsPerOrder;
 
     @Shadow public SubmitNodeCollection order(final int order) { return null; }
 
     @Unique private EntityMaterialMap canpipe_modelSubmitMaterialMap = null;
 
-    @ModifyReturnValue(method = "lambda$order$0", at = @At("RETURN"))
-    SubmitNodeCollection onSubmitNodeCollectionInit(SubmitNodeCollection snc) {
-        ((SubmitNodeCollectorExtended) snc).canpipe_setScopedModelMaterialMap(this.canpipe_modelSubmitMaterialMap);
-        return snc;
-    }
+    // @ModifyReturnValue(method = "lambda$order$0", at = @At("RETURN"))
+    // SubmitNodeCollection onSubmitNodeCollectionInit(SubmitNodeCollection snc) {
+    //     ((SubmitNodeCollectorExtended) snc).canpipe_setScopedModelMaterialMap(this.canpipe_modelSubmitMaterialMap);
+    //     return snc;
+    // }
 
     @Override
     public void canpipe_setPendingItemSubmitMaterialMap(MaterialMap materialMap) {
@@ -44,14 +44,14 @@ public class SubmitNodeStorageMixin /* implements SubmitNodeCollectorExtended */
         ((SubmitNodeCollectorExtended) this.order(0)).canpipe_setPendingBlockSubmitMaterialMap(materialMap);
     }
 
-    @Override
-    public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() {
-        return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getItemSubmitsMaterialMaps();
-    }
+    // @Override
+    // public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() {
+    //     return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getItemSubmitsMaterialMaps();
+    // }
 
-    @Override public Map<SubmitNodeStorage.BlockModelSubmit, MaterialMap> canpipe_getBlockSubmitsMaterialMaps() {
-        return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getBlockSubmitsMaterialMaps();
-    }
+    // @Override public Map<SubmitNodeStorage.BlockModelSubmit, MaterialMap> canpipe_getBlockSubmitsMaterialMaps() {
+    //     return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getBlockSubmitsMaterialMaps();
+    // }
 
     @Override
     public void canpipe_setScopedModelMaterialMap(EntityMaterialMap materialMap) {
@@ -71,9 +71,9 @@ public class SubmitNodeStorageMixin /* implements SubmitNodeCollectorExtended */
         ((SubmitNodeCollectorExtended) this.order(0)).canpipe_setPendingSpriteID(spriteId);
     }
 
-    @Override
-    public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() {
-        return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getModelSubmitsExtras();
-    }
-*/
+    // @Override
+    // public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() {
+    //     return ((SubmitNodeCollectorExtended) this.order(0)).canpipe_getModelSubmitsExtras();
+    // }
+
 }

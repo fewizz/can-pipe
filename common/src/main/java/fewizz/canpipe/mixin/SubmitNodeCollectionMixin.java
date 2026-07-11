@@ -25,29 +25,29 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.resources.model.sprite.SpriteId;
 
 @Mixin(SubmitNodeCollection.class)
-public class SubmitNodeCollectionMixin/* implements SubmitNodeCollectorExtended */{
+public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
 /*
     @Shadow @Final private List<SubmitNodeStorage.ItemSubmit> itemSubmits;
     @Shadow @Final private ModelFeatureRenderer.Storage modelSubmits;
-
+*/
     @Unique private MaterialMap canpipe_pendingItemSubmitMaterialMap = null;
     @Unique private MaterialMap canpipe_pendingBlockSubmitMaterialMap = null;
     @Unique private EntityMaterialMap canpipe_scopedModelSubmitMaterialMap = null;
     @Unique private boolean canpipe_pendingModelSubmitEntityGlint = false;
-    @Unique private Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_itemSubmitsMaterialMaps;
-    @Unique private Map<SubmitNodeStorage.BlockModelSubmit, MaterialMap> canpipe_blockSubmitsMaterialMaps;
-    @Unique private Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> canpipe_modelSubmitExtras;
+    // @Unique private Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_itemSubmitsMaterialMaps;
+    // @Unique private Map<SubmitNodeStorage.BlockModelSubmit, MaterialMap> canpipe_blockSubmitsMaterialMaps;
+    // @Unique private Map<SubmitNodeStorage.ModelSubmit<?>, ModelSubmitExtra> canpipe_modelSubmitExtras;
     @Unique private SpriteId canpipe_pendingSpriteId;
 
     @Override public void canpipe_setPendingItemSubmitMaterialMap(MaterialMap materialMap) { this.canpipe_pendingItemSubmitMaterialMap = materialMap; }
     @Override public void canpipe_setPendingBlockSubmitMaterialMap(MaterialMap materialMap) { this.canpipe_pendingBlockSubmitMaterialMap = materialMap; }
-    @Override public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() { return this.canpipe_itemSubmitsMaterialMaps; }
-    @Override public Map<SubmitNodeStorage.BlockModelSubmit, MaterialMap> canpipe_getBlockSubmitsMaterialMaps() { return this.canpipe_blockSubmitsMaterialMaps; }
+    // @Override public Map<SubmitNodeStorage.ItemSubmit, MaterialMap> canpipe_getItemSubmitsMaterialMaps() { return this.canpipe_itemSubmitsMaterialMaps; }
+    // @Override public Map<SubmitNodeStorage.BlockModelSubmit, MaterialMap> canpipe_getBlockSubmitsMaterialMaps() { return this.canpipe_blockSubmitsMaterialMaps; }
     @Override public void canpipe_setScopedModelMaterialMap(EntityMaterialMap materialMap) { canpipe_scopedModelSubmitMaterialMap = materialMap; }
     @Override public void canpipe_setPendingModelEntityGlint() { this.canpipe_pendingModelSubmitEntityGlint = true; }
-    @Override public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() { return this.canpipe_modelSubmitExtras; }
+    // @Override public Map<ModelSubmit<?>, ModelSubmitExtra> canpipe_getModelSubmitsExtras() { return this.canpipe_modelSubmitExtras; }
     @Override public void canpipe_setPendingSpriteID(SpriteId pendingSpriteId) { this.canpipe_pendingSpriteId = pendingSpriteId; }
-
+/*
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
         this.canpipe_itemSubmitsMaterialMaps = new HashMap<>();

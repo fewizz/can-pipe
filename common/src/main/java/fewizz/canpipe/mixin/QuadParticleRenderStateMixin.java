@@ -56,7 +56,7 @@ public class QuadParticleRenderStateMixin implements QuadParticleRenderStateExte
     void afterAdd(CallbackInfo ci, @Local SingleQuadParticle.Layer layer) {
         ((QuadParticleRenderStateStorageExtended) this.particles.get(layer)).canpipe_alsoAddMaterial(this.canpipe_pendingMaterial);
     }
-
+/* // TODO
     @ModifyExpressionValue(
         method = "prepare",
         at = @At(
@@ -140,5 +140,5 @@ public class QuadParticleRenderStateMixin implements QuadParticleRenderStateExte
             ++this.canpipe_forEachParticleIndex;
         }
     }
-
+*/
 }

@@ -17,7 +17,7 @@ public class ChunkSectionLayerGroupMixin {
         method = "outputTarget",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/Minecraft;getMainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+            target = "Lnet/minecraft/client/renderer/GameRenderer;mainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
         )
     )
     RenderTarget replaceMainOutputTarget(RenderTarget renderTarget) {
@@ -32,7 +32,7 @@ public class ChunkSectionLayerGroupMixin {
         method = "outputTarget",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;getTranslucentTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;translucentTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
         )
     )
     RenderTarget replaceTranslucentOutputTarget(RenderTarget renderTarget) {
