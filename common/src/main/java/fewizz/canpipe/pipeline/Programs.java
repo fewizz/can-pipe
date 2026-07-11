@@ -8,16 +8,23 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.function.TriConsumer;
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.PrimitiveTopology;
+import com.mojang.blaze3d.pipeline.BindGroupLayout;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
+import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.resources.Identifier;
 
 
@@ -32,7 +39,8 @@ public class Programs {
         int glslVersion,
         Map<Identifier, OptionGroup> options,
         Map<OptionGroup.Element<?>, Object> appliedOptions,
-        Optional<Integer> shadowMapSize
+        Optional<Integer> shadowMapSize,
+        Pair<List<GpuFormat>, GpuFormat> formats
     ) {
         List<String> samplers = JanksonUtils.listOfStrings(json, "samplers");
 
@@ -45,24 +53,38 @@ public class Programs {
             .withVertexShader(vertexLocation)
             .withFragmentShader(fragmentLocation)
             .withCull(false)
-            .withVertexFormat(CanPipe.VertexFormats.POSITION_TEX, VertexFormat.Mode.QUADS);
+            .withVertexBinding(0, CanPipe.VertexFormats.POSITION_TEX)
+            .withPrimitiveTopology(PrimitiveTopology.QUADS);
 
-        renderPipelineBuilder.withUniform("canpipe_ub_pass", UniformType.UNIFORM_BUFFER);
+        int colorAttachmentIndex = 0;
+        for (var colorAttachmentFormat : formats.getLeft()) {
+            renderPipelineBuilder.withColorTargetState(colorAttachmentIndex, new ColorTargetState(
+                Optional.empty(),  // no blend function
+                colorAttachmentFormat,
+                ColorTargetState.WRITE_ALL
+            ));
+            colorAttachmentIndex += 1;
+        }
 
-        renderPipelineBuilder.withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_shadow", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
+        var bindGroupLayoutBuilder = BindGroupLayout.builder()
+            .withUniform("canpipe_ub_pass", UniformType.UNIFORM_BUFFER)
 
-        renderPipelineBuilder.withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("Projection", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("Fog", UniformType.UNIFORM_BUFFER);
+            .withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_shadow", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
 
         for (String sampler : samplers) {
-            renderPipelineBuilder.withSampler(sampler);
+            bindGroupLayoutBuilder.withSampler(sampler);
         }
+
+        renderPipelineBuilder.withBindGroupLayout(bindGroupLayoutBuilder.build());
+
+        renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS);
+        renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.PROJECTION);
+        renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.FOG);
 
         RenderPipeline pipeline = renderPipelineBuilder.build();
 
@@ -82,28 +104,33 @@ public class Programs {
             return src;
         };
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
-            pipeline,
-            (Identifier location, ShaderType type) -> {
-                String src = getShaderSource.apply(location).get();
-                return Shaders.process(
-                    location, src, type, glslVersion, options, appliedOptions,
-                    getShaderSource, shadowMapSize, postprocess
+        TriConsumer<String, Identifier, String> onCompilationError = (String log, Identifier location, String src) -> {
+            Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
+            try {
+                Files.createDirectories(compilationErrorsPath);
+                Files.writeString(
+                    compilationErrorsPath.resolve(location.toString().replace("/", "--").replace(":", "--")),
+                    src+"\n"+log
                 );
-            },
-            (String log, Identifier location, String src) -> {
-                Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
-                try {
-                    Files.createDirectories(compilationErrorsPath);
-                    Files.writeString(
-                        compilationErrorsPath.resolve(location.toString().replace("/", "--").replace(":", "--")),
-                        src+"\n"+log
-                    );
-                } catch (IOException e) {
-                    CanPipe.LOGGER.warn("Couldn't save \""+location.toString()+"\" compilation error", e);
-                }
-                throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
+            } catch (IOException e) {
+                CanPipe.LOGGER.warn("Couldn't save \""+location.toString()+"\" compilation error", e);
             }
+            throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
+        };
+
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
+            vertexLocation,
+            Shaders.process(
+                vertexLocation, getShaderSource.apply(vertexLocation).get(), ShaderType.VERTEX, glslVersion, options, appliedOptions,
+                getShaderSource, shadowMapSize, postprocess
+            ), null, onCompilationError
+        );
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
+            fragmentLocation,
+            Shaders.process(
+                fragmentLocation, getShaderSource.apply(fragmentLocation).get(), ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
+                getShaderSource, shadowMapSize, postprocess
+            ), null, onCompilationError
         );
 
         return pipeline;

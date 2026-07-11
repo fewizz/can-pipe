@@ -8,9 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -26,6 +25,7 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
@@ -63,6 +63,7 @@ public class Pipeline implements AutoCloseable {
 
     public static record Shadows(
         Map<RenderPipeline, RenderPipeline> materialPrograms,
+        Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders,
         List<Framebuffer> framebuffers,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
@@ -101,6 +102,7 @@ public class Pipeline implements AutoCloseable {
     public final @Nullable FabulousTargets fabulousTargets;
 
     private final Map<RenderPipeline, RenderPipeline> materialPrograms;
+    private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders;
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
     private final Map<String, RenderPipeline> programs = new HashMap<>();
@@ -320,7 +322,8 @@ public class Pipeline implements AutoCloseable {
             samplers.add("frxs_shadowMap");
             samplers.add("frxs_shadowMapTexture");
         }
-        this.materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
+        this.materialPrograms = new HashMap<>();
+        this.materialProgramsLoaders = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
             renderPipeline -> renderPipeline,
             renderPipeline -> MaterialPrograms.load(
                 renderPipeline, glslVersion, enablePBR, false, shadowMapSize,
@@ -396,6 +399,7 @@ public class Pipeline implements AutoCloseable {
                 )
             ));
             this.shadows = new Shadows(
+                new HashMap<>(),
                 materialPrograms,
                 framebuffers,
                 cascadeRadii,
@@ -411,7 +415,7 @@ public class Pipeline implements AutoCloseable {
         }
 
         // "programs"
-        Function<String, RenderPipeline> getOrLoadProgram = (String name) -> {
+        BiFunction<String, Pair<List<GpuFormat>, GpuFormat>, RenderPipeline> getOrLoadProgram = (String name, Pair<List<GpuFormat>, GpuFormat> formats) -> {
             return this.programs.computeIfAbsent(name, _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();
@@ -421,7 +425,8 @@ public class Pipeline implements AutoCloseable {
                 try {
                     return Programs.load(
                         programJson.get(), location, getShaderSource, glslVersion,
-                        options, appliedOptions, shadowMapSize
+                        options, appliedOptions, shadowMapSize,
+                        formats
                     );
                 } catch (Exception e) {
                     throw new RuntimeException("Couldn't load program \""+name+"\"", e);
@@ -551,7 +556,8 @@ public class Pipeline implements AutoCloseable {
         RenderPass renderPass;
         // For example, when rendering gui items
         if (RenderSystem.outputColorTextureOverride != null && RenderSystem.outputDepthTextureOverride != null) {
-            renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, OptionalInt.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
+            renderPass = null; // TODO
+            // renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, OptionalInt.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
         }
         else {
             renderPass = ((CommandEncoderExtended) commandEncoder).canpipe_createRenderPass(name, framebuffer.colorTextureViews, framebuffer.getDepthTextureView());
@@ -611,7 +617,7 @@ public class Pipeline implements AutoCloseable {
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result) {
         // 0.0 - noon, 0.5 - midnight
-        float hourAngle = Minecraft.getInstance().gameRenderer.getGameRenderState().levelRenderState.skyRenderState.sunAngle;
+        float hourAngle = Minecraft.getInstance().gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunAngle;
         long ticks = level.getDefaultClockTime() % 24000L;
 
         result.set(

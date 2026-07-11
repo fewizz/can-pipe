@@ -1,5 +1,7 @@
 package fewizz.canpipe.pipeline;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -10,6 +12,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
@@ -221,6 +224,14 @@ public class Framebuffer extends RenderTarget {
             },
             depthClearDepth
         );
+    }
+
+    public Pair<List<GpuFormat>, @Nullable GpuFormat> getFormats() {
+        List<GpuFormat> result = new ArrayList<>();
+        for (var a : this.colorTextures) {
+            result.add(a.getFormat());
+        }
+        return Pair.of(result, this.depthTexture != null ? this.depthTexture.getFormat() : null);
     }
 
 }

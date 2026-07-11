@@ -7,7 +7,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.shaders.ShaderSource;
+import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuSampler;
@@ -28,9 +28,10 @@ public interface GpuDeviceExtended {
         int baseLayer, int layerCount  // added
     );
 
-    void canpipe_precompilePipelineShaderModules(
-        RenderPipeline pipeline,
-        ShaderSource shaderSource,
+    void canpipe_precompilePipelineModule(
+        Identifier id,
+        String shaderSource,
+        ShaderType shaderType,
         TriConsumer<String, Identifier, String> onCompilationError
     );
 

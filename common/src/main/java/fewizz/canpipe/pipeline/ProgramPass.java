@@ -4,18 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector2i;
 import org.lwjgl.system.MemoryStack;
 
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
@@ -61,7 +64,7 @@ public class ProgramPass extends Pass {
         super(id);
         this.textures = new ArrayList<>();
 
-        var samplers = renderPipeline.getSamplers();
+        var samplers = renderPipeline.getBindGroupLayouts().get(0).getSamplers();
         if (samplers.size() > samplerTextures.size()) {
             CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+id+"\"");
         }
@@ -102,13 +105,13 @@ public class ProgramPass extends Pass {
         int w = this.extent.x;
         int h = this.extent.y;
 
-        if (w == 0) w = mc.getMainRenderTarget().width;
-        if (h == 0) h = mc.getMainRenderTarget().height;
+        if (w == 0) w = mc.gameRenderer.mainRenderTarget().width;
+        if (h == 0) h = mc.gameRenderer.mainRenderTarget().height;
 
         w >>= this.frxLoadUniform.get();
         h >>= this.frxLoadUniform.get();
 
-        var autoStorageIndexBuffer = RenderSystem.getSequentialBuffer(Mode.QUADS);
+        var autoStorageIndexBuffer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
         var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
         var vertexBuffer = CanPipe.getQuadBuffer();
 
@@ -132,7 +135,7 @@ public class ProgramPass extends Pass {
         ) {
             renderPass.setPipeline(this.renderPipeline);
 
-            var samplers = this.renderPipeline.getSamplers();
+            var samplers = this.renderPipeline.getBindGroupLayouts().get(0).getSamplers();
             for (int i = 0; i < Math.min(samplers.size(), this.textures.size()); ++i) {
                 String sampler = samplers.get(i);
                 var samplerTexture = this.textures.get(i);
@@ -144,9 +147,9 @@ public class ProgramPass extends Pass {
             renderPass.setUniform("canpipe_ub_pass", this.passUbo);
             Uniforms.setRenderPassFREXUniforms(renderPass);
 
-            renderPass.setVertexBuffer(0, vertexBuffer);
+            renderPass.setVertexBuffer(0, vertexBuffer.slice());
             renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
-            renderPass.drawIndexed(0, 0, 6, 1);
+            renderPass.drawIndexed(6, 1, 0, 0, 0);
         }
     }
 
@@ -160,7 +163,7 @@ public class ProgramPass extends Pass {
         JsonObject json,
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
-        Function<String, RenderPipeline> getOrLoadProgram,
+        BiFunction<String, Pair<List<GpuFormat>, GpuFormat>, RenderPipeline> getOrLoadProgram,
         Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture
     ) {
         String toggleConfig = json.get(String.class, "toggleConfig");
@@ -186,7 +189,9 @@ public class ProgramPass extends Pass {
             return Optional.of(new ClearPass(id, framebuffer.get()));
         }
 
-        RenderPipeline renderPipeline = getOrLoadProgram.apply(programName);
+        var formats = framebuffer.get().getFormats();
+
+        RenderPipeline renderPipeline = getOrLoadProgram.apply(programName, formats);
         Objects.nonNull(renderPipeline);
 
         List<Optional<AbstractTexture>> samplerTextures = new ArrayList<>();

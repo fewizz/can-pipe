@@ -10,7 +10,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import com.mojang.blaze3d.pipeline.ColorTargetState;
+import org.apache.commons.lang3.function.TriConsumer;
+
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -18,13 +21,12 @@ import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
-import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
+import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.resources.Identifier;
@@ -33,7 +35,7 @@ public class MaterialPrograms {
 
     private MaterialPrograms() {}
 
-    static RenderPipeline load(
+    static MaterialProgramLoader load(
         RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
@@ -80,11 +82,7 @@ public class MaterialPrograms {
                 .withFragmentShader(fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh"))
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow ? originalRenderPipeline.isCull() : false)
-                .withColorTargetState(new ColorTargetState(
-                    originalRenderPipeline.getColorTargetState().blendFunction(),
-                    originalRenderPipeline.getColorTargetState().writeMask()
-                ))
-                .withVertexFormat(vertexFormat, originalRenderPipeline.getVertexFormatMode());
+                .withVertexBinding(0, vertexFormat);
 
             var dsState = originalRenderPipeline.getDepthStencilState();
             if (dsState != null) {
@@ -97,42 +95,47 @@ public class MaterialPrograms {
             }
         }
 
-        renderPipelineBuilder.withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("canpipe_ub_origin_type", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("canpipe_ub_is_rendering_hand", UniformType.UNIFORM_BUFFER);
+        var bindGroupLayoutBuilder = BindGroupLayout.builder()
+            .withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER)
+            .withUniform("canpipe_ub_origin_type", UniformType.UNIFORM_BUFFER)
+            .withUniform("canpipe_ub_is_rendering_hand", UniformType.UNIFORM_BUFFER)
 
-        renderPipelineBuilder.withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_shadow", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
+            .withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_shadow", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
         if (shadow) {
-            renderPipelineBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
+            bindGroupLayoutBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
         }
 
-        boolean terrain = originalRenderPipeline.getUniforms().stream().anyMatch(u -> u.name().equals("ChunkSection"));
+        boolean terrain = originalRenderPipeline.getBindGroupLayouts().stream().anyMatch(bgl -> bgl == BindGroupLayouts.CHUNK_SECTION);
 
         if (terrain) {
-            renderPipelineBuilder.withUniform("ChunkSection", UniformType.UNIFORM_BUFFER);
+            renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.CHUNK_SECTION);
         }
         else {
-            renderPipelineBuilder.withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER);
+            renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS);
         }
-        renderPipelineBuilder.withUniform("Projection", UniformType.UNIFORM_BUFFER);
-        renderPipelineBuilder.withUniform("Fog", UniformType.UNIFORM_BUFFER);
+        renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.PROJECTION);
+        renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.FOG);
 
+        /*
         ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler0");
         ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler1");
-        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler2");
+        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler2");*/
 
-        renderPipelineBuilder.withUniform("canpipe_spritesExtents", UniformType.TEXEL_BUFFER, TextureFormat.valueOf("RGBA16_UNORM"));
+        // TODO
+        bindGroupLayoutBuilder.withSampler("Sampler0");
+        bindGroupLayoutBuilder.withSampler("Sampler1");
+        bindGroupLayoutBuilder.withSampler("Sampler2");
+
+        bindGroupLayoutBuilder.withUniform("canpipe_spritesExtents", UniformType.TEXEL_BUFFER, GpuFormat.RGBA16_UNORM);
 
         for (String sampler : samplers) {
-            renderPipelineBuilder.withSampler(sampler);
+            bindGroupLayoutBuilder.withSampler(sampler);
         }
-
-        var renderPipeline = renderPipelineBuilder.build();
 
         Collection<Material> materials;
 
@@ -188,35 +191,43 @@ public class MaterialPrograms {
             return src;
         };
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineShaderModules(
-            renderPipeline,
-            (Identifier location, ShaderType type) -> {
-                String src = switch (type) {
-                    case ShaderType.VERTEX -> vertexSrc;
-                    case ShaderType.FRAGMENT -> fragmentSrc;
-                };
-
-                return Shaders.process(
-                    location, src, type, glslVersion, options, appliedOptions,
-                    getShaderSource, shadowMapSize, postprocess
+        TriConsumer<String, Identifier, String> onCompilationError = (String log, Identifier location, String src) -> {
+            Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
+            try {
+                Files.createDirectories(compilationErrorsPath);
+                Files.writeString(
+                    compilationErrorsPath.resolve(location.toString().replace("/", "--").replace(":", "--")),
+                    src+"\n"+log
                 );
-            },
-            (String log, Identifier location, String src) -> {
-                Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
-                try {
-                    Files.createDirectories(compilationErrorsPath);
-                    Files.writeString(
-                        compilationErrorsPath.resolve(location.toString().replace("/", "--").replace(":", "--")),
-                        src+"\n"+log
-                    );
-                } catch (IOException e) {
-                    CanPipe.LOGGER.warn("Couldn't save \""+location.toString()+"\" compilation error", e);
-                }
-                throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
+            } catch (IOException e) {
+                CanPipe.LOGGER.warn("Couldn't save \""+location.toString()+"\" compilation error", e);
             }
+            throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
+        };
+
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
+            vertexShaderLocation,
+            Shaders.process(
+                vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
+                getShaderSource, shadowMapSize, postprocess
+            ),
+            ShaderType.VERTEX,
+            onCompilationError
         );
 
-        return renderPipeline;
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
+            fragmentShaderLocation,
+            Shaders.process(
+                fragmentShaderLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
+                getShaderSource, shadowMapSize, postprocess
+            ),
+            ShaderType.FRAGMENT,
+            onCompilationError
+        );
+
+        return new MaterialProgramLoader(
+
+        );
     }
 
     private static String getVertexSrc(
@@ -232,11 +243,11 @@ public class MaterialPrograms {
         String vertexSrcOriginal = getShaderSource.apply(vertexShaderLocation).get();
 
         boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
-        boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
-        boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
-        boolean hasLightmapPos = vertexFormat.contains(VertexFormatElement.UV2);
-        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
-        boolean hasMaterialIndex = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX);
+        boolean hasTexturePos = vertexFormat.contains(DefaultVertexFormat.UV0_SEMANTIC_NAME);
+        boolean hasOverlayPos = vertexFormat.contains(DefaultVertexFormat.UV1_SEMANTIC_NAME);
+        boolean hasLightmapPos = vertexFormat.contains(DefaultVertexFormat.UV2_SEMANTIC_NAME);
+        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormats.MATERIAL_FLAGS_ATTRIBUTE_NAME);
+        boolean hasMaterialIndex = vertexFormat.contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME);
 
         StringBuilder materialsFunctionsSrc = new StringBuilder();
         StringBuilder materialsSwitchSrc = new StringBuilder();
@@ -301,22 +312,22 @@ public class MaterialPrograms {
             vertexSrcBuilder.append("in int in_materialIndex;\n");
         }
         vertexSrcBuilder.append(
-            vertexFormat.contains(VertexFormatElement.NORMAL) ?
+            vertexFormat.contains(DefaultVertexFormat.NORMAL_SEMANTIC_NAME) ?
             "in vec3 in_normal; // Normal\n" :
             "const vec3 in_normal = vec3(0.0, 1.0, 0.0);  // Normal\n"
         );
         vertexSrcBuilder.append(
-            vertexFormat.contains(CanPipe.VertexFormatElements.AO) ?
+            vertexFormat.contains(CanPipe.VertexFormats.AO_ATTRIBUTE_NAME) ?
             "in float in_ao;\n" :
             "const float in_ao = 1.0;\n"
         );
         vertexSrcBuilder.append(
-            vertexFormat.contains(CanPipe.VertexFormatElements.SPRITE_INDEX) ?
+            vertexFormat.contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME) ?
             "in int in_spriteIndex;\n" :
             "const int in_spriteIndex = -1;\n"
         );
         vertexSrcBuilder.append(
-            vertexFormat.contains(CanPipe.VertexFormatElements.TANGENT) ?
+            vertexFormat.contains(CanPipe.VertexFormats.TANGENT_ATTRIBUTE_NAME) ?
             "in vec4 in_tangent;\n" :
             "const vec4 in_tangent = vec4(1.0);\n"
         );
@@ -420,10 +431,10 @@ public class MaterialPrograms {
         StringBuilder materialsSwitchSrc = new StringBuilder();
 
         boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
-        boolean hasTexturePos = vertexFormat.contains(VertexFormatElement.UV0);
-        boolean hasOverlayPos = vertexFormat.contains(VertexFormatElement.UV1);
-        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_FLAGS);
-        boolean hasMaterialIndex = vertexFormat.contains(CanPipe.VertexFormatElements.MATERIAL_INDEX);
+        boolean hasTexturePos = vertexFormat.contains(DefaultVertexFormat.UV0_SEMANTIC_NAME);
+        boolean hasOverlayPos = vertexFormat.contains(DefaultVertexFormat.UV1_SEMANTIC_NAME);
+        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormats.MATERIAL_FLAGS_ATTRIBUTE_NAME);
+        boolean hasMaterialIndex = vertexFormat.contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME);
 
         if (hasMaterialIndex) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");
@@ -454,7 +465,7 @@ public class MaterialPrograms {
             alphaCutout = 0.01F;
         }
         else if (
-            originalRenderPipeline.getVertexFormat() == DefaultVertexFormat.PARTICLE ||
+            originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.PARTICLE ||
 
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
