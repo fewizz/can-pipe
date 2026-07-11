@@ -10,9 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
@@ -52,22 +50,12 @@ public class GpuDeviceMixin implements GpuDeviceExtended {
         );
     }
 
-    /*@Override
-    public void canpipe_precompilePipelineShaderModules(
-        RenderPipeline pipeline,
-        ShaderSource shaderSource,
-        TriConsumer<String, Identifier, String> onCompilationError
-    ) {
-        ((GpuDeviceBackendExtended) this.backend).canpipe_precompilePipelineShaderModules(
-            pipeline, shaderSource, onCompilationError
-        );
-    }*/
     @Override
     public void canpipe_precompilePipelineModule(
         Identifier id, String shaderSource, ShaderType shaderType,
         TriConsumer<String, Identifier, String> onCompilationError
     ) {
-        throw new UnsupportedOperationException("Unimplemented method 'canpipe_precompilePipelineModule'");
+        ((GpuDeviceBackendExtended) this.backend).canpipe_precompilePipelineModule(id, shaderSource, shaderType, onCompilationError);
     }
 
     @ModifyExpressionValue(

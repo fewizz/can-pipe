@@ -123,14 +123,14 @@ public class Programs {
             Shaders.process(
                 vertexLocation, getShaderSource.apply(vertexLocation).get(), ShaderType.VERTEX, glslVersion, options, appliedOptions,
                 getShaderSource, shadowMapSize, postprocess
-            ), null, onCompilationError
+            ), ShaderType.VERTEX, onCompilationError
         );
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
             fragmentLocation,
             Shaders.process(
                 fragmentLocation, getShaderSource.apply(fragmentLocation).get(), ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
                 getShaderSource, shadowMapSize, postprocess
-            ), null, onCompilationError
+            ), ShaderType.FRAGMENT, onCompilationError
         );
 
         return pipeline;

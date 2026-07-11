@@ -8,20 +8,16 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
-import fewizz.canpipe.mixininterface.MinecraftExtended;
-import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 
 @Mixin(Minecraft.class)
-public class MinecraftMixin implements MinecraftExtended {
+public class MinecraftMixin {
 
     @Shadow @Final private ReloadableResourceManager resourceManager;
 

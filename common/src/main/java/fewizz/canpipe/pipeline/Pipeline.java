@@ -62,7 +62,6 @@ import net.minecraft.world.level.Level;
 public class Pipeline implements AutoCloseable {
 
     public static record Shadows(
-        Map<RenderPipeline, RenderPipeline> materialPrograms,
         Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders,
         List<Framebuffer> framebuffers,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
@@ -101,7 +100,6 @@ public class Pipeline implements AutoCloseable {
     public final @Nullable Shadows shadows;
     public final @Nullable FabulousTargets fabulousTargets;
 
-    private final Map<RenderPipeline, RenderPipeline> materialPrograms;
     private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders;
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
@@ -322,7 +320,6 @@ public class Pipeline implements AutoCloseable {
             samplers.add("frxs_shadowMap");
             samplers.add("frxs_shadowMapTexture");
         }
-        this.materialPrograms = new HashMap<>();
         this.materialProgramsLoaders = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
             renderPipeline -> renderPipeline,
             renderPipeline -> MaterialPrograms.load(
@@ -387,7 +384,7 @@ public class Pipeline implements AutoCloseable {
 
             var vertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "vertexSource"));
             var fragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "fragmentSource"));
-            var materialPrograms = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
+            var materialProgramsLoaders = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
                 renderPipeline -> renderPipeline,
                 renderPipeline -> MaterialPrograms.load(
                     renderPipeline, glslVersion, enablePBR, true, shadowMapSize,
@@ -399,8 +396,7 @@ public class Pipeline implements AutoCloseable {
                 )
             ));
             this.shadows = new Shadows(
-                new HashMap<>(),
-                materialPrograms,
+                materialProgramsLoaders,
                 framebuffers,
                 cascadeRadii,
                 shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
@@ -538,14 +534,24 @@ public class Pipeline implements AutoCloseable {
         Profiler.get().pop();
     }
 
-    public RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline) {
+    public MaterialProgramLoader getMaterialProgramLoader(RenderPipeline renderPipeline) {
         Minecraft mc = Minecraft.getInstance();
+
         if (this.shadows != null && ((LevelRendererExtended) mc.levelRenderer).canpipe_getCurrentShadowCascadeIdx() >= 0) {
-            renderPipeline = this.shadows.materialPrograms().getOrDefault(renderPipeline, renderPipeline);
+            return this.shadows.materialProgramsLoaders().get(renderPipeline);
         }
         else {
-            renderPipeline = this.materialPrograms.getOrDefault(renderPipeline, renderPipeline);
+            return this.materialProgramsLoaders.get(renderPipeline);
         }
+    }
+
+    public RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline, Pair<List<GpuFormat>, GpuFormat> formats) {
+        MaterialProgramLoader loader = this.getMaterialProgramLoader(renderPipeline);
+
+        if (loader != null) {
+            renderPipeline = loader.getOrCompileRenderPipeline(formats);
+        }
+
         return renderPipeline;
     }
 
@@ -640,7 +646,9 @@ public class Pipeline implements AutoCloseable {
 
     public RenderTarget replaceRenderTarget(RenderTarget renderTarget, RenderSetup renderSetup) {
         RenderPipeline originalRenderPipeline = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getPipeline();
-        boolean renderPipelineIsReplaced = this.getReplacedRenderPipeline(originalRenderPipeline) != originalRenderPipeline;
+
+        MaterialProgramLoader loader = this.getMaterialProgramLoader(originalRenderPipeline);
+        boolean renderPipelineIsReplaced = loader != null;
 
         if (renderPipelineIsReplaced) {
             OutputTarget outputTarget = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getOutputTarget();

@@ -1,14 +1,8 @@
 package fewizz.canpipe.b3d.mixin;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
 
-import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
@@ -17,6 +11,7 @@ import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 @Mixin(RenderPipeline.Builder.class)
 public abstract class RenderPipelineBuilderMixin implements RenderPipelineBuilderExtended {
 
+    @Shadow private int activeColorTargetStateCount;
     // @Shadow public abstract RenderPipeline.Builder withSampler(final String sampler);
 
     /*private Optional<Set<String>> canpipe_optionalSamplers = Optional.empty();
@@ -37,5 +32,10 @@ public abstract class RenderPipelineBuilderMixin implements RenderPipelineBuilde
         ((RenderPipelineAccessor) pipeline).canpipe_setOptionalSamplers(Set.copyOf(optionalSamplers));
         return pipeline;
     }*/
+
+    @Override
+    public void canpipe_resetActiveColorTargetStateCount() {
+        this.activeColorTargetStateCount = 0;
+    }
 
 }

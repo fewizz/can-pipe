@@ -66,6 +66,9 @@ public class MaterialPrograms {
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
             vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_TEX_LIGHTMAP;
         }
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR) {
+            vertexFormat = CanPipe.VertexFormats.POSITION_TEX_LIGHTMAP_COLOR;
+        }
         else {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormatBinding(0).toString());
         }

@@ -9,6 +9,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.pipeline.Framebuffer;
+import fewizz.canpipe.pipeline.MaterialProgramLoader;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -20,7 +22,10 @@ public class ChunkSectionLayerMixin {
     public RenderPipeline pipeline(RenderPipeline renderPipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            renderPipeline = p.getReplacedRenderPipeline(renderPipeline);
+            MaterialProgramLoader loader = p.getMaterialProgramLoader(renderPipeline);
+            Framebuffer fb = p.shadowFramebufferOr(p.solidFramebuffer);
+            var formats = fb.getFormats();
+            renderPipeline = loader.getOrCompileRenderPipeline(formats);
         }
         return renderPipeline;
     }

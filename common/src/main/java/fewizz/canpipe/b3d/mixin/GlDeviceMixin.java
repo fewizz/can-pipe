@@ -3,8 +3,6 @@ package fewizz.canpipe.b3d.mixin;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.OptionalDouble;
-import java.util.Set;
-import java.util.function.Predicate;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
@@ -14,7 +12,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -22,11 +19,9 @@ import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.opengl.GlDevice;
-import com.mojang.blaze3d.opengl.GlProgram;
 import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTextureView;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -37,7 +32,6 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
-import fewizz.canpipe.b3d.RenderPipelineExtended;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.renderer.ShaderDefines;
@@ -81,15 +75,15 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
     }
 
     @Override
-    public void canpipe_precompilePipelineShaderModules(
-        RenderPipeline pipeline,
-        ShaderSource shaderSource,
+    public void canpipe_precompilePipelineModule(
+        Identifier id,
+        String shaderSource,
+        ShaderType shaderType,
         TriConsumer<String, Identifier, String> onCompilationError
     ) {
         try {
             this.canpipe_onCompilationError = onCompilationError;
-            this.getOrCompileShader(pipeline.getVertexShader(), ShaderType.VERTEX, pipeline.getShaderDefines(), shaderSource);
-            this.getOrCompileShader(pipeline.getFragmentShader(), ShaderType.FRAGMENT, pipeline.getShaderDefines(), shaderSource);
+            this.getOrCompileShader(id, shaderType, ShaderDefines.EMPTY, (_id, _shaderType) -> shaderSource);
         } finally {
             this.canpipe_onCompilationError = null;
             this.canpipe_compilationLog = null;
