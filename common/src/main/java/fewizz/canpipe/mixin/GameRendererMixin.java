@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 
@@ -43,6 +44,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow @Final private FogRenderer fogRenderer;
     @Shadow @Final private GameRenderState gameRenderState;
     @Shadow @Final private Lightmap lightmap;
+    @Shadow @Final private RenderTarget mainRenderTarget;
 
     @Unique private long canpipe_renderStartNano = -1;
     @Unique private int canpipe_renderFrames = -1;
@@ -59,6 +61,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private Matrix4f canpipe_lastProjectionMatrix;
     @Unique private boolean canpipe_runResizePasses = false;
     @Unique private boolean canpipe_runInitPasses = false;
+    @Unique private RenderTarget canpipe_mainRenderTargetOverride;
 
     @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
     @Override public FogRenderer canpipe_getFogRenderer() { return this.fogRenderer; }
@@ -68,6 +71,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override public Lightmap canpipe_getLightmap() { return this.lightmap; }
     @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
     @Override public void canpipe_setOriginType(int originType) { this.canpipe_originType = originType; }
+    @Override public void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget) { this.canpipe_mainRenderTargetOverride = renderTarget; }
 
     @Override
     public void canpipe_onPipelineActivated() {
@@ -329,11 +333,19 @@ public class GameRendererMixin implements GameRendererExtended {
     RenderTarget useOriginalMainRenderTargetOnResize(RenderTarget mainRenderTarget) {
         if (Pipelines.getCurrent() != null) {
             RenderTarget mainRenderTargetOverride = mainRenderTarget;
-            ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(null);
+            this.canpipe_mainRenderTargetOverride = null;
             mainRenderTarget = this.minecraft.gameRenderer.mainRenderTarget();
-            ((MinecraftExtended) this.minecraft).canpipe_setMainRenderTargetOverride(mainRenderTargetOverride);
+            this.canpipe_mainRenderTargetOverride = mainRenderTargetOverride;
         }
         return mainRenderTarget;
+    }
+
+    @ModifyReturnValue(method = "getMainRenderTarget", at = @At("RETURN"))
+    RenderTarget onGetMainTarget(RenderTarget original) {
+        if (this.canpipe_mainRenderTargetOverride != null) {
+            original = this.canpipe_mainRenderTargetOverride;
+        }
+        return original;
     }
 
 }

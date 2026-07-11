@@ -7,7 +7,6 @@
     },
     "client": [
         "BlockEntityRenderDispatcherMixin",
-        "BlockFeatureRendererMixin",
         "BlockModelRenderStateAccessor",
         "BlockModelRenderStateMixin",
         "BlockStateModelWrapperMixin",
@@ -26,6 +25,7 @@
         "FeatureRenderDispatcherMixin",
         "FluidRendererMixin",
         "GameRendererMixin",
+        "GameRenderStateMixin",
         "ItemFeatureRendererMixin",
         "ItemStackLayerRenderState",
         "LevelRendererMixin",
@@ -37,7 +37,6 @@
         "OrderedSubmitNodeCollectorMixin",
         "ParticleAccessor",
         "ParticleEngineMixin",
-        "ParticleFeatureRendererMixin",
         "ParticleMixin",
         "QuadInstanceMixin",
         "QuadParticleRenderStateMixin",

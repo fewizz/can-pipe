@@ -2,6 +2,8 @@ package fewizz.canpipe.mixininterface;
 
 import org.joml.Matrix4f;
 
+import com.mojang.blaze3d.pipeline.RenderTarget;
+
 import fewizz.canpipe.helpers.ShadowFrustum;
 import net.minecraft.client.renderer.Lightmap;
 import net.minecraft.client.renderer.fog.FogRenderer;
@@ -22,5 +24,7 @@ public interface GameRendererExtended {
     void canpipe_setOriginType(int originType);
 
     boolean canpipe_isRenderingHand();
+
+    void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget);
 
 }

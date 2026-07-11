@@ -27,7 +27,6 @@ import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
-import fewizz.canpipe.mixininterface.MinecraftExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -178,7 +177,7 @@ final public class Pipelines implements PreparableReloadListener {
     public static void setLoadedPipeline(Pipeline loadedPipeline) {
         Minecraft mc = Minecraft.getInstance();
 
-        ((MinecraftExtended) mc).canpipe_setMainRenderTargetOverride(
+        ((GameRendererExtended) mc.gameRenderer).canpipe_setMainRenderTargetOverride(
             loadedPipeline != null ? loadedPipeline.defaultFramebuffer : null
         );
 
