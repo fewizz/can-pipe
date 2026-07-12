@@ -73,6 +73,9 @@ public class MaterialPrograms {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormatBinding(0).toString());
         }
 
+        Identifier vertexShaderIDWithPostfix = vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh");
+        Identifier fragmentShaderIDWithPostfix = fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh");
+
         var renderPipelineBuilder = RenderPipeline.builder();
         {
             Identifier location = Identifier.fromNamespaceAndPath(
@@ -81,8 +84,8 @@ public class MaterialPrograms {
 
             renderPipelineBuilder
                 .withLocation(location)
-                .withVertexShader(vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh"))
-                .withFragmentShader(fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh"))
+                .withVertexShader(vertexShaderIDWithPostfix)
+                .withFragmentShader(fragmentShaderIDWithPostfix)
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow ? originalRenderPipeline.isCull() : false)
                 .withVertexBinding(0, vertexFormat)
@@ -97,21 +100,6 @@ public class MaterialPrograms {
                     !shadow ? dsState.depthBiasConstant() : shadowsOffsetBiasUnits
                 ));
             }
-        }
-
-        var bindGroupLayoutBuilder = BindGroupLayout.builder()
-            .withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER)
-            .withUniform("canpipe_ub_origin_type", UniformType.UNIFORM_BUFFER)
-            .withUniform("canpipe_ub_is_rendering_hand", UniformType.UNIFORM_BUFFER)
-
-            .withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER)
-            .withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER)
-            .withUniform("frx_ub_shadow", UniformType.UNIFORM_BUFFER)
-            .withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER)
-            .withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER)
-            .withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
-        if (shadow) {
-            bindGroupLayoutBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
         }
 
         boolean terrain = originalRenderPipeline.getBindGroupLayouts().stream().anyMatch(bgl -> bgl == BindGroupLayouts.CHUNK_SECTION);
@@ -131,15 +119,29 @@ public class MaterialPrograms {
         ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler2");*/
 
         // TODO
-        bindGroupLayoutBuilder.withSampler("Sampler0");
-        bindGroupLayoutBuilder.withSampler("Sampler1");
-        bindGroupLayoutBuilder.withSampler("Sampler2");
+        renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.SAMPLER0_SAMPLER1_SAMPLER2);
+
+        var bindGroupLayoutBuilder = BindGroupLayout.builder()
+            .withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER)
+            .withUniform("canpipe_ub_origin_type", UniformType.UNIFORM_BUFFER)
+            .withUniform("canpipe_ub_is_rendering_hand", UniformType.UNIFORM_BUFFER)
+
+            .withUniform("frx_ub_accessibility", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_view", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_shadow", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER)
+            .withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
+        if (shadow) {
+            bindGroupLayoutBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
+        }
 
         bindGroupLayoutBuilder.withUniform("canpipe_spritesExtents", UniformType.TEXEL_BUFFER, GpuFormat.RGBA16_UNORM);
 
         for (String sampler : samplers) {
             bindGroupLayoutBuilder.withSampler(sampler);
         }
+        renderPipelineBuilder.withBindGroupLayout(bindGroupLayoutBuilder.build());
 
         Collection<Material> materials;
 
@@ -161,9 +163,6 @@ public class MaterialPrograms {
         else {
             materials = Collections.emptyList();
         }
-
-        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
-        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
 
         Function<String, String> postprocess = (String src) -> {
             // These three ideally shouldn't be in a material shader, but it's still possible
@@ -209,8 +208,11 @@ public class MaterialPrograms {
             throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
         };
 
+        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
+        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
+
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
-            vertexShaderLocation,
+            vertexShaderIDWithPostfix,
             Shaders.process(
                 vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
                 getShaderSource, shadowMapSize, postprocess
@@ -220,7 +222,7 @@ public class MaterialPrograms {
         );
 
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
-            fragmentShaderLocation,
+            fragmentShaderIDWithPostfix,
             Shaders.process(
                 fragmentShaderLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
                 getShaderSource, shadowMapSize, postprocess
@@ -275,6 +277,13 @@ public class MaterialPrograms {
         }
 
         var vertexSrcBuilder = new StringBuilder();
+
+        vertexSrcBuilder.append("#define in_vertex Position\n");
+        vertexSrcBuilder.append("#define in_color Color\n");
+        vertexSrcBuilder.append("#define in_uv UV0\n");
+        vertexSrcBuilder.append("#define in_overlayPos UV1\n");
+        vertexSrcBuilder.append("#define in_lightmap UV2\n");
+        vertexSrcBuilder.append("#define in_normal Normal\n");
 
         vertexSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");
         if (terrain) {
@@ -472,7 +481,6 @@ public class MaterialPrograms {
             originalRenderPipeline == RenderPipelines.GLINT ||
             originalRenderPipeline == RenderPipelines.LINES ||
             originalRenderPipeline == RenderPipelines.SECONDARY_BLOCK_OUTLINE ||
-            originalRenderPipeline == RenderPipelines.LINES ||
             originalRenderPipeline == RenderPipelines.LINES_TRANSLUCENT ||
 
             originalRenderPipeline == RenderPipelines.ENTITY_CUTOUT ||
