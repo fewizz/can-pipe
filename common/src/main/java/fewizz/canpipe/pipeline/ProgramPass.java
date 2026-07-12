@@ -7,20 +7,18 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector2i;
 import org.lwjgl.system.MemoryStack;
 
-import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPass.RenderArea;
 import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.RenderPass.RenderArea;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
@@ -30,7 +28,6 @@ import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
 import fewizz.canpipe.UniformBufferStruct.IntUniform;
 import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
 import fewizz.canpipe.Uniforms;
-import fewizz.canpipe.b3d.CommandEncoderExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -102,61 +99,65 @@ public class ProgramPass extends Pass {
 
     @Override
     public void apply(CommandEncoder commandEncoder) {
-        Minecraft mc = Minecraft.getInstance();
+        try {
+            Minecraft mc = Minecraft.getInstance();
 
-        int w = this.extent.x;
-        int h = this.extent.y;
+            int w = this.extent.x;
+            int h = this.extent.y;
 
-        if (w == 0) w = mc.gameRenderer.mainRenderTarget().width;
-        if (h == 0) h = mc.gameRenderer.mainRenderTarget().height;
+            if (w == 0) w = mc.gameRenderer.mainRenderTarget().width;
+            if (h == 0) h = mc.gameRenderer.mainRenderTarget().height;
 
-        w >>= this.frxLoadUniform.get();
-        h >>= this.frxLoadUniform.get();
+            w >>= this.frxLoadUniform.get();
+            h >>= this.frxLoadUniform.get();
 
-        var autoStorageIndexBuffer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
-        var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
-        var vertexBuffer = CanPipe.getQuadBuffer();
+            var autoStorageIndexBuffer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
+            var indexBuffer = autoStorageIndexBuffer.getBuffer(6);
+            var vertexBuffer = CanPipe.getQuadBuffer();
 
-        if (this.frxSizeUniform.x != w || this.frxSizeUniform.y != h) {
-            this.frxSizeUniform.set(w, h);
-            this.frxFrameProjectionMatrix.setOrtho2D(0, w, 0, h);
+            if (this.frxSizeUniform.x != w || this.frxSizeUniform.y != h) {
+                this.frxSizeUniform.set(w, h);
+                this.frxFrameProjectionMatrix.setOrtho2D(0, w, 0, h);
 
-            try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-                var builder = Std140Builder.onStack(memoryStack, this.pass.size());
-                this.pass.writeTo(builder);
-                commandEncoder.writeToBuffer(this.passUbo.slice(), builder.get());
-            }
-        }
-
-        RenderPassDescriptor renderPassDescriptor = RenderPassDescriptor.create(() -> "Program pass "+this.id);
-        for (var colorAttachment : this.framebuffer.colorTextureViews) {
-            renderPassDescriptor.withColorAttachment(colorAttachment);
-        }
-        if (this.framebuffer.getDepthTextureView() != null) {
-            renderPassDescriptor.withDepthAttachment(this.framebuffer.getDepthTextureView());
-        }
-        renderPassDescriptor.withRenderArea(new RenderArea(0, 0, w, h));
-
-        try (
-            RenderPass renderPass = commandEncoder.createRenderPass(renderPassDescriptor)
-        ) {
-            renderPass.setPipeline(this.renderPipeline);
-
-            var samplers = this.renderPipeline.getBindGroupLayouts().get(0).getSamplers();
-            for (int i = 0; i < Math.min(samplers.size(), this.textures.size()); ++i) {
-                String sampler = samplers.get(i);
-                var samplerTexture = this.textures.get(i);
-                renderPass.bindTexture(sampler, samplerTexture.getTextureView(), this.textures.get(i).getSampler());
+                try (MemoryStack memoryStack = MemoryStack.stackPush()) {
+                    var builder = Std140Builder.onStack(memoryStack, this.pass.size());
+                    this.pass.writeTo(builder);
+                    commandEncoder.writeToBuffer(this.passUbo.slice(), builder.get());
+                }
             }
 
-            RenderSystem.bindDefaultUniforms(renderPass);
-            renderPass.setUniform("DynamicTransforms", DYNAMIC_TRANSFORMS_UBO);
-            renderPass.setUniform("canpipe_ub_pass", this.passUbo);
-            Uniforms.setRenderPassFREXUniforms(renderPass);
+            RenderPassDescriptor renderPassDescriptor = RenderPassDescriptor.create(() -> "Program pass "+this.id);
+            for (var colorAttachment : this.framebuffer.colorTextureViews) {
+                renderPassDescriptor.withColorAttachment(colorAttachment);
+            }
+            if (this.framebuffer.getDepthTextureView() != null) {
+                renderPassDescriptor.withDepthAttachment(this.framebuffer.getDepthTextureView());
+            }
+            renderPassDescriptor.withRenderArea(new RenderArea(0, 0, w, h));
 
-            renderPass.setVertexBuffer(0, vertexBuffer.slice());
-            renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
-            renderPass.drawIndexed(6, 1, 0, 0, 0);
+            try (
+                RenderPass renderPass = commandEncoder.createRenderPass(renderPassDescriptor)
+            ) {
+                renderPass.setPipeline(this.renderPipeline);
+
+                var samplers = this.renderPipeline.getBindGroupLayouts().get(0).getSamplers();
+                for (int i = 0; i < Math.min(samplers.size(), this.textures.size()); ++i) {
+                    String sampler = samplers.get(i);
+                    var samplerTexture = this.textures.get(i);
+                    renderPass.bindTexture(sampler, samplerTexture.getTextureView(), this.textures.get(i).getSampler());
+                }
+
+                RenderSystem.bindDefaultUniforms(renderPass);
+                renderPass.setUniform("DynamicTransforms", DYNAMIC_TRANSFORMS_UBO);
+                renderPass.setUniform("canpipe_ub_pass", this.passUbo);
+                Uniforms.setRenderPassFREXUniforms(renderPass);
+
+                renderPass.setVertexBuffer(0, vertexBuffer.slice());
+                renderPass.setIndexBuffer(indexBuffer, autoStorageIndexBuffer.type());
+                renderPass.drawIndexed(6, 1, 0, 0, 0);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't apply program pass \""+this.id+"\" with render pipeline \""+this.renderPipeline+"\"", e);
         }
     }
 
@@ -170,7 +171,7 @@ public class ProgramPass extends Pass {
         JsonObject json,
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
-        BiFunction<String, Pair<List<GpuFormat>, GpuFormat>, RenderPipeline> getOrLoadProgram,
+        BiFunction<String, Framebuffer, RenderPipeline> getOrLoadProgram,
         Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture
     ) {
         String toggleConfig = json.get(String.class, "toggleConfig");
@@ -181,6 +182,7 @@ public class ProgramPass extends Pass {
         }
 
         String passName = json.get(String.class, "name");
+        Objects.requireNonNull(passName);
         String framebufferName = json.get(String.class, "framebuffer");
         Optional<Framebuffer> framebuffer = getOrLoadOptionalFramebuffer.apply(framebufferName);
         if (framebuffer.isEmpty()) {
@@ -190,16 +192,15 @@ public class ProgramPass extends Pass {
         }
 
         String programName = json.get(String.class, "program");
+        Objects.requireNonNull(programName);
         var id = Identifier.fromNamespaceAndPath(pipelineId.getNamespace(), passName);
 
         if (programName.equals("frex_clear")) {
             return Optional.of(new ClearPass(id, framebuffer.get()));
         }
 
-        var formats = framebuffer.get().getFormats();
-
-        RenderPipeline renderPipeline = getOrLoadProgram.apply(programName, formats);
-        Objects.nonNull(renderPipeline);
+        RenderPipeline renderPipeline = getOrLoadProgram.apply(programName, framebuffer.get());
+        Objects.requireNonNull(renderPipeline);
 
         List<Optional<AbstractTexture>> samplerTextures = new ArrayList<>();
         for (String s : JanksonUtils.listOfStrings(json, "samplerImages")) {

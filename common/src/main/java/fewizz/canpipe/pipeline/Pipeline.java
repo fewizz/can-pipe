@@ -31,9 +31,9 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderPass.RenderArea;
 import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.systems.RenderPass.RenderArea;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
@@ -42,7 +42,6 @@ import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.Uniforms;
-import fewizz.canpipe.b3d.CommandEncoderExtended;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixin.RenderSetupAccessor;
@@ -106,7 +105,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders;
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
-    private final Map<String, RenderPipeline> programs = new HashMap<>();
+    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, RenderPipeline> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
@@ -416,8 +415,8 @@ public class Pipeline implements AutoCloseable {
         }
 
         // "programs"
-        BiFunction<String, Pair<List<GpuFormat>, GpuFormat>, RenderPipeline> getOrLoadProgram = (String name, Pair<List<GpuFormat>, GpuFormat> formats) -> {
-            return this.programs.computeIfAbsent(name, _name -> {
+        BiFunction<String, Framebuffer, RenderPipeline> getOrLoadProgram = (String name, Framebuffer fb) -> {
+            return this.programs.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();
                 if (programJson.isEmpty()) {
@@ -427,7 +426,7 @@ public class Pipeline implements AutoCloseable {
                     return Programs.load(
                         programJson.get(), location, getShaderSource, glslVersion,
                         options, appliedOptions, shadowMapSize,
-                        formats
+                        fb
                     );
                 } catch (Exception e) {
                     throw new RuntimeException("Couldn't load program \""+name+"\"", e);

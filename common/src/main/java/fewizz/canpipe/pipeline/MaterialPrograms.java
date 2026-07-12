@@ -76,12 +76,12 @@ public class MaterialPrograms {
         Identifier vertexShaderIDWithPostfix = vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh");
         Identifier fragmentShaderIDWithPostfix = fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh");
 
+        Identifier location = Identifier.fromNamespaceAndPath(
+            CanPipe.MOD_ID, (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
+        );
+
         var renderPipelineBuilder = RenderPipeline.builder();
         {
-            Identifier location = Identifier.fromNamespaceAndPath(
-                CanPipe.MOD_ID, (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
-            );
-
             renderPipelineBuilder
                 .withLocation(location)
                 .withVertexShader(vertexShaderIDWithPostfix)
@@ -194,18 +194,18 @@ public class MaterialPrograms {
             return src;
         };
 
-        TriConsumer<String, Identifier, String> onCompilationError = (String log, Identifier location, String src) -> {
+        TriConsumer<String, Identifier, String> onCompilationError = (String log, Identifier shaderLocation, String src) -> {
             Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
             try {
                 Files.createDirectories(compilationErrorsPath);
                 Files.writeString(
-                    compilationErrorsPath.resolve(location.toString().replace("/", "--").replace(":", "--")),
+                    compilationErrorsPath.resolve(shaderLocation.toString().replace("/", "--").replace(":", "--")),
                     src+"\n"+log
                 );
             } catch (IOException e) {
-                CanPipe.LOGGER.warn("Couldn't save \""+location.toString()+"\" compilation error", e);
+                CanPipe.LOGGER.warn("Couldn't save \""+shaderLocation.toString()+"\" compilation error", e);
             }
-            throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
+            throw new RuntimeException("Couldn't compile \""+shaderLocation.toString()+"\": "+log);
         };
 
         String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
@@ -231,7 +231,7 @@ public class MaterialPrograms {
             onCompilationError
         );
 
-        return new MaterialProgramLoader(renderPipelineBuilder, originalRenderPipeline);
+        return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline);
     }
 
     private static String getVertexSrc(

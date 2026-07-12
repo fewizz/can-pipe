@@ -9,9 +9,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.function.TriConsumer;
-import org.apache.commons.lang3.tuple.Pair;
 
-import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
@@ -40,7 +38,7 @@ public class Programs {
         Map<Identifier, OptionGroup> options,
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Optional<Integer> shadowMapSize,
-        Pair<List<GpuFormat>, GpuFormat> formats
+        Framebuffer framebuffer
     ) {
         List<String> samplers = JanksonUtils.listOfStrings(json, "samplers");
 
@@ -48,8 +46,18 @@ public class Programs {
         var vertexLocation = Identifier.parse(json.get(String.class, "vertexSource"));
         var fragmentLocation = Identifier.parse(json.get(String.class, "fragmentSource"));
 
+        var formats = framebuffer.getFormats();
+        String postfix = "";
+        for (var colorAttachmentFormat : formats.getLeft()) {
+            postfix += "-c-"+colorAttachmentFormat.toString();
+        }
+        if (formats.getRight() != null) {
+            postfix += "-d-"+formats.getRight().toString();
+        }
+        postfix = postfix.replace("_", "-").toLowerCase();
+
         var renderPipelineBuilder = RenderPipeline.builder()
-            .withLocation(pipelineLocation.withSuffix("-"+name))
+            .withLocation(pipelineLocation.withSuffix("-"+name).withSuffix(postfix))
             .withVertexShader(vertexLocation)
             .withFragmentShader(fragmentLocation)
             .withCull(false)
