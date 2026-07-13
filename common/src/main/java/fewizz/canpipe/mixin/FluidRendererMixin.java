@@ -28,7 +28,7 @@ import net.minecraft.world.level.material.FluidState;
 
 @Mixin(FluidRenderer.class)
 public class FluidRendererMixin {
-/*
+
     @Shadow @Final private FluidStateModelSet fluidModels;
 
     @ModifyExpressionValue(
@@ -46,7 +46,7 @@ public class FluidRendererMixin {
     ) {
         if (
             vc instanceof VertexConsumerExtended vce &&
-            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.SPRITE_INDEX)
+            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME)
         ) {
 
             TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
@@ -109,5 +109,5 @@ public class FluidRendererMixin {
             sprite.getU0() <= u && u <= sprite.getU1() &&
             sprite.getV0() <= v && v <= sprite.getV1();
     }
-*/
+
 }
