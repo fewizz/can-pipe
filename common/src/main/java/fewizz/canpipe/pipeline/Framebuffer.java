@@ -186,7 +186,7 @@ public class Framebuffer extends RenderTarget {
         JsonObject depthAttachmentJson = framebufferJson.getObject("depthAttachment");
 
         if (depthAttachmentJson != null) {
-            depthClearDepth = depthAttachmentJson.getDouble("clearDepth", 1.0);
+            depthClearDepth = depthAttachmentJson.getDouble("clearDepth", 0.0);
         }
 
         return new Framebuffer(
