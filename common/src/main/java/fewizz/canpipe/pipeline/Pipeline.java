@@ -24,11 +24,15 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.joml.Vector4fc;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderPass.RenderArea;
@@ -90,6 +94,7 @@ public class Pipeline implements AutoCloseable {
     public final int brightnessSmoothingFrames;  // I wonder why smoothing is frame dependent, not time?
     public final int rainSmoothingFrames;
     public final int thunderSmoothingFrames;
+    public final boolean awareOfDepthRangeChanges;
 
     public final Framebuffer defaultFramebuffer;
     public final Framebuffer solidFramebuffer;
@@ -141,6 +146,7 @@ public class Pipeline implements AutoCloseable {
         this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
         this.rainSmoothingFrames = pipelineJson.getInt("rainSmoothingFrames", 500);
         this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
+        this.awareOfDepthRangeChanges = false;
 
         // "images"
         Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
@@ -330,7 +336,8 @@ public class Pipeline implements AutoCloseable {
                 renderPipeline, glslVersion, enablePBR, false, shadowMapSize,
                 materialVertexShaderLocation, materialFragmentShaderLocation,
                 options, appliedOptions, samplers, getShaderSource,
-                0.0F, 0.0F
+                0.0F, 0.0F,
+                this.awareOfDepthRangeChanges
             )
         ));
 
@@ -396,7 +403,8 @@ public class Pipeline implements AutoCloseable {
                     List.of(),
                     getShaderSource,
                     shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
-                    shadowsJson.getFloat("offsetBiasUnits", 4.0F)
+                    shadowsJson.getFloat("offsetBiasUnits", 4.0F),
+                    this.awareOfDepthRangeChanges
                 )
             ));
             this.shadows = new Shadows(
@@ -676,6 +684,66 @@ public class Pipeline implements AutoCloseable {
         }
 
         return renderTarget;
+    }
+
+    public RenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
+        if (
+            !pipeline.getLocation().getNamespace().equals("minecraft")
+            // || colorAttachments.get(0).textureView().texture().getFormat() == GpuFormat.RGBA8_UNORM
+        ) {
+            return pipeline;
+        }
+
+        List<GpuFormat> colorAttachmentFormats = new ArrayList<>();
+        for (var attachment : colorAttachments) {
+            colorAttachmentFormats.add(attachment.textureView().texture().getFormat());
+        }
+
+        return this.replacedRenderPipelines.computeIfAbsent(Pair.of(colorAttachmentFormats, pipeline), _key -> {
+            List<ColorTargetState> colorTargets = new ArrayList<>();
+            for (var attachment : colorAttachments) {
+                colorTargets.add(new ColorTargetState(
+                    pipeline.getColorTargetState().blendFunction(),
+                    attachment.textureView().texture().getFormat(),
+                    pipeline.getColorTargetState().writeMask()
+                ));
+            }
+
+            DepthStencilState depthState = null;
+            var originalDepthState = pipeline.getDepthStencilState();
+            if (originalDepthState != null) {
+                CompareOp compareOp = originalDepthState.depthTest();
+
+                if (!this.awareOfDepthRangeChanges) {
+                    if      (compareOp == CompareOp.LESS_THAN) { compareOp = CompareOp.GREATER_THAN; }
+                    else if (compareOp == CompareOp.GREATER_THAN) { compareOp = CompareOp.LESS_THAN; }
+                    else if (compareOp == CompareOp.LESS_THAN_OR_EQUAL) { compareOp = CompareOp.GREATER_THAN_OR_EQUAL; }
+                    else if (compareOp == CompareOp.GREATER_THAN_OR_EQUAL) { compareOp = CompareOp.LESS_THAN_OR_EQUAL; }
+                }
+
+                depthState = new DepthStencilState(
+                    compareOp,
+                    originalDepthState.writeDepth(),
+                    originalDepthState.depthBiasScaleFactor(),
+                    originalDepthState.depthBiasConstant()
+                );
+            }
+
+            return new RenderPipeline(
+                pipeline.getLocation(),
+                pipeline.getVertexShader(),
+                pipeline.getFragmentShader(),
+                pipeline.getShaderDefines(),
+                pipeline.getBindGroupLayouts(),
+                colorTargets.toArray(new ColorTargetState[0]),
+                depthState,
+                pipeline.getPolygonMode(),
+                pipeline.isCull(),
+                pipeline.getVertexFormatBindings(),
+                pipeline.getPrimitiveTopology(),
+                pipeline.getSortKey()
+            ) {};
+        });
     }
 
 }

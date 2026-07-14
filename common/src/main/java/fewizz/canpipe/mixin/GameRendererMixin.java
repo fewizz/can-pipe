@@ -298,22 +298,11 @@ public class GameRendererMixin implements GameRendererExtended {
             shift = Shift.AFTER
         )
     )
-    void afterRenderLevel(DeltaTracker deltaTracker, CallbackInfo ci) {
-        this.canpipe_isRenderingHand = true;
-    }
-
-    @Inject(
-        method = "renderLevel",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher;renderAllFeatures("+
-                "Lnet/minecraft/client/renderer/SubmitNodeStorage;"+
-            ")V"
-        )
-    )
-    void beforeLateDebugPass(CallbackInfo ci, @Local ProfilerFiller profiler) {
+    void afterRenderLevel(DeltaTracker deltaTracker, CallbackInfo ci, @Local ProfilerFiller profiler) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
+
+        this.canpipe_isRenderingHand = true;
 
         profiler.popPush("can-pipe fabulous passes");
         this.canpipe_originType = 2;  // camera

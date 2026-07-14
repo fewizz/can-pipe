@@ -54,6 +54,12 @@
         "TextureAtlasSpriteMixin",
         "VertexConsumerMixin",
         "VideoSettingsScreenMixin",
-        "WeatherEffectRendererMixin"
+        "WeatherEffectRendererMixin",
+
+        "depth.CameraMixin",
+        "depth.GameRendererMixin",
+        "depth.GlDeviceMixin",
+        "depth.LevelRendererMixin",
+        "depth.ProjectionMixin"
     ]
 }

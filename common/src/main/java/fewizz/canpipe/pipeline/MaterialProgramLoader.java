@@ -45,17 +45,10 @@ public class MaterialProgramLoader {
             pipelineBuilder.withLocation(this.id.withSuffix(postfix));
 
             var originalBlendFunction = this.originalRenderPipeline.getColorTargetState().blendFunction();
-            var originalDSState = originalRenderPipeline.getDepthStencilState();
 
             for (int i = 0; i < colorFormats.size(); ++i) {
                 pipelineBuilder.withColorTargetState(i, new ColorTargetState(originalBlendFunction, colorFormats.get(i), ColorTargetState.WRITE_ALL));
             }
-            pipelineBuilder.withDepthStencilState(new DepthStencilState(
-                originalDSState.depthTest(),
-                originalDSState.writeDepth(),
-                originalDSState.depthBiasScaleFactor(),
-                originalDSState.depthBiasConstant()
-            ));
 
             return pipelineBuilder.build();
         });

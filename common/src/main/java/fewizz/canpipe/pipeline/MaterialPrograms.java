@@ -16,6 +16,7 @@ import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -48,7 +49,8 @@ public class MaterialPrograms {
         List<String> samplers,
         Function<Identifier, Optional<String>> getShaderSource,
         float shadowsOffsetSlopeFactor,
-        float shadowsOffsetBiasUnits
+        float shadowsOffsetBiasUnits,
+        boolean awareOfDepthRangeChanges
     ) {
         VertexFormat vertexFormat;
         if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.BLOCK) {
@@ -93,8 +95,17 @@ public class MaterialPrograms {
 
             var dsState = originalRenderPipeline.getDepthStencilState();
             if (dsState != null) {
+                CompareOp compareOp = dsState.depthTest();
+
+                if (!awareOfDepthRangeChanges) {
+                    if      (compareOp == CompareOp.LESS_THAN) { compareOp = CompareOp.GREATER_THAN; }
+                    else if (compareOp == CompareOp.GREATER_THAN) { compareOp = CompareOp.LESS_THAN; }
+                    else if (compareOp == CompareOp.LESS_THAN_OR_EQUAL) { compareOp = CompareOp.GREATER_THAN_OR_EQUAL;}
+                    else if (compareOp == CompareOp.GREATER_THAN_OR_EQUAL) { compareOp = CompareOp.LESS_THAN_OR_EQUAL;}
+                }
+
                 renderPipelineBuilder.withDepthStencilState(new DepthStencilState(
-                    dsState.depthTest(),
+                    compareOp,
                     dsState.writeDepth(),
                     !shadow ? dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
                     !shadow ? dsState.depthBiasConstant() : shadowsOffsetBiasUnits
