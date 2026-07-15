@@ -10,8 +10,10 @@ import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
+import fewizz.canpipe.mixin.RenderPipelineBuilderAccessor;
 import net.minecraft.resources.Identifier;
 
 public class MaterialProgramLoader {
@@ -52,6 +54,10 @@ public class MaterialProgramLoader {
 
             return pipelineBuilder.build();
         });
+    }
+
+    public VertexFormat vertexFormat() {
+        return ((RenderPipelineBuilderAccessor) this.pipelineBuilder).canpipe_getVertexFormatPerBuffer()[0];
     }
 
 }

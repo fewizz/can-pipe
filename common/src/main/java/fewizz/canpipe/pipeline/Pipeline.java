@@ -686,6 +686,29 @@ public class Pipeline implements AutoCloseable {
         return renderTarget;
     }
 
+    public RenderTarget replaceRenderTarget(RenderTarget renderTarget, RenderPipeline originalRenderPipeline, OutputTarget outputTarget) {
+
+        MaterialProgramLoader loader = this.getMaterialProgramLoader(originalRenderPipeline);
+        boolean renderPipelineIsReplaced = loader != null;
+
+        if (renderPipelineIsReplaced) {
+            if (outputTarget == OutputTarget.MAIN_TARGET) {
+                renderTarget = this.shadowFramebufferOr(this.solidFramebuffer);
+            }
+            else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
+                renderTarget = this.shadowFramebufferOr(this.translucentItemEntityFramebuffer);
+            }
+            else if (outputTarget == OutputTarget.WEATHER_TARGET) {
+                renderTarget = this.shadowFramebufferOr(this.weatherFramebuffer);
+            }
+            else {
+                throw new RuntimeException("Unexpected output target: "+outputTarget);
+            }
+        }
+
+        return renderTarget;
+    }
+
     public RenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
         if (
             !pipeline.getLocation().getNamespace().equals("minecraft")
