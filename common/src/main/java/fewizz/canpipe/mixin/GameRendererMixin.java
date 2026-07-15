@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -326,12 +327,18 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_lastCameraPos = this.mainCamera.position().toVector3f();
     }
 
-    @ModifyReturnValue(method = "mainRenderTarget", at = @At("RETURN"))
-    RenderTarget onGetMainTarget(RenderTarget original) {
+    @ModifyExpressionValue(
+        method = {"mainRenderTarget", "processBlurEffect", "render", "renderLevel", "takeAutoScreenshot"},
+        at = @At(
+            value = "FIELD",
+            target = "Lnet/minecraft/client/renderer/GameRenderer;mainRenderTarget:Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+        )
+    )
+    RenderTarget replaceMainRenderTarget(RenderTarget renderTarget) {
         if (this.canpipe_mainRenderTargetOverride != null) {
-            original = this.canpipe_mainRenderTargetOverride;
+            renderTarget = this.canpipe_mainRenderTargetOverride;
         }
-        return original;
+        return renderTarget;
     }
 
 }
