@@ -1,9 +1,12 @@
 package fewizz.canpipe.mixin;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector4f;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -17,6 +20,7 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.CommandEncoder;
@@ -50,11 +54,7 @@ public class PreparedRenderTypeMixin {
     )
     RenderTarget replaceRenderTarget(RenderTarget renderTarget) {
         Pipeline p = Pipelines.getCurrent();
-        if (
-            RenderSystem.outputColorTextureOverride == null &&
-            RenderSystem.outputDepthTextureOverride == null &&
-            p != null
-        ) {
+        if (p != null) {
             renderTarget = p.replaceRenderTarget(renderTarget, this.pipeline, this.outputTarget);
         }
         return renderTarget;
@@ -75,13 +75,26 @@ public class PreparedRenderTypeMixin {
         )
     )
     RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline, @Local RenderTarget renderTarget) {
-        if (
-            renderTarget instanceof Framebuffer fb &&
-            RenderSystem.outputColorTextureOverride == null &&
-            RenderSystem.outputDepthTextureOverride == null
-        ) {
+        if (renderTarget instanceof Framebuffer fb) {
             Pipeline p = Pipelines.getCurrent();
-            renderPipeline = p.getReplacedRenderPipeline(renderPipeline, fb.getFormats());
+            Pair<List<GpuFormat>, @Nullable GpuFormat> formats;
+
+            if (RenderSystem.outputColorTextureOverride != null) {
+                List<GpuFormat> colorFormats = new ArrayList<>();
+                if (fb.colorTextureViews.length > 0) {
+                    colorFormats.add(RenderSystem.outputColorTextureOverride.texture().getFormat());
+                }
+                for (int i = 1; i < fb.colorTextureViews.length; ++i) {
+                    colorFormats.add(null);
+                }
+
+                formats = Pair.of(colorFormats, RenderSystem.outputDepthTextureOverride.texture().getFormat());
+            }
+            else {
+                formats = fb.getFormats();
+            }
+
+            renderPipeline = p.getReplacedRenderPipeline(renderPipeline, formats);
         }
         return renderPipeline;
     }
@@ -111,12 +124,9 @@ public class PreparedRenderTypeMixin {
         Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
     ) {
-        if (
-            renderTarget instanceof Framebuffer framebuffer &&
-            RenderSystem.outputColorTextureOverride == null &&
-            RenderSystem.outputDepthTextureOverride == null
-        ) {
-            return Pipelines.getCurrent().createRenderPass(instance, nameSupplier, framebuffer);
+        if (renderTarget instanceof Framebuffer framebuffer) {
+            Pipeline p = Pipelines.getCurrent();
+            return p.createRenderPass(instance, nameSupplier, framebuffer);
         }
         return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
     }

@@ -8,7 +8,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
@@ -37,7 +36,12 @@ public class MaterialProgramLoader {
 
             String postfix = "";
             for (var colorAttachmentFormat : formats.getLeft()) {
-                postfix += "-c-"+colorAttachmentFormat.toString();
+                if (colorAttachmentFormat != null) {
+                    postfix += "-c-"+colorAttachmentFormat.toString();
+                }
+                else {
+                    postfix += "-c-u";  // unused
+                }
             }
             if (formats.getRight() != null) {
                 postfix += "-d-"+formats.getRight().toString();
@@ -49,7 +53,13 @@ public class MaterialProgramLoader {
             var originalBlendFunction = this.originalRenderPipeline.getColorTargetState().blendFunction();
 
             for (int i = 0; i < colorFormats.size(); ++i) {
-                pipelineBuilder.withColorTargetState(i, new ColorTargetState(originalBlendFunction, colorFormats.get(i), ColorTargetState.WRITE_ALL));
+                var format = colorFormats.get(i);
+                if (format != null) {
+                    pipelineBuilder.withColorTargetState(i, new ColorTargetState(originalBlendFunction, format, ColorTargetState.WRITE_ALL));
+                }
+                else {
+                    pipelineBuilder.withUnusedColorTargetState(i);
+                }
             }
 
             return pipelineBuilder.build();

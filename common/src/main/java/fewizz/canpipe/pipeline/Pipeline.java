@@ -571,20 +571,37 @@ public class Pipeline implements AutoCloseable {
         GameRendererExtended gre = (GameRendererExtended) Minecraft.getInstance().gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
 
-        RenderPass renderPass;
-        // For example, when rendering gui items
-        if (RenderSystem.outputColorTextureOverride != null && RenderSystem.outputDepthTextureOverride != null) {
-            renderPass = commandEncoder.createRenderPass(name, RenderSystem.outputColorTextureOverride, Optional.empty(), RenderSystem.outputDepthTextureOverride, OptionalDouble.empty());
-        }
-        else {
-            var descriptor = RenderPassDescriptor.create(name);
-            for (var colorAttachment : framebuffer.colorTextureViews) {
+        var descriptor = RenderPassDescriptor.create(name);
+        for (int i = 0; i < framebuffer.colorTextureViews.length; ++i) {
+            var colorAttachment = framebuffer.colorTextureViews[i];
+            if (RenderSystem.outputColorTextureOverride != null) {
+                colorAttachment = i == 0 ? RenderSystem.outputColorTextureOverride : null;
+            }
+
+            if (colorAttachment != null) {
                 descriptor.withColorAttachment(colorAttachment);
             }
-            descriptor.withDepthAttachment(framebuffer.getDepthTextureView());
-            descriptor.withRenderArea(new RenderArea(0, 0, framebuffer.width, framebuffer.height));
-            renderPass = commandEncoder.createRenderPass(descriptor);
+            else {
+                descriptor.withUnusedColorAttachment();
+            }
         }
+
+        var depthAttachment = framebuffer.getDepthTextureView();
+        if (RenderSystem.outputDepthTextureOverride != null) {
+            depthAttachment = RenderSystem.outputDepthTextureOverride;
+        }
+        descriptor.withDepthAttachment(depthAttachment);
+
+        RenderArea renderArea;
+        if (RenderSystem.outputColorTextureOverride != null) {
+            renderArea = new RenderArea(0, 0, RenderSystem.outputColorTextureOverride.getWidth(0), RenderSystem.outputColorTextureOverride.getHeight(0));
+        }
+        else {
+            renderArea = new RenderArea(0, 0, framebuffer.width, framebuffer.height);
+        }
+
+        descriptor.withRenderArea(renderArea);
+        RenderPass renderPass = commandEncoder.createRenderPass(descriptor);
 
         Uniforms.setRenderPassFREXUniforms(renderPass);
 
