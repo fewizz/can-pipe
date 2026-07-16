@@ -102,7 +102,7 @@ public class CanPipe {
             AO_ATTRIBUTE_NAME = "in_ao";
 
         private static final GpuFormat
-            MATERIAL_FLAGS_FORMAT = GpuFormat.R8_UINT,
+            MATERIAL_FLAGS_FORMAT = GpuFormat.R8_SINT,
             SPRITE_INDEX_FORMAT = GpuFormat.R32_SINT,
             MATERIAL_INDEX_FORMAT = GpuFormat.R16_SINT,
             TANGENT_FORMAT = GpuFormat.RGBA8_SNORM,

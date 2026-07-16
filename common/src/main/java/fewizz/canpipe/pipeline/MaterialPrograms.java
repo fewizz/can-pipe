@@ -123,6 +123,7 @@ public class MaterialPrograms {
         }
         renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.PROJECTION);
         renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.FOG);
+        renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.GLOBALS);
 
         /*
         ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler0");
@@ -293,7 +294,7 @@ public class MaterialPrograms {
         vertexSrcBuilder.append("#define in_color Color\n");
         vertexSrcBuilder.append("#define in_uv UV0\n");
         vertexSrcBuilder.append("#define in_overlayPos UV1\n");
-        vertexSrcBuilder.append("#define in_lightmap UV2\n");
+        vertexSrcBuilder.append("#define in_lightmapPos UV2\n");
         vertexSrcBuilder.append("#define in_normal Normal\n");
 
         vertexSrcBuilder.append("#define CANPIPE_MATERIAL_SHADER\n");

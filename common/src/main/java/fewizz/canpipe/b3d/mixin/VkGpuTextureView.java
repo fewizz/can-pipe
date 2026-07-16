@@ -37,7 +37,7 @@ public class VkGpuTextureView implements GpuTextureViewExtended {
         if (value == VK12.VK_IMAGE_VIEW_TYPE_CUBE && layerCount != -1 && layerCount < 6) {
             value = VK12.VK_IMAGE_VIEW_TYPE_2D;
         }
-        if (layerCount > 1) {
+        if (value == VK12.VK_IMAGE_VIEW_TYPE_2D && layerCount > 1) {
             value = VK12.VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         }
         return value;

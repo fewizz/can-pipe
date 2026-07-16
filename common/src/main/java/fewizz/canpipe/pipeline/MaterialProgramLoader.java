@@ -3,10 +3,12 @@ package fewizz.canpipe.pipeline;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.GpuFormat.ComponentType;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexFormat;
@@ -55,7 +57,18 @@ public class MaterialProgramLoader {
             for (int i = 0; i < colorFormats.size(); ++i) {
                 var format = colorFormats.get(i);
                 if (format != null) {
-                    pipelineBuilder.withColorTargetState(i, new ColorTargetState(originalBlendFunction, format, ColorTargetState.WRITE_ALL));
+                    boolean blend = !(
+                        format.componentType() == GpuFormat.ComponentType.SINT_8 ||
+                        format.componentType() == GpuFormat.ComponentType.UINT_8 ||
+                        format.componentType() == GpuFormat.ComponentType.SINT_16 ||
+                        format.componentType() == GpuFormat.ComponentType.UINT_16 ||
+                        format.componentType() == GpuFormat.ComponentType.SINT_32 ||
+                        format.componentType() == GpuFormat.ComponentType.UINT_32
+                    );
+                    pipelineBuilder.withColorTargetState(
+                        i,
+                        new ColorTargetState(blend ? originalBlendFunction : Optional.empty(), format, ColorTargetState.WRITE_ALL)
+                    );
                 }
                 else {
                     pipelineBuilder.withUnusedColorTargetState(i);

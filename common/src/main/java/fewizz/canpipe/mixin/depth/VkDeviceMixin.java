@@ -5,22 +5,29 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vulkan.VulkanDevice;
 
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 
-@Mixin(GlDevice.class)
-public class GlDeviceMixin {
+@Mixin(VulkanDevice.class)
+public class VkDeviceMixin {
 
     @ModifyArg(
         method = "compileShader",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;glShaderSource(ILjava/lang/String;)V"),
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vulkan/glsl/GlslCompiler;createIntermediary("+
+                "Ljava/lang/String;"+
+                "Ljava/lang/String;"+
+                "Lcom/mojang/blaze3d/shaders/ShaderType;"+
+            ")Lcom/mojang/blaze3d/vulkan/glsl/IntermediaryShaderModule;"
+        ),
         index = 1
     )
-    String changeClipDepth(String src, @Local GlDevice.ShaderCompilationKey key) {
+    String changeClipDepth(String src, @Local VulkanDevice.ShaderCompilationKey key) {
         Pipeline p = Pipelines.getCurrent();
         if (  // TODO
             // p != null &&

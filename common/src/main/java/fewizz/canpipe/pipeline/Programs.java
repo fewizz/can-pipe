@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.function.TriConsumer;
 
@@ -27,6 +29,9 @@ import net.minecraft.resources.Identifier;
 
 
 public class Programs {
+
+    static final Predicate<String> CONTAINS_VERTEX_IN = Pattern.compile("\\s*in\\s+vec(3|4)\\s+in_vertex").asPredicate();
+    static final Predicate<String> CONTAINS_UV_IN = Pattern.compile("\\s*in\\s+vec2\\s+in_uv").asPredicate();
 
     private Programs() {}
 
@@ -130,7 +135,22 @@ public class Programs {
             vertexLocation,
             Shaders.process(
                 vertexLocation, getShaderSource.apply(vertexLocation).get(), ShaderType.VERTEX, glslVersion, options, appliedOptions,
-                getShaderSource, shadowMapSize, postprocess
+                getShaderSource, shadowMapSize, (src) -> {
+                    // some shaderpacks define them, some - not
+                    if (!CONTAINS_VERTEX_IN.test(src)) {
+                        src = "in vec3 in_vertex;\n\n"+src;
+                    }
+                    if (!CONTAINS_UV_IN.test(src)) {
+                        src = "in vec2 in_uv;\n\n"+src;
+                    }
+
+                    src = 
+                        "#define in_vertex Position\n"+
+                        "#define in_uv UV0\n\n"+
+                        src;
+
+                    return postprocess.apply(src);
+                }
             ), ShaderType.VERTEX, onCompilationError
         );
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(

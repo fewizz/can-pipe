@@ -26,6 +26,8 @@
         "RenderPipelineAccessor",
         "RenderPipelineBuilderMixin",
         "RenderPipelineMixin",
+        "VkBackendMixin",
+        "VkCommandEncoderMixin",
         "VkDeviceAccessor",
         "VkDeviceMixin",
         "VkGpuTextureView"

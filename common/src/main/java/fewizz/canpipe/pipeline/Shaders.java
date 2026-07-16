@@ -23,8 +23,6 @@ import net.minecraft.resources.Identifier;
 
 public class Shaders {
 
-    static final Predicate<String> CONTAINS_VERTEX_IN = Pattern.compile("\\s*in\\s+vec(3|4)\\s+in_vertex").asPredicate();
-    static final Predicate<String> CONTAINS_UV_IN = Pattern.compile("\\s*in\\s+vec2\\s+in_uv").asPredicate();
     static final Pattern DEFINITION_PATTERN = Pattern.compile("^\\s*#define\\s+([[a-z][A-Z][0-9]_]+)");
     static final Pattern INCLUDE_PATTERN = Pattern.compile("^\\s*#include\\s+([[a-z][0-9]._]+:[[a-z][0-9]._/]+)");
 
@@ -78,14 +76,6 @@ public class Shaders {
             header +=
                 "#define SHADOW_MAP_PRESENT\n"+
                 "#define SHADOW_MAP_SIZE "+shadowMapSize.get()+"\n\n";
-        }
-
-        // some shaderpacks define them, some - not
-        if (type == ShaderType.VERTEX && !CONTAINS_VERTEX_IN.test(source)) {
-            header += "in vec3 in_vertex;\n\n";
-        }
-        if (type == ShaderType.VERTEX && !CONTAINS_UV_IN.test(source)) {
-            header += "in vec2 in_uv;\n\n";
         }
 
         // header +=  // LumiLights uses these for variable names
