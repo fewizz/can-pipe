@@ -1,7 +1,6 @@
 package fewizz.canpipe.b3d.mixin;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.OptionalDouble;
 
 import org.apache.commons.lang3.function.TriConsumer;
@@ -21,7 +20,6 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlShaderModule;
 import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.GlTextureView;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderSource;
 import com.mojang.blaze3d.shaders.ShaderType;
@@ -32,8 +30,6 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.GpuDeviceBackendExtended;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 
@@ -51,9 +47,6 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
     @Unique private AddressMode canpipe_addressModeW = null;
     @Unique private CompareOp canpipe_compareOp = null;
     @Unique private Boolean canpipe_linearMipmap = null;
-
-    /** Color textures + depth texture at the end (nullable) **/
-    @Unique private Object2IntMap<List<GlTextureView>> canpipe_framebufferCache = new Object2IntOpenHashMap<>();
 
     @Override
     public GpuSampler canpipe_createSampler(
