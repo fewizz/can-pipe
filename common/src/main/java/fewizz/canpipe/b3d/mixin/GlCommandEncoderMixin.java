@@ -1,8 +1,5 @@
 package fewizz.canpipe.b3d.mixin;
 
-import java.util.function.Supplier;
-
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;
@@ -22,10 +19,8 @@ import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
-import com.mojang.blaze3d.systems.RenderPassBackend;
 import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
 
 import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 
@@ -37,30 +32,10 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     @Shadow @Final private static Logger LOGGER;
     @Shadow @Final private GlDevice device;
 
-    @Unique private GpuTextureView[] canpipe_colorAttachments = null;
     @Unique private int canpipe_clearBaseLevel = -1;
     @Unique private int canpipe_clearLevelCount = -1;
     @Unique private int canpipe_clearBaseLayer = -1;
     @Unique private int canpipe_clearLayerCount = -1;
-
-    @Override
-    public RenderPassBackend canpipe_createRenderPass(
-        Supplier<String> supplier,
-        GpuTextureView[] colorAttachments,
-        @Nullable GpuTextureView depthAttachment
-    ) {
-        try {
-            this.canpipe_colorAttachments = colorAttachments;
-            // TODO
-            return null;/*this.createRenderPass(
-                supplier, this.canpipe_colorAttachments.length > 0 ? this.canpipe_colorAttachments[0] : null, OptionalInt.empty(),
-                depthAttachment, OptionalDouble.empty()
-            );*/
-        }
-        finally {
-            this.canpipe_colorAttachments = null;
-        }
-    }
 
     @ModifyExpressionValue(
         method = "trySetup",
@@ -90,76 +65,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             colorTextureView.set(depthTextureView);
         }*/
     }
-
-    // TODO
-    /*@WrapOperation(
-        method = "createRenderPass("+
-            "Lcom/mojang/blaze3d/systems/RenderPassDescriptor;"+
-        ")Lcom/mojang/blaze3d/systems/RenderPassBackend;",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/GlTextureView;getFbo(Lcom/mojang/blaze3d/opengl/DirectStateAccess;Lcom/mojang/blaze3d/textures/GpuTexture;)I"
-        )
-    )
-    int ifColorAttachmentsCountNotEqualsOne(
-        GlTextureView colorTextureView, DirectStateAccess dsa, GpuTexture depthTexture, Operation<Integer> operation,
-        @Local(argsOnly = true, ordinal = 1) GpuTextureView depthTextureView
-    ) {
-        // Replacing original `getFbo`, i.e., it won't be called from `createRenderPass`,
-        // only from `canpipe_colorAttachments` and `clearColorAndDepthTextures`
-
-        var colorAttachments =
-            this.canpipe_colorAttachments != null ?
-            this.canpipe_colorAttachments :
-            new GpuTextureView[] {colorTextureView};
-
-        Object2IntMap<Pair<List<GpuTextureView>, GpuTextureView>> fboCache = ((GlDeviceAccessor) this.device).get_canpipe_framebufferCache();
-
-        // Creating such object on every renderpass creation is kinda messy
-        Pair<List<GpuTextureView>, GpuTextureView> fboTextureViewsKey = Pair.of(
-            Arrays.asList(colorAttachments),
-            depthTextureView
-        );
-
-        return fboCache.computeIfAbsent(fboTextureViewsKey, k -> {
-            int id = GlStateManager.glGenFramebuffers();
-
-            GlStateManager._glBindFramebuffer(GL33C.GL_FRAMEBUFFER, id);
-            GL33C.glDrawBuffers(IntStream.range(0, colorAttachments.length).map(i -> GL33C.GL_COLOR_ATTACHMENT0+i).toArray());
-
-            for (int attachmentIndex = 0; attachmentIndex < colorAttachments.length; ++attachmentIndex) {
-                GpuTextureView attachment = colorAttachments[attachmentIndex];
-                GpuTextureViewExtended attachmentExt = (GpuTextureViewExtended) attachment;
-
-                var textureID = ((GlTextureView) attachment).texture().glId();
-
-                if ((attachment.texture().usage() & GpuTexture.USAGE_CUBEMAP_COMPATIBLE) != 0) {
-                    int face = attachmentExt.canpipe_baseArrayLayer() % 6;
-                    int layer = attachmentExt.canpipe_baseArrayLayer() / 6;
-                    if (layer > 0) { throw new RuntimeException("Cubemap with layer "+layer); }
-                    GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureID, attachment.baseMipLevel());
-                }
-                else if (attachment.texture().getDepthOrLayers() > 1 || attachmentExt.canpipe_baseArrayLayer() > 0) {
-                    GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, textureID, attachment.baseMipLevel(), attachmentExt.canpipe_baseArrayLayer());
-                } else {
-                    GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL33C.GL_TEXTURE_2D, textureID, attachment.baseMipLevel());
-                }
-            }
-
-            if (depthTextureView != null) {
-                var depthAttachmentExt = (GpuTextureViewExtended) depthTextureView;
-                var textureID = ((GlTextureView) depthTextureView).texture().glId();
-
-                if (depthTextureView.texture().getDepthOrLayers() > 1 || depthAttachmentExt.canpipe_baseArrayLayer() > 0) {
-                    GL33C.glFramebufferTextureLayer(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, textureID, depthTextureView.baseMipLevel(), depthAttachmentExt.canpipe_baseArrayLayer());
-                }
-                else {
-                    GlStateManager._glFramebufferTexture2D(GL33C.GL_FRAMEBUFFER, GL33C.GL_DEPTH_ATTACHMENT, GL33C.GL_TEXTURE_2D, textureID, depthTextureView.baseMipLevel());
-                }
-            }
-            return id;
-        });
-    }*/
 
     @Override
     public void canpipe_clearDepthTexture(
