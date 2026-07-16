@@ -37,8 +37,8 @@ import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 @Mixin(PreparedRenderType.class)
 public class PreparedRenderTypeMixin {
 
-    @Shadow @Final RenderPipeline pipeline;
-    @Shadow @Final OutputTarget outputTarget;
+    @Shadow @Final private RenderPipeline pipeline;
+    @Shadow @Final private OutputTarget outputTarget;
 
     @ModifyExpressionValue(
         method = "drawFromBuffer("+
@@ -118,7 +118,7 @@ public class PreparedRenderTypeMixin {
         )
     )
     RenderPass onCreateRenderPass(
-        CommandEncoder instance, Supplier<String> nameSupplier,
+        CommandEncoder instance, Supplier<String> label,
         GpuTextureView colorTexture, Optional<Vector4f> clearColor,
         @Nullable GpuTextureView depthTexture, OptionalDouble clearDepth,
         Operation<RenderPass> operation,
@@ -126,9 +126,9 @@ public class PreparedRenderTypeMixin {
     ) {
         if (renderTarget instanceof Framebuffer framebuffer) {
             Pipeline p = Pipelines.getCurrent();
-            return p.createRenderPass(instance, nameSupplier, framebuffer);
+            return p.createRenderPass(instance, label, framebuffer);
         }
-        return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
+        return operation.call(instance, label, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
     @Inject(

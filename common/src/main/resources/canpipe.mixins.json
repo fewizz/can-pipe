@@ -61,6 +61,7 @@
         "depth.CameraMixin",
         "depth.GameRendererMixin",
         "depth.GlDeviceMixin",
+        "depth.GuiItemAtlasMixin",
         "depth.LevelRendererMixin",
         "depth.ProjectionMixin"
     ]
