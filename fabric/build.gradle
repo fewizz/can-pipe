@@ -76,6 +76,29 @@ loom {
             // vmArg "-XX:-Inline"
             programArg "--renderDebugLabels"
             properties(["mixin.debug": "true",])
+
+            ideConfigGenerated = false
+        }
+        clientGl {
+            inherit client
+
+            runDir "../run"
+            programArg "--graphicsBackend=opengl"
+            ideConfigGenerated = true
+        }
+        clientVk {
+            inherit client
+
+            runDir "../run"
+            programArg "--graphicsBackend=vulkan"
+            ideConfigGenerated = true
+        }
+        clientVkValidated {
+            inherit clientVk
+
+            runDir "../run"
+            programArg "--vulkanValidation"
+            ideConfigGenerated = true
         }
     }
 }
