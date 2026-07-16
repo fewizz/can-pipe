@@ -25,6 +25,9 @@
         "RenderPassMixin",
         "RenderPipelineAccessor",
         "RenderPipelineBuilderMixin",
-        "RenderPipelineMixin"
+        "RenderPipelineMixin",
+        "VkDeviceAccessor",
+        "VkDeviceMixin",
+        "VkGpuTextureView"
     ]
 }

@@ -18,15 +18,8 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
     @Unique /*final*/ int canpipe_baseArrayLayer;
     @Unique /*final*/ int canpipe_layerCount;
 
-    @Override
-    public int canpipe_baseArrayLayer() {
-        return this.canpipe_baseArrayLayer;
-    }
-
-    @Override
-    public int canpipe_layerCount() {
-        return this.canpipe_layerCount;
-    }
+    @Override public int canpipe_baseArrayLayer() { return this.canpipe_baseArrayLayer; }
+    @Override public int canpipe_layerCount() { return this.canpipe_layerCount; }
 
     @Inject(method = "<init>", at = @At("TAIL"))
     void onInitEnd(CallbackInfo ci) {
