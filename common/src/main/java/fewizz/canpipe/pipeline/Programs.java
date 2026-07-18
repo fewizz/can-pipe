@@ -24,6 +24,7 @@ import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.resources.Identifier;
 
@@ -68,6 +69,8 @@ public class Programs {
             .withCull(false)
             .withVertexBinding(0, CanPipe.VertexFormats.POSITION_TEX)
             .withPrimitiveTopology(PrimitiveTopology.QUADS);
+
+        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_allowNoColorTargets();
 
         int colorAttachmentIndex = 0;
         for (var colorAttachmentFormat : formats.getLeft()) {

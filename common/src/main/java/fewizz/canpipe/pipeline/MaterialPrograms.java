@@ -25,6 +25,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
 import net.minecraft.client.renderer.BindGroupLayouts;
@@ -92,6 +93,8 @@ public class MaterialPrograms {
                 .withCull(!shadow ? originalRenderPipeline.isCull() : false)
                 .withVertexBinding(0, vertexFormat)
                 .withPrimitiveTopology(originalRenderPipeline.getPrimitiveTopology());
+
+            ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_allowNoColorTargets();
 
             var dsState = originalRenderPipeline.getDepthStencilState();
             if (dsState != null) {

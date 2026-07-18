@@ -8,7 +8,6 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Matrix4fc;
 import org.joml.Vector4f;
-import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,13 +17,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
-import com.mojang.blaze3d.framegraph.FramePass;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -35,15 +32,12 @@ import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.helpers.ShadowFrustum;
-import fewizz.canpipe.mixininterface.FeatureRenderDispatcherExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRenderStateExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -55,12 +49,10 @@ import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
-import net.minecraft.client.renderer.state.level.ParticlesRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
@@ -102,9 +94,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Unique private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSectionsSink = new ObjectArrayList<>(50);
 
-    // @Unique private PerVertexFormatBufferSource canpipe_perVertexFormetBufferSource = new PerVertexFormatBufferSource();
-
     @Override public int canpipe_getCurrentShadowCascadeIdx() { return this.canpipe_currentShadowCascadeIdx; }
+    @Override public void canpipe_setCurrentShadowCascadeIdx(int cascade) { this.canpipe_currentShadowCascadeIdx = cascade; }
     @Override public float canpipe_getEyeBlockLight() { return this.canpipe_eyeBlockLight; }
     @Override public float canpipe_getEyeSkyLight() { return this.canpipe_eyeSkyLight; }
     @Override public float canpipe_getSmoothedEyeBlockLight() { return this.canpipe_smoothedEyeBlockLight; }
@@ -211,11 +202,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
             return;
         }
-/*
+
         profiler.popPush("can-pipe shadows");
         profiler.push("preparations");
 
-        GameRendererExtended gre = ((GameRendererExtended) this.minecraft.gameRenderer);
+        GameRendererExtended gre = ((GameRendererExtended) mc.gameRenderer);
 
         Matrix4f viewMatrix = gre.canpipe_worldViewMatrix();
 
@@ -223,8 +214,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         modelViewMatrixStack.pushMatrix();
         modelViewMatrixStack.mul(viewMatrix);
 
-        boolean entityShadowsOptionValue = this.minecraft.options.entityShadows().get();
-        this.minecraft.options.entityShadows().set(false);
+        boolean entityShadowsOptionValue = mc.options.entityShadows().get();
+        mc.options.entityShadows().set(false);
 
         PoseStack poseStack = new PoseStack();
 
@@ -242,67 +233,68 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         for (this.canpipe_currentShadowCascadeIdx = 0; this.canpipe_currentShadowCascadeIdx < p.shadows.cascadeRadii().size()+1; ++this.canpipe_currentShadowCascadeIdx) {
             profiler.popPush("cascade " + this.canpipe_currentShadowCascadeIdx);
 
-            try {
-                ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(this.canpipe_perVertexFormetBufferSource);
-                ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setCrumblingBufferSourceOverride(new NullBufferSource());
+            profiler.push("prepare chunk sections to render");
+            // applyFrustum(gre.canpipe_getShadowFrustums()[cascade]);
+            // lrse.canpipe_getChunkSectionsToRender()[this.canpipe_currentShadowCascadeIdx];
+            ChunkSectionsToRender sections = prepareChunkRenders(viewMatrix);
+            profiler.push("render sections");
+            // ChunkSectionsToRender sections = lrse.canpipe_getChunkSectionsToRender()[this.canpipe_currentShadowCascadeIdx];
+            sections.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
 
-                profiler.push("render sections");
-                ChunkSectionsToRender sections = lrse.canpipe_getChunkSectionsToRender()[this.canpipe_currentShadowCascadeIdx];
-                sections.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+            if (p.shadows.allowEntities()) {
+                profiler.popPush("entities");
 
-                if (p.shadows.allowEntities()) {
-                    profiler.popPush("entities");
+                profiler.push("submit entities");
+                this.submitEntities(poseStack, this.levelRenderState, this.submitNodeStorage);
 
-                    profiler.push("submit entities");
-                    this.submitEntities(poseStack, this.levelRenderState, this.submitNodeStorage);
+                /*profiler.popPush("submit block entities");
+                this.submitBlockEntities(poseStack, this.levelRenderState, this.submitNodeStorage);
 
-                    profiler.popPush("submit block entities");
-                    this.submitBlockEntities(poseStack, this.levelRenderState, this.submitNodeStorage);
+                profiler.popPush("render features");
+                this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
+                this.checkPoseStack(poseStack);*/
 
-                    profiler.popPush("render features");
-                    this.featureRenderDispatcher.renderAllFeatures();
-                    this.checkPoseStack(poseStack);
+                profiler.popPush("end batch");
 
-                    profiler.popPush("per-vertex format end batch");
-                    this.canpipe_perVertexFormetBufferSource.endBatch();
-
-                    profiler.popPush("end batch");
-                    this.renderBuffers.bufferSource().endBatch();
-
-                    profiler.pop();
-                }
-
-                if (p.shadows.allowParticles()) {
-                    profiler.popPush("particles");
-
-                    profiler.push("submit particles");
-                    ParticlesRenderState state = lrse.canpipe_getParticlesRenderStates()[this.canpipe_currentShadowCascadeIdx];
-                    state.submit(this.submitNodeStorage, levelRenderState.cameraRenderState);
-
-                    profiler.popPush("render features");
-                    this.featureRenderDispatcher.renderAllFeatures();
-
-                    // state.reset();  // `ParticleGroupRenderState`s are shared
-                    state.particles.clear();
-
-                    profiler.pop();
-                }
+                // this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
+                // this.featureRenderDispatcher.
 
                 profiler.pop();
-
-            } finally {
-                ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setBufferSourceOverride(null);
-                ((FeatureRenderDispatcherExtended) this.featureRenderDispatcher).canpipe_setCrumblingBufferSourceOverride(null);
             }
+
+            /*if (p.shadows.allowParticles()) {
+                profiler.popPush("particles");
+
+                profiler.push("submit particles");
+                ParticlesRenderState state = lrse.canpipe_getParticlesRenderStates()[this.canpipe_currentShadowCascadeIdx];
+                state.submit(this.submitNodeStorage, levelRenderState.cameraRenderState);
+
+                profiler.popPush("render features");
+                this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
+
+                // state.reset();  // `ParticleGroupRenderState`s are shared
+                state.particles.clear();
+
+                profiler.pop();
+            }*/
+
+            try (FeatureRenderDispatcher.PreparedFrame frame = this.featureRenderDispatcher.prepareFrame(this.submitNodeStorage)) {
+			          frame.executeSolid();
+                frame.executeTranslucent();
+                frame.executeTranslucentAfterTerrain();
+                frame.executeAlwaysOnTop();
+            }
+
+            profiler.pop();
         }
 
         this.canpipe_currentShadowCascadeIdx = -1;
 
         modelViewMatrixStack.popMatrix();
 
-        this.minecraft.options.entityShadows().set(entityShadowsOptionValue);
+        mc.options.entityShadows().set(entityShadowsOptionValue);
 
-        profiler.pop();*/
+        profiler.pop();
     }
 
     @WrapOperation(
@@ -333,58 +325,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return null;
     }
 
-    // TODO
-    /*@WrapMethod(method = "extractVisibleEntities")
-    void suppressEntityShadows(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState output, Operation<Void> operation) {
-        Pipeline p = Pipelines.getCurrent();
-        boolean disableEntityShadows = p != null && p.shadows != null;
-
-        Minecraft mc = Minecraft.getInstance();
-        boolean originalEntityShadowsOptionValue = mc.options.entityShadows().get();
-
-        try {
-            if (disableEntityShadows) {
-                mc.options.entityShadows().set(false);
-            }
-            operation.call(camera, frustum, deltaTracker, output);
-        }
-        finally {
-            if (disableEntityShadows) {
-                mc.options.entityShadows().set(originalEntityShadowsOptionValue);
-            }
-        }
-    }*/
-
-    // TODO
-    /*@WrapOperation(
-        method = "offsetFrustum",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/culling/Frustum;offsetToFullyIncludeCameraCube("+
-                "I"+
-            ")Lnet/minecraft/client/renderer/culling/Frustum;"
-        )
-    )
-    private static Frustum dontOffsetShadowFrustum(Frustum frustum, int size, Operation<Frustum> operation) {
-        var mc = Minecraft.getInstance();
-        if (((LevelRendererExtended) mc.levelRenderer).canpipe_getCurrentShadowCascadeIdx() >= 0) {
-            return frustum;
-        }
-        return operation.call(frustum, size);
-    }*/
-
-    // TODO
-    /*@ModifyExpressionValue(
-        method = "extractVisibleEntities",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/Camera;isDetached()Z"
-        )
-    )
-    private boolean addPlayerWhenCollectingVisibleEntities(boolean original) {
-        return original || this.canpipe_currentShadowCascadeIdx >= 0;
-    }*/
-
     @WrapOperation(
         method = "lambda$addMainPass$0",
         at = @At(
@@ -410,14 +350,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         return operation.call(device, u, v, min, mag, maxAnisotropy, maxLod);
     }
 
-    // TODO
-    /*@ModifyExpressionValue(
-        method = {"clearVisibleSections", "applyFrustum", "prepareChunkRenders"},
-        require = 3,
+    @ModifyExpressionValue(
+        method = {"visibleSections", "clearVisibleSections", "prepareChunkRenders", "scheduleTranslucentSectionResort"},
+        require = 1+1+1+5,
         at = @At(
-            value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;visibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;",
-            opcode = Opcodes.GETFIELD
+            value= "FIELD",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;visibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;"
         )
     )
     ObjectArrayList<SectionRenderDispatcher.RenderSection> replaceVisibleSections(ObjectArrayList<SectionRenderDispatcher.RenderSection> original) {
@@ -425,16 +363,14 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return this.canpipe_visibleSections[this.canpipe_currentShadowCascadeIdx];
         }
         return original;
-    }*/
+    }
 
-    // TODO
-    /*@ModifyExpressionValue(
-        method = {"clearVisibleSections", "applyFrustum"},
-        require = 2,
+   @ModifyExpressionValue(
+        method = {"nearbyVisibleSections", "clearVisibleSections", "scheduleTranslucentSectionResort"},
+        require = 1+1+1,
         at = @At(
-            value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;nearbyVisibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;",
-            opcode = Opcodes.GETFIELD
+            value= "FIELD",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;nearbyVisibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;"
         )
     )
     ObjectArrayList<SectionRenderDispatcher.RenderSection> replaceNearbyVisibleSections(ObjectArrayList<SectionRenderDispatcher.RenderSection> original) {
@@ -442,23 +378,21 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return this.canpipe_nearbyVisibleSectionsSink;
         }
         return original;
-    }*/
+    }
 
-    // TODO
-    /*@ModifyExpressionValue(
-        method = {"extractVisibleEntities", "submitEntities"},
-        require = 2,
+    @ModifyExpressionValue(
+        method = "submitEntities",
         at = @At(
             value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/state/level/LevelRenderState;entityRenderStates:Ljava/util/List;",
-            opcode = Opcodes.GETFIELD
+            target = "Lnet/minecraft/client/renderer/state/level/LevelRenderState;entityRenderStates:Ljava/util/List;"
         )
     )
     List<EntityRenderState> replaceEntityRenderStates(List<EntityRenderState> entityRenderStates) {
-        if (this.canpipe_currentShadowCascadeIdx >= 0) {
-            return ((LevelRenderStateExtended) this.levelRenderState).canpipe_getEntityRenderStates()[this.canpipe_currentShadowCascadeIdx];
+        int cascade = this.canpipe_currentShadowCascadeIdx;
+        if (cascade >= 0) {
+            return ((LevelRenderStateExtended) this.levelRenderState).canpipe_getEntityRenderStates()[cascade];
         }
         return entityRenderStates;
-    }*/
+    }
 
 }

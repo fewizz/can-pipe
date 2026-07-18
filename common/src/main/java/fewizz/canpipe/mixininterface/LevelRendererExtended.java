@@ -3,6 +3,7 @@ package fewizz.canpipe.mixininterface;
 public interface LevelRendererExtended {
 
     int canpipe_getCurrentShadowCascadeIdx();
+    void canpipe_setCurrentShadowCascadeIdx(int cascade);
     float canpipe_getEyeBlockLight();
     float canpipe_getEyeSkyLight();
     float canpipe_getSmoothedEyeBlockLight();

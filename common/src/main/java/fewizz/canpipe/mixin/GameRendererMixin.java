@@ -50,9 +50,6 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private int canpipe_originType = 0;
     @Unique private boolean canpipe_isRenderingHand = false;
     @Unique private Vector3f canpipe_lastCameraPos = null;
-    @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
-    @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
-    @Unique private Vector4f[] canpipe_shadowCenters = null;
     @Unique private Matrix4f canpipe_viewMatrix = null;
     @Unique private Matrix4f canpipe_projectionMatrix = null;
     @Unique private Matrix4f canpipe_shadowViewMatrix = null;
@@ -62,7 +59,10 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private boolean canpipe_runInitPasses = false;
     @Unique private RenderTarget canpipe_mainRenderTargetOverride;
 
-    @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
+    @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
+    @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
+    @Unique private Vector4f[] canpipe_shadowCenters = null;
+
     @Override public FogRenderer canpipe_getFogRenderer() { return this.fogRenderer; }
     @Override public Matrix4f canpipe_worldViewMatrix() { return this.canpipe_viewMatrix; }
     @Override public Matrix4f canpipe_worldProjectionMatrix() { return this.canpipe_projectionMatrix; }
@@ -71,6 +71,8 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
     @Override public void canpipe_setOriginType(int originType) { this.canpipe_originType = originType; }
     @Override public void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget) { this.canpipe_mainRenderTargetOverride = renderTarget; }
+
+    @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
 
     @Override
     public void canpipe_onPipelineActivated() {
@@ -92,8 +94,8 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_viewMatrix = null;
         this.canpipe_projectionMatrix = null;
 
-        canpipe_runResizePasses = true;
-        canpipe_runInitPasses = true;
+        this.canpipe_runResizePasses = true;
+        this.canpipe_runInitPasses = true;
     }
 
     @Inject(method = "resize", at = @At("HEAD"))
