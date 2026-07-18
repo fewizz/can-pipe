@@ -11,13 +11,9 @@ import com.mojang.blaze3d.textures.AddressMode;
 public interface GlDeviceAccessor {
 
     @Accessor("canpipe_pendingTextureViewBaseLayer") int get_canpipe_pendingTextureViewBaseLayer();
-
     @Accessor("canpipe_pendingTextureViewLayerCount") int get_canpipe_pendingTextureViewLayerCount();
-
     @Accessor("canpipe_addressModeW") AddressMode get_canpipe_addressModeW();
-
-    @Accessor("canpipe_compareOp") CompareOp get_canpipe_compareOp();
-
     @Accessor("canpipe_linearMipmap") Boolean get_canpipe_linearMipmap();
+    @Accessor("canpipe_compareOp") CompareOp get_canpipe_compareOp();
 
 }

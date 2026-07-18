@@ -35,8 +35,8 @@ public abstract class VkDeviceMixin implements GpuDeviceBackendExtended {
     @Unique private int canpipe_pendingTextureViewLayerCount = -1;
 
     @Unique private AddressMode canpipe_addressModeW = null;
-    @Unique private CompareOp canpipe_compareOp = null;
     @Unique private Boolean canpipe_linearMipmap = null;
+    @Unique private CompareOp canpipe_compareOp = null;
 
     @Override
     public GpuSampler canpipe_createSampler(
@@ -47,13 +47,13 @@ public abstract class VkDeviceMixin implements GpuDeviceBackendExtended {
     ) {
         try {
             this.canpipe_addressModeW = w;
-            this.canpipe_compareOp = compareOp;
             this.canpipe_linearMipmap = linearMipmap;
+            this.canpipe_compareOp = compareOp;
             return this.createSampler(u, v, min, mag, maxAnisotropy, maxLod);
         } finally {
             this.canpipe_addressModeW = null;
-            this.canpipe_compareOp = null;
             this.canpipe_linearMipmap = null;
+            this.canpipe_compareOp = null;
         }
     }
 

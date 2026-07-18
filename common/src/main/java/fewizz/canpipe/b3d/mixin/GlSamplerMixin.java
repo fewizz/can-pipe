@@ -31,8 +31,8 @@ public abstract class GlSamplerMixin implements GpuSamplerExtended {
     @Shadow @Final private OptionalDouble maxLod;
 
     @Unique protected AddressMode canpipe_addressModeW;
-    @Unique @Nullable protected CompareOp canpipe_compareOp = null;
     @Unique protected boolean canpipe_linearMipmap;
+    @Unique @Nullable protected CompareOp canpipe_compareOp = null;
 
     @Inject(
         method = "<init>",
@@ -40,11 +40,13 @@ public abstract class GlSamplerMixin implements GpuSamplerExtended {
     )
     void onInitBegin(CallbackInfo ci) {
         GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
-        this.canpipe_addressModeW = ((GlDeviceAccessor) device).get_canpipe_addressModeW();
-        this.canpipe_linearMipmap = ((GlDeviceAccessor) device).get_canpipe_linearMipmap() != null ? ((GlDeviceAccessor) device).get_canpipe_linearMipmap() : true;
-        if (this.canpipe_addressModeW == null) {
-            this.canpipe_addressModeW = AddressMode.REPEAT;
-        }
+
+        var addressModeW = ((GlDeviceAccessor) device).get_canpipe_addressModeW();
+        this.canpipe_addressModeW = addressModeW != null ? addressModeW : AddressMode.REPEAT;
+
+        var linearMipmap = ((GlDeviceAccessor) device).get_canpipe_linearMipmap();
+        this.canpipe_linearMipmap = linearMipmap != null ? linearMipmap : true;
+
         this.canpipe_compareOp = ((GlDeviceAccessor) device).get_canpipe_compareOp();
     }
 

@@ -8,7 +8,7 @@
     uniform sampler2D canpipe_overlay;
     uniform sampler2D frxs_lightmap;
 
-    #if defined FRAGMENT_SHADER && defined SHADOW_MAP_PRESENT
+    #if defined FRAGMENT_SHADER && defined SHADOW_MAP_PRESENT && !defined DEPTH_PASS
         uniform sampler2DArrayShadow frxs_shadowMap;
         uniform sampler2DArray frxs_shadowMapTexture;
     #endif
