@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.mojang.blaze3d.GpuFormat;
-import com.mojang.blaze3d.GpuFormat.ComponentType;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexFormat;

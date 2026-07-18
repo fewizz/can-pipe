@@ -1,4 +1,4 @@
-package fewizz.canpipe.mixin;
+package fewizz.canpipe.mixin.particles;
 
 import java.util.Arrays;
 

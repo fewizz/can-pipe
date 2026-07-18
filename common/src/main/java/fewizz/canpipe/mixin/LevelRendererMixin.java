@@ -53,6 +53,7 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
+import net.minecraft.client.renderer.state.level.ParticlesRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
@@ -102,59 +103,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Override public float canpipe_getSmoothedEyeSkyLight() { return this.canpipe_smoothedEyeSkyLight; }
     @Override public float canpipe_getSmoothedRainGradient() { return this.canpipe_smoothedRainGradient; }
     @Override public float canpipe_getSmoothedThunderGradient() { return this.canpipe_smoothedThunderGradient; }
-/*
-    @Inject(
-        method = "extractLevel",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;prepareChunkRenders("+
-                "Lorg/joml/Matrix4fc;"+
-            ")Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"
-        )
-    )
-    void extractShadowedEntities(
-        CallbackInfo ci,
-        @Local Camera camera,
-        @Local DeltaTracker deltaTracker,
-        @Local ProfilerFiller profiler,
-        @Local(ordinal = 0) float dt,
-        @Local(ordinal = 0) Matrix4f viewMatrix
-    ) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p == null || p.shadows == null) { return; }
 
-        GameRendererExtended gre = ((GameRendererExtended) this.minecraft.gameRenderer);
-        LevelRenderStateExtended lrse = ((LevelRenderStateExtended) this.levelRenderState);
-
-        try {
-            for (this.canpipe_currentShadowCascadeIdx = 0; this.canpipe_currentShadowCascadeIdx < p.shadows.cascadeRadii().size()+1; ++this.canpipe_currentShadowCascadeIdx) {
-                profiler.popPush("can-pipe cascade "+this.canpipe_currentShadowCascadeIdx);
-
-                ShadowFrustum frustum = ((GameRendererExtended) this.minecraft.gameRenderer).canpipe_getShadowFrustums()[this.canpipe_currentShadowCascadeIdx];
-
-                profiler.push("apply frustum");
-                applyFrustum(gre.canpipe_getShadowFrustums()[this.canpipe_currentShadowCascadeIdx]);
-
-                profiler.push("prepare chunk sections to render");
-                lrse.canpipe_getChunkSectionsToRender()[this.canpipe_currentShadowCascadeIdx] = (prepareChunkRenders(viewMatrix));
-
-                profiler.popPush("shadowed entities");
-                this.extractVisibleEntities(camera, frustum, deltaTracker, this.levelRenderState);
-
-                profiler.popPush("shadowed block entities");
-                this.extractVisibleBlockEntities(camera, dt, this.levelRenderState);
-
-                profiler.popPush("particles");
-                ParticlesRenderState state = lrse.canpipe_getParticlesRenderStates()[this.canpipe_currentShadowCascadeIdx];
-                this.minecraft.particleEngine.extract(state, frustum, camera, dt);
-
-                profiler.pop();
-            }
-        } finally {
-            this.canpipe_currentShadowCascadeIdx = -1;
-        }
-    }
-*/
     @Inject(method = "render", at = @At(value = "HEAD"))
     void renderShadows(
         final GraphicsResourceAllocator resourceAllocator,
@@ -262,7 +211,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 profiler.pop();
             }
 
-            /*if (p.shadows.allowParticles()) {
+            if (p.shadows.allowParticles()) {
                 profiler.popPush("particles");
 
                 profiler.push("submit particles");
@@ -276,7 +225,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 state.particles.clear();
 
                 profiler.pop();
-            }*/
+            }
 
             try (FeatureRenderDispatcher.PreparedFrame frame = this.featureRenderDispatcher.prepareFrame(this.submitNodeStorage)) {
 			          frame.executeSolid();
