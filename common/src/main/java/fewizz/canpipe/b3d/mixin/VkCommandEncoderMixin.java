@@ -1,13 +1,25 @@
 package fewizz.canpipe.b3d.mixin;
 
 import org.joml.Vector4f;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.vulkan.VK10;
+import org.lwjgl.vulkan.VK12;
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkImageBlit;
+import org.lwjgl.vulkan.VkImageMemoryBarrier;
+import org.lwjgl.vulkan.VkImageSubresourceLayers;
+import org.lwjgl.vulkan.VkImageSubresourceRange;
+import org.lwjgl.vulkan.VkOffset3D;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.vulkan.VulkanCommandEncoder;
+import com.mojang.blaze3d.vulkan.VulkanConst;
+import com.mojang.blaze3d.vulkan.VulkanGpuTexture;
 
 import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
 
@@ -18,6 +30,8 @@ public abstract class VkCommandEncoderMixin implements CommandEncoderBackendExte
     @Unique private int canpipe_clearLevelCount = -1;
     @Unique private int canpipe_clearBaseLayer = -1;
     @Unique private int canpipe_clearLayerCount = -1;
+
+    @Shadow private VkCommandBuffer commandBuffer() { return null; }
 
     @Override
     public void canpipe_clearDepthTexture(
@@ -61,7 +75,60 @@ public abstract class VkCommandEncoderMixin implements CommandEncoderBackendExte
         GpuTexture srcTexture,
         GpuTexture dstTexture
     ) {
-        // TODO
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            var imageSubresourceRange = VkImageSubresourceRange.calloc(stack);
+            imageSubresourceRange.aspectMask(VK10.VK_IMAGE_ASPECT_COLOR_BIT);
+            imageSubresourceRange.baseMipLevel(0);
+            imageSubresourceRange.levelCount(1);
+            imageSubresourceRange.baseArrayLayer(0);
+            imageSubresourceRange.layerCount(1);
+
+            var imageBarrier = VkImageMemoryBarrier.calloc(1, stack).sType$Default();
+            imageBarrier.srcAccessMask(VK12.VK_ACCESS_MEMORY_READ_BIT | VK12.VK_ACCESS_MEMORY_WRITE_BIT);
+            imageBarrier.dstAccessMask(VK12.VK_ACCESS_MEMORY_READ_BIT | VK12.VK_ACCESS_MEMORY_WRITE_BIT);
+            imageBarrier.dstQueueFamilyIndex(VK12.VK_QUEUE_FAMILY_IGNORED);
+            imageBarrier.srcQueueFamilyIndex(VK12.VK_QUEUE_FAMILY_IGNORED);
+            imageBarrier.subresourceRange(imageSubresourceRange);
+            imageBarrier.dstAccessMask(VK12.VK_ACCESS_TRANSFER_READ_BIT);
+            imageBarrier.oldLayout(VK12.VK_IMAGE_LAYOUT_GENERAL);
+            imageBarrier.newLayout(VK12.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            imageBarrier.image(((VulkanGpuTexture) dstTexture).vkImage());
+            // wait for nothing, this is just the swapchain image
+            VK12.vkCmdPipelineBarrier(this.commandBuffer(), VK10.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK10.VK_PIPELINE_STAGE_TRANSFER_BIT, 0, null, null, imageBarrier);
+
+            final var regions = VkImageBlit.calloc(1, stack);
+
+            final var srcSubresourceLayer = VkImageSubresourceLayers.calloc(stack);
+            srcSubresourceLayer.layerCount(1);
+            srcSubresourceLayer.aspectMask(VulkanConst.formatAspectMask(srcTexture.getFormat()));
+
+            final var dstSubresourceLayer = VkImageSubresourceLayers.calloc(stack);
+            dstSubresourceLayer.layerCount(1);
+            dstSubresourceLayer.aspectMask(VulkanConst.formatAspectMask(dstTexture.getFormat()));
+
+            regions.srcSubresource(srcSubresourceLayer);
+            regions.srcOffsets(0, VkOffset3D.calloc(stack).x(0).y(0).z(0));
+            regions.srcOffsets(1, VkOffset3D.calloc(stack).x(srcTexture.getWidth(0)).y(srcTexture.getHeight(0)).z(1));
+
+            regions.dstSubresource(srcSubresourceLayer);
+            regions.dstOffsets(0, VkOffset3D.calloc(stack).x(0).y(0).z(0));
+            regions.dstOffsets(1, VkOffset3D.calloc(stack).x(dstTexture.getWidth(0)).y(dstTexture.getHeight(0)).z(1));
+
+            VK10.vkCmdBlitImage(
+                this.commandBuffer(),
+                ((VulkanGpuTexture) srcTexture).vkImage(), VK10.VK_IMAGE_LAYOUT_GENERAL,
+                ((VulkanGpuTexture) dstTexture).vkImage(), VK10.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                regions,
+                VK10.VK_FILTER_NEAREST
+            );
+
+            imageBarrier.oldLayout(VK10.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            imageBarrier.newLayout(VK10.VK_IMAGE_LAYOUT_GENERAL);
+            imageBarrier.srcAccessMask(VK10.VK_ACCESS_TRANSFER_WRITE_BIT);
+            imageBarrier.dstAccessMask(0);
+
+            VK10.vkCmdPipelineBarrier(this.commandBuffer(), VK10.VK_PIPELINE_STAGE_TRANSFER_BIT, VK10.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, null, null, imageBarrier);
+        }
     }
 
     @ModifyArg(
