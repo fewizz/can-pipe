@@ -82,7 +82,10 @@ public abstract class VkDeviceMixin implements GpuDeviceBackendExtended {
     ) {
         try {
             this.canpipe_onCompilationError = onCompilationError;
-            this.getOrCompileShader(id, shaderType, ShaderDefines.EMPTY, (_id, _type) -> shaderSource);
+            var result = this.getOrCompileShader(id, shaderType, ShaderDefines.EMPTY, (_id, _type) -> shaderSource);
+            if (result == IntermediaryShaderModule.INVALID && this.canpipe_onCompilationError != null) {
+                onCompilationError.accept(this.canpipe_compilationLog, id, shaderSource);
+            }
         } finally {
             this.canpipe_onCompilationError = null;
             this.canpipe_compilationLog = null;

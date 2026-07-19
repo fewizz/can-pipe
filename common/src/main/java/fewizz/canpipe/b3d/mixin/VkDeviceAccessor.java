@@ -15,5 +15,6 @@ public interface VkDeviceAccessor {
     @Accessor("canpipe_addressModeW") AddressMode get_canpipe_addressModeW();
     @Accessor("canpipe_linearMipmap") Boolean get_canpipe_linearMipmap();
     @Accessor("canpipe_compareOp") CompareOp get_canpipe_compareOp();
+    @Accessor("canpipe_compilationLog") void set_canpipe_compilationLog(String log);
 
 }
