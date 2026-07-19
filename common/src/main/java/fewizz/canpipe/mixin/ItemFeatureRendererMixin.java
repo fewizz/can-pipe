@@ -13,6 +13,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import fewizz.canpipe.helpers.CursedList;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
@@ -26,6 +27,22 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 
 @Mixin(ItemFeatureRenderer.class)
 public class ItemFeatureRendererMixin {
+
+    @ModifyExpressionValue(
+        method = "prepareMainSubmit",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/feature/ItemFeatureRenderer;getVertexBuilder"
+        )
+    )
+    VertexConsumer setMaterial(VertexConsumer vc, @Local ItemFeatureRenderer.Submit submit) {
+        if (submit.quads() instanceof CursedList cl) {
+            MaterialMap materialMap = (MaterialMap) cl.element;
+            ((VertexConsumerExtended) vc).canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
+        }
+        return vc;
+    }
+
 /*
     @Unique private MaterialMap canpipe_materialMap = null;
 

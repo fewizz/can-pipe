@@ -13,6 +13,7 @@ import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.sprite.SpriteId;
 
 @Mixin(SubmitNodeCollection.class)
@@ -46,11 +47,27 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
         ),
         index = 2
     )
-    List<BlockStateModelPart> onSubmitBlockModel(List<BlockStateModelPart> modelParts) {
+    List<BlockStateModelPart> onBlockModelSubmit(List<BlockStateModelPart> modelParts) {
         if (this.canpipe_pendingBlockSubmitMaterialMap != null) {
             modelParts = new CursedList<>(modelParts, this.canpipe_pendingBlockSubmitMaterialMap);
         }
         return modelParts;
+    }
+
+    @ModifyArg(
+        method = "submitItem",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/feature/ItemFeatureRenderer$Submit;<init>",
+            ordinal = 0
+        ),
+        index = 6
+    )
+    List<BakedQuad> onItemSubmit(List<BakedQuad> quads) {
+        if (this.canpipe_pendingItemSubmitMaterialMap != null) {
+            quads = new CursedList<>(quads, this.canpipe_pendingItemSubmitMaterialMap);
+        }
+        return quads;
     }
 
 
