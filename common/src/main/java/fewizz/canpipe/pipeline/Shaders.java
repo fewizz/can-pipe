@@ -45,13 +45,6 @@ public class Shaders {
         Optional<Integer> shadowMapSize,
         Function<String, String> postProcess
     ) {
-        /*if (type == ShaderType.VERTEX) {
-            // Cinnabar adds `arrayIndex` attrib in dynamictransforms.glsl
-            // But sometimes this header is included only in a fragment shader,
-            // and Cinnabar can't find corresponding attrib in a vertex shader
-            source = "#include minecraft:shaders/include/dynamictransforms.glsl\n"+source;
-        }*/
-
         String preprocessedSource = processIncludesAndDefinitions(
             source, location, options, appliedOptions, getShaderSource
         );
@@ -77,10 +70,9 @@ public class Shaders {
                 "#define SHADOW_MAP_SIZE "+shadowMapSize.get()+"\n\n";
         }
 
-        // header +=  // LumiLights uses these for variable names
-        //     "#define sample _sample\n"+
-        //     "#define sampler _sampler\n\n";
-        // Handled in Hg3DRenderPipelineMixin
+        header +=  // LumiLights uses these for variable names
+            "#define sample _sample\n"+
+            "#define sampler _sampler\n\n";
 
         header +=  // for ecos
             "#define texture2D texture\n\n";

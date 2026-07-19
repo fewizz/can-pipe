@@ -25,7 +25,7 @@ public class BlockModelRenderStateMixin {
 
     @Inject(method = "submitModel", at = @At("HEAD"))
     void onBeforeSubmitModel(CallbackInfo ci, @Local SubmitNodeCollector submitNodeCollector) {
-        ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setPendingBlockSubmitMaterialMap(canpipe_materialMap);
+        ((SubmitNodeCollectorExtended) submitNodeCollector).canpipe_setPendingBlockSubmitMaterialMap(this.canpipe_materialMap);
     }
 
     @Inject(method = "submitModel", at = @At("RETURN"))

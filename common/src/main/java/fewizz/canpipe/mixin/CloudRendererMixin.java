@@ -10,15 +10,15 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.CloudRenderer;
 
-// TODO
-//@Mixin(CloudRenderer.class)
+
+@Mixin(CloudRenderer.class)
 public class CloudRendererMixin {
-/*
+
     @ModifyExpressionValue(
         method = "render",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;getCloudsTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;cloudsTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;"
         )
     )
     RenderTarget replaceCloudRenderTarget(RenderTarget renderTarget) {
@@ -28,5 +28,5 @@ public class CloudRendererMixin {
         }
         return renderTarget;
     }
-*/
+
 }
