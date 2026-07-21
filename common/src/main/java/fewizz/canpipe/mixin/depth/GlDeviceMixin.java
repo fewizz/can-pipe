@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin.depth;
 
+import fewizz.canpipe.pipeline.PipelineRaw;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -21,10 +22,10 @@ public class GlDeviceMixin {
         index = 1
     )
     String changeClipDepth(String src, @Local GlDevice.ShaderCompilationKey key) {
-        Pipeline p = Pipelines.getCurrent();
-        if (  // TODO
-            // p != null &&
-            // !p.awareOfDepthRangeChanges &&
+        PipelineRaw p = Pipelines.getLoadingError() == null ? Pipelines.getCurrentRaw() : null;
+        if (
+            p != null &&
+            !p.awareOfDepthRangeChanges &&
             key.type() == ShaderType.VERTEX &&
             RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()
         ) {

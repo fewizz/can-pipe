@@ -2,6 +2,7 @@ package fewizz.canpipe;
 
 import java.nio.file.Path;
 
+import com.mojang.blaze3d.platform.CompareOp;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryUtil;
@@ -238,6 +239,19 @@ public class CanPipe {
             id = id.withPath(path);
         }
         return id;
+    }
+
+    public static CompareOp reverseCompareOp(CompareOp op) {
+        if (op == CompareOp.LESS_THAN) {
+            return CompareOp.GREATER_THAN;
+        } else if (op == CompareOp.GREATER_THAN) {
+            return CompareOp.LESS_THAN;
+        } else if (op == CompareOp.LESS_THAN_OR_EQUAL) {
+            return CompareOp.GREATER_THAN_OR_EQUAL;
+        } else if (op == CompareOp.GREATER_THAN_OR_EQUAL) {
+            return CompareOp.LESS_THAN_OR_EQUAL;
+        }
+        return op;
     }
 
 }

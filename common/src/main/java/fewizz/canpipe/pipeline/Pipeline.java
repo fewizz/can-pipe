@@ -113,7 +113,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
-    public final Map<Pair<List<GpuFormat>, RenderPipeline>, RenderPipeline> replacedRenderPipelines = new HashMap<>();
+    public final Map<RenderPipeline, RenderPipeline> replacedRenderPipelines = new HashMap<>();
 
     private final List<Pass>
         onInitPasses = new ArrayList<>(),
@@ -726,45 +726,34 @@ public class Pipeline implements AutoCloseable {
     }
 
     public RenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
-        if (
-            !pipeline.getLocation().getNamespace().equals("minecraft")
-            // || colorAttachments.get(0).textureView().texture().getFormat() == GpuFormat.RGBA8_UNORM
-        ) {
-            return pipeline;
-        }
+        if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return pipeline; }
 
-        List<GpuFormat> colorAttachmentFormats = new ArrayList<>();
-        for (var attachment : colorAttachments) {
-            colorAttachmentFormats.add(attachment.textureView().texture().getFormat());
-        }
+        boolean patchReversedDepth = !this.awareOfDepthRangeChanges;
+        boolean patchAttachment = !colorAttachments.isEmpty() && colorAttachments.getFirst().textureView().texture().getFormat() != GpuFormat.RGBA8_UNORM;  //this.defaultFramebuffer.getColorTexture().getFormat() != GpuFormat.RGBA8_UNORM;
 
-        return this.replacedRenderPipelines.computeIfAbsent(Pair.of(colorAttachmentFormats, pipeline), _key -> {
-            List<ColorTargetState> colorTargets = new ArrayList<>();
-            for (var attachment : colorAttachments) {
-                colorTargets.add(new ColorTargetState(
-                    pipeline.getColorTargetState().blendFunction(),
-                    attachment.textureView().texture().getFormat(),
-                    pipeline.getColorTargetState().writeMask()
-                ));
+        if (!patchAttachment && !patchReversedDepth) { return pipeline;}
+
+        return this.replacedRenderPipelines.computeIfAbsent(pipeline, _key -> {
+            ColorTargetState[] colorTargets = pipeline.getColorTargetStates();
+            if (patchAttachment) {
+                List<ColorTargetState> colorTargetsList = new ArrayList<>();
+                for (var attachment : colorAttachments) {
+                    colorTargetsList.add(new ColorTargetState(
+                            pipeline.getColorTargetState().blendFunction(),
+                            attachment.textureView().texture().getFormat(),
+                            pipeline.getColorTargetState().writeMask()
+                    ));
+                }
+                colorTargets = colorTargetsList.toArray(new ColorTargetState[0]);
             }
 
-            DepthStencilState depthState = null;
-            var originalDepthState = pipeline.getDepthStencilState();
-            if (originalDepthState != null) {
-                CompareOp compareOp = originalDepthState.depthTest();
-
-                if (!this.awareOfDepthRangeChanges) {
-                    if      (compareOp == CompareOp.LESS_THAN) { compareOp = CompareOp.GREATER_THAN; }
-                    else if (compareOp == CompareOp.GREATER_THAN) { compareOp = CompareOp.LESS_THAN; }
-                    else if (compareOp == CompareOp.LESS_THAN_OR_EQUAL) { compareOp = CompareOp.GREATER_THAN_OR_EQUAL; }
-                    else if (compareOp == CompareOp.GREATER_THAN_OR_EQUAL) { compareOp = CompareOp.LESS_THAN_OR_EQUAL; }
-                }
-
+            DepthStencilState depthState = pipeline.getDepthStencilState();
+            if (patchReversedDepth && depthState != null) {
                 depthState = new DepthStencilState(
-                    compareOp,
-                    originalDepthState.writeDepth(),
-                    originalDepthState.depthBiasScaleFactor(),
-                    originalDepthState.depthBiasConstant()
+                    CanPipe.reverseCompareOp(depthState.depthTest()),
+                    depthState.writeDepth(),
+                    depthState.depthBiasScaleFactor(),
+                    depthState.depthBiasConstant()
                 );
             }
 
@@ -774,7 +763,7 @@ public class Pipeline implements AutoCloseable {
                 pipeline.getFragmentShader(),
                 pipeline.getShaderDefines(),
                 pipeline.getBindGroupLayouts(),
-                colorTargets.toArray(new ColorTargetState[0]),
+                colorTargets,
                 depthState,
                 pipeline.getPolygonMode(),
                 pipeline.isCull(),

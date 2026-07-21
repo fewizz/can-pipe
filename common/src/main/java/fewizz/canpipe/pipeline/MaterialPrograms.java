@@ -98,17 +98,8 @@ public class MaterialPrograms {
 
             var dsState = originalRenderPipeline.getDepthStencilState();
             if (dsState != null) {
-                CompareOp compareOp = dsState.depthTest();
-
-                if (!awareOfDepthRangeChanges) {
-                    if      (compareOp == CompareOp.LESS_THAN) { compareOp = CompareOp.GREATER_THAN; }
-                    else if (compareOp == CompareOp.GREATER_THAN) { compareOp = CompareOp.LESS_THAN; }
-                    else if (compareOp == CompareOp.LESS_THAN_OR_EQUAL) { compareOp = CompareOp.GREATER_THAN_OR_EQUAL;}
-                    else if (compareOp == CompareOp.GREATER_THAN_OR_EQUAL) { compareOp = CompareOp.LESS_THAN_OR_EQUAL;}
-                }
-
                 renderPipelineBuilder.withDepthStencilState(new DepthStencilState(
-                    compareOp,
+                    CanPipe.reverseCompareOp(dsState.depthTest()),
                     dsState.writeDepth(),
                     !shadow ? dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
                     !shadow ? dsState.depthBiasConstant() : shadowsOffsetBiasUnits
