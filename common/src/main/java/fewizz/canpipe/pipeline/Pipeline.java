@@ -145,7 +145,7 @@ public class Pipeline implements AutoCloseable {
         this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
         this.rainSmoothingFrames = pipelineJson.getInt("rainSmoothingFrames", 500);
         this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
-        this.awareOfDepthRangeChanges = false;
+        this.awareOfDepthRangeChanges = rawPipeline.awareOfDepthRangeChanges;
 
         // "images"
         Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {

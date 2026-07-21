@@ -25,12 +25,14 @@ public class PipelineRaw {
     @NotNull public final String nameKey;
     @NotNull public final Map<Identifier, OptionGroup> options;
     @NotNull private final JsonObject json;
+    public final boolean awareOfDepthRangeChanges;
 
     PipelineRaw(Identifier location, String nameKey, Map<Identifier, OptionGroup> options, JsonObject json) {
         this.location = location;
         this.nameKey = nameKey;
         this.options = Collections.unmodifiableMap(options);
         this.json = json;
+        this.awareOfDepthRangeChanges = JanksonUtils.booleanOrDefault(json, "awareOfDepthRangeChanges", false);
     }
 
     static PipelineRaw load(

@@ -69,9 +69,22 @@ public class JanksonUtils {
     public static JsonObject objectOrThrow(JsonObject jsonObject, String propertyName) {
         JsonObject value = jsonObject.getObject(propertyName);
         if (value == null) {
-            throw new RuntimeException("Couldn't find string property \""+propertyName+"\"");
+            throw new RuntimeException("Couldn't find object property \""+propertyName+"\"");
         }
         return value;
+    }
+
+    public static boolean booleanOrDefault(JsonObject jsonObject, String propertyName, boolean defaultValue) {
+        var json = jsonObject.get(propertyName);
+        if (json == null) { return defaultValue; }
+        if (!(json instanceof JsonPrimitive booleanJson)) {
+            throw new RuntimeException("Expected \""+propertyName+"\" property to be boolean json primitive");
+        }
+        var value = booleanJson.getValue();
+        if (!(value instanceof Boolean b)) {
+            throw new RuntimeException("Expected \"awareOfDepthRangeChanges\" property to be boolean json primitive");
+        }
+        return b;
     }
 
 }
