@@ -199,6 +199,7 @@ final public class Pipelines implements PreparableReloadListener {
             ((LevelRendererAccessor) mc.levelRenderer).canpipe_set_sectionRenderDispatcher(null);
             mc.levelExtractor.allChanged();
             mc.levelExtractor.resetSampler();
+
         }
         ((LevelExtractorAccessor) mc.levelExtractor).canpipe_set_shouldResetSkyRenderer(true);
     }
