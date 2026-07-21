@@ -196,6 +196,7 @@ final public class Pipelines implements PreparableReloadListener {
             mc.levelExtractor.setLevel(null);
             mc.levelExtractor.setLevel(mc.level);
             mc.levelExtractor.resetSampler();
+            mc.levelExtractor.onResourceManagerReload(null);  // Reset sky renderer
         }
     }
 
