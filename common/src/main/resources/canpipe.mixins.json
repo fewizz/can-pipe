@@ -31,6 +31,7 @@
         "ItemStackLayerRenderState",
         "LevelExtractorAccessor",
         "LevelExtractorMixin",
+        "LevelRendererAccessor",
         "LevelRendererMixin",
         "LevelRenderStateMixin",
         "LightmapMixin",

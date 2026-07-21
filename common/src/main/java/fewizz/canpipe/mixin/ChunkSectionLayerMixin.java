@@ -2,6 +2,7 @@ package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
@@ -19,7 +20,7 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 @Mixin(ChunkSectionLayer.class)
 public class ChunkSectionLayerMixin {
 
-    @Final private boolean translucent;
+    @Shadow @Final private boolean translucent;
 
     @ModifyReturnValue(method = "pipeline", at = @At("RETURN"))
     public RenderPipeline pipeline(RenderPipeline renderPipeline) {

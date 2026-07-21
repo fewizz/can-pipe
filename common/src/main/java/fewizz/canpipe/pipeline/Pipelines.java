@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 import fewizz.canpipe.mixin.LevelExtractorAccessor;
+import fewizz.canpipe.mixin.LevelRendererAccessor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -152,13 +153,12 @@ final public class Pipelines implements PreparableReloadListener {
         // "load" part
         Pipeline loadedPipeline = null;
 
+        // Flushes main command buffer
+        // Main command buffer could already be created at this point, for example because of texture loading
+        RenderSystem.getDevice().createCommandEncoder().submit();
+        RenderSystem.getDevice().clearPipelineCache();
+
         if (raw != null) {
-            // Flushes main command buffer
-            // Main command buffer could already be created at this point, for example because of texture loading
-            RenderSystem.getDevice().createCommandEncoder().submit();
-
-            RenderSystem.getDevice().clearPipelineCache();
-
             try {
                 loadedPipeline = new Pipeline(raw, appliedOptions);
             } catch (Exception e) {
@@ -194,8 +194,10 @@ final public class Pipelines implements PreparableReloadListener {
         boolean prevPipelineUnloaded = prevPipeline != null;
         boolean newPipelineLoaded = loadedPipeline != null;
         if (prevPipelineUnloaded != newPipelineLoaded) {
-            mc.levelExtractor.setLevel(null);
-            mc.levelExtractor.setLevel(mc.level);
+            var srd = mc.levelRenderer.sectionRenderDispatcher();
+            if (srd != null) { srd.dispose(); }
+            ((LevelRendererAccessor) mc.levelRenderer).canpipe_set_sectionRenderDispatcher(null);
+            mc.levelExtractor.allChanged();
             mc.levelExtractor.resetSampler();
         }
         ((LevelExtractorAccessor) mc.levelExtractor).canpipe_set_shouldResetSkyRenderer(true);
