@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import fewizz.canpipe.mixin.LevelExtractorAccessor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -196,8 +197,8 @@ final public class Pipelines implements PreparableReloadListener {
             mc.levelExtractor.setLevel(null);
             mc.levelExtractor.setLevel(mc.level);
             mc.levelExtractor.resetSampler();
-            mc.levelExtractor.onResourceManagerReload(null);  // Reset sky renderer
         }
+        ((LevelExtractorAccessor) mc.levelExtractor).canpipe_set_shouldResetSkyRenderer(true);
     }
 
     public static Map<Identifier, PipelineRaw> readRaw(ResourceManager resourceManager) {

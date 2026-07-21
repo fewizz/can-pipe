@@ -29,6 +29,7 @@
         "GameRenderStateMixin",
         "ItemFeatureRendererMixin",
         "ItemStackLayerRenderState",
+        "LevelExtractorAccessor",
         "LevelExtractorMixin",
         "LevelRendererMixin",
         "LevelRenderStateMixin",
