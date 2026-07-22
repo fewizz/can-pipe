@@ -31,7 +31,6 @@ import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderPass.RenderArea;
@@ -113,7 +112,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
-    public final Map<RenderPipeline, RenderPipeline> replacedRenderPipelines = new HashMap<>();
+    public final Map<Pair<GpuFormat, RenderPipeline>, RenderPipeline> replacedRenderPipelines = new HashMap<>();
 
     private final List<Pass>
         onInitPasses = new ArrayList<>(),
@@ -733,7 +732,13 @@ public class Pipeline implements AutoCloseable {
 
         if (!patchAttachment && !patchReversedDepth) { return pipeline;}
 
-        return this.replacedRenderPipelines.computeIfAbsent(pipeline, _key -> {
+        GpuFormat firstColorAttachmentFormat = colorAttachments.isEmpty() ? null : colorAttachments.get(0).textureView().texture().getFormat();
+
+        return this.replacedRenderPipelines.computeIfAbsent(Pair.of(firstColorAttachmentFormat, pipeline), _key -> {
+            for (var a : colorAttachments) {
+                System.out.println("\t"+a.textureView().texture().getLabel() + " "+a.textureView().texture().getFormat());
+            }
+
             ColorTargetState[] colorTargets = pipeline.getColorTargetStates();
             if (patchAttachment) {
                 List<ColorTargetState> colorTargetsList = new ArrayList<>();
