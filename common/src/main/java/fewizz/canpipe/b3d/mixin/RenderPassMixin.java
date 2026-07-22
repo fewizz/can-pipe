@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderPassDescriptor;
 
@@ -48,9 +49,11 @@ public class RenderPassMixin {
     String moreDetailedFormatMismatchError(
         String message,
         @Local ColorTargetState colorTargetState,
-        @Local RenderPassDescriptor.Attachment<Optional<Vector4fc>> attachment
+        @Local RenderPassDescriptor.Attachment<Optional<Vector4fc>> attachment,
+        @Local RenderPipeline renderPipeline
     ) {
-        return message+" Expected format "+colorTargetState.format()+", but got "+attachment.textureView().texture().getFormat()+".";
+        return message+" Expected format \""+colorTargetState.format()+"\", but got \""+attachment.textureView().texture().getFormat()+"\"."
+            +" Texture: \""+attachment.textureView().texture().getLabel()+"\", Render pipeline: \""+renderPipeline+"\".";
     }
 
 }
