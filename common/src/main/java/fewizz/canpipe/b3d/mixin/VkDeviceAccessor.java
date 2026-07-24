@@ -1,6 +1,5 @@
 package fewizz.canpipe.b3d.mixin;
 
-import java.util.List;
 import java.util.Set;
 
 import org.spongepowered.asm.mixin.Mixin;
