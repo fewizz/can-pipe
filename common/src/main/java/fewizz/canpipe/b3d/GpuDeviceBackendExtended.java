@@ -1,6 +1,7 @@
 package fewizz.canpipe.b3d;
 
 import java.util.OptionalDouble;
+import java.util.Set;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
@@ -28,11 +29,12 @@ public interface GpuDeviceBackendExtended extends GpuDeviceBackend {
         int baseLayer, int layerCount  // added
     );
 
-    void canpipe_precompilePipelineModule(
+    GpuShaderModule canpipe_precompilePipelineModule(
         Identifier id,
         String shaderSource,
         ShaderType shaderType,
-        TriConsumer<String, Identifier, String> onCompilationError
+        TriConsumer<String, Identifier, String> onCompilationError,
+        Set<String> expectedInputAttributes
     );
 
 }

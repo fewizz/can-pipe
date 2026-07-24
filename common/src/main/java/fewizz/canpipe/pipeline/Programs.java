@@ -134,7 +134,7 @@ public class Programs {
             throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
         };
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
             vertexLocation,
             Shaders.process(
                 vertexLocation, getShaderSource.apply(vertexLocation).get(), ShaderType.VERTEX, glslVersion, options, appliedOptions,
@@ -156,7 +156,7 @@ public class Programs {
                 }
             ), ShaderType.VERTEX, onCompilationError
         );
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
             fragmentLocation,
             Shaders.process(
                 fragmentLocation, getShaderSource.apply(fragmentLocation).get(), ShaderType.FRAGMENT, glslVersion, options, appliedOptions,

@@ -1,5 +1,8 @@
 package fewizz.canpipe.b3d.mixin;
 
+import java.util.List;
+import java.util.Set;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -16,5 +19,6 @@ public interface VkDeviceAccessor {
     @Accessor("canpipe_linearMipmap") Boolean get_canpipe_linearMipmap();
     @Accessor("canpipe_compareOp") CompareOp get_canpipe_compareOp();
     @Accessor("canpipe_compilationLog") void set_canpipe_compilationLog(String log);
+    @Accessor("canpipe_expectedInputAttributes") Set<String> get_canpipe_expectedInputAttributes();
 
 }

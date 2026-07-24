@@ -5,9 +5,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.function.TriConsumer;
@@ -16,7 +18,6 @@ import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -217,7 +218,13 @@ public class MaterialPrograms {
         String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
         String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
+        /*Set<String> expectedAttributeNames = new HashSet<>();
+        for (var attr : vertexFormat.getElements()) {
+            expectedAttributeNames.add(attr.name());
+        }*/
+
+
+        var vertexShader = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
             vertexShaderIDWithPostfix,
             Shaders.process(
                 vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
@@ -227,14 +234,21 @@ public class MaterialPrograms {
             onCompilationError
         );
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompilePipelineModule(
+
+        Set<String> expectedInputAttributes =
+            vertexShader.canpipe_isGettingOutputVariablesNamesSupported() ?
+            new HashSet<>(vertexShader.canpipe_getOutputVariablesNames()) :
+            null;
+
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
             fragmentShaderIDWithPostfix,
             Shaders.process(
                 fragmentShaderLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
                 getShaderSource, shadowMapSize, postprocess
             ),
             ShaderType.FRAGMENT,
-            onCompilationError
+            onCompilationError,
+            expectedInputAttributes
         );
 
         return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline);

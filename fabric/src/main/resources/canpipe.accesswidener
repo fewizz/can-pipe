@@ -4,6 +4,7 @@ accessible  class   com/mojang/blaze3d/opengl/GlDevice
 accessible  class   com/mojang/blaze3d/opengl/GlDevice$ShaderCompilationKey
 
 accessible  class   com/mojang/blaze3d/vulkan/VulkanDevice$ShaderCompilationKey
+accessible  class   com/mojang/blaze3d/vulkan/glsl/SpvVariable
 
 accessible  class   com/mojang/blaze3d/opengl/GlCommandEncoder
 
