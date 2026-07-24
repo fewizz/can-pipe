@@ -1,8 +1,11 @@
 package fewizz.canpipe.b3d.mixin;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -57,33 +60,33 @@ public class VkGlslCompilerMixin {
         ),
         index = 1
     )
-    ByteBuffer patchSpirv(ByteBuffer spv) {
+    ByteBuffer patchSpirv(ByteBuffer spvBytes) {
         var device = (VulkanDevice) ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
         var attribs = ((VkDeviceAccessor) device).get_canpipe_expectedInputAttributes();
         if (attribs == null) {
-            return spv;
+            return spvBytes;
         }
 
-        IntBuffer spvi = spv.asIntBuffer();
+        IntBuffer spvWords = spvBytes.asIntBuffer();
 
         // 1. Search for `OpName`s (https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpName)
 
         Int2ObjectMap<String> idToName = new Int2ObjectOpenHashMap<>();
 
-        for (int i = 5; i < spvi.capacity();) {
-            int wordCountAndOp = spvi.get(i);
+        for (int i = 5; i < spvWords.capacity();) {
+            int wordCountAndOp = spvWords.get(i);
 
             int wordCount = wordCountAndOp >>> 16;
             int op = wordCountAndOp & ((1 << 16) - 1);
 
             if (op == 5) {
-                int id = spvi.get(i+1);
+                int id = spvWords.get(i+1);
 
                 ByteList chars = new ByteArrayList();
                 boolean done = false;
 
                 for (int x = 2; !done && x < wordCount; ++x) {
-                    int v = spvi.get(i+x);
+                    int v = spvWords.get(i+x);
                     for (int s = 0; s < 4; ++s) {
                         byte b = (byte)((v >> (s*8)) & 0xFF);
                         if (b == 0) {
@@ -112,23 +115,23 @@ public class VkGlslCompilerMixin {
         // from `Input` to `Private`
 
         IntSet typePointersIDsToPatch = new IntOpenHashSet();
-        IntSet variablesIDsToRemoveFromEntryPoint = new IntOpenHashSet();
+        IntSet variablesIDsToPatch = new IntOpenHashSet();
 
-        for (int i = 5; i < spvi.capacity();) {
-            int wordCountAndOp = spvi.get(i);
+        for (int i = 5; i < spvWords.capacity();) {
+            int wordCountAndOp = spvWords.get(i);
 
             int wordCount = wordCountAndOp >>> 16;
             int op = wordCountAndOp & ((1 << 16) - 1);
 
             if (op == 59) {
-                int id = spvi.get(i+2);
-                boolean isInput = spvi.get(i+3) == 1;
+                int id = spvWords.get(i+2);
+                boolean isInput = spvWords.get(i+3) == 1;
                 String name = idToName.get(id);
 
                 if (isInput && !attribs.contains(name)) {
-                    spvi.put(i+3, 6);
-                    typePointersIDsToPatch.add(spvi.get(i+1));
-                    variablesIDsToRemoveFromEntryPoint.add(spvi.get(i+2));
+                    spvWords.put(i+3, 6);
+                    typePointersIDsToPatch.add(spvWords.get(i+1));
+                    variablesIDsToPatch.add(spvWords.get(i+2));
                 }
             }
 
@@ -137,18 +140,18 @@ public class VkGlslCompilerMixin {
 
         // 3. Patch `OpTypePointer`s (https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpTypePointer)
 
-        for (int i = 5; i < spvi.capacity();) {
-            int wordCountAndOp = spvi.get(i);
+        for (int i = 5; i < spvWords.capacity();) {
+            int wordCountAndOp = spvWords.get(i);
 
             int wordCount = wordCountAndOp >>> 16;
             int op = wordCountAndOp & ((1 << 16) - 1);
 
             if (op == 32) {
-                int id = spvi.get(i+1);
+                int id = spvWords.get(i+1);
                 if (typePointersIDsToPatch.contains(id)) {
-                    int storageClass = spvi.get(i+2);
+                    int storageClass = spvWords.get(i+2);
                     if (storageClass != 1) { throw new RuntimeException("Expected storage class 1 (Input), but got "+storageClass); }
-                    spvi.put(i+2, 6);
+                    spvWords.put(i+2, 6);
                 }
             }
 
@@ -157,8 +160,10 @@ public class VkGlslCompilerMixin {
 
         // 4. Patch `OpEntryPoint`'s interface (https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpEntryPoint)
 
-        for (int i = 5; i < spvi.capacity();) {
-            int wordCountAndOp = spvi.get(i);
+        IntSet wordsToSkip = new IntOpenHashSet();
+
+        for (int i = 5; i < spvWords.capacity();) {
+            int wordCountAndOp = spvWords.get(i);
 
             int wordCount = wordCountAndOp >>> 16;
             int op = wordCountAndOp & ((1 << 16) - 1);
@@ -166,7 +171,7 @@ public class VkGlslCompilerMixin {
             if (op == 15) {
                 int x = 3;
                 for (; x < wordCount; ++x) {
-                    int v = spvi.get(i+x);
+                    int v = spvWords.get(i+x);
                     byte[] arr = new byte[]{
                         (byte)((v >>  0) & 0xFF),
                         (byte)((v >>  8) & 0xFF),
@@ -180,24 +185,24 @@ public class VkGlslCompilerMixin {
                 IntList remainingIndices = new IntArrayList();
 
                 for (; x < wordCount; ++x) {
-                    int id = spvi.get(i+x);
-                    if (!variablesIDsToRemoveFromEntryPoint.contains(id)) {
+                    int id = spvWords.get(i+x);
+                    if (!variablesIDsToPatch.contains(id)) {
                         remainingIndices.add(id);
                     }
                 }
 
-                // Thank god we have `OpNop`, so I don't have to recreate IntBuffer
-                // Moving remaining indices to the left, `OpNop`ing others
-                for (int j = 0; beginning+j < x; ++j) {
-                    spvi.put(
-                        i+beginning+j,
-                        j < remainingIndices.size() ? remainingIndices.getInt(j) : (1 << 16) | 0
-                    );
-                }
-
                 // Patch instruction word count
                 int newWordCount = wordCount - (x - beginning) + remainingIndices.size();
-                spvi.put(i, (newWordCount << 16) | op);
+                spvWords.put(i, (newWordCount << 16) | op);
+
+                for (int j = 0; beginning+j < x; ++j) {
+                    if (j < remainingIndices.size()) {
+                        spvWords.put(i+beginning+j, remainingIndices.getInt(j));
+                    }
+                    else {
+                        wordsToSkip.add(i+beginning+j);
+                    }
+                }
 
                 break;
             }
@@ -205,7 +210,57 @@ public class VkGlslCompilerMixin {
             i += wordCount;
         }
 
-        return spv;
+        // 5. Patch decorations
+
+        for (int i = 5; i < spvWords.capacity();) {
+            if (wordsToSkip.contains(i)) {
+                ++i;
+                continue;
+            }
+
+            int wordCountAndOp = spvWords.get(i);
+
+            int wordCount = wordCountAndOp >>> 16;
+            int op = wordCountAndOp & ((1 << 16) - 1);
+
+            if (op == 71) {
+                int id = spvWords.get(i+1);
+                boolean isLocation = spvWords.get(i+2) == 30;
+                if (isLocation && variablesIDsToPatch.contains(id)) {
+                    for (int x = 0; x < wordCount; ++x) wordsToSkip.add(i+x);
+                }
+            }
+
+            i += wordCount;
+        }
+
+        int newSize = spvWords.limit() - wordsToSkip.size();
+
+        if (newSize != spvWords.limit()) {
+            ByteBuffer newSpvBytes = MemoryUtil.memAlloc(newSize*4);
+            IntBuffer newSpvWords = newSpvBytes.asIntBuffer();
+
+            for (int i = 0, j = 0; i < spvWords.limit(); ++i) {
+                int word = spvWords.get(i);
+                if (!wordsToSkip.contains(i)) {
+                    newSpvWords.put(j, word);
+                    ++j;
+                }
+            }
+
+            MemoryUtil.memFree(spvBytes);
+            spvBytes = newSpvBytes;
+        }
+
+        var bytes = new byte[spvBytes.limit()];
+        spvBytes.get(0, bytes);
+        try {
+            Files.write(Path.of("/tmp/vert.spv"), bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return spvBytes;
     }
 
 }
