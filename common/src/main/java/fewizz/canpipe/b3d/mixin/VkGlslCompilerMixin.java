@@ -140,7 +140,7 @@ public class VkGlslCompilerMixin {
                 boolean isInput = instr[3] == 1;
                 String name = idToName.get(id);
 
-                if (isInput && !attribs.contains(name)) {
+                if (isInput && !attribs.contains(name) && !name.startsWith("gl_")) {
                     instr[3] = 6;  // Private
                     variablesIDsToPatch.add(id);
 

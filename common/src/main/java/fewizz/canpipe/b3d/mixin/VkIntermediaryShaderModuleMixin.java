@@ -17,6 +17,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.Share;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.vulkan.glsl.IntermediaryShaderModule;
 import com.mojang.blaze3d.vulkan.glsl.SpvVariable;
 
@@ -87,14 +89,39 @@ public class VkIntermediaryShaderModuleMixin implements GpuShaderModule {
             target = "Ljava/nio/IntBuffer;put"
         )
     )
-    private static IntBuffer fixOutputVarsSpirvPatching(
+    private static IntBuffer dontPatchFragmentShaderOutputsAndfixOutputsSpirvPatching(
         IntBuffer buf,
         int index,
         int value,
         Operation<IntBuffer> operation,
         @Local(name = "outputs") List<SpvVariable> outputs,
-        @Local(name = "i") int i
+        @Local(name = "i") int i,
+        @Share("isFragmentShader") LocalRef<Boolean> isFragmentShaderShared
     ) {
+        // I could instead just pass shader type here...
+        if (isFragmentShaderShared.get() == null) {
+            for (int j = 5; j < buf.limit();) {
+                int opAndSize = buf.get(j);
+                int size = opAndSize >>> 16;
+                int op = opAndSize & ((1 << 16) - 1);
+
+                // https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpEntryPoint
+                if (op == 15) {
+                    int executionModel = buf.get(j+1);
+                    isFragmentShaderShared.set(executionModel == 4);
+                    break;
+                }
+                j += size;
+            }
+        }
+
+        Boolean isFragmentShader = isFragmentShaderShared.get();
+        if (isFragmentShader == null) { throw new RuntimeException("Couldn't find OpEntryPoint"); }
+
+        if (isFragmentShader) {
+            return buf;
+        }
+
         // Var was already added, and it takes multiple locations
         if (i > 0 && outputs.get(i-1).name().equals(outputs.get(i).name())) {
             return buf;
