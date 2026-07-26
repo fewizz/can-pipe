@@ -5,9 +5,7 @@ import java.util.List;
 
 import org.lwjgl.util.spvc.Spvc;
 import org.lwjgl.util.spvc.SpvcReflectedResource;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
@@ -26,18 +24,6 @@ import fewizz.canpipe.b3d.GpuShaderModule;
 
 @Mixin(IntermediaryShaderModule.class)
 public class VkIntermediaryShaderModuleMixin implements GpuShaderModule {
-
-    @Shadow @Final private List<SpvVariable> outputs;
-
-    @Override
-    public boolean canpipe_isGettingOutputVariablesNamesSupported() {
-        return true;
-    }
-
-    @Override
-    public List<String> canpipe_getOutputVariablesNames() {
-        return this.outputs.stream().map(x -> x.name()).toList();
-    }
 
     @Inject(
         method = "createFromSpirv",
@@ -89,7 +75,7 @@ public class VkIntermediaryShaderModuleMixin implements GpuShaderModule {
             target = "Ljava/nio/IntBuffer;put"
         )
     )
-    private static IntBuffer dontPatchFragmentShaderOutputsAndfixOutputsSpirvPatching(
+    private static IntBuffer dontPatchFragmentShaderOutputsAndFixOutputsSpirvPatching(
         IntBuffer buf,
         int index,
         int value,

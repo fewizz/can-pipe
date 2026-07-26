@@ -5,11 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.function.TriConsumer;
@@ -218,13 +216,7 @@ public class MaterialPrograms {
         String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
         String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
 
-        /*Set<String> expectedAttributeNames = new HashSet<>();
-        for (var attr : vertexFormat.getElements()) {
-            expectedAttributeNames.add(attr.name());
-        }*/
-
-
-        var vertexShader = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
+        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
             vertexShaderIDWithPostfix,
             Shaders.process(
                 vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
@@ -233,13 +225,6 @@ public class MaterialPrograms {
             ShaderType.VERTEX,
             onCompilationError
         );
-
-
-        Set<String> expectedInputAttributes =
-            vertexShader.canpipe_isGettingOutputVariablesNamesSupported() ?
-            new HashSet<>(vertexShader.canpipe_getOutputVariablesNames()) :
-            null;
-
         ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
             fragmentShaderIDWithPostfix,
             Shaders.process(
@@ -247,8 +232,7 @@ public class MaterialPrograms {
                 getShaderSource, shadowMapSize, postprocess
             ),
             ShaderType.FRAGMENT,
-            onCompilationError,
-            expectedInputAttributes
+            onCompilationError
         );
 
         return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline);

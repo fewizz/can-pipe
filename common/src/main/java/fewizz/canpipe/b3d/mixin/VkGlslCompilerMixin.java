@@ -1,25 +1,32 @@
 package fewizz.canpipe.b3d.mixin;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.Share;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vulkan.VulkanDevice;
+import com.mojang.blaze3d.vulkan.VulkanBindGroupLayout;
 import com.mojang.blaze3d.vulkan.glsl.GlslCompiler;
+import com.mojang.blaze3d.vulkan.glsl.IntermediaryShaderModule;
 
+import fewizz.canpipe.CanPipe;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.bytes.ByteList;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -45,27 +52,61 @@ public class VkGlslCompilerMixin {
         return message;
     }
 
-    @ModifyArg(
+    @WrapOperation(
         method = "createIntermediary",
+        at = @At(value = "INVOKE", target = "org.lwjgl.system.MemoryUtil.memCalloc")
+    )
+    ByteBuffer onAllocMemoryForSpirv(int size, Operation<ByteBuffer> operation) {
+        // Make byte buffer for spirv slightly bigger
+        // to be able to add more (256/4 = 64, should be enough) `OpTypeFunction`s if needed, for spirv patches below.
+        // Cursed. But I can't resize IntermediaryShaderModule.spirv, because IntermediaryShaderModule is a record
+        // and org.lwjgl.system.MemoryUtil has no methods to change address of existing ByteBuffer (and that's good)
+        // (result of MemoryUtil.memRealloc() may point to a different address)
+        ByteBuffer result = operation.call(size + 256);
+        result.limit(size);
+        return result;
+    }
+
+    @WrapOperation(
+        method = "compile",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vulkan/glsl/IntermediaryShaderModule;createFromSpirv"
-        ),
-        index = 1
+            target = "Lcom/mojang/blaze3d/vulkan/glsl/IntermediaryShaderModule;rebind",
+            ordinal = 1  // fragment shader
+        )
     )
-    ByteBuffer patchSpirv(ByteBuffer spvBytes) {
-        var device = (VulkanDevice) ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
-        var attribs = ((VkDeviceAccessor) device).get_canpipe_expectedInputAttributes();
-        if (attribs == null) {
-            return spvBytes;
+    void patchSpirvBeforeFramentShaderRebind(
+        IntermediaryShaderModule fragment,
+        List<String> inputVariables,
+        List<VulkanBindGroupLayout.Entry> entries,
+        Operation<Void> operation,
+        @Share("originalFragmentShaderSpirvHolder") LocalRef<ByteBuffer> originalFragmentShaderSpirvHolder
+    ) {
+        var extraInputs = fragment.inputs().stream().map(v -> v.name()).collect(Collectors.toSet());
+        extraInputs.removeAll(inputVariables);
+        if (extraInputs.isEmpty()) {
+            operation.call(fragment, inputVariables, entries);
+            return;
         }
 
-        IntBuffer spvWords = spvBytes.asIntBuffer();
+        {
+            // avoid `!remainingInputs.isEmpty()` validation in IntermediaryShaderModule.rebind()
+            var originalInputs = new ArrayList<>(fragment.inputs());
+            fragment.inputs().removeIf(v -> extraInputs.contains(v.name()));
+            operation.call(fragment, inputVariables, entries);
+            // restore
+            fragment.inputs().clear();
+            fragment.inputs().addAll(originalInputs);
+        }
+
+        originalFragmentShaderSpirvHolder.set(MemoryUtil.memDuplicate(fragment.spirv()));
+
+        IntBuffer spvWords = fragment.spirv().asIntBuffer();
 
         int bound = spvWords.get(3);
 
         List<int[]> instrs = new ArrayList<>();
-        for (int i = 5; i < spvWords.capacity();) {
+        for (int i = 5; i < spvWords.limit();) {
             int wordCountAndOp = spvWords.get(i);
             int wordCount = wordCountAndOp >>> 16;
 
@@ -140,7 +181,7 @@ public class VkGlslCompilerMixin {
                 boolean isInput = instr[3] == 1;
                 String name = idToName.get(id);
 
-                if (isInput && !attribs.contains(name) && !name.startsWith("gl_")) {
+                if (isInput && !inputVariables.contains(name) && !name.startsWith("gl_")) {
                     instr[3] = 6;  // Private
                     variablesIDsToPatch.add(id);
 
@@ -227,34 +268,43 @@ public class VkGlslCompilerMixin {
             ++i;
         }
 
+        // 5. Recreate spirv ByteBuffer
+
+        spvWords.put(3, bound);  // Bound is probably increased
+
         int newSize = 5 + instrs.stream().mapToInt(i -> i.length).sum();
+        spvWords.limit(newSize);  // :pray:
+        fragment.spirv().limit(newSize*4);
 
-        if (newSize != spvWords.limit()) {
-            ByteBuffer newSpvBytes = MemoryUtil.memAlloc(newSize*4);
-            IntBuffer newSpvWords = newSpvBytes.asIntBuffer();
-
-            newSpvWords.put(0, spvWords, 0, 5);
-            newSpvWords.put(3, bound);
-
-            int i = 5;
-            for (int[] instr : instrs) {
-                newSpvWords.put(i, instr);
-                i += instr.length;
-            }
-
-            MemoryUtil.memFree(spvBytes);
-            spvBytes = newSpvBytes;
+        int i = 5;
+        for (int[] instr : instrs) {
+            spvWords.put(i, instr);
+            i += instr.length;
         }
 
-        var bytes = new byte[spvBytes.limit()];
-        spvBytes.get(0, bytes);
-        try {
-            Files.write(Path.of("/tmp/vert.spv"), bytes);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return spvBytes;
+        CanPipe.LOGGER.warn("Shader \""+fragment.name()+"\" expects input variables which are not provided: "+extraInputs);
     }
+
+    @Inject(
+        method = "compile",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vulkan/glsl/IntermediaryShaderModule;createVulkanShaderModule",
+            ordinal = 1,  // fragment shader
+            shift = Shift.AFTER
+        )
+    )
+    void restoreSpirv(
+        CallbackInfoReturnable<Object> ci,
+        @Share("originalFragmentShaderSpirvHolder") LocalRef<ByteBuffer> originalFragmentShaderSpirvHolder,
+        @Local(name = "fragment") IntermediaryShaderModule fragment
+    ) {
+        var originalSpirv = originalFragmentShaderSpirvHolder.get();
+        if (originalSpirv != null) {
+            fragment.spirv().limit(originalSpirv.limit());
+            MemoryUtil.memCopy(originalSpirv, fragment.spirv());
+        }
+    }
+
 
 }

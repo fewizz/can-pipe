@@ -1,7 +1,6 @@
 package fewizz.canpipe.b3d.mixin;
 
 import java.util.OptionalDouble;
-import java.util.Set;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
@@ -55,10 +54,9 @@ public class GpuDeviceMixin implements GpuDeviceExtended {
     @Override
     public GpuShaderModule canpipe_precompileShaderModule(
         Identifier id, String shaderSource, ShaderType shaderType,
-        TriConsumer<String, Identifier, String> onCompilationError,
-        Set<String> expectedInputAttributes
+        TriConsumer<String, Identifier, String> onCompilationError
     ) {
-        return ((GpuDeviceBackendExtended) this.backend).canpipe_precompilePipelineModule(id, shaderSource, shaderType, onCompilationError, expectedInputAttributes);
+        return ((GpuDeviceBackendExtended) this.backend).canpipe_precompilePipelineModule(id, shaderSource, shaderType, onCompilationError);
     }
 
     @ModifyExpressionValue(

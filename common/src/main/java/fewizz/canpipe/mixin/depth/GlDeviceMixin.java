@@ -1,6 +1,5 @@
 package fewizz.canpipe.mixin.depth;
 
-import fewizz.canpipe.pipeline.PipelineRaw;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -10,7 +9,7 @@ import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
 
 @Mixin(GlDevice.class)

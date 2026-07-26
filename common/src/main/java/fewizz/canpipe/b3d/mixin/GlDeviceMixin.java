@@ -2,7 +2,6 @@ package fewizz.canpipe.b3d.mixin;
 
 import java.nio.ByteBuffer;
 import java.util.OptionalDouble;
-import java.util.Set;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
@@ -74,8 +73,7 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         Identifier id,
         String shaderSource,
         ShaderType shaderType,
-        TriConsumer<String, Identifier, String> onCompilationError,
-        Set<String> expectedInputAttributes
+        TriConsumer<String, Identifier, String> onCompilationError
     ) {
         try {
             this.canpipe_onCompilationError = onCompilationError;
