@@ -71,6 +71,7 @@
         "depth.GlDeviceMixin",
         "depth.GuiItemAtlasMixin",
         "depth.LevelRendererMixin",
+        "depth.PictureInPictureRendererMixin",
         "depth.ProjectionMixin",
         "depth.VkDeviceMixin"
     ]
