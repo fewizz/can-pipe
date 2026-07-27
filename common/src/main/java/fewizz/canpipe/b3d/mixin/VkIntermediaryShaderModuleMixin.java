@@ -2,6 +2,7 @@ package fewizz.canpipe.b3d.mixin;
 
 import java.nio.IntBuffer;
 import java.util.List;
+import java.util.Set;
 
 import org.lwjgl.util.spvc.Spvc;
 import org.lwjgl.util.spvc.SpvcReflectedResource;
@@ -12,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -20,6 +22,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.vulkan.glsl.IntermediaryShaderModule;
 import com.mojang.blaze3d.vulkan.glsl.SpvVariable;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.b3d.GpuShaderModule;
 
 @Mixin(IntermediaryShaderModule.class)
@@ -113,6 +116,24 @@ public class VkIntermediaryShaderModuleMixin implements GpuShaderModule {
             return buf;
         }
         return operation.call(buf, index, value);
+    }
+
+    @ModifyExpressionValue(
+        method = "rebind",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/util/Set;isEmpty",
+            ordinal = 2
+        )
+    )
+    boolean dontCrashOnRemainingSamplers(
+        boolean noRemainingSamplers,
+        @Local(name="remainingUniformBuffers") Set<String> remainingUniformBuffers
+    ) {
+        if (!noRemainingSamplers) {
+            CanPipe.LOGGER.warn("Shader expects uniform buffers which are not being provided: " + remainingUniformBuffers);
+        }
+        return true;
     }
 
 }

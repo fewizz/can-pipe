@@ -4,7 +4,9 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.lwjgl.system.MemoryUtil;
@@ -12,6 +14,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -20,6 +23,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.GpuDeviceBackend;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vulkan.VulkanBindGroupLayout;
@@ -306,5 +310,48 @@ public class VkGlslCompilerMixin {
         }
     }
 
+
+    @ModifyExpressionValue(
+        method = "addToBindGroup",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/util/stream/Stream;noneMatch",
+            ordinal = 2  // samplers
+        )
+    )
+    private static boolean dontCrashIfSamplerNotFound(
+        boolean noSampler,
+        @Share("entriesToFilterOut") LocalRef<Set<String>> entriesToFilterOut,
+        @Local(name="name") String name,
+        @Local IntermediaryShaderModule shader,
+        @Local RenderPipeline pipeline
+    ) {
+        if (noSampler) {
+            var entries = entriesToFilterOut.get();
+            if (entries == null) {
+                entries = new HashSet<>();
+                entriesToFilterOut.set(entries);
+            }
+            entriesToFilterOut.get().add(name);
+
+            CanPipe.LOGGER.warn("Unable to find sampler \""+name+"\" in shader \""+shader.name()+"\" of pipeline \""+pipeline.getLocation()+"\"");
+        }
+        return false;
+    }
+
+    @Inject(
+        method = "addToBindGroup",
+        at = @At("RETURN")
+    )
+    private static void afterAddToBindGroup(
+        CallbackInfo ci,
+        @Share("entriesToFilterOut") LocalRef<Set<String>> entriesToFilterOut,
+        @Local(name="entries") List<VulkanBindGroupLayout.Entry> entries
+    ) {
+        var es = entriesToFilterOut.get();
+        if (es != null) {
+            entries.removeIf(e -> es.contains(e.name()));
+        }
+    }
 
 }
