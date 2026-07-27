@@ -103,7 +103,11 @@ public class VkGlslCompilerMixin {
             fragment.inputs().addAll(originalInputs);
         }
 
-        originalFragmentShaderSpirvHolder.set(MemoryUtil.memDuplicate(fragment.spirv()));
+        {
+            ByteBuffer copy = MemoryUtil.memAlloc(fragment.spirv().limit());
+            MemoryUtil.memCopy(fragment.spirv(), copy);
+            originalFragmentShaderSpirvHolder.set(copy);
+        }
 
         IntBuffer spvWords = fragment.spirv().asIntBuffer();
 
@@ -119,6 +123,10 @@ public class VkGlslCompilerMixin {
             instrs.add(instr);
 
             i += wordCount;
+            if (wordCount == 0) {
+                throw new RuntimeException("Word count is 0?!");
+            }
+            System.out.println(i+" "+wordCount);
         }
 
         // 1. Search for `OpName`s (https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpName)
@@ -307,6 +315,8 @@ public class VkGlslCompilerMixin {
         if (originalSpirv != null) {
             fragment.spirv().limit(originalSpirv.limit());
             MemoryUtil.memCopy(originalSpirv, fragment.spirv());
+            MemoryUtil.memFree(originalSpirv);
+            originalFragmentShaderSpirvHolder.set(null);
         }
     }
 
