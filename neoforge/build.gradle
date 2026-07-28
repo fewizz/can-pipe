@@ -17,13 +17,6 @@ compileJava.source project(":common").sourceSets.main.allSource
 
 dependencies {
     jarJar implementation("blue.endless:jankson:1.2.3")
-
-    // hack, neo version is JIJed
-    compileOnly "graphics.cinnabar:cinnabar-fabric:${cinnabar_version}"
-
-    if (System.getenv("WITH_CINNABAR") == "1") {
-        implementation "graphics.cinnabar:cinnabar-neoforge:${cinnabar_version}"
-    }
 }
 
 neoForge {
@@ -31,11 +24,19 @@ neoForge {
     accessTransformers.from(file("src/main/resources/META-INF/accesstransformer.cfg"))
 
     runs {
-        client {
+        clientGl {
             client()
-            ideName = "NeoForge"
+            ideName = "NeoForge GL"
             gameDirectory = new File(project.rootDir, "/run")
             systemProperty("mixin.debug", "true")
+            programArgument("--graphicsBackend=opengl")
+        }
+        clientVk {
+            client()
+            ideName = "NeoForge VK"
+            gameDirectory = new File(project.rootDir, "/run")
+            systemProperty("mixin.debug", "true")
+            programArgument("--graphicsBackend=vulkan")
         }
     }
 
