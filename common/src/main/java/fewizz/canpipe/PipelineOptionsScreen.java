@@ -337,6 +337,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                     this.onReset = () -> {
                         widget.setValue(enumElement.defaultValue);
+                        enableResetAndApplyValue.accept(null);
                     };
                 }
                 else {

@@ -735,10 +735,6 @@ public class Pipeline implements AutoCloseable {
         GpuFormat firstColorAttachmentFormat = colorAttachments.isEmpty() ? null : colorAttachments.get(0).textureView().texture().getFormat();
 
         return this.replacedRenderPipelines.computeIfAbsent(Pair.of(firstColorAttachmentFormat, pipeline), _key -> {
-            for (var a : colorAttachments) {
-                System.out.println("\t"+a.textureView().texture().getLabel() + " "+a.textureView().texture().getFormat());
-            }
-
             ColorTargetState[] colorTargets = pipeline.getColorTargetStates();
             if (patchAttachment) {
                 List<ColorTargetState> colorTargetsList = new ArrayList<>();
