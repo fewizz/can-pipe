@@ -27,11 +27,10 @@ public class ItemFeatureRendererMixin {
     VertexConsumer setMaterial(VertexConsumer vc, @Local ItemFeatureRenderer.Submit submit) {
         if (submit.quads() instanceof CursedList cl) {
             MaterialMap materialMap = (MaterialMap) cl.element;
-            var vce = (VertexConsumerExtended) vc;
-            if (submit.foilType() != ItemStackRenderState.FoilType.NONE) {
-                vce.canpipe_setScopedEntityGlint(true);
-            }
-            vce.canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
+            ((VertexConsumerExtended) vc).canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
+        }
+        if (submit.foilType() != ItemStackRenderState.FoilType.NONE) {
+            ((VertexConsumerExtended) vc).canpipe_setScopedEntityGlint(true);
         }
         return vc;
     }
