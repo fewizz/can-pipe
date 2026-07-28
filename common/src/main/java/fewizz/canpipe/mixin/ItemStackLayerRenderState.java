@@ -1,5 +1,6 @@
 package fewizz.canpipe.mixin;
 
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -24,7 +25,7 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
 
     @Shadow private boolean usesBlockLight;
 
-    @Unique ItemStack canpipe_itemStack = null;
+    @Unique @Nullable ItemStack canpipe_itemStack = null;
 
     @Override
     public void canpipe_setItemStack(ItemStack itemStack) {
@@ -45,9 +46,8 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
         )
     )
     void onSubmit(CallbackInfo ci, @Local(argsOnly = true) SubmitNodeCollector submitNodeCollector) {
-        Item item = this.canpipe_itemStack.getItem();
-
-        if (submitNodeCollector instanceof SubmitNodeCollectorExtended snce) {
+        if (this.canpipe_itemStack != null && submitNodeCollector instanceof SubmitNodeCollectorExtended snce) {
+            Item item = this.canpipe_itemStack.getItem();
             MaterialMap materialMap = MaterialMaps.getForItem(item);
             if (materialMap == null && item instanceof BlockItem bi) {
                 materialMap = MaterialMaps.getForBlockState(bi.getBlock().defaultBlockState());
