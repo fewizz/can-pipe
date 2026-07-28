@@ -43,7 +43,7 @@ public class MutableMeshImplMixin extends MeshViewImplMixin {
             target = "Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;clear()Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;"
         )
     )
-    void onInitBedoreEmitterClear(CallbackInfo ci) {
+    void onInitBeforeEmitterClear(CallbackInfo ci) {
         ((MutableQuadViewExtended) this.emitter).canpipe_setExtraData(this.canpipe_extraData);
     }
 

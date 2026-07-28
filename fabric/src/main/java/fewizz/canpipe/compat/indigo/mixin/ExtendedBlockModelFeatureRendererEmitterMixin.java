@@ -1,14 +1,13 @@
 package fewizz.canpipe.compat.indigo.mixin;
 
+import fewizz.canpipe.compat.indigo.QuadViewExtended;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import fewizz.canpipe.compat.indigo.QuadViewExtended;
-
-@Mixin(targets = {"net.fabricmc.fabric.impl.client.indigo.renderer.render.AltItemRenderer$1"})
-public class AltItemRendererEmitterMixin {
+@Mixin(targets = {"net.fabricmc.fabric.impl.client.indigo.renderer.render.ExtendedBlockModelFeatureRenderer$1"})
+public class ExtendedBlockModelFeatureRendererEmitterMixin {
 
     @Inject(
         method = "<init>",

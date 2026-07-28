@@ -7,9 +7,10 @@
 	},
 	"plugin": "fewizz.canpipe.compat.indigo.MixinPlugin",
 	"client": [
-		"AltItemRendererEmitterMixin",
 		"AltModelBlockRendererImplMixin",
 		"BlockStateModelWrapperMixin",
+		"ExtendedBlockModelFeatureRendererEmitterMixin",
+		"ExtendedItemFeatureRendererEmitterMixin",
 		"IndigoRendererQuadEmitterMixin",
 		"MeshViewImplMixin",
 		"MutableMeshImplMixin",
