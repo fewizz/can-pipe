@@ -72,13 +72,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private RenderBuffers renderBuffers;
 
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
-    // @Shadow private void cullTerrain(Camera camera, Frustum frustum, boolean spectator) {}
-    // @Shadow private void extractVisibleEntities(Camera camera, Frustum frustum, DeltaTracker deltaTracker, LevelRenderState levelRenderState) {}
-    // @Shadow private void extractVisibleBlockEntities(Camera camera, float dt, LevelRenderState levelRenderState) {}
-    // @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeStorage submitNodeStorage) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
-    // @Shadow private void applyFrustum(Frustum frustum) {}
-    @Shadow public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix) { return null; }
+    @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
+    @Shadow public ChunkSectionsToRender prepareChunkRenders(Matrix4fc modelViewMatrix) { return null; }
 
     @Unique private int canpipe_currentShadowCascadeIdx = -1;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
@@ -183,11 +179,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             profiler.popPush("cascade " + this.canpipe_currentShadowCascadeIdx);
 
             profiler.push("prepare chunk sections to render");
-            // applyFrustum(gre.canpipe_getShadowFrustums()[cascade]);
-            // lrse.canpipe_getChunkSectionsToRender()[this.canpipe_currentShadowCascadeIdx];
             ChunkSectionsToRender sections = prepareChunkRenders(viewMatrix);
             profiler.push("render sections");
-            // ChunkSectionsToRender sections = lrse.canpipe_getChunkSectionsToRender()[this.canpipe_currentShadowCascadeIdx];
             sections.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
 
             if (p.shadows.allowEntities()) {
@@ -196,17 +189,10 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 profiler.push("submit entities");
                 this.submitEntities(poseStack, this.levelRenderState, this.submitNodeStorage);
 
-                /*profiler.popPush("submit block entities");
+                profiler.popPush("submit block entities");
                 this.submitBlockEntities(poseStack, this.levelRenderState, this.submitNodeStorage);
 
-                profiler.popPush("render features");
-                this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
-                this.checkPoseStack(poseStack);*/
-
-                profiler.popPush("end batch");
-
-                // this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
-                // this.featureRenderDispatcher.
+                this.checkPoseStack(poseStack);
 
                 profiler.pop();
             }
@@ -218,22 +204,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 ParticlesRenderState state = lrse.canpipe_getParticlesRenderStates()[this.canpipe_currentShadowCascadeIdx];
                 state.submit(this.submitNodeStorage, levelRenderState.cameraRenderState);
 
-                profiler.popPush("render features");
-                this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
-
-                // state.reset();  // `ParticleGroupRenderState`s are shared
                 state.particles.clear();
 
                 profiler.pop();
             }
 
-            try (FeatureRenderDispatcher.PreparedFrame frame = this.featureRenderDispatcher.prepareFrame(this.submitNodeStorage)) {
-			          frame.executeSolid();
-                frame.executeTranslucent();
-                frame.executeTranslucentAfterTerrain();
-                frame.executeAlwaysOnTop();
-            }
-
+            profiler.popPush("render features");
+            this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
             profiler.pop();
         }
 

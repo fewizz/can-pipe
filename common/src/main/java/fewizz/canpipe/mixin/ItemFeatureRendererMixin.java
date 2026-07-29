@@ -7,7 +7,7 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.helpers.CursedList;
+import fewizz.canpipe.helpers.WrappedListWithExtraElement;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -25,7 +25,7 @@ public class ItemFeatureRendererMixin {
         )
     )
     VertexConsumer setMaterial(VertexConsumer vc, @Local ItemFeatureRenderer.Submit submit) {
-        if (submit.quads() instanceof CursedList cl) {
+        if (submit.quads() instanceof WrappedListWithExtraElement cl) {
             MaterialMap materialMap = (MaterialMap) cl.element;
             ((VertexConsumerExtended) vc).canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
         }

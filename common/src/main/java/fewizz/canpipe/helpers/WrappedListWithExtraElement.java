@@ -5,12 +5,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-public class CursedList<T, E> implements List<T> {
+public class WrappedListWithExtraElement<T, E> implements List<T> {
 
     private final List<T> originalList;
     public final E element;
 
-    public CursedList(List<T> originalList, E element) {
+    public WrappedListWithExtraElement(List<T> originalList, E element) {
         this.originalList = originalList;
         this.element = element;
     }

@@ -9,7 +9,7 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.helpers.CursedList;
+import fewizz.canpipe.helpers.WrappedListWithExtraElement;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
@@ -26,7 +26,7 @@ public class BlockModelFeatureRendererMixin {
         )
     )
     List<BlockStateModelPart> setMaterial(List<BlockStateModelPart> modelParts, @Local(name = "wrappedBuffer") VertexConsumer wrappedBuffer) {
-        if (modelParts instanceof CursedList cl) {
+        if (modelParts instanceof WrappedListWithExtraElement cl) {
             MaterialMap materialMap = (MaterialMap) cl.element;
             ((VertexConsumerExtended) wrappedBuffer).canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
         }

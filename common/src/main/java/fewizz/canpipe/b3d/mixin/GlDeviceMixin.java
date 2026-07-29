@@ -131,30 +131,7 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         }
         return module;
     }
-/* // TODO
-    @ModifyArg(
-        method = "compileProgram",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlProgram;setupUniforms(Ljava/util/List;Ljava/util/List;)V"),
-        index = 1
-    )
-    List<String> dontPassOptionalUnusedSamplers(
-        List<String> samplers,
-        @Local RenderPipeline pipeline,
-        @Local GlProgram program
-    ) {
-        if (pipeline instanceof RenderPipelineExtended rpe) {
-            Set<String> optionalSamplers = rpe.canpipe_getOptionalSamplers();
-            if (optionalSamplers != null) {
-                Predicate<String> ifNotOptionalAndUnused = (String sampler) -> !(
-                    optionalSamplers.contains(sampler) &&
-                    GlStateManager._glGetUniformLocation(program.getProgramId(), sampler) == -1
-                );
-                samplers = samplers.stream().filter(ifNotOptionalAndUnused).toList();
-            }
-        }
-        return samplers;
-    }
-*/
+
     @Inject(
         method = "createTexture("+
             "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+

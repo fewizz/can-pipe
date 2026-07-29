@@ -23,7 +23,6 @@
         "DebugEntrySimplePerformanceImpactorsMixin",
         "EntityRenderDispatcherMixin",
         "EquipmentLayerRendererMixin",
-        "FeatureRenderDispatcherMixin",
         "FluidRendererMixin",
         "GameRendererMixin",
         "GameRenderStateMixin",

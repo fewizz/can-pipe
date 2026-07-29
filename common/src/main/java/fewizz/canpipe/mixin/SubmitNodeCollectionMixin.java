@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-import fewizz.canpipe.helpers.CursedList;
+import fewizz.canpipe.helpers.WrappedListWithExtraElement;
 import fewizz.canpipe.helpers.WrappedModelSubmitState;
 import fewizz.canpipe.material.EntityMaterialMap;
 import fewizz.canpipe.material.MaterialMap;
@@ -43,7 +43,7 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     )
     List<BlockStateModelPart> onBlockModelSubmit(List<BlockStateModelPart> modelParts) {
         if (this.canpipe_pendingBlockSubmitMaterialMap != null) {
-            modelParts = new CursedList<>(modelParts, this.canpipe_pendingBlockSubmitMaterialMap);
+            modelParts = new WrappedListWithExtraElement<>(modelParts, this.canpipe_pendingBlockSubmitMaterialMap);
         }
         return modelParts;
     }
@@ -59,7 +59,7 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
     )
     List<BakedQuad> onItemSubmit(List<BakedQuad> quads) {
         if (this.canpipe_pendingItemSubmitMaterialMap != null) {
-            quads = new CursedList<>(quads, this.canpipe_pendingItemSubmitMaterialMap);
+            quads = new WrappedListWithExtraElement<>(quads, this.canpipe_pendingItemSubmitMaterialMap);
         }
         return quads;
     }

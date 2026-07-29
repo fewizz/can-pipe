@@ -8,8 +8,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -19,7 +17,6 @@ import com.mojang.blaze3d.opengl.GlCommandEncoder;
 import com.mojang.blaze3d.opengl.GlDevice;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.opengl.GlTexture;
-import com.mojang.blaze3d.systems.RenderPassDescriptor;
 import com.mojang.blaze3d.textures.GpuTexture;
 
 import fewizz.canpipe.b3d.CommandEncoderBackendExtended;
@@ -43,27 +40,6 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     )
     int fixTextureTarget(int target, @Local GlTexture glTexture) {
         return GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
-    }
-
-    @Inject(
-        method = "createRenderPass("+
-            "Lcom/mojang/blaze3d/systems/RenderPassDescriptor;"+
-        ")Lcom/mojang/blaze3d/systems/RenderPassBackend;",
-        at = @At("HEAD")
-    )
-    void replaceTextureViewIfNull(
-        RenderPassDescriptor renderPassDescriptor,
-        CallbackInfoReturnable<Void> ci
-    ) {
-        // TODO
-        /*if (renderPassDescriptor.colorAttachments.get() != null) return;
-
-        if (this.canpipe_colorAttachments != null && this.canpipe_colorAttachments.length > 0) {
-            colorTextureView.set(this.canpipe_colorAttachments[0]);
-        }
-        else {
-            colorTextureView.set(depthTextureView);
-        }*/
     }
 
     @Override

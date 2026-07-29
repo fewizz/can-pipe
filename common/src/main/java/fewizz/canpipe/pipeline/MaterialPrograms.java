@@ -118,11 +118,6 @@ public class MaterialPrograms {
         renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.FOG);
         renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.GLOBALS);
 
-        /*
-        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler0");
-        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler1");
-        ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_withOptionalSampler("Sampler2");*/
-
         // TODO
         renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.SAMPLER0_SAMPLER1_SAMPLER2);
 

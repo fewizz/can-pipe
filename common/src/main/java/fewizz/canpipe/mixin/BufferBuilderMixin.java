@@ -267,17 +267,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             this.canpipe_pendingMaterialIndex = -1;
         }
     }
-/*  // TODO
-    @ModifyVariable(method = "<init>", at = @At("STORE"), ordinal = 0)  // if format is ENTITY
-    private boolean onEntityFormatSet(boolean value) {
-        return value || this.format == CanPipe.VertexFormats.ENTITY || this.format == CanPipe.VertexFormats.ENTITY_SHADOW;
-    }
 
-    @ModifyVariable(method = "<init>", at = @At("STORE"), ordinal = 1)  // if format is BLOCK
-    private boolean onBlockFormatSet(boolean value) {
-        return value || this.format == CanPipe.VertexFormats.BLOCK;
-    }
-*/
     @Inject(method = "addVertex(FFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;", at = @At("RETURN"))
     private void onAddVertex(CallbackInfoReturnable<VertexConsumer> cir) {
         var ptr = this.beginElement(canpipe_aoID);
@@ -324,35 +314,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             canpipe_setSpriteAndMaterial(spriteIndexPtr, materialIndexPtr, materialFlagsPtr);
         }
     }
-/*
-    @Inject(method = "addVertex(FFFIFFIIFFF)V", at = @At("RETURN"))
-    private void onAddVertexBulk(
-        CallbackInfo ci, @Local(ordinal = 5) float normalX, @Local(ordinal = 6) float normalY, @Local(ordinal = 7) float normalZ
-    ) {
-        if (!this.fastFormat) { return; }  // Because I don't know how to Mixin
 
-        if (this.canpipe_aoOffset != -1) {
-            float ao = this.canpipe_aoPending != null ? this.canpipe_aoPending : 1.0F;
-            MemoryUtil.memPutByte(this.vertexPointer + this.canpipe_aoOffset, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
-            this.canpipe_aoPending = null;
-        }
-
-        boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
-        if (lastVertex) {
-            this.canpipe_setSpriteAndMaterial(
-                this.canpipe_spriteIndexOffset != -1 ? this.vertexPointer + this.canpipe_spriteIndexOffset : -1,
-                this.canpipe_materialIndexOffset != -1 ? this.vertexPointer + this.canpipe_materialIndexOffset : -1,
-                this.canpipe_materialFlagsOffset != -1 ? this.vertexPointer + this.canpipe_materialFlagsOffset : -1
-            );
-
-            this.canpipe_setNormalAndTangent(
-                this.canpipe_recomputeNormal && this.canpipe_normalOffset != -1 ? this.vertexPointer + this.canpipe_normalOffset : -1,
-                normalX, normalY, normalZ,
-                this.canpipe_tangentOffset != -1 ? this.vertexPointer + this.canpipe_tangentOffset : -1
-            );
-        }
-    }
-*/
     @ModifyExpressionValue(
         method = "setNormal",
         at = @At(

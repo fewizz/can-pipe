@@ -44,10 +44,6 @@ public class LevelExtractorMixin {
 
     @Inject(
         method = "extract",
-        /*at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/Camera;getCullFrustum()Lnet/minecraft/client/renderer/culling/Frustum;"
-        )*/
         at = @At("RETURN")
     )
     void extractShadowedEntities(
@@ -56,7 +52,6 @@ public class LevelExtractorMixin {
         @Local DeltaTracker deltaTracker,
         @Local ProfilerFiller profiler,
         @Local(ordinal = 0) float dt
-        // @Local(ordinal = 0) Matrix4f viewMatrix
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null || p.shadows == null) { return; }
