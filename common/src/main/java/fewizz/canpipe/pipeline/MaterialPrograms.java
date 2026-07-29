@@ -100,8 +100,8 @@ public class MaterialPrograms {
                 renderPipelineBuilder.withDepthStencilState(new DepthStencilState(
                     CanPipe.reverseCompareOp(dsState.depthTest()),
                     dsState.writeDepth(),
-                    !shadow ? dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
-                    !shadow ? dsState.depthBiasConstant() : shadowsOffsetBiasUnits
+                    !shadow ? -dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
+                    !shadow ? -dsState.depthBiasConstant() : shadowsOffsetBiasUnits
                 ));
             }
         }

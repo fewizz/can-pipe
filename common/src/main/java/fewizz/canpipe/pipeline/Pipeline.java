@@ -753,8 +753,8 @@ public class Pipeline implements AutoCloseable {
                 depthState = new DepthStencilState(
                     CanPipe.reverseCompareOp(depthState.depthTest()),
                     depthState.writeDepth(),
-                    depthState.depthBiasScaleFactor(),
-                    depthState.depthBiasConstant()
+                    -depthState.depthBiasScaleFactor(),
+                    -depthState.depthBiasConstant()
                 );
             }
 
