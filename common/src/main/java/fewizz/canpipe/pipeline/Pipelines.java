@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import fewizz.canpipe.mixin.GameRendererAccessor;
+import fewizz.canpipe.mixin.GuiRendererAccessor;
 import fewizz.canpipe.mixin.LevelExtractorAccessor;
 import fewizz.canpipe.mixin.LevelRendererAccessor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -199,9 +201,10 @@ final public class Pipelines implements PreparableReloadListener {
             ((LevelRendererAccessor) mc.levelRenderer).canpipe_set_sectionRenderDispatcher(null);
             mc.levelExtractor.allChanged();
             mc.levelExtractor.resetSampler();
-
         }
         ((LevelExtractorAccessor) mc.levelExtractor).canpipe_set_shouldResetSkyRenderer(true);
+        var guiRenderer = ((GameRendererAccessor) mc.gameRenderer).canpipe_getGuiRenderer();
+        ((GuiRendererAccessor) guiRenderer).canpipe_invalidateItemAtlas();
     }
 
     public static Map<Identifier, PipelineRaw> readRaw(ResourceManager resourceManager) {
