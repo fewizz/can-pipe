@@ -1,6 +1,7 @@
-package fewizz.canpipe.mixin;
+package fewizz.canpipe.mixin.settings;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -18,13 +19,20 @@ import fewizz.canpipe.pipeline.PipelineRaw;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.TextureFilteringMethod;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.ImageWidget;
+import net.minecraft.client.gui.components.OptionsList;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 
 @Mixin(VideoSettingsScreen.class)
 public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implements VideoSettingsScreenExtended {
@@ -33,6 +41,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
 
     @Unique private Button canpipe_pipelineSettingsButton = null;
     @Unique private CycleButton<Optional<PipelineRaw>> canpipe_pipelineSwitchButton = null;
+    @Unique private ImageWidget canpipe_pipelineWarningSign = null;
 
     @Override
     public void canpipe_onPipelineLoaded() {
@@ -43,9 +52,26 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
 
         boolean showPipelineSettingsButton = pipeline != null && !rawPipeline.options.isEmpty();
 
-        this.canpipe_pipelineSwitchButton.setWidth(Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH - (showPipelineSettingsButton ? 30 : 0));
+        MutableComponent warningSignComponent = null;
+        if (!rawPipeline.awareOfDepthRangeChanges) {
+            warningSignComponent = Component.literal("Pipeline is not aware of depth changes");
+        }
+
+        if (warningSignComponent != null) {
+            this.canpipe_pipelineWarningSign.setTooltip(Tooltip.create(warningSignComponent));
+        }
+        boolean showWarningSign = warningSignComponent != null;
+
+        int switchButtonWidth = Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH;
+        boolean switchButtonIsShortened = false;
+        if (showPipelineSettingsButton) { switchButtonWidth -= 20; switchButtonIsShortened = true; }
+        if (showWarningSign) { switchButtonWidth -= 20; switchButtonIsShortened = true; }
+        if (switchButtonIsShortened) { switchButtonWidth -= 10; }
+
+        this.canpipe_pipelineSwitchButton.setWidth(switchButtonWidth);
         this.canpipe_pipelineSwitchButton.setValue(Optional.ofNullable(rawPipeline));
         this.canpipe_pipelineSettingsButton.visible = showPipelineSettingsButton;
+        this.canpipe_pipelineWarningSign.visible = showWarningSign;
 
         @SuppressWarnings("unchecked") var textureFilteringButton = (CycleButton<TextureFilteringMethod>) this.list.findOption(this.options.textureFiltering());
 
@@ -114,12 +140,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 ));
             },
             Supplier::get
-        ) {
-            @Override
-            public void setX(int x) {
-                super.setX(x + 130);
-            }
-        };
+        ) {};
 
         var pipelineButton = (CycleButton<Optional<PipelineRaw>>) new OptionInstance<Optional<PipelineRaw>>(
             "Pipeline",
@@ -170,7 +191,43 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         this.canpipe_pipelineSettingsButton = settingsButton;
         this.canpipe_pipelineSwitchButton = pipelineButton;
 
-        this.list.addSmall(pipelineButton, settingsButton);
+        this.canpipe_pipelineWarningSign = ImageWidget.sprite(20, 20, Identifier.withDefaultNamespace("icon/info"));
+        this.canpipe_pipelineWarningSign.setTooltip(Tooltip.create(Component.literal(":)")));
+
+        ((AbstractSelectionListAccessor) this.list).callAddEntry(new OptionsList.AbstractEntry() {
+
+            @Override
+            public List<? extends GuiEventListener> children() {
+                return List.of(
+                    VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton,
+                    VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign,
+                    VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton
+                );
+            }
+
+            @Override
+            public List<? extends NarratableEntry> narratables() {
+                return List.of(
+                    VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton,
+                    VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign,
+                    VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton
+                );
+            }
+
+            @Override
+            public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
+                final int left = VideoSettingsScreenMixin.this.width / 2 - 155;
+                VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.setPosition(left, this.getContentY());
+                VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.extractRenderState(graphics, mouseX, mouseY, a);
+
+                VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.setPosition(left + 265, this.getContentY());
+                VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.extractRenderState(graphics, mouseX, mouseY, a);
+
+                VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.setPosition(left + 290, this.getContentY());
+                VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.extractRenderState(graphics, mouseX, mouseY, a);
+            }
+
+        });
     }
 
     @Inject(

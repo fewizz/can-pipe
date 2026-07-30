@@ -1,31 +1,34 @@
 accessWidener v2 official
 
-accessible  class   com/mojang/blaze3d/opengl/GlDevice
-accessible  class   com/mojang/blaze3d/opengl/GlDevice$ShaderCompilationKey
+accessible  class  com/mojang/blaze3d/opengl/GlDevice
+accessible  class  com/mojang/blaze3d/opengl/GlDevice$ShaderCompilationKey
 
-accessible  class   com/mojang/blaze3d/vulkan/VulkanDevice$ShaderCompilationKey
-accessible  class   com/mojang/blaze3d/vulkan/glsl/SpvVariable
+accessible  class  com/mojang/blaze3d/vulkan/VulkanDevice$ShaderCompilationKey
+accessible  class  com/mojang/blaze3d/vulkan/glsl/SpvVariable
 
-accessible  class   com/mojang/blaze3d/opengl/GlCommandEncoder
+accessible  class  com/mojang/blaze3d/opengl/GlCommandEncoder
 
-accessible  class   com/mojang/blaze3d/opengl/GlStateManager$TextureState
+accessible  class  com/mojang/blaze3d/opengl/GlStateManager$TextureState
 
-accessible  class   net/minecraft/client/renderer/rendertype/RenderSetup$TextureBinding
+accessible  class  net/minecraft/client/renderer/rendertype/RenderSetup$TextureBinding
 
-accessible  class   net/minecraft/client/renderer/state/level/QuadParticleRenderState$Storage
+accessible  class  net/minecraft/client/renderer/state/level/QuadParticleRenderState$Storage
 
-accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  POSITION_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
-accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  COLOR_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
-accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  UV0_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
-accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  UV1_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
-accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  UV2_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
-accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  NORMAL_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
-accessible  field   com/mojang/blaze3d/vertex/DefaultVertexFormat  LINE_WIDTH_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field  com/mojang/blaze3d/vertex/DefaultVertexFormat  POSITION_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field  com/mojang/blaze3d/vertex/DefaultVertexFormat  COLOR_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field  com/mojang/blaze3d/vertex/DefaultVertexFormat  UV0_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field  com/mojang/blaze3d/vertex/DefaultVertexFormat  UV1_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field  com/mojang/blaze3d/vertex/DefaultVertexFormat  UV2_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field  com/mojang/blaze3d/vertex/DefaultVertexFormat  NORMAL_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
+accessible  field  com/mojang/blaze3d/vertex/DefaultVertexFormat  LINE_WIDTH_FORMAT  Lcom/mojang/blaze3d/GpuFormat;
 
-accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  POSITION_SEMANTIC_ID  I
-accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  COLOR_SEMANTIC_ID  I
-accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  UV0_SEMANTIC_ID  I
-accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  UV1_SEMANTIC_ID  I
-accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  UV2_SEMANTIC_ID  I
-accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  NORMAL_SEMANTIC_ID  I
-accessible  field   com/mojang/blaze3d/vertex/BufferBuilder  LINE_WIDTH_SEMANTIC_ID  I
+accessible  field  com/mojang/blaze3d/vertex/BufferBuilder  POSITION_SEMANTIC_ID  I
+accessible  field  com/mojang/blaze3d/vertex/BufferBuilder  COLOR_SEMANTIC_ID  I
+accessible  field  com/mojang/blaze3d/vertex/BufferBuilder  UV0_SEMANTIC_ID  I
+accessible  field  com/mojang/blaze3d/vertex/BufferBuilder  UV1_SEMANTIC_ID  I
+accessible  field  com/mojang/blaze3d/vertex/BufferBuilder  UV2_SEMANTIC_ID  I
+accessible  field  com/mojang/blaze3d/vertex/BufferBuilder  NORMAL_SEMANTIC_ID  I
+accessible  field  com/mojang/blaze3d/vertex/BufferBuilder  LINE_WIDTH_SEMANTIC_ID  I
+
+accessible  class  net/minecraft/client/gui/components/AbstractSelectionList$Entry
+accessible  class  net/minecraft/client/gui/components/OptionsList$AbstractEntry

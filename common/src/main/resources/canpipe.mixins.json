@@ -20,7 +20,6 @@
         "ChunkSectionsToRenderMixin",
         "CuboidItemModelWrapperMixin",
         "CloudRendererMixin",
-        "DebugEntrySimplePerformanceImpactorsMixin",
         "EntityRenderDispatcherMixin",
         "EquipmentLayerRendererMixin",
         "FluidRendererMixin",
@@ -54,7 +53,6 @@
         "TextureAtlasMixin",
         "TextureAtlasSpriteMixin",
         "VertexConsumerMixin",
-        "VideoSettingsScreenMixin",
         "WeatherEffectRendererMixin",
 
         "particles.ParticleAccessor",
@@ -72,6 +70,10 @@
         "depth.LevelRendererMixin",
         "depth.PictureInPictureRendererMixin",
         "depth.ProjectionMixin",
-        "depth.VkDeviceMixin"
+        "depth.VkDeviceMixin",
+
+        "settings.AbstractSelectionListAccessor",
+        "settings.DebugEntrySimplePerformanceImpactorsMixin",
+        "settings.VideoSettingsScreenMixin"
     ]
 }

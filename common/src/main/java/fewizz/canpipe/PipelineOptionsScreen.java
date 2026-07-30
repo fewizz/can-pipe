@@ -196,7 +196,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 Consumer<Object> applyValue
             ) {
                 this.nameWidget = new StringWidget(Component.translatable(e.nameKey), minecraft.font);
-                this.resetButton = new Button.Builder(Component.literal("←"), (resetButton) -> {
+                this.resetButton = new Button.Builder(Component.literal("←"), resetButton -> {
                     this.handlingReset = true;
                     this.onReset.run();
                     this.handlingReset = false;
