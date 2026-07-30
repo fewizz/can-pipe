@@ -2,6 +2,8 @@ package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -75,11 +77,23 @@ public class ModelFeatureRendererMixin {
             target = "Lnet/minecraft/client/renderer/feature/ModelFeatureRenderer$Submit;state"
         )
     )
-    Object fixState(Object state, @Local ModelFeatureRenderer.Submit<?> submit) {
+    Object fixState(Object state) {
         if (state instanceof WrappedModelSubmitState wrapped) {
             state = wrapped.state();
         }
         return state;
+    }
+
+    @Inject(
+        method = "prepareModel",
+        at = @At("RETURN")
+    )
+    void afterModelPrepared(CallbackInfo ci, @Local VertexConsumer buffer) {
+        if (buffer instanceof VertexConsumerExtended vce) {
+            vce.canpipe_setScopedMaterialSupplier(null);
+            vce.canpipe_setScopedEntityGlint(false);
+            vce.canpipe_setScopedSpriteSupplier(null);
+        }
     }
 
 }
