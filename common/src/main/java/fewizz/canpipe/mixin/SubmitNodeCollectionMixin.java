@@ -79,6 +79,8 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
                 state, this.canpipe_pendingSpriteId, this.canpipe_scopedModelSubmitMaterialMap, this.canpipe_pendingModelSubmitEntityGlint
             );
         }
+        this.canpipe_pendingModelSubmitEntityGlint = false;
+        this.canpipe_pendingSpriteId = null;
         return state;
     }
 
