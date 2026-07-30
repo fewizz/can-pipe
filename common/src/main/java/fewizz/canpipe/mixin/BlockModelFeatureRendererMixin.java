@@ -26,9 +26,9 @@ public class BlockModelFeatureRendererMixin {
         )
     )
     List<BlockStateModelPart> setMaterial(List<BlockStateModelPart> modelParts, @Local(name = "wrappedBuffer") VertexConsumer wrappedBuffer) {
-        if (modelParts instanceof WrappedListWithExtraElement cl) {
+        if (wrappedBuffer instanceof VertexConsumerExtended vce && modelParts instanceof WrappedListWithExtraElement cl) {
             MaterialMap materialMap = (MaterialMap) cl.element;
-            ((VertexConsumerExtended) wrappedBuffer).canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
+            vce.canpipe_setScopedMaterialSupplier(sprite -> materialMap.getMaterial(sprite));
         }
         return modelParts;
     }

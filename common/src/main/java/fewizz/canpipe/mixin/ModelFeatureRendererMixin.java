@@ -27,9 +27,8 @@ public class ModelFeatureRendererMixin {
         )
     )
     VertexConsumer onPrepareModel(VertexConsumer vc, @Local ModelFeatureRenderer.Submit<?> submit) {
-        if (submit.state() instanceof WrappedModelSubmitState wrapped) {
+        if (vc instanceof VertexConsumerExtended vce && submit.state() instanceof WrappedModelSubmitState wrapped) {
             EntityMaterialMap materialMap = wrapped.materialMap();
-            var vce = (VertexConsumerExtended) vc;
 
             TextureAtlasSprite sprite = submit.sprite();
 
