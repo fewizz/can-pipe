@@ -97,12 +97,24 @@ public class MaterialPrograms {
 
             var dsState = originalRenderPipeline.getDepthStencilState();
             if (dsState != null) {
-                renderPipelineBuilder.withDepthStencilState(new DepthStencilState(
-                    CanPipe.reverseCompareOp(dsState.depthTest()),
-                    dsState.writeDepth(),
-                    !shadow ? -dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
-                    !shadow ? -dsState.depthBiasConstant() : shadowsOffsetBiasUnits
-                ));
+                if (!awareOfDepthRangeChanges) {
+                    dsState = new DepthStencilState(
+                        CanPipe.reverseCompareOp(dsState.depthTest()),
+                        dsState.writeDepth(),
+                        !shadow ? -dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
+                        !shadow ? -dsState.depthBiasConstant() : shadowsOffsetBiasUnits
+                    );
+                }
+                else {
+                    dsState = new DepthStencilState(
+                        dsState.depthTest(),
+                        dsState.writeDepth(),
+                        !shadow ? dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
+                        !shadow ? dsState.depthBiasConstant() : shadowsOffsetBiasUnits
+                    );
+                }
+
+                renderPipelineBuilder.withDepthStencilState(dsState);
             }
         }
 

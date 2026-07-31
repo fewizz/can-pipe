@@ -56,13 +56,15 @@ public class Shaders {
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
             "#define " + type.name() + "_SHADER\n\n";
 
-        if (RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
+        var raw = Pipelines.getCurrentRaw();
+        if (raw != null && Pipelines.getLoadingError() == null && raw.awareOfDepthRangeChanges) {
+            if (RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
+                header +=
+                    "#define CANPIPE_Z_ZERO_TO_ONE\n";
+            }
             header +=
-                "#define CANPIPE_Z_ZERO_TO_ONE\n";
+                "#define CANPIPE_REVERSED_DEPTH\n";
         }
-
-        header +=
-            "#define CANPIPE_REVERSED_DEPTH\n";
 
         if (shadowMapSize.isPresent()) {
             header +=
