@@ -1,6 +1,6 @@
 package fewizz.canpipe.b3d.mixin;
 
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -18,18 +18,17 @@ public class GlDirectStateAccessEmulatedMixin {
         )
     )
     void layeredAttachment(
-        int target, int framebuffer, int attachment, int texture, int level,
+        int target, int attachment, int textarget, int texture, int level,
         Operation<Void> operation
     ) {
-        int prevLevel = level;
-        level = (level << 1) >>> 1;
-        if (prevLevel != level) {
-            int layer = level >> 16;
+        int realTextureTarget = GlStateManagerAccessor.canpipe_getTextureTarget(texture);
+        if (realTextureTarget == GL33C.GL_TEXTURE_2D_ARRAY || realTextureTarget == GL33C.GL_TEXTURE_CUBE_MAP) {
+            int layer = level >>> 16;
             level = level & 0xFFFF;
-            GL30.glFramebufferTextureLayer(target, attachment, texture, level, layer);
+            GL33C.glFramebufferTextureLayer(target, attachment, texture, level, layer);
         }
         else {
-            operation.call(framebuffer, attachment, texture, level);
+            operation.call(target, attachment, textarget, texture, level);
         }
     }
 

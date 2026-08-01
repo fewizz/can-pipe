@@ -164,6 +164,17 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         return target;
     }
 
+    @ModifyExpressionValue(
+        method = "createTexture("+
+            "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+
+        ")Lcom/mojang/blaze3d/textures/GpuTexture;",
+        at = @At(value = "CONSTANT", args = "intValue=34067")  // GL_TEXTURE_CUBE_MAP
+    )
+    int onGettingCubemapTarget(int target, @Local(ordinal = 5) int id) {
+        GlStateManagerAccessor.canpipe_setTextureTarget(id, GL33C.GL_TEXTURE_CUBE_MAP);
+        return target;
+    }
+
     @WrapWithCondition(
         method = "createTexture("+
             "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+

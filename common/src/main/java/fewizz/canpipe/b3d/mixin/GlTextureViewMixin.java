@@ -24,8 +24,8 @@ public class GlTextureViewMixin implements GpuTextureViewExtended {
     @Inject(method = "<init>", at = @At("TAIL"))
     void onInitEnd(CallbackInfo ci) {
         GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
-        this.canpipe_baseArrayLayer = ((GlDeviceAccessor) device).get_canpipe_pendingTextureViewBaseLayer();
-        this.canpipe_layerCount = ((GlDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount();
+        this.canpipe_baseArrayLayer = Math.max(((GlDeviceAccessor) device).get_canpipe_pendingTextureViewBaseLayer(), 0);
+        this.canpipe_layerCount = Math.max(((GlDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount(), 1);
     }
 
 }

@@ -12,6 +12,7 @@
         "GlConstSwitchMetaMixin",
         "GlDeviceAccessor",
         "GlDeviceMixin",
+        "GlDirectStateAccessMixin",
         "GlDirectStateAccessCoreMixin",
         "GlDirectStateAccessEmulatedMixin",
         "GlFramebufferCacheKeyMixin",
