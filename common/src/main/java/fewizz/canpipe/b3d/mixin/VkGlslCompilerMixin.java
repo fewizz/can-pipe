@@ -126,7 +126,6 @@ public class VkGlslCompilerMixin {
             if (wordCount == 0) {
                 throw new RuntimeException("Word count is 0?!");
             }
-            System.out.println(i+" "+wordCount);
         }
 
         // 1. Search for `OpName`s (https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html#OpName)
