@@ -54,7 +54,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
 
         MutableComponent warningSignComponent = null;
         if (rawPipeline != null && !rawPipeline.awareOfDepthRangeChanges) {
-            warningSignComponent = Component.literal("Pipeline isn't aware of depth range changes.\nHere be dragons.");
+            warningSignComponent = Component.literal("This pipeline isn't aware of depth range changes.\nHere be dragons.");
         }
 
         if (warningSignComponent != null) {

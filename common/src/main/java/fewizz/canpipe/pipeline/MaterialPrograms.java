@@ -97,20 +97,12 @@ public class MaterialPrograms {
 
             var dsState = originalRenderPipeline.getDepthStencilState();
             if (dsState != null) {
-                if (!awareOfDepthRangeChanges) {
+                if (!awareOfDepthRangeChanges || shadow) {
                     dsState = new DepthStencilState(
                         CanPipe.reverseCompareOp(dsState.depthTest()),
                         dsState.writeDepth(),
                         !shadow ? -dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
                         !shadow ? -dsState.depthBiasConstant() : shadowsOffsetBiasUnits
-                    );
-                }
-                else {
-                    dsState = new DepthStencilState(
-                        dsState.depthTest(),
-                        dsState.writeDepth(),
-                        !shadow ? dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
-                        !shadow ? dsState.depthBiasConstant() : shadowsOffsetBiasUnits
                     );
                 }
 
