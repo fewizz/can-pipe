@@ -39,6 +39,7 @@ public class PreparedRenderTypeMixin {
 
     @Shadow @Final private RenderPipeline pipeline;
     @Shadow @Final private OutputTarget outputTarget;
+    @Shadow @Final List<PreparedRenderType.Texture> textures;
 
     @ModifyExpressionValue(
         method = "drawFromBuffer("+
@@ -140,22 +141,15 @@ public class PreparedRenderTypeMixin {
         ")V",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/RenderPass;bindTexture("+
-                "Ljava/lang/String;"+
-                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
-                "Lcom/mojang/blaze3d/textures/GpuSampler;"+
-            ")V"
+            target = "Lcom/mojang/blaze3d/systems/RenderPass;setIndexBuffer"
         )
     )
-    void bindSpritesExtentsBeforeRender(
+    void bindSpritesExtents(
         CallbackInfo ci,
-        @Local PreparedRenderType.Texture texture,
         @Local RenderPass renderPass
     ) {
-        if (texture.name().equals("Sampler0")) {
-            Pipeline.bindSpritesExtentsSampler(renderPass, texture.textureView());
-        }
-
+        PreparedRenderType.Texture sampler0 = this.textures.stream().filter(t -> t.name().equals("Sampler0")).findFirst().orElse(null);
+        Pipeline.bindSpritesExtentsSampler(renderPass, sampler0 != null ? sampler0.textureView() : null);
     }
 
 }

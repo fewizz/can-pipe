@@ -18,12 +18,12 @@ import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.GpuFormat;
@@ -635,18 +635,22 @@ public class Pipeline implements AutoCloseable {
         return renderPass;
     }
 
-    public static void bindSpritesExtentsSampler(RenderPass renderPass, GpuTextureView sampler0) {
+    public static void bindSpritesExtentsSampler(RenderPass renderPass, @Nullable GpuTextureView sampler0) {
         var mc = Minecraft.getInstance();
         MutableObject<TextureAtlas> atlas = new MutableObject<>();
 
-        mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
-            if (atlas.get() == null && possibleAtlas.getTexture() == sampler0.texture()) {
-                atlas.setValue(possibleAtlas);
-            }
-        });
+        if (sampler0 != null) {
+            mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
+                if (atlas.get() == null && possibleAtlas.getTexture() == sampler0.texture()) {
+                    atlas.setValue(possibleAtlas);
+                }
+            });
+        }
+
         if (atlas.get() == null) {  // we just need to bind something
             atlas.setValue(mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS));
         }
+
         renderPass.setUniform(
             "canpipe_spritesExtents",
             ((TextureAtlasExtended) atlas.get()).canpipe_getSpritesExtentsBuffer()
