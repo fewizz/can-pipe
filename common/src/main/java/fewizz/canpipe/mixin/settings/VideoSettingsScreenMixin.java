@@ -39,9 +39,12 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
 
     VideoSettingsScreenMixin() { super(null, null, null); }
 
-    @Unique private Button canpipe_pipelineSettingsButton = null;
     @Unique private CycleButton<Optional<PipelineRaw>> canpipe_pipelineSwitchButton = null;
     @Unique private ImageWidget canpipe_pipelineWarningSign = null;
+    @Unique private Button canpipe_pipelineSettingsButton = null;
+
+    @Unique private int canpipe_pinelineWarningXOffset = 0;
+    @Unique private int canpipe_pinelineSettingsButtonXOffset = 0;
 
     @Override
     public void canpipe_onPipelineLoaded() {
@@ -63,10 +66,19 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         boolean showWarningSign = warningSignComponent != null;
 
         int switchButtonWidth = Button.DEFAULT_WIDTH + 10 + Button.DEFAULT_WIDTH;
-        boolean switchButtonIsShortened = false;
-        if (showPipelineSettingsButton) { switchButtonWidth -= 20; switchButtonIsShortened = true; }
-        if (showWarningSign) { switchButtonWidth -= 20; switchButtonIsShortened = true; }
-        if (switchButtonIsShortened) { switchButtonWidth -= 10; }
+        boolean padded = false;
+        if (showPipelineSettingsButton) {
+            switchButtonWidth -= 20;
+            this.canpipe_pinelineSettingsButtonXOffset = switchButtonWidth;
+            padded = true;
+        }
+        if (showWarningSign) {
+            switchButtonWidth -= 20 + (padded ? 5 : 0);
+            this.canpipe_pinelineWarningXOffset = switchButtonWidth;
+            padded = true;
+        }
+
+        switchButtonWidth -= padded ? 5 : 0;
 
         this.canpipe_pipelineSwitchButton.setWidth(switchButtonWidth);
         this.canpipe_pipelineSwitchButton.setValue(Optional.ofNullable(rawPipeline));
@@ -217,13 +229,14 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             @Override
             public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
                 final int left = VideoSettingsScreenMixin.this.width / 2 - 155;
+
                 VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.setPosition(left, this.getContentY());
                 VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.extractRenderState(graphics, mouseX, mouseY, a);
 
-                VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.setPosition(left + 265, this.getContentY());
+                VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.setPosition(left + VideoSettingsScreenMixin.this.canpipe_pinelineWarningXOffset, this.getContentY());
                 VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.extractRenderState(graphics, mouseX, mouseY, a);
 
-                VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.setPosition(left + 290, this.getContentY());
+                VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.setPosition(left + VideoSettingsScreenMixin.this.canpipe_pinelineSettingsButtonXOffset, this.getContentY());
                 VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.extractRenderState(graphics, mouseX, mouseY, a);
             }
 
