@@ -88,6 +88,9 @@ public class ProgramPass extends Pass {
         this.frxLoadUniform.set(lod);
         this.frxLayerUniform.set(layer);
         this.frxSizeUniform.set(-1);
+
+        // Prelink
+        RenderSystem.getDevice().precompilePipeline(renderPipeline);
     }
 
     @Override
