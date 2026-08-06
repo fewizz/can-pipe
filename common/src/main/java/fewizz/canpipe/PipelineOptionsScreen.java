@@ -54,7 +54,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         super(previousScreen, Minecraft.getInstance().options, Component.empty());
         this.raw = raw;
         this.appliedOptions = appliedOptions;
-        this.layout.setHeaderHeight(0);
+        this.layout.setHeaderHeight(20);
     }
 
     @Override
