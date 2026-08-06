@@ -24,7 +24,7 @@ public class Texture extends AbstractTexture {
     private final Supplier<GpuTexture> gpuTextureSupplier;
     private final boolean recreateOnResize;
 
-    private Texture(String name, GpuSampler sampler, boolean recreateOnResize, Supplier<GpuTexture> gpuTextureUpdater) {
+    protected Texture(String name, GpuSampler sampler, boolean recreateOnResize, Supplier<GpuTexture> gpuTextureUpdater) {
         this.gpuTextureSupplier = gpuTextureUpdater;
         this.recreateOnResize = recreateOnResize;
         this.sampler = sampler;

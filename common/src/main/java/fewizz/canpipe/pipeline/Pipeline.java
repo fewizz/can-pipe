@@ -18,13 +18,10 @@ import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.lang3.tuple.Pair;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
@@ -51,7 +48,6 @@ import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.OutputTarget;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -177,7 +173,7 @@ public class Pipeline implements AutoCloseable {
                 var id = CanPipe.upgradeIdentifier(Identifier.parse(name));
 
                 if (id.equals(Identifier.withDefaultNamespace("textures/environment/moon_phases.png"))) {
-                    texture = new MoonPhasesTexture();
+                    texture = textures.computeIfAbsent(id.toString(), k -> new MoonPhasesTexture());
                 }
                 if (texture == null) {
                     texture = mc.getTextureManager().getTexture(id);
@@ -483,23 +479,10 @@ public class Pipeline implements AutoCloseable {
         this.framebuffers.forEach((n, f) -> f.onWindowSizeChanged());
     }
 
-    public void onBeforeRenderingLevel(Matrix4fc view, Matrix4fc projection, boolean runResizePasses, boolean runInitPasses) {
+    public void onBeforeRenderingLevel(boolean runResizePasses, boolean runInitPasses) {
         Profiler.get().push("can-pipe before world");
 
-        Minecraft mc = Minecraft.getInstance();
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-
-        try (MemoryStack memoryStack = MemoryStack.stackPush()) {
-            var buffer = memoryStack.malloc(DynamicUniforms.TRANSFORM_UBO_SIZE);
-            new DynamicUniforms.Transform(
-                ((GameRendererExtended) mc.gameRenderer).canpipe_worldViewMatrix(),
-                new Vector4f(1.0F, 1.0F, 1.0F, 1.0F),
-                new Vector3f(),
-                new Matrix4f()
-            ).write(buffer);
-            buffer.rewind();
-            commandEncoder.writeToBuffer(ProgramPass.DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
-        }
 
         if (runInitPasses) {
             for (Pass pass : this.onInitPasses) {

@@ -31,6 +31,7 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
@@ -166,7 +167,14 @@ public class Uniforms {
         FOG.size()
     );
 
-    public static void updateFREXUniforms(
+    // passes
+    public static final GpuBuffer DYNAMIC_TRANSFORMS_UBO = RenderSystem.getDevice().createBuffer(
+        () -> "can-pipe pass dynamic transforms UBO",
+        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
+        DynamicUniforms.TRANSFORM_UBO_SIZE
+    );
+
+    public static void update(
         Matrix4fc view, Matrix4fc projection,
         Matrix4fc lastView, Matrix4fc lastProjection,
         int renderFrames, float renderSeconds,
@@ -453,6 +461,11 @@ public class Uniforms {
             builder = Std140Builder.onStack(memoryStack, FOG.size());
             FOG.writeTo(builder);
             commandEncoder.writeToBuffer(FOG_UBO.slice(), builder.get());
+
+            var buffer = memoryStack.malloc(DynamicUniforms.TRANSFORM_UBO_SIZE);
+            new DynamicUniforms.Transform(view, new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f()).write(buffer);
+            buffer.rewind();
+            commandEncoder.writeToBuffer(DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
         }
 
         Profiler.get().pop();
@@ -460,12 +473,23 @@ public class Uniforms {
     }
 
     public static void setRenderPassFREXUniforms(RenderPass renderPass) {
-        renderPass.setUniform("frx_ub_accessibility", Uniforms.ACCESSIBILITY_UBO);
-        renderPass.setUniform("frx_ub_view", Uniforms.VIEW_UBO);
-        renderPass.setUniform("frx_ub_shadow", Uniforms.SHADOW_UBO);
-        renderPass.setUniform("frx_ub_player", Uniforms.PLAYER_UBO);
-        renderPass.setUniform("frx_ub_world", Uniforms.WORLD_UBO);
-        renderPass.setUniform("frx_ub_fog", Uniforms.FOG_UBO);
+        renderPass.setUniform("frx_ub_accessibility", ACCESSIBILITY_UBO);
+        renderPass.setUniform("frx_ub_view", VIEW_UBO);
+        renderPass.setUniform("frx_ub_shadow", SHADOW_UBO);
+        renderPass.setUniform("frx_ub_player", PLAYER_UBO);
+        renderPass.setUniform("frx_ub_world", WORLD_UBO);
+        renderPass.setUniform("frx_ub_fog", FOG_UBO);
+    }
+
+    public static void close() {
+        ACCESSIBILITY_UBO.close();
+        VIEW_UBO.close();
+        SHADOW_UBO.close();
+        PLAYER_UBO.close();
+        WORLD_UBO.close();
+        FOG_UBO.close();
+
+        DYNAMIC_TRANSFORMS_UBO.close();
     }
 
 }

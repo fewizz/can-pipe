@@ -29,7 +29,6 @@ import fewizz.canpipe.UniformBufferStruct.IntUniform;
 import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
 import fewizz.canpipe.Uniforms;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 
@@ -48,12 +47,6 @@ public class ProgramPass extends Pass {
     private final IntUniform frxLayerUniform = pass.add(new IntUniform());
     private final Mat4Uniform frxFrameProjectionMatrix = pass.add(new Mat4Uniform());
     private final GpuBuffer passUbo;
-
-    public static final GpuBuffer DYNAMIC_TRANSFORMS_UBO = RenderSystem.getDevice().createBuffer(
-        () -> "can-pipe pass dynamic transforms UBO",
-        GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
-        DynamicUniforms.TRANSFORM_UBO_SIZE
-    );
 
     private ProgramPass(
         Identifier id, Framebuffer framebuffer, RenderPipeline renderPipeline,
@@ -148,7 +141,7 @@ public class ProgramPass extends Pass {
                 }
 
                 RenderSystem.bindDefaultUniforms(renderPass);
-                renderPass.setUniform("DynamicTransforms", DYNAMIC_TRANSFORMS_UBO);
+                renderPass.setUniform("DynamicTransforms", Uniforms.DYNAMIC_TRANSFORMS_UBO);
                 renderPass.setUniform("canpipe_ub_pass", this.passUbo);
                 Uniforms.setRenderPassFREXUniforms(renderPass);
 

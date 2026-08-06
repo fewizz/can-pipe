@@ -87,4 +87,9 @@ public class LightmapMixin implements LightmapExtended {
         );
     }
 
+    @Inject(method = "close", at = @At("RETURN"))
+    void onClose(CallbackInfo ci) {
+        this.canpipe_emissiveColorReadGpuBuffer.close();
+    }
+
 }

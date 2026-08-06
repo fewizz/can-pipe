@@ -2,7 +2,6 @@ package fewizz.canpipe;
 
 import java.nio.file.Path;
 
-import com.mojang.blaze3d.platform.CompareOp;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryUtil;
@@ -12,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -86,6 +86,13 @@ public class CanPipe {
 
     public static void beforeRendererClose() {
         Pipelines.setLoadedPipeline(null);
+
+        CanPipe.quadVertexUvBuffer.close();
+        CanPipe.whiteTextureView.close();
+        CanPipe.whiteTexture.close();
+        for (var buffer : CanPipe.int0to3UBOBuffers.clone()) { buffer.close(); }
+
+        Uniforms.close();
     }
 
     public static @NonNull GpuBuffer getQuadBuffer() { return CanPipe.quadVertexUvBuffer; }

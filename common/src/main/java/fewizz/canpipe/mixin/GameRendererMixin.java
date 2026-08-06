@@ -267,7 +267,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
         float renderSeconds = (float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0);
 
-        Uniforms.updateFREXUniforms(
+        Uniforms.update(
             viewMatrix, projectionMatrix,
             this.canpipe_lastViewMatrix, this.canpipe_lastProjectionMatrix,
             this.canpipe_renderFrames, renderSeconds,
@@ -277,7 +277,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
         this.canpipe_originType = 0;  // camera
 
-        p.onBeforeRenderingLevel(viewMatrix, projectionMatrix, this.canpipe_runResizePasses, this.canpipe_runInitPasses);
+        p.onBeforeRenderingLevel(this.canpipe_runResizePasses, this.canpipe_runInitPasses);
 
         this.canpipe_runInitPasses = false;
         this.canpipe_runResizePasses = false;

@@ -9,15 +9,23 @@ import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 
-public class MoonPhasesTexture extends AbstractTexture {
+public class MoonPhasesTexture extends Texture {
     // In 1.21.11, `textures/environment/moon_phases.png` is divided into
     // moon/full_moon, moon/waning_gibbous, moon/third_quarter, moon/waning_crescent
     // moon/new_moon, moon/waxing_crescent, moon/first_quarter, moon/waxing_gibbous
 
     public MoonPhasesTexture() {
+        super(
+            "can-pipe: moon phases",
+            RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST),
+            false,  // don't recreate on resize
+            () -> createMoonPhasesTexture()
+        );
+    }
+
+    private static GpuTexture createMoonPhasesTexture() {
         Minecraft mc = Minecraft.getInstance();
 
         List<NativeImage> phases = List.of(
@@ -51,17 +59,16 @@ public class MoonPhasesTexture extends AbstractTexture {
             }
         }
 
-        this.texture = gpuDevice.createTexture(
+        var texture = gpuDevice.createTexture(
             "can-pipe: moon phases",
             GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
             GpuFormat.RGBA8_UNORM,
             w * 4, h * 2,
             1, 1
         );
-        commandEncoder.writeToTexture(this.texture, nativeImage);
+        commandEncoder.writeToTexture(texture, nativeImage);
 
-        this.textureView = gpuDevice.createTextureView(texture);
-        this.sampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST);
+        return texture;
     }
 
 }
