@@ -132,10 +132,6 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             this.canpipe_pipelineSwitchButton.active = false;
             this.canpipe_pipelineSwitchButton.setTooltip(Tooltip.create(NO_PIPELINES_FOUND));
         }
-
-        if (rawPipeline != null && rawPipeline.descriptionKey != null) {
-            this.canpipe_pipelineSwitchButton.setTooltip(Tooltip.create(Component.translatable(rawPipeline.descriptionKey)));
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -172,10 +168,15 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             "canpipe.video_settings.pipeline",
             (Optional<PipelineRaw> p) -> {  // widget tooltip
                 var e = Pipelines.getLoadingError();
-                if (e == null) return null;
-                return Tooltip.create(Component.literal(
-                    e.getMessage() != null ? e.getMessage() : e.toString()
-                ));
+                if (e != null) {
+                    return Tooltip.create(Component.literal(
+                        e.getMessage() != null ? e.getMessage() : e.toString()
+                    ));
+                }
+                if (p.isPresent() && p.get().descriptionKey != null) {
+                    return Tooltip.create(Component.translatable(p.get().descriptionKey));
+                };
+                return null;
             },
             (Component c, Optional<PipelineRaw> p) -> {  // widget's new message, before on value changed
                 // no pipeline is loaded

@@ -209,8 +209,9 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 this.resetButton.visible = appliedValue != null;
 
                 Consumer<Object> enableResetAndApplyValue = (Object value) -> {
-                    this.resetButton.visible = true;
-                    applyValue.accept(!this.handlingReset ? value : null);
+                    boolean equalsToDefault = value != null ? value.equals(e.defaultValue) : e.defaultValue == null;
+                    this.resetButton.visible = !equalsToDefault;
+                    applyValue.accept((!this.handlingReset && !equalsToDefault) ? value : null);
                 };
 
                 if (e instanceof OptionGroup.BooleanElement boolElement) {
