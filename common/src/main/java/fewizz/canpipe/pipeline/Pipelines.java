@@ -218,7 +218,7 @@ final public class Pipelines implements PreparableReloadListener {
         ).forEach((location, pipelineJson) -> {
             try {
                 JsonObject json = Jankson.builder().build().load(pipelineJson.open());
-                rawPipelines.put(location, PipelineRaw.load(json, location, resourceManager));
+                rawPipelines.put(location, new PipelineRaw(json, location, resourceManager));
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't parse pipeline json file \""+location+"\"", e);
             }

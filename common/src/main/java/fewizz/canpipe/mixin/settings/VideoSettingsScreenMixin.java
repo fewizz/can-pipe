@@ -31,11 +31,15 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.client.gui.screens.options.VideoSettingsScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 
 @Mixin(VideoSettingsScreen.class)
 public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implements VideoSettingsScreenExtended {
+
+    private static final Component NONE = Component.translatable("gui.none");
+    private static final Component PIPELINE_ISNT_AWARE_OF_DEPTH_CHANGES = Component.translatable("canpipe.video_settings.pipeline_isnt_aware_of_depth_changes");
+    private static final Component NO_PIPELINES_FOUND = Component.translatable("canpipe.video_settings.no_pipelines_found");
+    private static final Component PIPELINE_SETTINGS = Component.translatable("canpipe.video_settings.pipeline_settings");
 
     VideoSettingsScreenMixin() { super(null, null, null); }
 
@@ -55,9 +59,9 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
 
         boolean showPipelineSettingsButton = pipeline != null && !rawPipeline.options.isEmpty();
 
-        MutableComponent warningSignComponent = null;
+        Component warningSignComponent = null;
         if (rawPipeline != null && !rawPipeline.awareOfDepthRangeChanges) {
-            warningSignComponent = Component.literal("This pipeline isn't aware of depth range changes.\nHere be dragons.");
+            warningSignComponent = PIPELINE_ISNT_AWARE_OF_DEPTH_CHANGES;
         }
 
         if (warningSignComponent != null) {
@@ -123,6 +127,15 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 entityShadowsButton.setValue(this.options.entityShadows().get());
             }
         }
+
+        if (Pipelines.RAW_PIPELINES.isEmpty()) {
+            this.canpipe_pipelineSwitchButton.active = false;
+            this.canpipe_pipelineSwitchButton.setTooltip(Tooltip.create(NO_PIPELINES_FOUND));
+        }
+
+        if (rawPipeline != null && rawPipeline.descriptionKey != null) {
+            this.canpipe_pipelineSwitchButton.setTooltip(Tooltip.create(Component.translatable(rawPipeline.descriptionKey)));
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -153,9 +166,10 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             },
             Supplier::get
         ) {};
+        settingsButton.setTooltip(Tooltip.create(PIPELINE_SETTINGS));
 
         var pipelineButton = (CycleButton<Optional<PipelineRaw>>) new OptionInstance<Optional<PipelineRaw>>(
-            "Pipeline",
+            "canpipe.video_settings.pipeline",
             (Optional<PipelineRaw> p) -> {  // widget tooltip
                 var e = Pipelines.getLoadingError();
                 if (e == null) return null;
@@ -165,7 +179,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             },
             (Component c, Optional<PipelineRaw> p) -> {  // widget's new message, before on value changed
                 // no pipeline is loaded
-                if (p.isEmpty()) return Component.literal("No");
+                if (p.isEmpty()) return NONE;
 
                 var component = Component.translatable(p.get().nameKey);
                 // there was an unsuccessful try to load pipeline,
@@ -204,7 +218,6 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         this.canpipe_pipelineSwitchButton = pipelineButton;
 
         this.canpipe_pipelineWarningSign = ImageWidget.sprite(20, 20, Identifier.withDefaultNamespace("icon/info"));
-        this.canpipe_pipelineWarningSign.setTooltip(Tooltip.create(Component.literal(":)")));
 
         ((AbstractSelectionListAccessor) this.list).callAddEntry(new OptionsList.AbstractEntry() {
 

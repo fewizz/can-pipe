@@ -1,6 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -15,7 +14,6 @@ import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
-import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.JanksonUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -23,23 +21,16 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public class PipelineRaw {
     @NotNull public final Identifier location;
     @NotNull public final String nameKey;
+    @NotNull public final String descriptionKey;
     @NotNull public final Map<Identifier, OptionGroup> options;
     @NotNull private final JsonObject json;
     public final boolean awareOfDepthRangeChanges;
 
-    PipelineRaw(Identifier location, String nameKey, Map<Identifier, OptionGroup> options, JsonObject json) {
-        this.location = location;
-        this.nameKey = nameKey;
-        this.options = Collections.unmodifiableMap(options);
-        this.json = json;
-        this.awareOfDepthRangeChanges = JanksonUtils.booleanOrDefault(json, "awareOfDepthRangeChanges", false);
-    }
-
-    static PipelineRaw load(
+    PipelineRaw(
         JsonObject pipelineJson,
         Identifier pipelineLocation,
         ResourceManager resourceManager
-    ) throws IOException, SyntaxError {
+    ) {
         Map<String, JsonObject> includes = new HashMap<>();
 
         class ProcessIncludes { private static void doProcess(
@@ -47,7 +38,7 @@ public class PipelineRaw {
             JsonObject object,
             Map<String, JsonObject> includes,
             ResourceManager manager
-        ) throws IOException, SyntaxError {
+        ) {
             for (var pathToInclude : JanksonUtils.listOfStrings(object, "include")) {
                 JsonObject toInclude = includes.getOrDefault(pathToInclude, null);
                 if (toInclude == null) {
@@ -132,9 +123,13 @@ public class PipelineRaw {
 
         pipelineJson.remove("options");
 
-        String nameKey = pipelineJson.get(String.class, "nameKey");
+        this.location = pipelineLocation;
+        this.nameKey = pipelineJson.get(String.class, "nameKey");
+        this.descriptionKey = pipelineJson.get(String.class, "descriptionKey");
 
-        return new PipelineRaw(pipelineLocation, nameKey, options, pipelineJson);
+        this.options = Collections.unmodifiableMap(options);
+        this.json = pipelineJson;
+        this.awareOfDepthRangeChanges = JanksonUtils.booleanOrDefault(json, "awareOfDepthRangeChanges", false);
     }
 
     public OptionGroup.Element<?> optionElementByName(String name) {
