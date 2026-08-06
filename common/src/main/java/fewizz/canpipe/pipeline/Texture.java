@@ -23,11 +23,13 @@ import net.minecraft.resources.Identifier;
 public class Texture extends AbstractTexture {
     private final Supplier<GpuTexture> gpuTextureSupplier;
     private final boolean recreateOnResize;
+    private final boolean closeSampler;
 
-    protected Texture(String name, GpuSampler sampler, boolean recreateOnResize, Supplier<GpuTexture> gpuTextureUpdater) {
+    protected Texture(String name, GpuSampler sampler, boolean closeSampler, boolean recreateOnResize, Supplier<GpuTexture> gpuTextureUpdater) {
         this.gpuTextureSupplier = gpuTextureUpdater;
         this.recreateOnResize = recreateOnResize;
         this.sampler = sampler;
+        this.closeSampler = closeSampler;
         this.texture = this.gpuTextureSupplier.get();
         this.textureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
             this.texture, 0, this.texture.getMipLevels(), 0, this.texture.getDepthOrLayers()
@@ -37,7 +39,7 @@ public class Texture extends AbstractTexture {
     @Override
     public void close() {
         super.close();
-        this.sampler.close();  // We don't cache extended samplers
+        if (closeSampler) { this.sampler.close(); }
     }
 
     void onWindowSizeChanged() {
@@ -206,7 +208,7 @@ public class Texture extends AbstractTexture {
 
             boolean recreateOnResize = width == 0 || height == 0;
 
-            return new Texture(name, sampler, recreateOnResize, () -> {
+            return new Texture(name, sampler, true /* we use custom, uncached samplers */, recreateOnResize, () -> {
                 int newWidth = width; int newHeight = height;
 
                 var window = Minecraft.getInstance().getWindow();

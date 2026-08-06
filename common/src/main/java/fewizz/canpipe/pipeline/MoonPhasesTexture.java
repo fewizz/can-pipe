@@ -20,6 +20,7 @@ public class MoonPhasesTexture extends Texture {
         super(
             "can-pipe: moon phases",
             RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST),
+            false,  // sampler is taken from cache, don't close it
             false,  // don't recreate on resize
             () -> createMoonPhasesTexture()
         );
