@@ -74,7 +74,7 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
         index = 3
     )
     Object onSubmitModel(Object state) {
-        if (this.canpipe_scopedModelSubmitMaterialMap != null) {
+        if (this.canpipe_scopedModelSubmitMaterialMap != null || this.canpipe_pendingModelSubmitEntityGlint) {
             state = new WrappedModelSubmitState(
                 state, this.canpipe_pendingSpriteId, this.canpipe_scopedModelSubmitMaterialMap, this.canpipe_pendingModelSubmitEntityGlint
             );
