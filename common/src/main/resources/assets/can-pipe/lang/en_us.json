@@ -4,6 +4,6 @@
     "canpipe.button.reset": "Reset",
     "canpipe.video_settings.pipeline": "Pipeline",
     "canpipe.video_settings.no_pipelines_found": "No pipelines found.",
-    "canpipe.video_settings.pipeline_isnt_aware_of_depth_changes": "Pipeline isn't aware of depth range changes.\nHere be dragons.",
+    "canpipe.video_settings.pipeline_isnt_aware_of_depth_changes": "This pipeline isn't aware of depth range changes.\nHere be dragons.",
     "canpipe.video_settings.pipeline_settings": "Pipeline settings."
 }
