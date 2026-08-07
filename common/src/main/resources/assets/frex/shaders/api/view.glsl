@@ -44,6 +44,8 @@ layout(std140) uniform frx_ub_shadow {
 #define frx_projectionMatrix ProjMat
 #ifdef CANPIPE_TERRAIN
     #define frx_modelToCamera vec4(-CameraBlockPos + CameraOffset, 0.0)
+    // alias to ChunkSection.ChunkVisibility
+    #define canpipe_chunkVisibility ChunkVisibility
 #else
     #define frx_modelToCamera vec4(ModelOffset, 0.0)
 #endif
