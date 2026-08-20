@@ -2,7 +2,6 @@ package fewizz.canpipe.b3d.mixin;
 
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.vulkan.VK10;
 import org.lwjgl.vulkan.VK12;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkImageBlit;
@@ -77,7 +76,7 @@ public abstract class VkCommandEncoderMixin implements CommandEncoderBackendExte
     ) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             var imageSubresourceRange = VkImageSubresourceRange.calloc(stack);
-            imageSubresourceRange.aspectMask(VK10.VK_IMAGE_ASPECT_COLOR_BIT);
+            imageSubresourceRange.aspectMask(VK12.VK_IMAGE_ASPECT_COLOR_BIT);
             imageSubresourceRange.baseMipLevel(0);
             imageSubresourceRange.levelCount(1);
             imageSubresourceRange.baseArrayLayer(0);
@@ -94,7 +93,7 @@ public abstract class VkCommandEncoderMixin implements CommandEncoderBackendExte
             imageBarrier.newLayout(VK12.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
             imageBarrier.image(((VulkanGpuTexture) dstTexture).vkImage());
             // wait for nothing, this is just the swapchain image
-            VK12.vkCmdPipelineBarrier(this.commandBuffer(), VK10.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK10.VK_PIPELINE_STAGE_TRANSFER_BIT, 0, null, null, imageBarrier);
+            VK12.vkCmdPipelineBarrier(this.commandBuffer(), VK12.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK12.VK_PIPELINE_STAGE_TRANSFER_BIT, 0, null, null, imageBarrier);
 
             final var regions = VkImageBlit.calloc(1, stack);
 
@@ -114,20 +113,20 @@ public abstract class VkCommandEncoderMixin implements CommandEncoderBackendExte
             regions.dstOffsets(0, VkOffset3D.calloc(stack).x(0).y(0).z(0));
             regions.dstOffsets(1, VkOffset3D.calloc(stack).x(dstTexture.getWidth(0)).y(dstTexture.getHeight(0)).z(1));
 
-            VK10.vkCmdBlitImage(
+            VK12.vkCmdBlitImage(
                 this.commandBuffer(),
-                ((VulkanGpuTexture) srcTexture).vkImage(), VK10.VK_IMAGE_LAYOUT_GENERAL,
-                ((VulkanGpuTexture) dstTexture).vkImage(), VK10.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                ((VulkanGpuTexture) srcTexture).vkImage(), VK12.VK_IMAGE_LAYOUT_GENERAL,
+                ((VulkanGpuTexture) dstTexture).vkImage(), VK12.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 regions,
-                VK10.VK_FILTER_NEAREST
+                VK12.VK_FILTER_NEAREST
             );
 
-            imageBarrier.oldLayout(VK10.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-            imageBarrier.newLayout(VK10.VK_IMAGE_LAYOUT_GENERAL);
-            imageBarrier.srcAccessMask(VK10.VK_ACCESS_TRANSFER_WRITE_BIT);
+            imageBarrier.oldLayout(VK12.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            imageBarrier.newLayout(VK12.VK_IMAGE_LAYOUT_GENERAL);
+            imageBarrier.srcAccessMask(VK12.VK_ACCESS_TRANSFER_WRITE_BIT);
             imageBarrier.dstAccessMask(0);
 
-            VK10.vkCmdPipelineBarrier(this.commandBuffer(), VK10.VK_PIPELINE_STAGE_TRANSFER_BIT, VK10.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, null, null, imageBarrier);
+            VK12.vkCmdPipelineBarrier(this.commandBuffer(), VK12.VK_PIPELINE_STAGE_TRANSFER_BIT, VK12.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, null, null, imageBarrier);
         }
     }
 
