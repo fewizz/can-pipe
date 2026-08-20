@@ -431,7 +431,7 @@ public class Uniforms {
 
         // fog.glsl
         var fogData = mc.gameRenderer.gameRenderState().levelRenderState.cameraRenderState.fogData;
-        FRX_FOG_COLOR.set(fogData.color);
+        FRX_FOG_COLOR.set(renderFrames > 0 ? fogData.color : fogData.color.max(new Vector4f(0.001F)));
         FRX_FOG_START.set(Math.min(fogData.environmentalStart, fogData.renderDistanceStart));  // Should be slose enough (:pray:)
         FRX_FOG_END.set(Math.min(fogData.environmentalEnd, fogData.renderDistanceEnd));
 
