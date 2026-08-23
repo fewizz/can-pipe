@@ -29,6 +29,9 @@ import blue.endless.jankson.JsonPrimitive;
 import blue.endless.jankson.api.SyntaxError;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.light.Lights;
+import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -245,6 +248,14 @@ final public class Pipelines implements PreparableReloadListener {
         }
 
         loadAndSetPipeline(selected, null);
+    }
+
+    public static void reloadCurrent() {
+        Minecraft mc = Minecraft.getInstance();
+        Lights.loadRaw(Lights.readRaw(mc.getResourceManager()));
+        Materials.loadRaw(Materials.readRaw(mc.getResourceManager()));
+        MaterialMaps.loadRaw(MaterialMaps.readRaw(mc.getResourceManager()));
+        Pipelines.loadRaw(Pipelines.readRaw(mc.getResourceManager()));
     }
 
     public static @Nullable Pipeline getCurrent() {

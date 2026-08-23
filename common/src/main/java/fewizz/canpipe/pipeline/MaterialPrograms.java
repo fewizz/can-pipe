@@ -23,6 +23,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import fewizz.canpipe.material.Material;
@@ -136,11 +137,16 @@ public class MaterialPrograms {
             .withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER)
             .withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER)
             .withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
+
         if (shadow) {
             bindGroupLayoutBuilder.withUniform("frxu_ub_cascade", UniformType.UNIFORM_BUFFER);
         }
 
         bindGroupLayoutBuilder.withUniform("canpipe_spritesExtents", UniformType.TEXEL_BUFFER, GpuFormat.RGBA16_UNORM);
+
+        for (var externalUboName : Uniforms.EXTERNAL_UBOS.keySet()) {
+            bindGroupLayoutBuilder.withUniform(externalUboName, UniformType.UNIFORM_BUFFER);
+        }
 
         for (String sampler : samplers) {
             bindGroupLayoutBuilder.withSampler(sampler);

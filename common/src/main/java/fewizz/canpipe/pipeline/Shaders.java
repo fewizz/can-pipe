@@ -2,6 +2,7 @@ package fewizz.canpipe.pipeline;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -26,6 +27,8 @@ public class Shaders {
     static final Pattern INCLUDE_PATTERN = Pattern.compile("^\\s*#include\\s+([[a-z][0-9]._]+:[[a-z][0-9]._/]+)");
 
     static final Pattern FLOAT_PATTERN = Pattern.compile("[0-9]+\\.[0-9]+");
+
+    public static final Map<Identifier, String> VIRTUAL_INCLUDES = new HashMap<>();
 
     /**
     Naive pattern for matching expressions like <code>#if X op Y</code>
@@ -254,6 +257,9 @@ public class Shaders {
                 }
                 else {  // this is file include
                     Optional<String> resourceStr = getShaderSource.apply(location);
+                    if (resourceStr.isEmpty()) {
+                        resourceStr = Optional.ofNullable(VIRTUAL_INCLUDES.get(location));
+                    }
 
                     if (resourceStr.isPresent()) {
                         innerIter = includePreprocessedLinesIterator(

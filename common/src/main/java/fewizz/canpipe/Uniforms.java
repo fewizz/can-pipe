@@ -1,5 +1,7 @@
 package fewizz.canpipe;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -173,6 +175,14 @@ public class Uniforms {
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
         DynamicUniforms.TRANSFORM_UBO_SIZE
     );
+
+
+    public static record CustomUBO(
+        UniformBufferStruct struct, GpuBuffer ubo, Runnable updater
+    ) {};
+
+    public static final Map<String, CustomUBO> EXTERNAL_UBOS = new HashMap<>();
+
 
     public static void update(
         Matrix4fc view, Matrix4fc projection,
@@ -435,6 +445,10 @@ public class Uniforms {
         FRX_FOG_START.set(Math.min(fogData.environmentalStart, fogData.renderDistanceStart));  // Should be slose enough (:pray:)
         FRX_FOG_END.set(Math.min(fogData.environmentalEnd, fogData.renderDistanceEnd));
 
+        for (var externalUbo : EXTERNAL_UBOS.values()) {
+            externalUbo.updater.run();
+        }
+
         Profiler.get().popPush("upload");
         try (MemoryStack memoryStack = MemoryStack.stackPush()) {
 
@@ -466,6 +480,12 @@ public class Uniforms {
             new DynamicUniforms.Transform(view, new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f()).write(buffer);
             buffer.rewind();
             commandEncoder.writeToBuffer(DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
+
+            for (var externalUbo : EXTERNAL_UBOS.values()) {
+                builder = Std140Builder.onStack(memoryStack, externalUbo.struct.size());
+                externalUbo.struct.writeTo(builder);
+                commandEncoder.writeToBuffer(externalUbo.ubo.slice(), builder.get());
+            }
         }
 
         Profiler.get().pop();
@@ -479,6 +499,29 @@ public class Uniforms {
         renderPass.setUniform("frx_ub_player", PLAYER_UBO);
         renderPass.setUniform("frx_ub_world", WORLD_UBO);
         renderPass.setUniform("frx_ub_fog", FOG_UBO);
+        for (var externalUboE : Uniforms.EXTERNAL_UBOS.entrySet()) {
+            renderPass.setUniform(externalUboE.getKey(), externalUboE.getValue().ubo);
+        }
+    }
+
+    public static void addExternalUBO(String name, UniformBufferStruct struct, String label, Runnable updater) {
+        GpuBuffer ubo = RenderSystem.getDevice().createBuffer(
+            () -> label,
+            GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
+            struct.size()
+        );
+        EXTERNAL_UBOS.put(name, new CustomUBO(struct, ubo, updater));
+    }
+
+    public static boolean externalUBOIsAdded(String name) {
+        return EXTERNAL_UBOS.containsKey(name);
+    }
+
+    public static void removeExternalUBO(String name) {
+        var externalUbo = EXTERNAL_UBOS.remove(name);
+        if (externalUbo != null) {
+            externalUbo.ubo().close();
+        };
     }
 
     public static void close() {
@@ -490,6 +533,11 @@ public class Uniforms {
         FOG_UBO.close();
 
         DYNAMIC_TRANSFORMS_UBO.close();
+
+        for (var externalUbo : EXTERNAL_UBOS.values()) {
+            externalUbo.ubo.close();
+        }
+        EXTERNAL_UBOS.clear();
     }
 
 }

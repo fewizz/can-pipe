@@ -21,7 +21,8 @@
 	"mixins": [
 		"${mod_id}.mixins.json",
 		"${mod_id}.b3d.mixins.json",
-		"${mod_id}.compat.indigo.mixins.json"
+		"${mod_id}.compat.indigo.mixins.json",
+		"${mod_id}.compat.hdrmod.mixins.json"
 	],
 	"accessWidener" : "${mod_id}.accesswidener",
 	"depends": {

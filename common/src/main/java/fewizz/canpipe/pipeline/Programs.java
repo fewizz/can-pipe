@@ -23,6 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import net.minecraft.client.renderer.BindGroupLayouts;
@@ -91,6 +92,10 @@ public class Programs {
             .withUniform("frx_ub_player", UniformType.UNIFORM_BUFFER)
             .withUniform("frx_ub_world", UniformType.UNIFORM_BUFFER)
             .withUniform("frx_ub_fog", UniformType.UNIFORM_BUFFER);
+
+        for (var externalUboName : Uniforms.EXTERNAL_UBOS.keySet()) {
+            bindGroupLayoutBuilder.withUniform(externalUboName, UniformType.UNIFORM_BUFFER);
+        }
 
         for (String sampler : samplers) {
             bindGroupLayoutBuilder.withSampler(sampler);
