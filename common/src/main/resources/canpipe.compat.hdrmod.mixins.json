@@ -5,7 +5,9 @@
     "injectors": {
         "defaultRequire": 1
     },
+    "plugin": "fewizz.canpipe.compat.hdrmod.MixinPlugin",
     "client": [
-        "HDRModMixin"
+        "HDRModMixin",
+        "MinecraftMixin"
     ]
 }

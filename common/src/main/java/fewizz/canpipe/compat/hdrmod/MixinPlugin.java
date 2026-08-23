@@ -1,4 +1,4 @@
-package fewizz.canpipe.compat.indigo;
+package fewizz.canpipe.compat.hdrmod;
 
 import java.util.List;
 import java.util.Set;
@@ -11,10 +11,10 @@ import fewizz.canpipe.PlatformHelperService;
 
 public class MixinPlugin implements IMixinConfigPlugin {
 
-    private boolean isIndigoLoaded = false;
+    private boolean isHDRModLoaded = false;
 
-    @Override public void onLoad(String mixinPackage) { isIndigoLoaded = PlatformHelperService.isModLoaded("fabric-renderer-indigo"); }
-    @Override public boolean shouldApplyMixin(String targetClassName, String mixinClassName) { return this.isIndigoLoaded; }
+    @Override public void onLoad(String mixinPackage) { isHDRModLoaded = PlatformHelperService.isModLoaded("hdr_mod"); }
+    @Override public boolean shouldApplyMixin(String targetClassName, String mixinClassName) { return this.isHDRModLoaded; }
     @Override public String getRefMapperConfig() { return null; }
     @Override public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {}
     @Override public List<String> getMixins() { return null; }

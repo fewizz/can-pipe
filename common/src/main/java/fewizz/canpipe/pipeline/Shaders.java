@@ -23,8 +23,8 @@ import net.minecraft.resources.Identifier;
 
 public class Shaders {
 
-    static final Pattern DEFINITION_PATTERN = Pattern.compile("^\\s*#define\\s+([[a-z][A-Z][0-9]_]+)");
-    static final Pattern INCLUDE_PATTERN = Pattern.compile("^\\s*#include\\s+([[a-z][0-9]._]+:[[a-z][0-9]._/]+)");
+    static final Pattern DEFINITION_PATTERN = Pattern.compile("^\\s*#define\\s+([[a-z][A-Z][0-9]_-]+)");
+    static final Pattern INCLUDE_PATTERN = Pattern.compile("^\\s*#include\\s+([[a-z][0-9]._-]+:[[a-z][0-9]._/]+)");
 
     static final Pattern FLOAT_PATTERN = Pattern.compile("[0-9]+\\.[0-9]+");
 

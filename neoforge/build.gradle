@@ -11,12 +11,27 @@ repositories {
         name= "RogueLogix"
         url = "https://maven.logix.dev/snapshots"
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = uri("https://api.modrinth.com/maven")
+            }
+        }
+        filter {
+            includeGroup("maven.modrinth")
+        }
+    }
 }
 
 compileJava.source project(":common").sourceSets.main.allSource
 
 dependencies {
     jarJar implementation("blue.endless:jankson:1.2.3")
+
+    implementation "maven.modrinth:rrtt217-s-hdr-mod:3.1.1-26.2+neoforge"
+    implementation "maven.modrinth:cloth-config:26.2.155+neoforge"
+    implementation "maven.modrinth:modmenu:20.0.1"
 }
 
 neoForge {

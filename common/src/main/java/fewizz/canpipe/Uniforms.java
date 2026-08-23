@@ -177,11 +177,11 @@ public class Uniforms {
     );
 
 
-    public static record CustomUBO(
+    public static record ExternalUBO(
         UniformBufferStruct struct, GpuBuffer ubo, Runnable updater
     ) {};
 
-    public static final Map<String, CustomUBO> EXTERNAL_UBOS = new HashMap<>();
+    public static final Map<String, ExternalUBO> EXTERNAL_UBOS = new HashMap<>();
 
 
     public static void update(
@@ -510,7 +510,7 @@ public class Uniforms {
             GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
             struct.size()
         );
-        EXTERNAL_UBOS.put(name, new CustomUBO(struct, ubo, updater));
+        EXTERNAL_UBOS.put(name, new ExternalUBO(struct, ubo, updater));
     }
 
     public static boolean externalUBOIsAdded(String name) {
