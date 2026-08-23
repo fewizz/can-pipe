@@ -36,10 +36,10 @@ import net.minecraft.resources.Identifier;
 @Mixin(VideoSettingsScreen.class)
 public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implements VideoSettingsScreenExtended {
 
-    private static final Component NONE = Component.translatable("gui.none");
-    private static final Component PIPELINE_ISNT_AWARE_OF_DEPTH_CHANGES = Component.translatable("canpipe.video_settings.pipeline_isnt_aware_of_depth_changes");
-    private static final Component NO_PIPELINES_FOUND = Component.translatable("canpipe.video_settings.no_pipelines_found");
-    private static final Component PIPELINE_SETTINGS = Component.translatable("canpipe.video_settings.pipeline_settings");
+    @Unique private static final Component NONE = Component.translatable("gui.none");
+    @Unique private static final Component PIPELINE_ISNT_AWARE_OF_DEPTH_CHANGES = Component.translatable("canpipe.video_settings.pipeline_isnt_aware_of_depth_changes");
+    @Unique private static final Component NO_PIPELINES_FOUND = Component.translatable("canpipe.video_settings.no_pipelines_found");
+    @Unique private static final Component PIPELINE_SETTINGS = Component.translatable("canpipe.video_settings.pipeline_settings");
 
     VideoSettingsScreenMixin() { super(null, null, null); }
 
@@ -47,8 +47,8 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
     @Unique private ImageWidget canpipe_pipelineWarningSign = null;
     @Unique private Button canpipe_pipelineSettingsButton = null;
 
-    @Unique private int canpipe_pinelineWarningXOffset = 0;
-    @Unique private int canpipe_pinelineSettingsButtonXOffset = 0;
+    @Unique private int canpipe_pipelineWarningXOffset = 0;
+    @Unique private int canpipe_pipelineSettingsButtonXOffset = 0;
 
     @Override
     public void canpipe_onPipelineLoaded() {
@@ -73,12 +73,12 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         boolean padded = false;
         if (showPipelineSettingsButton) {
             switchButtonWidth -= 20;
-            this.canpipe_pinelineSettingsButtonXOffset = switchButtonWidth;
+            this.canpipe_pipelineSettingsButtonXOffset = switchButtonWidth;
             padded = true;
         }
         if (showWarningSign) {
             switchButtonWidth -= 20 + (padded ? 5 : 0);
-            this.canpipe_pinelineWarningXOffset = switchButtonWidth;
+            this.canpipe_pipelineWarningXOffset = switchButtonWidth;
             padded = true;
         }
 
@@ -247,10 +247,10 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.setPosition(left, this.getContentY());
                 VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.extractRenderState(graphics, mouseX, mouseY, a);
 
-                VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.setPosition(left + VideoSettingsScreenMixin.this.canpipe_pinelineWarningXOffset, this.getContentY());
+                VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.setPosition(left + VideoSettingsScreenMixin.this.canpipe_pipelineWarningXOffset, this.getContentY());
                 VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.extractRenderState(graphics, mouseX, mouseY, a);
 
-                VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.setPosition(left + VideoSettingsScreenMixin.this.canpipe_pinelineSettingsButtonXOffset, this.getContentY());
+                VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.setPosition(left + VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButtonXOffset, this.getContentY());
                 VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.extractRenderState(graphics, mouseX, mouseY, a);
             }
 
