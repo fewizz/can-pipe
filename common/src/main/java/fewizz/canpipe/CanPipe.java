@@ -23,6 +23,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
+import fewizz.canpipe.compat.hdrmod.HDRModCompat;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -82,6 +83,8 @@ public class CanPipe {
         whitePixel.setPixel(0, 0, 0xFFFFFFFF);
         device.createCommandEncoder().writeToTexture(whiteTexture, whitePixel);
         CanPipe.whiteTextureView = device.createTextureView(whiteTexture);
+
+        HDRModCompat.init();
     }
 
     public static void beforeRendererClose() {
