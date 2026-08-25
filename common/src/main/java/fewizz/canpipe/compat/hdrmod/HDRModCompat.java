@@ -1,11 +1,11 @@
 package fewizz.canpipe.compat.hdrmod;
 
 import fewizz.canpipe.PlatformHelperService;
-import fewizz.canpipe.UniformBufferStruct;
-import fewizz.canpipe.UniformBufferStruct.FloatUniform;
-import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.pipeline.Shaders;
+import fewizz.canpipe.pipeline.UniformBufferStruct;
+import fewizz.canpipe.pipeline.Uniforms;
+import fewizz.canpipe.pipeline.UniformBufferStruct.FloatUniform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import xyz.rrtt217.HDRMod.api.HDRModApi;

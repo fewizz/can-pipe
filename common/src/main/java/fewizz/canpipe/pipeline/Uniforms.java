@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.pipeline;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,20 +17,18 @@ import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import fewizz.canpipe.UniformBufferStruct.FloatUniform;
-import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
-import fewizz.canpipe.UniformBufferStruct.IntUniform;
-import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
-import fewizz.canpipe.UniformBufferStruct.Vec2Uniform;
-import fewizz.canpipe.UniformBufferStruct.Vec3Uniform;
-import fewizz.canpipe.UniformBufferStruct.Vec4Uniform;
 import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.LightmapExtended;
-import fewizz.canpipe.pipeline.Pipeline;
-import fewizz.canpipe.pipeline.Pipelines;
+import fewizz.canpipe.pipeline.UniformBufferStruct.FloatUniform;
+import fewizz.canpipe.pipeline.UniformBufferStruct.IVec2Uniform;
+import fewizz.canpipe.pipeline.UniformBufferStruct.IntUniform;
+import fewizz.canpipe.pipeline.UniformBufferStruct.Mat4Uniform;
+import fewizz.canpipe.pipeline.UniformBufferStruct.Vec2Uniform;
+import fewizz.canpipe.pipeline.UniformBufferStruct.Vec3Uniform;
+import fewizz.canpipe.pipeline.UniformBufferStruct.Vec4Uniform;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DynamicUniforms;
@@ -181,7 +179,7 @@ public class Uniforms {
         UniformBufferStruct struct, GpuBuffer ubo, Runnable updater
     ) {};
 
-    public static final Map<String, ExternalUBO> EXTERNAL_UBOS = new HashMap<>();
+    static final Map<String, ExternalUBO> EXTERNAL_UBOS = new HashMap<>();
 
 
     public static void update(

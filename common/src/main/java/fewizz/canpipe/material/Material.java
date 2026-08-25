@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonObject;
-import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;

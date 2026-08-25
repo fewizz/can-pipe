@@ -1,4 +1,4 @@
-package fewizz.canpipe.helpers;
+package fewizz.canpipe.util;
 
 import org.jspecify.annotations.Nullable;
 

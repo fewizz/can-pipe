@@ -1,4 +1,4 @@
-package fewizz.canpipe;
+package fewizz.canpipe.util;
 
 import java.util.List;
 

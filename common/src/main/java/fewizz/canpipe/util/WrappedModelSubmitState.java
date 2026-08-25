@@ -1,4 +1,4 @@
-package fewizz.canpipe.helpers;
+package fewizz.canpipe.util;
 
 import fewizz.canpipe.material.EntityMaterialMap;
 import net.minecraft.client.resources.model.sprite.SpriteId;

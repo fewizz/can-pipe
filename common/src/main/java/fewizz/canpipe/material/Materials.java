@@ -73,9 +73,9 @@ final public class Materials implements PreparableReloadListener {
         Materials.materials.clear();
         Materials.materialByIndex.clear();
 
-        int indexInt = 0;
+        int index = 0;
         for (var entry : materialsJson.entrySet()) {
-            if (indexInt > Short.MAX_VALUE) {
+            if (index > Short.MAX_VALUE) {
                 throw new RuntimeException("Material index exceeded "+Short.MAX_VALUE);
             }
 
@@ -83,10 +83,10 @@ final public class Materials implements PreparableReloadListener {
             Identifier id = entry.getKey();
 
             try {
-                Material material = Material.load((short) indexInt, id, materialJson);
+                Material material = Material.load((short) index, id, materialJson);
                 Materials.materials.put(entry.getKey(), material);
-                Materials.materialByIndex.put((short) indexInt, material);
-                ++indexInt;
+                Materials.materialByIndex.put((short) index, material);
+                ++index;
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't load material \""+id+"\"", e);
             }

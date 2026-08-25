@@ -1,4 +1,4 @@
-package fewizz.canpipe.helpers;
+package fewizz.canpipe.util;
 
 import static org.joml.Matrix4fc.CORNER_NXNYNZ;
 import static org.joml.Matrix4fc.CORNER_NXNYPZ;

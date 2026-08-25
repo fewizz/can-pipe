@@ -9,10 +9,10 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.helpers.WrappedModelSubmitState;
 import fewizz.canpipe.material.EntityMaterialMap;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import fewizz.canpipe.util.WrappedModelSubmitState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderSetup.TextureBinding;

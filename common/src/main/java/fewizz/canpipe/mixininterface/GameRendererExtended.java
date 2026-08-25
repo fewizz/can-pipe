@@ -4,7 +4,7 @@ import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 
-import fewizz.canpipe.helpers.ShadowFrustum;
+import fewizz.canpipe.util.ShadowFrustum;
 import net.minecraft.client.renderer.Lightmap;
 import net.minecraft.client.renderer.fog.FogRenderer;
 

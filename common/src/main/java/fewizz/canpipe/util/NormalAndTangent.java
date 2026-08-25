@@ -1,4 +1,4 @@
-package fewizz.canpipe.helpers;
+package fewizz.canpipe.util;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector3f;

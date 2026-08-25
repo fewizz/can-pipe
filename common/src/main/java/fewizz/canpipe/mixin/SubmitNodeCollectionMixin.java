@@ -7,11 +7,11 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-import fewizz.canpipe.helpers.WrappedListWithExtraElement;
-import fewizz.canpipe.helpers.WrappedModelSubmitState;
 import fewizz.canpipe.material.EntityMaterialMap;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.SubmitNodeCollectorExtended;
+import fewizz.canpipe.util.WrappedListWithExtraElement;
+import fewizz.canpipe.util.WrappedModelSubmitState;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.resources.model.geometry.BakedQuad;

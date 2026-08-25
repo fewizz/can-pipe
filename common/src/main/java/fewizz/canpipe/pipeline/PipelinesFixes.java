@@ -5,7 +5,7 @@ import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.resources.Identifier;
 
 public class PipelinesFixes {

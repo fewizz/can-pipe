@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 import blue.endless.jankson.JsonObject;
-import fewizz.canpipe.JanksonUtils;
+import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateHolder;

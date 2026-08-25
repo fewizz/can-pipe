@@ -23,7 +23,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import fewizz.canpipe.material.Material;

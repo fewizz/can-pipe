@@ -12,8 +12,8 @@ import org.jspecify.annotations.Nullable;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.mixin.RenderTypeAccessor;
+import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 

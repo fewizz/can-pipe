@@ -9,9 +9,9 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.helpers.WrappedListWithExtraElement;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import fewizz.canpipe.util.WrappedListWithExtraElement;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.feature.BlockModelFeatureRenderer;
 

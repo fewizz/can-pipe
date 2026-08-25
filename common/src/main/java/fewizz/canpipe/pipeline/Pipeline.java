@@ -39,14 +39,13 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.GpuTextureViewExtended;
 import fewizz.canpipe.mixin.RenderSetupAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
+import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.OutputTarget;

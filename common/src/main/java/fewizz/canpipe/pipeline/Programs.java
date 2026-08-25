@@ -22,10 +22,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.JanksonUtils;
-import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
 import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
+import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.resources.Identifier;
 

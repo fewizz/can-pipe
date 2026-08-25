@@ -22,8 +22,8 @@ import com.mojang.blaze3d.textures.GpuTextureView;
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
-import fewizz.canpipe.JanksonUtils;
 import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.resources.Identifier;
 
 public class Framebuffer extends RenderTarget {

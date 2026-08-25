@@ -28,11 +28,11 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.helpers.NormalAndTangent;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import fewizz.canpipe.util.NormalAndTangent;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 @Mixin(BufferBuilder.class)
