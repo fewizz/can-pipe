@@ -1,9 +1,9 @@
 package fewizz.canpipe.pipeline;
 
-import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
 
-import fewizz.canpipe.b3d.CommandEncoderExtended;
-import fewizz.canpipe.b3d.GpuTextureViewExtended;
+import fewizz.canpipe.renderpearl.CommandEncoderExtended;
+import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import net.minecraft.resources.Identifier;
 
 class ClearPass extends Pass {

@@ -7,13 +7,13 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.mojang.blaze3d.GpuFormat;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
-import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import fewizz.canpipe.mixin.RenderPipelineBuilderAccessor;
+import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import net.minecraft.resources.Identifier;
 
 public class MaterialProgramLoader {
@@ -51,7 +51,7 @@ public class MaterialProgramLoader {
 
             pipelineBuilder.withLocation(this.id.withSuffix(postfix));
 
-            var originalBlendFunction = this.originalRenderPipeline.getColorTargetState().blendFunction();
+            var originalBlendFunction = this.originalRenderPipeline.getColorTargetStates().get(0).blendFunction();
 
             for (int i = 0; i < colorFormats.size(); ++i) {
                 var format = colorFormats.get(i);

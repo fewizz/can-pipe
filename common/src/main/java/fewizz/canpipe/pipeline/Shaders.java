@@ -15,8 +15,8 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.common.collect.Iterators;
-import com.mojang.blaze3d.shaders.ShaderType;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.pipeline.ShaderType;
 
 import it.unimi.dsi.fastutil.ints.Int2BooleanFunction;
 import net.minecraft.resources.Identifier;

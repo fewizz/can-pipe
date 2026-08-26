@@ -12,21 +12,21 @@ import java.util.function.Function;
 
 import org.apache.commons.lang3.function.TriConsumer;
 
-import com.mojang.blaze3d.GpuFormat;
-import com.mojang.blaze3d.pipeline.BindGroupLayout;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.shaders.ShaderType;
-import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.ShaderType;
+import com.mojang.renderpearl.api.pipeline.UniformType;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.b3d.GpuDeviceExtended;
-import fewizz.canpipe.b3d.RenderPipelineBuilderExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.renderpearl.GpuDeviceExtended;
+import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -504,13 +504,11 @@ public class MaterialPrograms {
 
             originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||
-            originalRenderPipeline == RenderPipelines.ARMOR_TRANSLUCENT ||
 
             originalRenderPipeline == RenderPipelines.END_CRYSTAL_BEAM ||
             originalRenderPipeline == RenderPipelines.BREEZE_WIND ||
             originalRenderPipeline == RenderPipelines.ENERGY_SWIRL ||
             originalRenderPipeline == RenderPipelines.TEXT ||
-            originalRenderPipeline == RenderPipelines.TEXT_BACKGROUND ||
             originalRenderPipeline == RenderPipelines.TEXT_POLYGON_OFFSET
         ) {
             alphaCutout = 0.1F;

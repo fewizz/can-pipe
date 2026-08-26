@@ -13,16 +13,16 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4f;
 
-import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
-import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.resources.Identifier;
 
@@ -49,7 +49,7 @@ public class Framebuffer extends RenderTarget {
         Supplier<Pair<GpuTexture, GpuTextureView>> depthTextureSupplier,
         @Nullable Double depthClearDepth
     ) {
-        super(name, depthClearDepth != null, null /* don't care about color's `this.format` */);
+        super(name, null, null);
 
         this.name = name;
         this.colorAttachmentsSupplier = colorTextureSupplier;

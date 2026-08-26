@@ -9,13 +9,14 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.joml.Vector4fc;
 import org.lwjgl.system.MemoryStack;
 
-import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.Std140Builder;
-import com.mojang.blaze3d.systems.CommandEncoder;
-import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
 
 import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
@@ -31,7 +32,6 @@ import fewizz.canpipe.pipeline.UniformBufferStruct.Vec3Uniform;
 import fewizz.canpipe.pipeline.UniformBufferStruct.Vec4Uniform;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
@@ -390,15 +390,7 @@ public class Uniforms {
         FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.moonPhase.index()]);
         FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
         FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunAngle);
-        {
-            var result = new Vector3f(0.0F);
-            int color = mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunriseAndSunsetColor;
-            if (mc.level.dimensionType().hasSkyLight()) {
-                result.set((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF);
-                result.div(255.0F);
-            }
-            CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(result);
-        }
+        CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunriseAndSunsetColor);
         {
             float skyFlashStrength = mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.endFlashIntensity;
             FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);

@@ -3,17 +3,17 @@ package fewizz.canpipe.pipeline;
 import java.util.OptionalDouble;
 import java.util.function.Supplier;
 
-import com.mojang.blaze3d.GpuFormat;
-import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.b3d.GpuDeviceExtended;
+import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;

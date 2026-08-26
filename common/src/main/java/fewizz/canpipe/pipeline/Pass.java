@@ -1,6 +1,6 @@
 package fewizz.canpipe.pipeline;
 
-import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
 
 import net.minecraft.resources.Identifier;
 
