@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.renderpearl.api.pipeline.CompareOp;
@@ -120,7 +119,8 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         return log;
     }
 
-    @ModifyReturnValue(method = "compileShader", at = @At("RETURN"))
+    // TODO
+    /*@ModifyReturnValue(method = "compileShader", at = @At("RETURN"))
     GlShaderModule onCompilationError(
         GlShaderModule module,
         @Local(ordinal = 0) String source,
@@ -130,7 +130,7 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
             this.canpipe_onCompilationError.accept(this.canpipe_compilationLog, key.id(), source);
         }
         return module;
-    }
+    }*/
 
     @Inject(
         method = "createTexture("+

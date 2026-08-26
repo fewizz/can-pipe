@@ -16,8 +16,10 @@ import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.UniformType;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
@@ -33,6 +35,7 @@ public class ProgramPass extends Pass {
 
     private final Framebuffer framebuffer;
     private final RenderPipeline renderPipeline;
+    private final CompiledRenderPipeline compiledRenderPipeline;
     // Textures (specified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually use them
     private final List<AbstractTexture> textures;
@@ -53,7 +56,9 @@ public class ProgramPass extends Pass {
         super(id);
         this.textures = new ArrayList<>();
 
-        var samplers = renderPipeline.getBindGroupLayouts().get(0).getSamplers();
+        var samplers = renderPipeline.getBindGroupLayouts().get(0)
+            .uniforms().stream().filter(u -> u.type() == UniformType.COMBINED_IMAGE_SAMPLER)
+            .toList();
         if (samplers.size() > samplerTextures.size()) {
             CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+id+"\"");
         }
@@ -61,7 +66,7 @@ public class ProgramPass extends Pass {
             CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has less samplers than textures provided by pass \""+id+"\"");
         }
         for (int i = 0; i < Math.min(samplers.size(), samplerTextures.size()); ++i) {
-            String sampler = samplers.get(i);
+            String sampler = samplers.get(i).name();
             var samplerTexture = samplerTextures.get(i).orElseGet(() -> {
                 CanPipe.LOGGER.warn("Couldn't find texture for sampler \""+sampler +"\", using \"white\" texture instead");
                 return new AbstractTexture() {{
@@ -87,7 +92,8 @@ public class ProgramPass extends Pass {
         this.frxSizeUniform.set(-1);
 
         // Prelink
-        RenderSystem.getDevice().precompilePipeline(renderPipeline);
+        // RenderSystem.getDevice().precompilePipeline(renderPipeline);
+        this.compiledRenderPipeline = null;  // TODO
     }
 
     @Override
@@ -119,25 +125,28 @@ public class ProgramPass extends Pass {
                 }
             }
 
-            RenderPassDescriptor renderPassDescriptor = RenderPassDescriptor.create(() -> "Program pass "+this.id);
+            var descriptorBuilder = RenderPassDescriptor.builder(() -> "Program pass "+this.id);
             for (var colorAttachment : this.framebuffer.colorTextureViews) {
-                renderPassDescriptor.withColorAttachment(colorAttachment);
+                descriptorBuilder.withColorAttachment(colorAttachment);
             }
             if (this.framebuffer.getDepthTextureView() != null) {
-                renderPassDescriptor.withDepthAttachment(this.framebuffer.getDepthTextureView());
+                descriptorBuilder.withDepthAttachment(this.framebuffer.getDepthTextureView());
             }
-            renderPassDescriptor.withRenderArea(new RenderArea(0, 0, w, h));
+            descriptorBuilder.withRenderArea(new RenderPass.RenderArea(0, 0, w, h));
 
             try (
-                RenderPass renderPass = commandEncoder.createRenderPass(renderPassDescriptor)
+                RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())
             ) {
-                renderPass.setPipeline(this.renderPipeline);
+                renderPass.setPipeline(this.compiledRenderPipeline);
 
-                var samplers = this.renderPipeline.getBindGroupLayouts().get(0).getSamplers();
+                var samplers = this.renderPipeline.getBindGroupLayouts().get(0)
+                    .uniforms().stream().filter(u -> u.type() == UniformType.COMBINED_IMAGE_SAMPLER)
+                    .toList();
+
                 for (int i = 0; i < Math.min(samplers.size(), this.textures.size()); ++i) {
-                    String sampler = samplers.get(i);
+                    String sampler = samplers.get(i).name();
                     var samplerTexture = this.textures.get(i);
-                    renderPass.bindTexture(sampler, samplerTexture.getTextureView(), this.textures.get(i).getSampler());
+                    renderPass.setUniform(sampler, samplerTexture.getTextureView(), this.textures.get(i).getSampler());
                 }
 
                 RenderSystem.bindDefaultUniforms(renderPass);

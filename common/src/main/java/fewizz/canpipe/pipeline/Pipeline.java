@@ -36,6 +36,7 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
@@ -271,7 +272,6 @@ public class Pipeline implements AutoCloseable {
 
             RenderPipelines.ARMOR_CUTOUT_NO_CULL,
             RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
-            RenderPipelines.ARMOR_TRANSLUCENT,
 
             RenderPipelines.ENTITY_SOLID,
             RenderPipelines.ENTITY_SOLID_Z_OFFSET_FORWARD,
@@ -295,7 +295,6 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.TRANSLUCENT_PARTICLE,
 
             RenderPipelines.TEXT,
-            RenderPipelines.TEXT_BACKGROUND,
             RenderPipelines.TEXT_POLYGON_OFFSET
         };
 
@@ -551,37 +550,40 @@ public class Pipeline implements AutoCloseable {
         GameRendererExtended gre = (GameRendererExtended) Minecraft.getInstance().gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
 
-        var descriptor = RenderPassDescriptor.create(name);
+        var descriptorBuilder = RenderPassDescriptor.builder(name);
         for (int i = 0; i < framebuffer.colorTextureViews.length; ++i) {
             var colorAttachment = framebuffer.colorTextureViews[i];
-            if (RenderSystem.outputColorTextureOverride != null) {
+            // TODO
+            /*if (RenderSystem.outputColorTextureOverride != null) {
                 colorAttachment = i == 0 ? RenderSystem.outputColorTextureOverride : null;
-            }
+            }*/
 
             if (colorAttachment != null) {
-                descriptor.withColorAttachment(colorAttachment);
+                descriptorBuilder.withColorAttachment(colorAttachment);
             }
             else {
-                descriptor.withUnusedColorAttachment();
+                descriptorBuilder.withUnusedColorAttachment();
             }
         }
 
         var depthAttachment = framebuffer.getDepthTextureView();
-        if (RenderSystem.outputDepthTextureOverride != null) {
+        // TODO
+        /*if (RenderSystem.outputDepthTextureOverride != null) {
             depthAttachment = RenderSystem.outputDepthTextureOverride;
-        }
-        descriptor.withDepthAttachment(depthAttachment);
+        }*/
+        descriptorBuilder.withDepthAttachment(depthAttachment);
 
         RenderArea renderArea;
-        if (RenderSystem.outputColorTextureOverride != null) {
+        // TODO
+        /*if (RenderSystem.outputColorTextureOverride != null) {
             renderArea = new RenderArea(0, 0, RenderSystem.outputColorTextureOverride.getWidth(0), RenderSystem.outputColorTextureOverride.getHeight(0));
         }
-        else {
+        else {*/
             renderArea = new RenderArea(0, 0, framebuffer.width, framebuffer.height);
-        }
+        // }
 
-        descriptor.withRenderArea(renderArea);
-        RenderPass renderPass = commandEncoder.createRenderPass(descriptor);
+        descriptorBuilder.withRenderArea(renderArea);
+        RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build());
 
         Uniforms.setRenderPassFREXUniforms(renderPass);
 
@@ -605,13 +607,13 @@ public class Pipeline implements AutoCloseable {
         renderPass.setUniform("canpipe_ub_render_target", CanPipe.get0to3UBOBuffers()[renderTarget]);
 
         // We don't know yet which render pipeline will be used
-        renderPass.bindTexture("Sampler0", CanPipe.getWhiteTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
-        renderPass.bindTexture("Sampler1", Minecraft.getInstance().gameRenderer.overlayTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
-        renderPass.bindTexture("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
+        renderPass.setUniform("Sampler0", CanPipe.getWhiteTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+        renderPass.setUniform("Sampler1", Minecraft.getInstance().gameRenderer.overlayTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
+        renderPass.setUniform("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 
         for (var e : this.materialProgramSamplerTextures.entrySet()) {
             AbstractTexture texture = e.getValue();
-            renderPass.bindTexture(e.getKey(), texture.getTextureView(), texture.getSampler());
+            renderPass.setUniform(e.getKey(), texture.getTextureView(), texture.getSampler());
         }
 
         return renderPass;
@@ -673,12 +675,13 @@ public class Pipeline implements AutoCloseable {
             if (outputTarget == OutputTarget.MAIN_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.solidFramebuffer);
             }
-            else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
+            // TODO
+            /*else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.translucentItemEntityFramebuffer);
             }
             else if (outputTarget == OutputTarget.WEATHER_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.weatherFramebuffer);
-            }
+            }*/
             else {
                 throw new RuntimeException("Unexpected output target: "+outputTarget);
             }
@@ -696,12 +699,13 @@ public class Pipeline implements AutoCloseable {
             if (outputTarget == OutputTarget.MAIN_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.solidFramebuffer);
             }
-            else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
+            // TODO
+            /*else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.translucentItemEntityFramebuffer);
             }
             else if (outputTarget == OutputTarget.WEATHER_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.weatherFramebuffer);
-            }
+            }*/
             else {
                 throw new RuntimeException("Unexpected output target: "+outputTarget);
             }
@@ -721,17 +725,17 @@ public class Pipeline implements AutoCloseable {
         GpuFormat firstColorAttachmentFormat = colorAttachments.isEmpty() ? null : colorAttachments.get(0).textureView().texture().getFormat();
 
         return this.replacedRenderPipelines.computeIfAbsent(Pair.of(firstColorAttachmentFormat, pipeline), _key -> {
-            ColorTargetState[] colorTargets = pipeline.getColorTargetStates();
+            List<ColorTargetState> colorTargets = pipeline.getColorTargetStates();
             if (patchAttachment) {
                 List<ColorTargetState> colorTargetsList = new ArrayList<>();
                 for (var attachment : colorAttachments) {
                     colorTargetsList.add(new ColorTargetState(
-                            pipeline.getColorTargetState().blendFunction(),
+                            pipeline.getColorTargetStates().get(0).blendFunction(),
                             attachment.textureView().texture().getFormat(),
-                            pipeline.getColorTargetState().writeMask()
+                            pipeline.getColorTargetStates().get(0).writeMask()
                     ));
                 }
-                colorTargets = colorTargetsList.toArray(new ColorTargetState[0]);
+                colorTargets = List.of(new ColorTargetState[0]);
             }
 
             DepthStencilState depthState = pipeline.getDepthStencilState();
@@ -746,16 +750,16 @@ public class Pipeline implements AutoCloseable {
 
             return new RenderPipeline(
                 pipeline.getLocation(),
-                pipeline.getVertexShader(),
-                pipeline.getFragmentShader(),
+                pipeline.getShaders(),
                 pipeline.getShaderDefines(),
                 pipeline.getBindGroupLayouts(),
-                colorTargets,
+                colorTargets.toArray(new ColorTargetState[0]),
                 depthState,
                 pipeline.getPolygonMode(),
                 pipeline.isCull(),
-                pipeline.getVertexFormatBindings(),
+                pipeline.getVertexFormatBindings().toArray(new VertexFormat[0]),
                 pipeline.getPrimitiveTopology(),
+                pipeline.pushConstantSize(),
                 pipeline.getSortKey()
             ) {};
         });

@@ -9,7 +9,6 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.joml.Vector4fc;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.buffers.Std140Builder;
@@ -32,6 +31,7 @@ import fewizz.canpipe.pipeline.UniformBufferStruct.Vec3Uniform;
 import fewizz.canpipe.pipeline.UniformBufferStruct.Vec4Uniform;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.DynamicGpuData;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
@@ -171,7 +171,7 @@ public class Uniforms {
     public static final GpuBuffer DYNAMIC_TRANSFORMS_UBO = RenderSystem.getDevice().createBuffer(
         () -> "can-pipe pass dynamic transforms UBO",
         GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST,
-        DynamicUniforms.TRANSFORM_UBO_SIZE
+        DynamicGpuData.TRANSFORM_UBO_SIZE
     );
 
 
@@ -466,8 +466,8 @@ public class Uniforms {
             FOG.writeTo(builder);
             commandEncoder.writeToBuffer(FOG_UBO.slice(), builder.get());
 
-            var buffer = memoryStack.malloc(DynamicUniforms.TRANSFORM_UBO_SIZE);
-            new DynamicUniforms.Transform(view, new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f()).write(buffer);
+            var buffer = memoryStack.malloc(DynamicGpuData.TRANSFORM_UBO_SIZE);
+            new DynamicGpuData.Transform(view, new Vector4f(1.0F, 1.0F, 1.0F, 1.0F), new Vector3f(), new Matrix4f()).write(buffer);
             buffer.rewind();
             commandEncoder.writeToBuffer(DYNAMIC_TRANSFORMS_UBO.slice(), buffer);
 

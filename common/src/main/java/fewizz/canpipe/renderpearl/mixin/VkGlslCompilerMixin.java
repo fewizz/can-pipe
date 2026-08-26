@@ -1,42 +1,16 @@
 package fewizz.canpipe.renderpearl.mixin;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.At.Shift;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.llamalad7.mixinextras.sugar.Local;
-import com.llamalad7.mixinextras.sugar.Share;
-import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.renderpearl.frontend.shaders.GlslCompiler;
-
-import fewizz.canpipe.CanPipe;
-import it.unimi.dsi.fastutil.bytes.ByteArrayList;
-import it.unimi.dsi.fastutil.bytes.ByteList;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 
 @Mixin(GlslCompiler.class)
 public class VkGlslCompilerMixin {
@@ -69,7 +43,8 @@ public class VkGlslCompilerMixin {
         return result;
     }
 
-    @WrapOperation(
+    // TODO
+    /*@WrapOperation(
         method = "compile",
         at = @At(
             value = "INVOKE",
@@ -317,7 +292,6 @@ public class VkGlslCompilerMixin {
         }
     }
 
-
     @ModifyExpressionValue(
         method = "addToBindGroup",
         at = @At(
@@ -359,6 +333,6 @@ public class VkGlslCompilerMixin {
         if (es != null) {
             entries.removeIf(e -> es.contains(e.name()));
         }
-    }
+    }*/
 
 }

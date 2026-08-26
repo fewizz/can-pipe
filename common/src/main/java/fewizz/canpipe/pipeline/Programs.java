@@ -97,7 +97,7 @@ public class Programs {
         }
 
         for (String sampler : samplers) {
-            bindGroupLayoutBuilder.withSampler(sampler);
+            bindGroupLayoutBuilder.withUniform(sampler, UniformType.COMBINED_IMAGE_SAMPLER);
         }
 
         renderPipelineBuilder.withBindGroupLayout(bindGroupLayoutBuilder.build());

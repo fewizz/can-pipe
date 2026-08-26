@@ -23,13 +23,13 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTexture;
-import com.mojang.blaze3d.vertex.PoseStack;
 
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRenderStateExtended;
@@ -46,7 +46,6 @@ import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -181,7 +180,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             profiler.push("prepare chunk sections to render");
             ChunkSectionsToRender sections = prepareChunkRenders(viewMatrix);
             profiler.push("render sections");
-            sections.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+            // TODO
+            // sections.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
 
             if (p.shadows.allowEntities()) {
                 profiler.popPush("entities");
@@ -210,7 +210,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             }
 
             profiler.popPush("render features");
-            this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
+            // TODO
+            // this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
             profiler.pop();
         }
 
@@ -242,11 +243,12 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         // Don't create transparency post chain, will be handled by pipeline
 
         // this.targets.main = ...
-        this.targets.translucent = frame.importExternal("translucent", p.fabulousTargets.translucentTerrainFramebuffer());
-        this.targets.itemEntity = frame.importExternal("item_entity", p.fabulousTargets.translucentItemEntityFramebuffer());
-        this.targets.particles = frame.importExternal("particles", p.fabulousTargets.translucentParticlesFramebuffer());
-        this.targets.weather = frame.importExternal("weather", p.fabulousTargets.weatherFramebuffer());
-        this.targets.clouds = frame.importExternal("clouds", p.fabulousTargets.cloudsFramebuffer());
+        // TODO
+        // this.targets.translucent = frame.importExternal("translucent", p.fabulousTargets.translucentTerrainFramebuffer());
+        // this.targets.itemEntity = frame.importExternal("item_entity", p.fabulousTargets.translucentItemEntityFramebuffer());
+        // this.targets.particles = frame.importExternal("particles", p.fabulousTargets.translucentParticlesFramebuffer());
+        // this.targets.weather = frame.importExternal("weather", p.fabulousTargets.weatherFramebuffer());
+        // this.targets.clouds = frame.importExternal("clouds", p.fabulousTargets.cloudsFramebuffer());
 
         return null;
     }

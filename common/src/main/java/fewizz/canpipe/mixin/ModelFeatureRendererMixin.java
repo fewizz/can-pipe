@@ -32,7 +32,7 @@ public class ModelFeatureRendererMixin {
         if (vc instanceof VertexConsumerExtended vce && submit.state() instanceof WrappedModelSubmitState wrapped) {
             EntityMaterialMap materialMap = wrapped.materialMap();
 
-            TextureAtlasSprite sprite = submit.sprite();
+            TextureAtlasSprite sprite = null;  // submit.sprite();  // TODO
 
             if (sprite != null) {
                 vce.canpipe_setScopedSpriteSupplier(() -> sprite);

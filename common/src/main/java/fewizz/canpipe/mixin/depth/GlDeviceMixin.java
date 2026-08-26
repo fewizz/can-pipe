@@ -1,21 +1,14 @@
 package fewizz.canpipe.mixin.depth;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.backend.opengl.GlDevice;
-
-import fewizz.canpipe.pipeline.PipelineRaw;
-import fewizz.canpipe.pipeline.Pipelines;
 
 @Mixin(GlDevice.class)
 public class GlDeviceMixin {
 
-    @ModifyArg(
+    // TODO
+    /*@ModifyArg(
         method = "compileShader",
         at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;glShaderSource(ILjava/lang/String;)V"),
         index = 1
@@ -40,6 +33,6 @@ public class GlDeviceMixin {
         }
 
         return src;
-    }
+    }*/
 
 }

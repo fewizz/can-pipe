@@ -1,6 +1,5 @@
 package fewizz.canpipe.mixin;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -21,7 +20,6 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
@@ -80,7 +78,8 @@ public class PreparedRenderTypeMixin {
             Pipeline p = Pipelines.getCurrent();
             Pair<List<GpuFormat>, @Nullable GpuFormat> formats;
 
-            if (RenderSystem.outputColorTextureOverride != null) {
+            // TODO
+            /*if (RenderSystem.outputColorTextureOverride != null) {
                 List<GpuFormat> colorFormats = new ArrayList<>();
                 if (fb.colorTextureViews.length > 0) {
                     colorFormats.add(RenderSystem.outputColorTextureOverride.texture().getFormat());
@@ -91,9 +90,9 @@ public class PreparedRenderTypeMixin {
 
                 formats = Pair.of(colorFormats, RenderSystem.outputDepthTextureOverride.texture().getFormat());
             }
-            else {
+            else {*/
                 formats = fb.getFormats();
-            }
+            //}
 
             renderPipeline = p.getReplacedRenderPipeline(renderPipeline, formats);
         }

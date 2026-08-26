@@ -6,11 +6,9 @@ import java.util.Set;
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
 import com.mojang.renderpearl.api.pipeline.CompareOp;
-import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
@@ -19,14 +17,12 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.vulkan.VulkanDevice;
 
 import fewizz.canpipe.renderpearl.GpuDeviceBackendExtended;
-import fewizz.canpipe.renderpearl.GpuShaderModule;
-import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 
 @Mixin(VulkanDevice.class)
 public abstract class VkDeviceMixin implements GpuDeviceBackendExtended {
 
-    @Shadow abstract IntermediaryShaderModule getOrCompileShader(final Identifier id, final ShaderType type, final ShaderDefines defines, final ShaderSource shaderSource);
+    // @Shadow abstract IntermediaryShaderModule getOrCompileShader(final Identifier id, final ShaderType type, final ShaderDefines defines, final ShaderSource shaderSource);
 
     @Unique private TriConsumer<String, Identifier, String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
@@ -75,7 +71,8 @@ public abstract class VkDeviceMixin implements GpuDeviceBackendExtended {
         }
     }
 
-    @Override
+    // TODO
+    /*@Override
     public GpuShaderModule canpipe_precompilePipelineModule(
         Identifier id,
         String shaderSource,
@@ -94,6 +91,6 @@ public abstract class VkDeviceMixin implements GpuDeviceBackendExtended {
             this.canpipe_compilationLog = null;
             this.canpipe_expectedInputAttributes = null;
         }
-    }
+    }*/
 
 }
