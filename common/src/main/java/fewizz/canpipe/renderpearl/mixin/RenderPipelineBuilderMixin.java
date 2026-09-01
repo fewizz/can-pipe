@@ -26,7 +26,7 @@ public abstract class RenderPipelineBuilderMixin implements RenderPipelineBuilde
         method = "build",
         at = @At(  // if (this.activeColorTargetStateCount == 0) {
             value = "FIELD",
-            target = "Lcom/mojang/blaze3d/pipeline/RenderPipeline$Builder;activeColorTargetStateCount:I",
+            target = "Lcom/mojang/renderpearl/api/pipeline/RenderPipeline$Builder;activeColorTargetStateCount:I",
             ordinal = 0
         )
     )

@@ -1,12 +1,15 @@
 {
     "required": true,
     "compatibilityLevel": "JAVA_21",
-    "package": "fewizz.canpipe.b3d.mixin",
+    "package": "fewizz.canpipe.renderpearl.mixin",
     "injectors": {
         "defaultRequire": 1
     },
     "client": [
-        "CommandEncoderMixin",
+        "FrontendCommandEncoderMixin",
+        "FrontendGpuDeviceAccessor",
+        "FrontendGpuDeviceMixin",
+        "FrontendRenderPassMixin",
         "GlCommandEncoderMixin",
         "GlConstMixin",
         "GlConstSwitchMetaMixin",
@@ -22,9 +25,6 @@
         "GlStateManagerAccessor",
         "GlStateManagerMixin",
         "GlTextureViewMixin",
-        "GpuDeviceAccessor",
-        "GpuDeviceMixin",
-        "RenderPassMixin",
         "RenderPipelineAccessor",
         "RenderPipelineBuilderMixin",
         "RenderPipelineMixin",
@@ -34,7 +34,7 @@
         "VkDeviceMixin",
         "VkGlslCompilerMixin",
         "VkGpuTextureView",
-        "VkIntermediaryShaderModuleMixin",
+        // "VkIntermediaryShaderModuleMixin",
         "VkSamplerMixin"
     ]
 }

@@ -19,9 +19,10 @@ public interface OrderedSubmitNodeCollectorMixin {
             "Lnet/minecraft/client/model/Model;"+
             "Ljava/lang/Object;"+
             "Lcom/mojang/blaze3d/vertex/PoseStack;"+
-            "IIILnet/minecraft/client/resources/model/sprite/SpriteId;"+
+            "III"+
+            "Lnet/minecraft/client/resources/model/sprite/SpriteId;"+
             "Lnet/minecraft/client/resources/model/sprite/SpriteGetter;"+
-            "ILnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;"+
+            "I"+
         ")V",
         at = @At("HEAD")
     )

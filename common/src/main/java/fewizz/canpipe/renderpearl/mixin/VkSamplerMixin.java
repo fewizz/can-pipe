@@ -36,7 +36,7 @@ public class VkSamplerMixin {
         )
     )
     void extend(CallbackInfo ci, @Local VkSamplerCreateInfo createInfo) {
-        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+        GpuDeviceBackend device = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
 
         var addressModeW = ((VkDeviceAccessor) device).get_canpipe_addressModeW();
         this.canpipe_addressModeW = addressModeW != null ? addressModeW : AddressMode.REPEAT;

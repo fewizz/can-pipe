@@ -30,7 +30,7 @@ public class VkGpuTextureView implements GpuTextureViewExtended {
         index = 0
     )
     int onSetViewType(int value) {
-        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+        GpuDeviceBackend device = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
         int layerCount = ((VkDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount();
         if (value == VK12.VK_IMAGE_VIEW_TYPE_CUBE && layerCount != -1 && layerCount < 6) {
             value = VK12.VK_IMAGE_VIEW_TYPE_2D;
@@ -50,7 +50,7 @@ public class VkGpuTextureView implements GpuTextureViewExtended {
         index = 0
     )
     int onSetBaseArrayLayer(int value) {
-        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+        GpuDeviceBackend device = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
         int baseArrayLayer = ((VkDeviceAccessor) device).get_canpipe_pendingTextureViewBaseLayer();
         this.canpipe_baseArrayLayer = baseArrayLayer != -1 ? baseArrayLayer : value;
         return this.canpipe_baseArrayLayer;
@@ -65,7 +65,7 @@ public class VkGpuTextureView implements GpuTextureViewExtended {
         index = 0
     )
     int onSetLayerCount(int value) {
-        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+        GpuDeviceBackend device = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
         int layerCount = ((VkDeviceAccessor) device).get_canpipe_pendingTextureViewLayerCount();
         this.canpipe_layerCount = layerCount != -1 ? layerCount : value;
         return this.canpipe_layerCount;

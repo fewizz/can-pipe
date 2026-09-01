@@ -23,7 +23,7 @@ public class VkGlslCompilerMixin {
         )
     )
     String onCompilationError(String message) {
-        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+        GpuDeviceBackend device = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
         ((VkDeviceAccessor) device).set_canpipe_compilationLog(message);
         return message;
     }

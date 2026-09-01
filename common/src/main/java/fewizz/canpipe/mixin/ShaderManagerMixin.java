@@ -15,7 +15,7 @@ public class ShaderManagerMixin {
         method = "apply(Lnet/minecraft/client/renderer/ShaderManager$Configs;Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/util/profiling/ProfilerFiller;)V",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/GpuDevice;clearPipelineCache()V"
+            target = "Lcom/mojang/renderpearl/api/device/GpuDevice;clearPipelineCache()V"
         )
     )
     void resetPipelineOnApply(CallbackInfo ci) {

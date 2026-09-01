@@ -10,23 +10,23 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.pipeline.CompareOp;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
-import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
+import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
+import com.mojang.renderpearl.frontend.FrontendGpuDevice;
 
 import fewizz.canpipe.renderpearl.GpuDeviceBackendExtended;
 import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.renderpearl.GpuShaderModule;
 import net.minecraft.resources.Identifier;
 
-@Mixin(GpuDevice.class)
-public class GpuDeviceMixin implements GpuDeviceExtended {
+@Mixin(FrontendGpuDevice.class)
+public class FrontendGpuDeviceMixin implements GpuDeviceExtended {
 
     @Final @Shadow  private GpuDeviceBackend backend;
 

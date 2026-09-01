@@ -9,14 +9,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.compat.indigo.QuadViewExtended;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
-import fewizz.canpipe.pipeline.Pipelines;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.EncodingFormat;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.QuadViewImpl;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -35,14 +33,15 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
     @Override public int[] canpipe_getExtraData() { return this.canpipe_extraData; }
     @Override public void canpipe_setExtraData(int[] data) { this.canpipe_extraData = data; }
 
-    @ModifyReturnValue(method = "diffuseShade", at = @At("RETURN"))
+    // TODO
+    /*@ModifyReturnValue(method = "diffuseShade", at = @At("RETURN"))
     boolean hasShade(boolean original) {
         // diffuse lighting is handled by pipeline
         if (Pipelines.getCurrent() != null) {
             return false;
         }
         return original;
-    }
+    }*/
 
     @Inject(
         method = "buffer*",

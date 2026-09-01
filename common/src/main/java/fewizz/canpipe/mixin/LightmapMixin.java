@@ -40,7 +40,7 @@ public class LightmapMixin implements LightmapExtended {
         method = "<init>",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/GpuDevice;createTexture("+
+            target = "Lcom/mojang/renderpearl/api/device/GpuDevice;createTexture("+
                 "Ljava/lang/String;"+
                 "I"+
                 "Lcom/mojang/blaze3d/GpuFormat;"+

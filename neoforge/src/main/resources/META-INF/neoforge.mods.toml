@@ -11,7 +11,7 @@ credits="${credits}"
 description = '''${description}'''
 
 [[mixins]]
-config = "${mod_id}.b3d.mixins.json"
+config = "${mod_id}.renderpearl.mixins.json"
 
 [[mixins]]
 config = "${mod_id}.mixins.json"

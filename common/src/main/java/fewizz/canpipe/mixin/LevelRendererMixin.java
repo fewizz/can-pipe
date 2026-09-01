@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
-import org.joml.Matrix4fc;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,8 +18,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.llamalad7.mixinextras.sugar.Local;
-import com.mojang.blaze3d.framegraph.FrameGraphBuilder;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -38,15 +35,12 @@ import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.renderpearl.CommandEncoderExtended;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
-import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
-import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
@@ -73,7 +67,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
     @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
-    @Shadow public ChunkSectionsToRender prepareChunkRenders(Matrix4fc modelViewMatrix) { return null; }
+    // @Shadow public ChunkSectionsToRender prepareChunkRenders(Matrix4fc modelViewMatrix) { return null; }
 
     @Unique private int canpipe_currentShadowCascadeIdx = -1;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
@@ -101,14 +95,13 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Inject(method = "render", at = @At(value = "HEAD"))
     void renderShadows(
-        final GraphicsResourceAllocator resourceAllocator,
-        final DeltaTracker deltaTracker,
-        final boolean renderOutline,
-        final CameraRenderState cameraState,
-        final Matrix4fc modelViewMatrix,
-        final GpuBufferSlice terrainFog,
-        final Vector4f fogColor,
-        final boolean shouldRenderSky,
+        GraphicsResourceAllocator resourceAllocator,
+        boolean renderOutline,
+        CameraRenderState cameraState,
+        GpuBufferSlice terrainFog,
+        Vector4f fogColor,
+        boolean shouldRenderSky,
+        boolean consistentDepthRequired,
         CallbackInfo ci
     ) throws Exception {
         Pipeline p = Pipelines.getCurrent();
@@ -116,7 +109,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         final Minecraft mc = Minecraft.getInstance();
         final ProfilerFiller profiler = Profiler.get();
-        float pt = deltaTracker.getGameTimeDeltaPartialTick(false);
+        float pt = 0.0F; // deltaTracker.getGameTimeDeltaPartialTick(false);  // TODO
 
         var eyePosBlockPos = BlockPos.containing(mc.player.getEyePosition());
         int blockLight = mc.level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(eyePosBlockPos);
@@ -178,7 +171,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             profiler.popPush("cascade " + this.canpipe_currentShadowCascadeIdx);
 
             profiler.push("prepare chunk sections to render");
-            ChunkSectionsToRender sections = prepareChunkRenders(viewMatrix);
+            // TODO
+            // ChunkSectionsToRender sections = prepareChunkRenders(viewMatrix);
             profiler.push("render sections");
             // TODO
             // sections.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
@@ -224,7 +218,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         profiler.pop();
     }
 
-    @WrapOperation(
+    // TODO
+    /*@WrapOperation(
         method = "render",
         at = @At(
             value = "INVOKE",
@@ -251,20 +246,20 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         // this.targets.clouds = frame.importExternal("clouds", p.fabulousTargets.cloudsFramebuffer());
 
         return null;
-    }
+    }*/
 
     @WrapOperation(
         method = "lambda$addMainPass$0",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/GpuDevice;createSampler("+
-                "Lcom/mojang/blaze3d/textures/AddressMode;"+
-                "Lcom/mojang/blaze3d/textures/AddressMode;"+
-                "Lcom/mojang/blaze3d/textures/FilterMode;"+
-                "Lcom/mojang/blaze3d/textures/FilterMode;"+
+            target = "Lcom/mojang/renderpearl/api/device/GpuDevice;createSampler("+
+                "Lcom/mojang/renderpearl/api/textures/AddressMode;"+
+                "Lcom/mojang/renderpearl/api/textures/AddressMode;"+
+                "Lcom/mojang/renderpearl/api/textures/FilterMode;"+
+                "Lcom/mojang/renderpearl/api/textures/FilterMode;"+
                 "I"+
                 "Ljava/util/OptionalDouble;"+
-            ")Lcom/mojang/blaze3d/textures/GpuSampler;"
+            ")Lcom/mojang/renderpearl/api/textures/GpuSampler;"
         )
     )
     GpuSampler onCreateSampler(GpuDevice device, AddressMode u, AddressMode v, FilterMode min, FilterMode mag, int maxAnisotropy, OptionalDouble maxLod, Operation<GpuSampler> operation) {
@@ -279,7 +274,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     }
 
     @ModifyExpressionValue(
-        method = {"visibleSections", "clearVisibleSections", "prepareChunkRenders", "scheduleTranslucentSectionResort"},
+        method = {"visibleSections", "clearVisibleSections", "extractSectionDrawGroups", "scheduleTranslucentSectionResort"},
         require = 1+1+1+5,
         at = @At(
             value= "FIELD",

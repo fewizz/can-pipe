@@ -39,7 +39,7 @@ public abstract class GlSamplerMixin implements GpuSamplerExtended {
         at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/GL33C;glGenSamplers()I")
     )
     void onInitBegin(CallbackInfo ci) {
-        GpuDeviceBackend device = ((GpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+        GpuDeviceBackend device = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
 
         var addressModeW = ((GlDeviceAccessor) device).get_canpipe_addressModeW();
         this.canpipe_addressModeW = addressModeW != null ? addressModeW : AddressMode.REPEAT;
