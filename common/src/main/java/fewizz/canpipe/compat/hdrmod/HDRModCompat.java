@@ -36,6 +36,8 @@ public class HDRModCompat {
             FloatUniform gamePeakBrightnessUniform = globalsStruct.add(new FloatUniform());
             FloatUniform gamePaperBrightnessUniform = globalsStruct.add(new FloatUniform());
             FloatUniform uiBrightnessUniform = globalsStruct.add(new FloatUniform());
+            FloatUniform uiHudBrightnessUniform = globalsStruct.add(new FloatUniform());
+            FloatUniform uiNonHudBrightnessUniform = globalsStruct.add(new FloatUniform());
 
             Uniforms.addExternalUBO(uboName, globalsStruct, "HDRMod globals UBO", () -> {
                 var windowHandle = Minecraft.getInstance().getWindow().handle();
@@ -43,6 +45,8 @@ public class HDRModCompat {
                 gamePeakBrightnessUniform.set(api.getColorManagementInfo().getCurrentGamePeakBrightness(windowHandle));
                 gamePaperBrightnessUniform.set(api.getColorManagementInfo().getCurrentGamePaperWhiteBrightness(windowHandle));
                 uiBrightnessUniform.set(api.getColorManagementInfo().getCurrentUIBrightness(windowHandle));
+                uiHudBrightnessUniform.set(api.getColorManagementInfo().getCurrentUIBrightness(windowHandle));
+                uiNonHudBrightnessUniform.set(api.getColorManagementInfo().getCurrentUIBrightness(windowHandle));
             });
 
             String src = """
@@ -53,6 +57,8 @@ public class HDRModCompat {
                 float hdrmod_gamePeakBrightness;
                 float hdrmod_gamePaperWhiteBrightness;
                 float hdrmod_uiBrightness;
+                float hdrmod_uiHudBrightness;
+                float hdrmod_uiNonHudBrightness;
             };
             """;
             Shaders.VIRTUAL_INCLUDES.put(globalsShaderLocation, src);
