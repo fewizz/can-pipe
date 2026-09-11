@@ -26,7 +26,7 @@ public class ScreenshotMixin {
         method = "takeScreenshot(Lcom/mojang/blaze3d/pipeline/RenderTarget;ILjava/util/function/Consumer;)V",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;getColorTexture()Lcom/mojang/blaze3d/textures/GpuTexture;"
+            target = "Lcom/mojang/blaze3d/pipeline/RenderTarget;getColorTexture()Lcom/mojang/renderpearl/api/textures/GpuTexture;"
         )
     )
     private static GpuTexture replaceTextureIfFormatIsNotRGBA8(

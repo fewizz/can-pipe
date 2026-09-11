@@ -32,7 +32,8 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
         this.canpipe_itemStack = itemStack;
     }
 
-    @Inject(
+    // TODO
+    /*@Inject(
         method = "submit",
         at = @At(
             value = "INVOKE",
@@ -54,6 +55,6 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
             }
             snce.canpipe_setPendingItemSubmitMaterialMap(materialMap);
         }
-    }
+    }*/
 
 }

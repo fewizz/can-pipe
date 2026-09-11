@@ -38,22 +38,23 @@ public class FrontendCommandEncoderMixin implements CommandEncoderExtended {
         ((CommandEncoderBackendExtended) this.backend).canpipe_blitImage(srcTexture, dstTexture);
     }
 
-    @ModifyExpressionValue(
-        method = "createRenderPass(Lcom/mojang/blaze3d/systems/RenderPassDescriptor;)Lcom/mojang/blaze3d/systems/RenderPass;",
+    // TODO
+    /*@ModifyExpressionValue(
+        method = "createRenderPass(Lcom/mojang/renderpearl/api/commands/RenderPassDescriptor;)Lcom/mojang/renderpearl/api/commands/RenderPass;",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/textures/GpuTexture;getDepthOrLayers()I"  // used only for checks
+            target = "Lcom/mojang/renderpearl/api/textures/GpuTexture;getDepthOrLayers()I"  // used only for checks
         )
     )
     int allowTexturesWithMultipleLayers(int value) {
         return 1;  // 1 == 1
-    }
+    }*/
 
-    @ModifyExpressionValue(
-        method = "createRenderPass(Lcom/mojang/blaze3d/systems/RenderPassDescriptor;)Lcom/mojang/blaze3d/systems/RenderPass;",
+    /*@ModifyExpressionValue(
+        method = "createRenderPass(Lcom/mojang/renderpearl/api/commands/RenderPassDescriptor;)Lcom/mojang/renderpearl/api/commands/RenderPass;",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/RenderPassDescriptor$Attachment;textureView()Lcom/mojang/blaze3d/textures/GpuTextureView;"
+            target = "Lcom/mojang/renderpearl/api/commands/RenderPassDescriptor$Attachment;textureView()Lcom/mojang/renderpearl/api/textures/GpuTextureView;"
         )
     )
     GpuTextureView checkTextureViewLayersCount(GpuTextureView textureView) {
@@ -61,6 +62,6 @@ public class FrontendCommandEncoderMixin implements CommandEncoderExtended {
             throw new IllegalStateException("Some attachment uses more than 1 array layers");
         }
         return textureView;
-    }
+    }*/
 
 }

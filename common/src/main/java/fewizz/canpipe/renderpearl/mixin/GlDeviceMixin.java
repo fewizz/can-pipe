@@ -3,6 +3,8 @@ package fewizz.canpipe.renderpearl.mixin;
 import java.nio.ByteBuffer;
 import java.util.OptionalDouble;
 
+import javax.management.RuntimeErrorException;
+
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
@@ -35,8 +37,6 @@ import net.minecraft.resources.Identifier;
 
 @Mixin(GlDevice.class)
 public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
-
-    @Shadow abstract protected GlShaderModule getOrCompileShader(Identifier shader, ShaderType type, ShaderDefines defines, ShaderSource shaderSource);
 
     @Unique private TriConsumer<String, Identifier, String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
@@ -76,7 +76,8 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
     ) {
         try {
             this.canpipe_onCompilationError = onCompilationError;
-            return (GpuShaderModule) this.getOrCompileShader(id, shaderType, ShaderDefines.EMPTY, (_id, _shaderType) -> shaderSource);
+            throw new RuntimeException();
+            // return (GpuShaderModule) this.getOrCompileShader(id, shaderType, ShaderDefines.EMPTY, (_id, _shaderType) -> shaderSource);
         } finally {
             this.canpipe_onCompilationError = null;
             this.canpipe_compilationLog = null;
@@ -99,25 +100,27 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         }
     }
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = "compileShader",
         at = @At(value = "CONSTANT", args = "intValue=32768")
     )
     int extendMaxLogLength(int original, @Local(ordinal = 0) int shaderId) {
         return GlStateManager.glGetShaderi(shaderId, GL33C.GL_INFO_LOG_LENGTH);
-    }
+    }*/
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = "compileShader",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/GlStateManager;glGetShaderInfoLog(II)Ljava/lang/String;"
+            target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager;glGetShaderInfoLog(II)Ljava/lang/String;"
         )
     )
     String catchLog(String log) {
         this.canpipe_compilationLog = log;
         return log;
-    }
+    }*/
 
     // TODO
     /*@ModifyReturnValue(method = "compileShader", at = @At("RETURN"))
@@ -132,13 +135,14 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         return module;
     }*/
 
+    // TODO
     @Inject(
         method = "createTexture("+
-            "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+
-        ")Lcom/mojang/blaze3d/textures/GpuTexture;",
+            "Ljava/lang/String;ILcom/mojang/renderpearl/api/GpuFormat;IIII"+
+        ")Lcom/mojang/renderpearl/api/textures/GpuTexture;",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_bindTexture(I)V"
+            target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager;_bindTexture(I)V"
         )
     )
     void beforeBindingTexture2D(
@@ -153,8 +157,8 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
 
     @ModifyExpressionValue(
         method = "createTexture("+
-            "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+
-        ")Lcom/mojang/blaze3d/textures/GpuTexture;",
+            "Ljava/lang/String;ILcom/mojang/renderpearl/api/GpuFormat;IIII"+
+        ")Lcom/mojang/renderpearl/api/textures/GpuTexture;",
         at = @At(value = "CONSTANT", args = "intValue=3553")  // GL_TEXTURE_2D
     )
     int changeTarget(int target, @Local(argsOnly = true, ordinal = 3) int depthOrLayers) {
@@ -166,8 +170,8 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
 
     @ModifyExpressionValue(
         method = "createTexture("+
-            "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+
-        ")Lcom/mojang/blaze3d/textures/GpuTexture;",
+            "Ljava/lang/String;ILcom/mojang/renderpearl/api/GpuFormat;IIII"+
+        ")Lcom/mojang/renderpearl/api/textures/GpuTexture;",
         at = @At(value = "CONSTANT", args = "intValue=34067")  // GL_TEXTURE_CUBE_MAP
     )
     int onGettingCubemapTarget(int target, @Local(ordinal = 5) int id) {
@@ -177,11 +181,11 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
 
     @WrapWithCondition(
         method = "createTexture("+
-            "Ljava/lang/String;ILcom/mojang/blaze3d/GpuFormat;IIII"+
-        ")Lcom/mojang/blaze3d/textures/GpuTexture;",
+            "Ljava/lang/String;ILcom/mojang/renderpearl/api/GpuFormat;IIII"+
+        ")Lcom/mojang/renderpearl/api/textures/GpuTexture;",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_texImage2D(IIIIIIIILjava/nio/ByteBuffer;)V",
+            target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager;_texImage2D(IIIIIIIILjava/nio/ByteBuffer;)V",
             ordinal = 1
         )
     )

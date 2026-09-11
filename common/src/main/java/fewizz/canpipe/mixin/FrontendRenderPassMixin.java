@@ -20,7 +20,8 @@ import fewizz.canpipe.pipeline.Pipelines;
 @Mixin(FrontendRenderPass.class)
 public class FrontendRenderPassMixin {
 
-    @Shadow @Final private List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments;
+    // TODO
+    /*@Shadow @Final private List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments;
 
     @ModifyVariable(
         method = "setPipeline",
@@ -32,6 +33,6 @@ public class FrontendRenderPassMixin {
             pipeline = p.onRenderPassSetPipeline(pipeline, this.colorAttachments);
         }
         return pipeline;
-    }
+    }*/
 
 }

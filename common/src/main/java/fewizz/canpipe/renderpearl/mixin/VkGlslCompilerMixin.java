@@ -15,7 +15,8 @@ import com.mojang.renderpearl.frontend.shaders.GlslCompiler;
 @Mixin(GlslCompiler.class)
 public class VkGlslCompilerMixin {
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = "createIntermediary",
         at = @At(
             value = "INVOKE",
@@ -41,7 +42,7 @@ public class VkGlslCompilerMixin {
         ByteBuffer result = operation.call(size + 256);
         result.limit(size);
         return result;
-    }
+    }*/
 
     // TODO
     /*@WrapOperation(

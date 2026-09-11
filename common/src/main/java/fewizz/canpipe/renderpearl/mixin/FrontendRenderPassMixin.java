@@ -19,7 +19,8 @@ import com.mojang.renderpearl.frontend.FrontendRenderPass;
 @Mixin(FrontendRenderPass.class)
 public class FrontendRenderPassMixin {
 
-    @Shadow @Final private List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments;
+    // TODO
+    /*@Shadow @Final private List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments;
 
     @ModifyArg(
         method = "setPipeline",
@@ -54,6 +55,6 @@ public class FrontendRenderPassMixin {
     ) {
         return message+" Expected format \""+colorTargetState.format()+"\", but got \""+attachment.textureView().texture().getFormat()+"\"."
             +" Texture: \""+attachment.textureView().texture().getLabel()+"\", Render pipeline: \""+renderPipeline+"\".";
-    }
+    }*/
 
 }

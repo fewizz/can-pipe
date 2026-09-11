@@ -14,7 +14,7 @@ public class GlDirectStateAccessEmulatedMixin {
         method = "bindFrameBufferTextures",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_glFramebufferTexture2D(IIIII)V"
+            target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager;_glFramebufferTexture2D(IIIII)V"
         )
     )
     void layeredAttachment(

@@ -39,7 +39,8 @@ public class QuadParticleFeatureRendererMixin {
 
     @Unique private static Framebuffer canpipe_selectedFramebuffer;
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = "executeGroup",
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;mainRenderTarget()Lcom/mojang/blaze3d/pipeline/RenderTarget;")
     )
@@ -65,9 +66,9 @@ public class QuadParticleFeatureRendererMixin {
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/systems/CommandEncoder;createRenderPass("+
                 "Ljava/util/function/Supplier;"+
-                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+"Ljava/util/Optional;"+
-                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+"Ljava/util/OptionalDouble;"+
-            ")Lcom/mojang/blaze3d/systems/RenderPass;",
+                "Lcom/mojang/renderpearl/api/textures/GpuTextureView;"+"Ljava/util/Optional;"+
+                "Lcom/mojang/renderpearl/api/textures/GpuTextureView;"+"Ljava/util/OptionalDouble;"+
+            ")Lcom/mojang/renderpearl/api/commands/RenderPass;",
             ordinal = 0
         )
     )
@@ -107,13 +108,14 @@ public class QuadParticleFeatureRendererMixin {
                 : CanPipe.VertexFormats.PARTICLE;
         }
         return vertexFormat;
-    }
+    }*/
 
-    @ModifyArg(
+    // TODO
+    /*@ModifyArg(
         method = "drawLayers",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/RenderPass;setPipeline(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)V"
+            target = "Lcom/mojang/renderpearl/api/commands/RenderPass;setPipeline(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)V"
         ),
         index = 0
     )
@@ -129,9 +131,9 @@ public class QuadParticleFeatureRendererMixin {
         method = "drawLayers",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/RenderPass;bindTexture("+
+            target = "Lcom/mojang/renderpearl/api/commands/RenderPass;bindTexture("+
                 "Ljava/lang/String;"+
-                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+                "Lcom/mojang/renderpearl/api/textures/GpuTextureView;"+
                 "Lcom/mojang/blaze3d/textures/GpuSampler;"+
             ")V"
         )
@@ -142,6 +144,6 @@ public class QuadParticleFeatureRendererMixin {
         @Local RenderPass renderPass
     ) {
         Pipeline.bindSpritesExtentsSampler(renderPass, texture.getTextureView());
-    }
+    }*/
 
 }

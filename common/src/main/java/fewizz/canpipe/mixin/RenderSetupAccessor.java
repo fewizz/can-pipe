@@ -7,13 +7,13 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
-import net.minecraft.client.renderer.rendertype.OutputTarget;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 
 @Mixin(RenderSetup.class)
 public interface RenderSetupAccessor {
 
-    @Accessor("outputTarget") OutputTarget canpipe_getOutputTarget();
+    // TODO
+    // @Accessor("outputTarget") OutputTarget canpipe_getOutputTarget();
 
     @Accessor("textures") Map<String, RenderSetup.TextureBinding> canpipe_getTextures();
 

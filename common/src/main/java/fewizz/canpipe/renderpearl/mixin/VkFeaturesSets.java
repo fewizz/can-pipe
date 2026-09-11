@@ -8,24 +8,31 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.google.common.collect.ImmutableSet;
-import com.mojang.renderpearl.backend.vulkan.VulkanBackend;
+import com.mojang.renderpearl.backend.vulkan.VulkanFeatureSets;
+import com.mojang.renderpearl.backend.vulkan.init.FeatureSet;
 import com.mojang.renderpearl.backend.vulkan.init.VulkanFeature;
 import com.mojang.renderpearl.backend.vulkan.init.VulkanPNextStruct;
 
-@Mixin(VulkanBackend.class)
-public class VkBackendMixin {
+@Mixin(VulkanFeatureSets.class)
+public class VkFeaturesSets {
 
     @Shadow @Final public static VulkanPNextStruct VK10_FEATURES_STRUCT;
-    @Shadow @Mutable public static Set<VulkanFeature> REQUIRED_DEVICE_FEATURES;
+    @Shadow @Mutable public static FeatureSet REQUIRED_FEATURESET;
 
-    @Inject(method = "<clinit>", at = @At(value = "RETURN"))
-    private static void onClassInit(CallbackInfo ci) {
-        REQUIRED_DEVICE_FEATURES = ImmutableSet.<VulkanFeature>builder()
-            .addAll(REQUIRED_DEVICE_FEATURES)
+    @ModifyArg(
+        method = "<clinit>",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/renderpearl/backend/vulkan/init/FeatureSet;<init>(Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;)V"
+        ),
+        index = 2
+    )
+    private static Set<VulkanFeature> onClassInit(Set<VulkanFeature> features) {
+        return ImmutableSet.<VulkanFeature>builder()
+            .addAll(features)
             .add(new VulkanFeature(VK10_FEATURES_STRUCT, "independentBlend", VkPhysicalDeviceFeatures.INDEPENDENTBLEND))
             .build();
     }

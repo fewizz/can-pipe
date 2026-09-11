@@ -11,13 +11,14 @@ import net.minecraft.client.renderer.ShaderManager;
 @Mixin(ShaderManager.class)
 public class ShaderManagerMixin {
 
-    @Inject(
+    // TODO
+    /*@Inject(
         method = "apply(Lnet/minecraft/client/renderer/ShaderManager$Configs;Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/util/profiling/ProfilerFiller;)V",
         at = @At(
             value = "INVOKE",
             target = "Lcom/mojang/renderpearl/api/device/GpuDevice;clearPipelineCache()V"
         )
-    )
+    )*/
     void resetPipelineOnApply(CallbackInfo ci) {
         /*
         Not needed if `Pipelines` resource reload listener's "apply" stage is executed on same tick as `ModelManager`'s "apply" stage

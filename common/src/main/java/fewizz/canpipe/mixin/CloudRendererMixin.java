@@ -14,7 +14,8 @@ import net.minecraft.client.renderer.CloudRenderer;
 @Mixin(CloudRenderer.class)
 public class CloudRendererMixin {
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = "render",
         at = @At(
             value = "INVOKE",
@@ -27,6 +28,6 @@ public class CloudRendererMixin {
             renderTarget = p.shadowFramebufferOr(p.cloudsFramebuffer);
         }
         return renderTarget;
-    }
+    }*/
 
 }

@@ -14,7 +14,7 @@ public class CameraMixin {
 
     @ModifyExpressionValue(
         method = "createProjectionMatrixForCulling",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/DeviceInfo;isZZeroToOne()Z")
+        at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/device/DeviceInfo;isZZeroToOne()Z")
     )
     boolean canpipe_replaceIsZZeroToZone(boolean value) {
         Pipeline p = Pipelines.getCurrent();

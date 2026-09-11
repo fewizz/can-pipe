@@ -13,7 +13,8 @@ import net.minecraft.client.renderer.WeatherEffectRenderer;
 @Mixin(WeatherEffectRenderer.class)
 public class WeatherEffectRendererMixin {
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = {
             "render("+
                 "Lnet/minecraft/world/phys/Vec3;"+
@@ -37,6 +38,6 @@ public class WeatherEffectRendererMixin {
             renderTarget = p.shadowFramebufferOr(p.weatherFramebuffer);
         }
         return renderTarget;
-    }
+    }*/
 
 }

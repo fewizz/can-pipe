@@ -23,7 +23,6 @@ import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
@@ -40,7 +39,6 @@ import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.mixin.RenderSetupAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
@@ -49,8 +47,6 @@ import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.OutputTarget;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
@@ -664,7 +660,8 @@ public class Pipeline implements AutoCloseable {
         return cascade >= 0 ? this.shadows.framebuffers.get(cascade) : or;
     }
 
-    public RenderTarget replaceRenderTarget(RenderTarget renderTarget, RenderSetup renderSetup) {
+    // TODO
+    /*public RenderTarget replaceRenderTarget(RenderTarget renderTarget, RenderSetup renderSetup) {
         RenderPipeline originalRenderPipeline = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getPipeline();
 
         MaterialProgramLoader loader = this.getMaterialProgramLoader(originalRenderPipeline);
@@ -675,13 +672,12 @@ public class Pipeline implements AutoCloseable {
             if (outputTarget == OutputTarget.MAIN_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.solidFramebuffer);
             }
-            // TODO
-            /*else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
+            else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.translucentItemEntityFramebuffer);
             }
             else if (outputTarget == OutputTarget.WEATHER_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.weatherFramebuffer);
-            }*/
+            }
             else {
                 throw new RuntimeException("Unexpected output target: "+outputTarget);
             }
@@ -699,20 +695,19 @@ public class Pipeline implements AutoCloseable {
             if (outputTarget == OutputTarget.MAIN_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.solidFramebuffer);
             }
-            // TODO
-            /*else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
+            else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.translucentItemEntityFramebuffer);
             }
             else if (outputTarget == OutputTarget.WEATHER_TARGET) {
                 renderTarget = this.shadowFramebufferOr(this.weatherFramebuffer);
-            }*/
+            }
             else {
                 throw new RuntimeException("Unexpected output target: "+outputTarget);
             }
         }
 
         return renderTarget;
-    }
+    }*/
 
     public RenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
         if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return pipeline; }

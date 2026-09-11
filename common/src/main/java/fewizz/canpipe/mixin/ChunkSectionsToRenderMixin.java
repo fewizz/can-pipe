@@ -31,7 +31,8 @@ import net.minecraft.client.renderer.oit.OitStage;
 @Mixin(ChunkSectionsToRender.class)
 public class ChunkSectionsToRenderMixin {
 
-    @WrapOperation(
+    // TODO
+    /*@WrapOperation(
         method = "renderOit",
         at = @At(
             value = "INVOKE",
@@ -39,7 +40,7 @@ public class ChunkSectionsToRenderMixin {
                 "Lnet/minecraft/client/renderer/oit/OitStage;"+
                 "Ljava/util/function/Supplier;"+
                 "Lnet/minecraft/client/renderer/oit/OitRenderPassProvider$Parameters;"+
-            ")Lcom/mojang/blaze3d/systems/RenderPass;"
+            ")Lcom/mojang/renderpearl/api/commands/RenderPass;"
         )
     )
     RenderPass replaceColorAttachments(
@@ -47,12 +48,12 @@ public class ChunkSectionsToRenderMixin {
         Operation<RenderPass> operation,
         @Local RenderTarget renderTarget
     ) {
-        /*if (renderTarget instanceof Framebuffer framebuffer) {
+        if (renderTarget instanceof Framebuffer framebuffer) {
             return Pipelines.getCurrent().createRenderPass(
                 RenderSystem.getDevice().createCommandEncoder(), nameSupplier,
                 framebuffer
             );
-        }*/
+        }
         return operation.call(instance, nameSupplier, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
@@ -72,6 +73,6 @@ public class ChunkSectionsToRenderMixin {
     )
     void bindSpritesExtentsBeforeDrawing(CallbackInfo ci, @Local RenderPass renderPass, @Local ChunkSectionLayer chunkSectionLayer, @Local(name="atlas") GpuTextureView atlas) {
         Pipeline.bindSpritesExtentsSampler(renderPass, atlas);
-    }
+    }*/
 
 }

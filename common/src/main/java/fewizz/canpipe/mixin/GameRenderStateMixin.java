@@ -12,13 +12,14 @@ import net.minecraft.client.renderer.state.GameRenderState;
 @Mixin(GameRenderState.class)
 public class GameRenderStateMixin {
 
-    @ModifyReturnValue(
+    // TODO
+    /*@ModifyReturnValue(
         method = "useShaderTransparency",
         at = @At("RETURN")
     )
     private boolean useShaderTransparency(boolean original) {
         Pipeline p = Pipelines.getCurrent();
         return original || (p != null && p.fabulousTargets != null);
-    }
+    }*/
 
 }

@@ -48,7 +48,7 @@ public class GlStateManagerMixin {
         method = "_bindTexture",
         at = @At(
             value = "FIELD",
-            target = "Lcom/mojang/blaze3d/opengl/GlStateManager$TextureState;binding:I",
+            target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager$TextureState;binding:I",
             ordinal = 1
         )
     )

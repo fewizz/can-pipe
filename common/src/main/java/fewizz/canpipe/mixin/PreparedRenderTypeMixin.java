@@ -29,17 +29,17 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import net.minecraft.client.renderer.rendertype.OutputTarget;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 
 @Mixin(PreparedRenderType.class)
 public class PreparedRenderTypeMixin {
 
     @Shadow @Final private RenderPipeline pipeline;
-    @Shadow @Final private OutputTarget outputTarget;
+    // @Shadow @Final private OutputTarget outputTarget;
     @Shadow @Final List<PreparedRenderType.Texture> textures;
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = "drawFromBuffer("+
             "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
             "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
@@ -57,7 +57,7 @@ public class PreparedRenderTypeMixin {
             renderTarget = p.replaceRenderTarget(renderTarget, this.pipeline, this.outputTarget);
         }
         return renderTarget;
-    }
+    }*/
 
     @ModifyExpressionValue(
         method = "drawFromBuffer("+
@@ -110,11 +110,11 @@ public class PreparedRenderTypeMixin {
             value = "INVOKE",
             target = "Lcom/mojang/blaze3d/systems/CommandEncoder;createRenderPass("+
                 "Ljava/util/function/Supplier;"+
-                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+                "Lcom/mojang/renderpearl/api/textures/GpuTextureView;"+
                 "Ljava/util/Optional;"+
-                "Lcom/mojang/blaze3d/textures/GpuTextureView;"+
+                "Lcom/mojang/renderpearl/api/textures/GpuTextureView;"+
                 "Ljava/util/OptionalDouble;"+
-            ")Lcom/mojang/blaze3d/systems/RenderPass;"
+            ")Lcom/mojang/renderpearl/api/commands/RenderPass;"
         )
     )
     RenderPass onCreateRenderPass(
@@ -140,7 +140,7 @@ public class PreparedRenderTypeMixin {
         ")V",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/systems/RenderPass;setIndexBuffer"
+            target = "Lcom/mojang/renderpearl/api/commands/RenderPass;setIndexBuffer"
         )
     )
     void bindSpritesExtents(

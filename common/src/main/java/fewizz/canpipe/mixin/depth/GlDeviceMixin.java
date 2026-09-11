@@ -10,7 +10,7 @@ public class GlDeviceMixin {
     // TODO
     /*@ModifyArg(
         method = "compileShader",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;glShaderSource(ILjava/lang/String;)V"),
+        at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager;glShaderSource(ILjava/lang/String;)V"),
         index = 1
     )
     String changeClipDepth(String src, @Local GlDevice.ShaderCompilationKey key) {

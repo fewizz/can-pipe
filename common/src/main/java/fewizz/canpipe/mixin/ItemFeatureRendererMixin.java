@@ -57,7 +57,8 @@ public abstract class ItemFeatureRendererMixin extends RenderTypeFeatureRenderer
         }
     }
 
-    @ModifyExpressionValue(
+    // TODO
+    /*@ModifyExpressionValue(
         method = "prepareFoilSubmit",
         at = @At(
             value = "INVOKE",
@@ -69,6 +70,6 @@ public abstract class ItemFeatureRendererMixin extends RenderTypeFeatureRenderer
             foilType = ItemStackRenderState.FoilType.NONE;
         }
         return foilType;
-    }
+    }*/
 
 }

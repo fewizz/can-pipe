@@ -67,7 +67,7 @@ public class ProjectionMixin {
 
     @ModifyExpressionValue(
         method = "getMatrix",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/DeviceInfo;isZZeroToOne()Z")
+        at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/device/DeviceInfo;isZZeroToOne()Z")
     )
     boolean replaceIsZZeroToOne(boolean value) {
         Pipeline p = Pipelines.getCurrent();

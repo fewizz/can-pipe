@@ -17,7 +17,7 @@ public class GlFramebufferCacheKeyMixin {
         method = "<init>",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/opengl/FrameBufferAttachment;fboMipLevel()I"
+            target = "Lcom/mojang/renderpearl/backend/opengl/FrameBufferAttachment;fboMipLevel()I"
         )
     )
     int takeLayerIntoAccount(

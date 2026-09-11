@@ -35,7 +35,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     @Unique private int canpipe_clearLayerCount = -1;
 
     @ModifyExpressionValue(
-        method = "trySetup",
+        method = "setupDraw",
         at = @At(value = "CONSTANT", args = "intValue=3553")  // GL_TEXTURE_2D
     )
     int fixTextureTarget(int target, @Local GlTexture glTexture) {
@@ -96,7 +96,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
 
     @WrapOperation(
         method = "clearColorTexture",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V")
+        at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager;_clear(I)V")
     )
     public void clearNonZeroColorLayer(int mask, Operation<Void> operation, @Local(argsOnly = true) GpuTexture colorTexture) {
         if (this.canpipe_clearBaseLayer == -1) {
@@ -122,7 +122,7 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
 
     @WrapOperation(
         method = "clearDepthTexture",
-        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/opengl/GlStateManager;_clear(I)V")
+        at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager;_clear(I)V")
     )
     public void clearNonZeroDepthLayer(int mask, Operation<Void> operation, @Local(argsOnly = true) GpuTexture depthTexture) {
         if (this.canpipe_clearBaseLayer == -1) {

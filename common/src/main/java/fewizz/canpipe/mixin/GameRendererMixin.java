@@ -2,7 +2,6 @@ package fewizz.canpipe.mixin;
 
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
@@ -25,12 +24,12 @@ import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.pipeline.Uniforms;
 import fewizz.canpipe.util.ShadowFrustum;
 import net.minecraft.client.Camera;
-import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.Lightmap;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.state.GameRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 
@@ -239,36 +238,30 @@ public class GameRendererMixin implements GameRendererExtended {
             target =
             "Lnet/minecraft/client/renderer/LevelRenderer;render("+
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
-                "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
                 "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
-                "Lorg/joml/Matrix4fc;"+
-                "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
+                "Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
-                "Z"+
+                "ZZ"+
             ")V"
         )
     )
-    void beforeRenderLevel(
-        DeltaTracker deltaTracker, CallbackInfo ci,
-        @Local(ordinal = 0) Matrix4fc viewMatrix,
-        @Local(ordinal = 0) Matrix4f projectionMatrix
-    ) {
+    void beforeRenderLevel(CallbackInfo ci, @Local CameraRenderState cameraState) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
-        this.canpipe_viewMatrix = new Matrix4f(viewMatrix);
-        this.canpipe_projectionMatrix = new Matrix4f(projectionMatrix);
+        this.canpipe_viewMatrix = new Matrix4f(cameraState.viewRotationMatrix);
+        this.canpipe_projectionMatrix = new Matrix4f(cameraState.projectionMatrix);
 
         if (this.canpipe_lastViewMatrix.get(0, 0) == Float.NEGATIVE_INFINITY) {
-            this.canpipe_lastViewMatrix.set(viewMatrix);
-            this.canpipe_lastProjectionMatrix.set(projectionMatrix);
+            this.canpipe_lastViewMatrix.set(cameraState.viewRotationMatrix);
+            this.canpipe_lastProjectionMatrix.set(cameraState.projectionMatrix);
         }
 
         float renderSeconds = (float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0);
 
         Uniforms.update(
-            viewMatrix, projectionMatrix,
+            cameraState.viewRotationMatrix, cameraState.projectionMatrix,
             this.canpipe_lastViewMatrix, this.canpipe_lastProjectionMatrix,
             this.canpipe_renderFrames, renderSeconds,
             this.canpipe_lastCameraPos,
@@ -289,18 +282,16 @@ public class GameRendererMixin implements GameRendererExtended {
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/LevelRenderer;render("+
                 "Lcom/mojang/blaze3d/resource/GraphicsResourceAllocator;"+
-                "Lnet/minecraft/client/DeltaTracker;"+
                 "Z"+
                 "Lnet/minecraft/client/renderer/state/level/CameraRenderState;"+
-                "Lorg/joml/Matrix4fc;"+
-                "Lcom/mojang/blaze3d/buffers/GpuBufferSlice;"+
+                "Lcom/mojang/renderpearl/api/buffers/GpuBufferSlice;"+
                 "Lorg/joml/Vector4f;"+
-                "Z"+
+                "ZZ"+
             ")V",
             shift = Shift.AFTER
         )
     )
-    void afterRenderLevel(DeltaTracker deltaTracker, CallbackInfo ci, @Local ProfilerFiller profiler) {
+    void afterRenderLevel(CallbackInfo ci, @Local ProfilerFiller profiler) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
@@ -312,19 +303,15 @@ public class GameRendererMixin implements GameRendererExtended {
     }
 
     @Inject(method = "renderLevel", at = @At("TAIL"))
-    void onRenderLevelEnd(
-        CallbackInfo ci,
-        @Local(ordinal = 0) Matrix4fc viewMatrix,
-        @Local(ordinal = 0) Matrix4f projectionMatrix
-    ) {
+    void onRenderLevelEnd(CallbackInfo ci) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
         this.canpipe_isRenderingHand = false;
         p.onAfterRenderHand();
 
-        this.canpipe_lastViewMatrix.set(viewMatrix);
-        this.canpipe_lastProjectionMatrix.set(projectionMatrix);
+        this.canpipe_lastViewMatrix.set(this.canpipe_viewMatrix);
+        this.canpipe_lastProjectionMatrix.set(this.canpipe_projectionMatrix);
         this.canpipe_lastCameraPos = this.mainCamera.position().toVector3f();
     }
 
