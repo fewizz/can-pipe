@@ -20,7 +20,8 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 @Mixin(ChunkSectionLayer.class)
 public class ChunkSectionLayerMixin {
 
-    @Shadow @Final private boolean translucent;
+    // TODO
+    /*@Shadow @Final private boolean translucent;
 
     @ModifyReturnValue(method = "pipeline", at = @At("RETURN"))
     public RenderPipeline pipeline(RenderPipeline renderPipeline) {
@@ -48,6 +49,6 @@ public class ChunkSectionLayerMixin {
         }
 
         return vertexFormat;
-    }
+    }*/
 
 }

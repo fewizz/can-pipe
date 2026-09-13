@@ -11,8 +11,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.frontend.FrontendRenderPass;
+import com.mojang.renderpearl.frontend.FrontendRenderPipeline;
 
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -27,10 +29,10 @@ public class FrontendRenderPassMixin {
         method = "setPipeline",
         at = @At("HEAD")
     )
-    RenderPipeline onSetPipeline(RenderPipeline pipeline) {
+    CompiledRenderPipeline onSetPipeline(CompiledRenderPipeline pipeline) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            pipeline = p.onRenderPassSetPipeline(pipeline, this.colorAttachments);
+            pipeline = p.onRenderPassSetPipeline(((FrontendRenderPipeline) pipeline)., this.colorAttachments);
         }
         return pipeline;
     }*/

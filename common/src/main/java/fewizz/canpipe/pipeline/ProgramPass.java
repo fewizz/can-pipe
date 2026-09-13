@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector2i;
 import org.lwjgl.system.MemoryStack;
 
@@ -49,7 +50,8 @@ public class ProgramPass extends Pass {
     private final GpuBuffer passUbo;
 
     private ProgramPass(
-        Identifier id, Framebuffer framebuffer, RenderPipeline renderPipeline,
+        Identifier id, Framebuffer framebuffer,
+        RenderPipeline renderPipeline, CompiledRenderPipeline compiledRenderPipeline,
         List<Optional<AbstractTexture>> samplerTextures,
         Vector2i extent, int lod, int layer
     ) {
@@ -85,15 +87,12 @@ public class ProgramPass extends Pass {
 
         this.framebuffer = framebuffer;
         this.renderPipeline = renderPipeline;
+        this.compiledRenderPipeline = compiledRenderPipeline;
         this.extent = extent;
 
         this.frxLoadUniform.set(lod);
         this.frxLayerUniform.set(layer);
         this.frxSizeUniform.set(-1);
-
-        // Prelink
-        // RenderSystem.getDevice().precompilePipeline(renderPipeline);
-        this.compiledRenderPipeline = null;  // TODO
     }
 
     @Override
@@ -173,7 +172,7 @@ public class ProgramPass extends Pass {
         JsonObject json,
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
-        BiFunction<String, Framebuffer, RenderPipeline> getOrLoadProgram,
+        BiFunction<String, Framebuffer, Pair<RenderPipeline, CompiledRenderPipeline>> getOrLoadProgram,
         Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture
     ) {
         String toggleConfig = json.get(String.class, "toggleConfig");
@@ -201,7 +200,10 @@ public class ProgramPass extends Pass {
             return Optional.of(new ClearPass(id, framebuffer.get()));
         }
 
-        RenderPipeline renderPipeline = getOrLoadProgram.apply(programName, framebuffer.get());
+        var renderPipelinePair = getOrLoadProgram.apply(programName, framebuffer.get());
+        RenderPipeline renderPipeline = renderPipelinePair.getLeft();
+        CompiledRenderPipeline compiledRenderPipeline = renderPipelinePair.getRight();
+
         Objects.requireNonNull(renderPipeline);
 
         List<Optional<AbstractTexture>> samplerTextures = new ArrayList<>();
@@ -217,7 +219,7 @@ public class ProgramPass extends Pass {
         int lod = json.getInt("lod", 0);
         int layer = json.getInt("layer", 0);
 
-        return Optional.of(new ProgramPass(id, framebuffer.get(), renderPipeline, samplerTextures, extent, lod, layer));
+        return Optional.of(new ProgramPass(id, framebuffer.get(), renderPipeline, compiledRenderPipeline, samplerTextures, extent, lod, layer));
     }
 
 }

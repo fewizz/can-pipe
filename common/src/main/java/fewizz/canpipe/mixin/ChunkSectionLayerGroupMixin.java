@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 @Mixin(ChunkSectionLayerGroup.class)
 public class ChunkSectionLayerGroupMixin {
 
-    @ModifyExpressionValue(
+    /*@ModifyExpressionValue(
         method = "outputTarget",
         at = @At(
             value = "INVOKE",
@@ -41,6 +41,6 @@ public class ChunkSectionLayerGroupMixin {
             renderTarget = p.shadowFramebufferOr(p.translucentTerrainFramebuffer);
         }
         return renderTarget;
-    }
+    }*/
 
 }

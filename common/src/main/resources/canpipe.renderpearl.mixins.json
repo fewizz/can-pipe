@@ -22,6 +22,7 @@
         "GlFramebufferCacheMixin",
         "GlSamplerMixin",
         "GlShaderModuleMixin",
+        "GlslCompilerMixin",
         "GlStateManagerAccessor",
         "GlStateManagerMixin",
         "GlTextureViewMixin",
@@ -32,7 +33,6 @@
         "VkDeviceAccessor",
         "VkDeviceMixin",
         "VkFeaturesSets",
-        "VkGlslCompilerMixin",
         "VkGpuTextureView",
         // "VkIntermediaryShaderModuleMixin",
         "VkSamplerMixin"

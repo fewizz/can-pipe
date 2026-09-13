@@ -220,7 +220,8 @@ public class MaterialPrograms {
         String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
         String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
+        // TODO
+        /*((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
             vertexShaderIDWithPostfix,
             Shaders.process(
                 vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
@@ -237,7 +238,8 @@ public class MaterialPrograms {
             ),
             ShaderType.FRAGMENT,
             onCompilationError
-        );
+        );*/
+        // (RenderSystem.getDevice()).compilePipeline(renderPipeline, null, null)
 
         return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline);
     }

@@ -2,10 +2,14 @@ package fewizz.canpipe.renderpearl.mixin;
 
 import java.nio.ByteBuffer;
 
+import org.lwjgl.util.shaderc.Shaderc;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -13,7 +17,16 @@ import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.renderpearl.frontend.shaders.GlslCompiler;
 
 @Mixin(GlslCompiler.class)
-public class VkGlslCompilerMixin {
+public class GlslCompilerMixin {
+
+    @ModifyReturnValue(
+        method = "createBaseShaderOptions",
+        at = @At("RETURN")
+    )
+    long onCreateBaseShaderOptions(long shaderOptionsHandle) {
+        Shaderc.shaderc_compile_options_set_auto_map_locations(shaderOptionsHandle, true);
+        return shaderOptionsHandle;
+    }
 
     // TODO
     /*@ModifyExpressionValue(

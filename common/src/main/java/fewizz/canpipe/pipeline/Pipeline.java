@@ -30,6 +30,7 @@ import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.commands.RenderPass.RenderArea;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.textures.FilterMode;
@@ -100,7 +101,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders;
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
-    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, RenderPipeline> programs = new HashMap<>();
+    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, Pair<RenderPipeline, CompiledRenderPipeline>> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
@@ -411,7 +412,7 @@ public class Pipeline implements AutoCloseable {
         }
 
         // "programs"
-        BiFunction<String, Framebuffer, RenderPipeline> getOrLoadProgram = (String name, Framebuffer fb) -> {
+        BiFunction<String, Framebuffer, Pair<RenderPipeline, CompiledRenderPipeline>> getOrLoadProgram = (String name, Framebuffer fb) -> {
             return this.programs.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();

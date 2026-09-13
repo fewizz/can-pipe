@@ -390,7 +390,8 @@ public class Uniforms {
         FRX_MOON_SIZE.set(DimensionType.MOON_BRIGHTNESS_PER_PHASE[mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.moonPhase.index()]);
         FRX_SKY_LIGHT_VECTOR.set(p.getSunOrMoonDir(mc.level, new Vector3f()));
         FRX_SKY_ANGLE_RADIANS.set(mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunAngle);
-        CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunriseAndSunsetColor);
+        var sunriseAndSunsetColor = mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.sunriseAndSunsetColor;
+        CANPIPE_SUNRISE_OR_SUNSET_COLOR.set(sunriseAndSunsetColor != null ? sunriseAndSunsetColor : new Vector4f());
         {
             float skyFlashStrength = mc.gameRenderer.gameRenderState().levelRenderState.skyRenderState.endFlashIntensity;
             FRX_SKY_FLASH_STRENGTH.set(skyFlashStrength);

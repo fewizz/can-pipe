@@ -38,8 +38,7 @@ public class FrontendCommandEncoderMixin implements CommandEncoderExtended {
         ((CommandEncoderBackendExtended) this.backend).canpipe_blitImage(srcTexture, dstTexture);
     }
 
-    // TODO
-    /*@ModifyExpressionValue(
+    @ModifyExpressionValue(
         method = "createRenderPass(Lcom/mojang/renderpearl/api/commands/RenderPassDescriptor;)Lcom/mojang/renderpearl/api/commands/RenderPass;",
         at = @At(
             value = "INVOKE",
@@ -48,7 +47,7 @@ public class FrontendCommandEncoderMixin implements CommandEncoderExtended {
     )
     int allowTexturesWithMultipleLayers(int value) {
         return 1;  // 1 == 1
-    }*/
+    }
 
     /*@ModifyExpressionValue(
         method = "createRenderPass(Lcom/mojang/renderpearl/api/commands/RenderPassDescriptor;)Lcom/mojang/renderpearl/api/commands/RenderPass;",

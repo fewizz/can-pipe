@@ -6,17 +6,23 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.function.TriConsumer;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.ShaderSource;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 
@@ -36,7 +42,7 @@ public class Programs {
 
     private Programs() {}
 
-    static RenderPipeline load(
+    static Pair<RenderPipeline, CompiledRenderPipeline> load(
         JsonObject json,
         Identifier pipelineLocation,
         Function<Identifier, Optional<String>> getShaderSource,
@@ -138,37 +144,92 @@ public class Programs {
             throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
         };
 
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
-            vertexLocation,
-            Shaders.process(
-                vertexLocation, getShaderSource.apply(vertexLocation).get(), ShaderType.VERTEX, glslVersion, options, appliedOptions,
-                getShaderSource, shadowMapSize, (src) -> {
-                    // some shaderpacks define them, some - not
-                    if (!CONTAINS_VERTEX_IN.test(src)) {
-                        src = "in vec3 in_vertex;\n\n"+src;
-                    }
-                    if (!CONTAINS_UV_IN.test(src)) {
-                        src = "in vec2 in_uv;\n\n"+src;
+        // TODO
+        // ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
+        //     vertexLocation,
+        //     Shaders.process(
+        //         vertexLocation, getShaderSource.apply(vertexLocation).get(), ShaderType.VERTEX, glslVersion, options, appliedOptions,
+        //         getShaderSource, shadowMapSize, (src) -> {
+        //             // some shaderpacks define them, some - not
+        //             if (!CONTAINS_VERTEX_IN.test(src)) {
+        //                 src = "in vec3 in_vertex;\n\n"+src;
+        //             }
+        //             if (!CONTAINS_UV_IN.test(src)) {
+        //                 src = "in vec2 in_uv;\n\n"+src;
+        //             }
+
+        //             src = 
+        //                 "#define in_vertex Position\n"+
+        //                 "#define in_uv UV0\n\n"+
+        //                 src;
+
+        //             return postprocess.apply(src);
+        //         }
+        //     ), ShaderType.VERTEX, onCompilationError
+        // );
+        // ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
+        //     fragmentLocation,
+        //     Shaders.process(
+        //         fragmentLocation, getShaderSource.apply(fragmentLocation).get(), ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
+        //         getShaderSource, shadowMapSize, postprocess
+        //     ), ShaderType.FRAGMENT, onCompilationError
+        // );
+
+        CompiledRenderPipeline compiledRenderPipeline = null;
+
+        try {
+            compiledRenderPipeline = RenderSystem.getDevice().compilePipeline(pipeline, new ShaderSource() {
+
+                @Override
+                public @Nullable String getShader(Identifier id, ShaderType type) {
+                    String result = getShaderSource.apply(id).orElse(null);
+                    
+                    if (result != null && type == ShaderType.VERTEX) {
+                        result = Shaders.process(
+                            id, result, ShaderType.VERTEX, glslVersion, options, appliedOptions,
+                            getShaderSource, shadowMapSize, (src) -> {
+                                // some shaderpacks define them, some - not
+                                if (!CONTAINS_VERTEX_IN.test(src)) {
+                                    src = "in vec3 in_vertex;\n\n"+src;
+                                }
+                                if (!CONTAINS_UV_IN.test(src)) {
+                                    src = "in vec2 in_uv;\n\n"+src;
+                                }
+
+                                src = 
+                                    "#define in_vertex Position\n"+
+                                    "#define in_uv UV0\n\n"+
+                                    src;
+
+                                return postprocess.apply(src);
+                            }
+                        );
                     }
 
-                    src = 
-                        "#define in_vertex Position\n"+
-                        "#define in_uv UV0\n\n"+
-                        src;
+                    if (result != null && type == ShaderType.FRAGMENT) {
+                        result = Shaders.process(
+                            id, result, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
+                            getShaderSource, shadowMapSize, postprocess
+                        );
+                    }
 
-                    return postprocess.apply(src);
+                    return result;
                 }
-            ), ShaderType.VERTEX, onCompilationError
-        );
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
-            fragmentLocation,
-            Shaders.process(
-                fragmentLocation, getShaderSource.apply(fragmentLocation).get(), ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
-                getShaderSource, shadowMapSize, postprocess
-            ), ShaderType.FRAGMENT, onCompilationError
-        );
 
-        return pipeline;
+                @Override
+                public @Nullable CachedIncludeSource getInclude(Identifier id) {
+                    return null;
+                }
+
+                @Override
+                public void close() {}
+
+            }, (runnable) -> runnable.run()).get().finishCompile();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return Pair.of(pipeline, compiledRenderPipeline);
     }
 
 }

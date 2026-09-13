@@ -59,47 +59,48 @@ public class PreparedRenderTypeMixin {
         return renderTarget;
     }*/
 
-    @ModifyExpressionValue(
-        method = "drawFromBuffer("+
-            "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
-            "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
-            "Lcom/mojang/blaze3d/IndexType;"+
-            "III"+
-        ")V",
-        at = @At(
-            value = "FIELD",
-            target = "Lnet/minecraft/client/renderer/rendertype/PreparedRenderType;"+
-                "pipeline:"+
-                "Lcom/mojang/blaze3d/pipeline/RenderPipeline;"
-        )
-    )
-    RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline, @Local RenderTarget renderTarget) {
-        if (renderTarget instanceof Framebuffer fb) {
-            Pipeline p = Pipelines.getCurrent();
-            Pair<List<GpuFormat>, @Nullable GpuFormat> formats;
+    // TODO
+    // @ModifyExpressionValue(
+    //     method = "drawFromBuffer("+
+    //         "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
+    //         "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
+    //         "Lcom/mojang/blaze3d/IndexType;"+
+    //         "III"+
+    //     ")V",
+    //     at = @At(
+    //         value = "FIELD",
+    //         target = "Lnet/minecraft/client/renderer/rendertype/PreparedRenderType;"+
+    //             "pipeline:"+
+    //             "Lcom/mojang/blaze3d/pipeline/RenderPipeline;"
+    //     )
+    // )
+    // RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline, @Local RenderTarget renderTarget) {
+    //     if (renderTarget instanceof Framebuffer fb) {
+    //         Pipeline p = Pipelines.getCurrent();
+    //         Pair<List<GpuFormat>, @Nullable GpuFormat> formats;
 
-            // TODO
-            /*if (RenderSystem.outputColorTextureOverride != null) {
-                List<GpuFormat> colorFormats = new ArrayList<>();
-                if (fb.colorTextureViews.length > 0) {
-                    colorFormats.add(RenderSystem.outputColorTextureOverride.texture().getFormat());
-                }
-                for (int i = 1; i < fb.colorTextureViews.length; ++i) {
-                    colorFormats.add(null);
-                }
+    //         // TODO
+    //         /*if (RenderSystem.outputColorTextureOverride != null) {
+    //             List<GpuFormat> colorFormats = new ArrayList<>();
+    //             if (fb.colorTextureViews.length > 0) {
+    //                 colorFormats.add(RenderSystem.outputColorTextureOverride.texture().getFormat());
+    //             }
+    //             for (int i = 1; i < fb.colorTextureViews.length; ++i) {
+    //                 colorFormats.add(null);
+    //             }
 
-                formats = Pair.of(colorFormats, RenderSystem.outputDepthTextureOverride.texture().getFormat());
-            }
-            else {*/
-                formats = fb.getFormats();
-            //}
+    //             formats = Pair.of(colorFormats, RenderSystem.outputDepthTextureOverride.texture().getFormat());
+    //         }
+    //         else {*/
+    //             formats = fb.getFormats();
+    //         //}
 
-            renderPipeline = p.getReplacedRenderPipeline(renderPipeline, formats);
-        }
-        return renderPipeline;
-    }
+    //         renderPipeline = p.getReplacedRenderPipeline(renderPipeline, formats);
+    //     }
+    //     return renderPipeline;
+    // }
 
-    @WrapOperation(
+    /*@WrapOperation(
         method = "drawFromBuffer("+
             "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
             "Lcom/mojang/blaze3d/buffers/GpuBuffer;"+
@@ -149,6 +150,6 @@ public class PreparedRenderTypeMixin {
     ) {
         PreparedRenderType.Texture sampler0 = this.textures.stream().filter(t -> t.name().equals("Sampler0")).findFirst().orElse(null);
         Pipeline.bindSpritesExtentsSampler(renderPass, sampler0 != null ? sampler0.textureView() : null);
-    }
+    }*/
 
 }
