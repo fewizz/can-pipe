@@ -1,5 +1,7 @@
 package fewizz.canpipe.pipeline;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,35 +9,56 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.backend.api.BackendRenderPipeline;
+import com.mojang.renderpearl.frontend.FrontendRenderPipeline;
 
 import fewizz.canpipe.mixin.RenderPipelineBuilderAccessor;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
+import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
+import it.unimi.dsi.fastutil.objects.Object2IntMaps;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceLists;
 import net.minecraft.resources.Identifier;
 
-public class MaterialProgramLoader {
+public class MaterialProgramLoader implements Closeable {
 
     private final Identifier id;
     private final RenderPipeline.Builder pipelineBuilder;
     private final RenderPipeline originalRenderPipeline;
-    private final Map<Pair<List<GpuFormat>, GpuFormat>, RenderPipeline> renderPipelinesPerFormat = new HashMap<>();
+    private final Map<Pair<List<GpuFormat>, GpuFormat>, CompiledRenderPipeline> renderPipelinesPerFormat = new HashMap<>();
 
-    MaterialProgramLoader(Identifier id, RenderPipeline.Builder pipelineBuilder, RenderPipeline originalRenderPipeline) {
+    private final BackendRenderPipeline.CreateInfo createInfo;
+    private final ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos;
+    private final Object2IntOpenHashMap<String> uniformBindings;
+
+    MaterialProgramLoader(
+        Identifier id, RenderPipeline.Builder pipelineBuilder, RenderPipeline originalRenderPipeline,
+        BackendRenderPipeline.CreateInfo createInfo, ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos, Object2IntOpenHashMap<String> uniformBindings
+    ) {
         this.id = id;
         this.pipelineBuilder = pipelineBuilder;
         this.originalRenderPipeline = originalRenderPipeline;
+
+        this.createInfo = createInfo;
+        this.shaderCreateInfos = shaderCreateInfos;
+        this.uniformBindings = uniformBindings;
     }
 
-    public RenderPipeline getOrCompileRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
+    public CompiledRenderPipeline getOrCompileRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
         return this.renderPipelinesPerFormat.computeIfAbsent(formats, (_formats) -> {
             ((RenderPipelineBuilderExtended) this.pipelineBuilder).canpipe_resetActiveColorTargetStateCount();
             var colorFormats = formats.getLeft();
             // var depthFormat = formats.getRight();
 
-            String postfix = "";
+            /*String postfix = "";
             for (var colorAttachmentFormat : formats.getLeft()) {
                 if (colorAttachmentFormat != null) {
                     postfix += "-c-"+colorAttachmentFormat.toString();
@@ -49,7 +72,7 @@ public class MaterialProgramLoader {
             }
             postfix = postfix.replace("_", "-").toLowerCase();
 
-            pipelineBuilder.withLocation(this.id.withSuffix(postfix));
+            pipelineBuilder.withLocation(this.id.withSuffix(postfix));*/
 
             var originalBlendFunction = this.originalRenderPipeline.getColorTargetStates().get(0).blendFunction();
 
@@ -74,12 +97,45 @@ public class MaterialProgramLoader {
                 }
             }
 
-            return pipelineBuilder.build();
+            var pipeline = pipelineBuilder.build();
+
+            var deviceBackend = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
+
+            var pending = deviceBackend.compilePipeline(new BackendRenderPipeline.CreateInfo(
+                this.createInfo.name(),
+                this.createInfo.shaders(),
+                this.createInfo.vertexBuffers(),
+                this.createInfo.attribBindings(),
+                this.createInfo.uniforms(),
+                this.createInfo.pushConstantsSize(),
+                this.createInfo.depthStencilState(),
+                this.createInfo.polygonMode(),
+                this.createInfo.cull(),
+                pipeline.getColorTargetStates(),
+                this.createInfo.primitiveTopology()
+            ));
+
+            var backendPipeline = pending.finishCompile();
+            return new FrontendRenderPipeline(
+                pipeline.getLocation().toString(),
+                backendPipeline,
+                ReferenceLists.unmodifiable(new ReferenceArrayList<>(pipeline.getVertexFormatBindings())),
+                Object2IntMaps.unmodifiable(uniformBindings),
+                BindGroupLayout.flattenUniforms(pipeline.getBindGroupLayouts()),
+                ReferenceLists.unmodifiable(new ReferenceArrayList<>(pipeline.getColorTargetStates())),
+                pipeline.wantsDepthTexture(),
+                pipeline.pushConstantSize()
+            );
         });
     }
 
     public VertexFormat vertexFormat() {
         return ((RenderPipelineBuilderAccessor) this.pipelineBuilder).canpipe_getVertexFormatPerBuffer()[0];
+    }
+
+    @Override
+    public void close() throws IOException {
+        this.shaderCreateInfos.forEach(shaderModule -> shaderModule.module().close());
     }
 
 }

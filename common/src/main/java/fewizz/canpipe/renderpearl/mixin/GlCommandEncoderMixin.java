@@ -1,5 +1,7 @@
 package fewizz.canpipe.renderpearl.mixin;
 
+import java.util.List;
+
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;
@@ -8,16 +10,23 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.backend.opengl.GlCommandEncoder;
 import com.mojang.renderpearl.backend.opengl.GlDevice;
+import com.mojang.renderpearl.backend.opengl.GlRenderPass;
+import com.mojang.renderpearl.backend.opengl.GlRenderPipeline;
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import com.mojang.renderpearl.backend.opengl.GlTexture;
+import com.mojang.renderpearl.backend.opengl.Uniform;
 
 import fewizz.canpipe.renderpearl.CommandEncoderBackendExtended;
 
@@ -144,6 +153,34 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
                 operation.call(mask);  // GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
             }
         }
+    }
+
+    @ModifyExpressionValue(
+        method = "setupDraw",
+        at = {
+            @At(
+                value = "INVOKE",
+                target = "Lit/unimi/dsi/fastutil/objects/ReferenceList;get(I)Ljava/lang/Object;",
+                ordinal = 0
+            ),
+            @At(
+                value = "INVOKE",
+                target = "Lit/unimi/dsi/fastutil/objects/ReferenceList;get(I)Ljava/lang/Object;",
+                ordinal = 1
+            )
+        }
+    )
+    public Object moreDetailedErrorOnNullUniform(
+        Object uniformBufferSlice, @Local GlRenderPass renderPass, @Local(name = "i") int uniformIndex
+    ) {
+        if (uniformBufferSlice == null) {
+            GlRenderPipeline glRenderPipeline = ((GlRenderPassAccessor) renderPass).canpipe_getPipeline();
+            Uniform uniform = glRenderPipeline.program().getUniform(uniformIndex);
+            if (uniform != null) {
+                throw new IllegalStateException("Buffer for uniform #"+uniformIndex+" is null");
+            }
+        }
+        return uniformBufferSlice;
     }
 
 }

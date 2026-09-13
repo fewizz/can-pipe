@@ -18,6 +18,8 @@
         "ChunkSectionLayerGroupMixin",
         "ChunkSectionLayerMixin",
         "ChunkSectionsToRenderMixin",
+        "ChunkSectionsToRenderIndirectMixin",
+        "ChunkSectionsToRenderSeparateMixin",
         "CuboidItemModelWrapperMixin",
         "CloudRendererMixin",
         "EntityRenderDispatcherMixin",

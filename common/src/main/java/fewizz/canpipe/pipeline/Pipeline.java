@@ -258,14 +258,11 @@ public class Pipeline implements AutoCloseable {
         int glslVersion = pipelineJson.getInt("glslVersion", 330);
 
         var renderPipelines = new RenderPipeline[] {
-            RenderPipelines.SOLID_BLOCK,
-            RenderPipelines.SOLID_TERRAIN,
-            RenderPipelines.CUTOUT_BLOCK,
-            RenderPipelines.CUTOUT_TERRAIN,
-            RenderPipelines.TRANSLUCENT_TERRAIN,
+            RenderPipelines.SOLID_BLOCK, RenderPipelines.SOLID_TERRAIN, RenderPipelines.SOLID_TERRAIN_MULTIDRAW,
+            RenderPipelines.CUTOUT_BLOCK, RenderPipelines.CUTOUT_TERRAIN, RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW,
+            RenderPipelines.TRANSLUCENT_BLOCK, RenderPipelines.TRANSLUCENT_TERRAIN, RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW,
             RenderPipelines.BEACON_BEAM_OPAQUE,
             RenderPipelines.BEACON_BEAM_TRANSLUCENT,
-            RenderPipelines.TRANSLUCENT_BLOCK,
 
             RenderPipelines.ARMOR_CUTOUT_NO_CULL,
             RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
@@ -533,7 +530,7 @@ public class Pipeline implements AutoCloseable {
         }
     }
 
-    public RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline, Pair<List<GpuFormat>, GpuFormat> formats) {
+    /*public RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline, Pair<List<GpuFormat>, GpuFormat> formats) {
         MaterialProgramLoader loader = this.getMaterialProgramLoader(renderPipeline);
 
         if (loader != null) {
@@ -541,12 +538,9 @@ public class Pipeline implements AutoCloseable {
         }
 
         return renderPipeline;
-    }
+    }*/
 
     public RenderPass createRenderPass(CommandEncoder commandEncoder, Supplier<String> name, Framebuffer framebuffer) {
-        GameRendererExtended gre = (GameRendererExtended) Minecraft.getInstance().gameRenderer;
-        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
-
         var descriptorBuilder = RenderPassDescriptor.builder(name);
         for (int i = 0; i < framebuffer.colorTextureViews.length; ++i) {
             var colorAttachment = framebuffer.colorTextureViews[i];
@@ -582,6 +576,37 @@ public class Pipeline implements AutoCloseable {
         descriptorBuilder.withRenderArea(renderArea);
         RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build());
 
+        this.bindUniforms(renderPass, framebuffer);
+
+        return renderPass;
+    }
+
+    public static void bindSpritesExtentsSampler(RenderPass renderPass, @Nullable GpuTextureView sampler0) {
+        var mc = Minecraft.getInstance();
+        MutableObject<TextureAtlas> atlas = new MutableObject<>();
+
+        if (sampler0 != null) {
+            mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
+                if (atlas.get() == null && possibleAtlas.getTexture() == sampler0.texture()) {
+                    atlas.setValue(possibleAtlas);
+                }
+            });
+        }
+
+        if (atlas.get() == null) {  // we just need to bind something
+            atlas.setValue(mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS));
+        }
+
+        renderPass.setUniform(
+            "canpipe_spritesExtents",
+            ((TextureAtlasExtended) atlas.get()).canpipe_getSpritesExtentsBuffer()
+        );
+    }
+
+    public void bindUniforms(RenderPass renderPass, Framebuffer framebuffer) {
+        GameRendererExtended gre = (GameRendererExtended) Minecraft.getInstance().gameRenderer;
+        LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
+
         Uniforms.setRenderPassFREXUniforms(renderPass);
 
         renderPass.setUniform("canpipe_ub_origin_type", CanPipe.get0to3UBOBuffers()[gre.canpipe_getOriginType()]);
@@ -612,30 +637,6 @@ public class Pipeline implements AutoCloseable {
             AbstractTexture texture = e.getValue();
             renderPass.setUniform(e.getKey(), texture.getTextureView(), texture.getSampler());
         }
-
-        return renderPass;
-    }
-
-    public static void bindSpritesExtentsSampler(RenderPass renderPass, @Nullable GpuTextureView sampler0) {
-        var mc = Minecraft.getInstance();
-        MutableObject<TextureAtlas> atlas = new MutableObject<>();
-
-        if (sampler0 != null) {
-            mc.getAtlasManager().forEach((loc, possibleAtlas) -> {
-                if (atlas.get() == null && possibleAtlas.getTexture() == sampler0.texture()) {
-                    atlas.setValue(possibleAtlas);
-                }
-            });
-        }
-
-        if (atlas.get() == null) {  // we just need to bind something
-            atlas.setValue(mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS));
-        }
-
-        renderPass.setUniform(
-            "canpipe_spritesExtents",
-            ((TextureAtlasExtended) atlas.get()).canpipe_getSpritesExtentsBuffer()
-        );
     }
 
     public Vector3f getSunOrMoonDir(Level level, Vector3f result) {

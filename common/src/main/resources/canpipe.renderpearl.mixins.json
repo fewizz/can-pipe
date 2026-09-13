@@ -20,6 +20,8 @@
         "GlDirectStateAccessEmulatedMixin",
         "GlFramebufferCacheKeyMixin",
         "GlFramebufferCacheMixin",
+        "GlRenderPassAccessor",
+        "GlRenderPipelineAccessor",
         "GlSamplerMixin",
         "GlShaderModuleMixin",
         "GlslCompilerMixin",

@@ -21,6 +21,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
@@ -28,9 +29,11 @@ import com.mojang.renderpearl.api.vertex.VertexFormat;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
+import fewizz.canpipe.pipeline.MaterialProgramLoader;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.feature.QuadParticleFeatureRenderer;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 
@@ -111,30 +114,34 @@ public class QuadParticleFeatureRendererMixin {
     }*/
 
     // TODO
-    /*@ModifyArg(
+    @WrapOperation(
         method = "drawLayers",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/api/commands/RenderPass;setPipeline(Lcom/mojang/blaze3d/pipeline/RenderPipeline;)V"
-        ),
-        index = 0
+        at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;getCompiledPipeline")
     )
-    private static RenderPipeline replaceRenderPipeline(RenderPipeline renderPipeline) {
+    private static CompiledRenderPipeline replaceRenderPipeline(
+        RenderPipeline pipeline,
+        Operation<CompiledRenderPipeline> operation
+    ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null && QuadParticleFeatureRendererMixin.canpipe_selectedFramebuffer != null) {
-            renderPipeline = p.getReplacedRenderPipeline(renderPipeline, canpipe_selectedFramebuffer.getFormats());
+        if (p != null &&
+            pipeline == RenderPipelines.OPAQUE_PARTICLE
+        ) {
+            MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
+            if (loader != null) {
+                return loader.getOrCompileRenderPipeline(p.solidFramebuffer.getFormats());
+            }
         }
-        return renderPipeline;
+        return operation.call(pipeline);
     }
 
     @Inject(
         method = "drawLayers",
         at = @At(
             value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/api/commands/RenderPass;bindTexture("+
+            target = "Lcom/mojang/renderpearl/api/commands/RenderPass;setUniform("+
                 "Ljava/lang/String;"+
                 "Lcom/mojang/renderpearl/api/textures/GpuTextureView;"+
-                "Lcom/mojang/blaze3d/textures/GpuSampler;"+
+                "Lcom/mojang/renderpearl/api/textures/GpuSampler;"+
             ")V"
         )
     )
@@ -143,7 +150,12 @@ public class QuadParticleFeatureRendererMixin {
         @Local AbstractTexture texture,
         @Local RenderPass renderPass
     ) {
-        Pipeline.bindSpritesExtentsSampler(renderPass, texture.getTextureView());
-    }*/
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            Pipeline.bindSpritesExtentsSampler(renderPass, texture.getTextureView());
+            p.bindUniforms(renderPass, p.solidFramebuffer);
+            // renderPass.setUniform("", null);
+        }
+    }
 
 }

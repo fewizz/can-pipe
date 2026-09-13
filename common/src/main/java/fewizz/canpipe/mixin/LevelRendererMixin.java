@@ -1,12 +1,16 @@
 package fewizz.canpipe.mixin;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
+import org.joml.Vector4fc;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,11 +26,15 @@ import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRenderStateExtended;
@@ -316,6 +324,37 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return ((LevelRenderStateExtended) this.levelRenderState).canpipe_getEntityRenderStates()[cascade];
         }
         return entityRenderStates;
+    }
+
+    @WrapOperation(
+        method = "lambda$addMainPass$0",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/renderpearl/api/commands/CommandEncoder;createRenderPass"
+        )
+    )
+    RenderPass onCreateSolidTerrainRenderPass(
+        CommandEncoder commandEncoder,
+        Supplier<String> label,
+		GpuTextureView colorTexture,
+		Optional<Vector4fc> clearColor,
+		@Nullable GpuTextureView depthTexture,
+		OptionalDouble clearDepth,
+        Operation<RenderPass> operation
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(label);
+            for (var colorAttachment : p.solidFramebuffer.colorTextureViews) {
+                descriptor.withColorAttachment(colorAttachment);
+            }
+            if (p.solidFramebuffer.getDepthTextureView() != null) {
+                descriptor.withDepthAttachment(p.solidFramebuffer.getDepthTextureView());
+            }
+            descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0)));
+            return commandEncoder.createRenderPass(descriptor.build());
+        }
+        return operation.call(commandEncoder, label, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
 }

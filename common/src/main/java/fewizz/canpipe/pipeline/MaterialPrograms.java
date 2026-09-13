@@ -101,6 +101,10 @@ public class MaterialPrograms {
                 .withVertexBinding(0, vertexFormat)
                 .withPrimitiveTopology(originalRenderPipeline.getPrimitiveTopology());
 
+            for (int bindingIndex = 1; bindingIndex < originalRenderPipeline.getVertexFormatBindings().size(); ++bindingIndex) {
+                renderPipelineBuilder.withVertexBinding(bindingIndex, originalRenderPipeline.getVertexFormatBindings().get(bindingIndex));
+            }
+
             ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_allowNoColorTargets();
 
             var dsState = originalRenderPipeline.getDepthStencilState();
@@ -118,10 +122,13 @@ public class MaterialPrograms {
             }
         }
 
-        boolean terrain = originalRenderPipeline.getBindGroupLayouts().stream().anyMatch(bgl -> bgl == BindGroupLayouts.CHUNK_SECTION);
+        boolean terrain = originalRenderPipeline.getBindGroupLayouts().stream().anyMatch(bgl -> bgl == BindGroupLayouts.TERRAIN_INFO);
+        boolean terrainMultidraw = terrain && !originalRenderPipeline.getBindGroupLayouts().stream().anyMatch(bgl -> bgl == BindGroupLayouts.CHUNK_SECTION);
 
         if (terrain) {
-            renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.CHUNK_SECTION);
+            if (!terrainMultidraw) {
+                renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.CHUNK_SECTION);
+            }
             renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.TERRAIN_INFO);
         }
         else {
@@ -212,7 +219,8 @@ public class MaterialPrograms {
             return src;
         };
 
-        TriConsumer<String, Identifier, String> onCompilationError = (String log, Identifier shaderLocation, String src) -> {
+        // TODO
+        /*TriConsumer<String, Identifier, String> onCompilationError = (String log, Identifier shaderLocation, String src) -> {
             Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
             try {
                 Files.createDirectories(compilationErrorsPath);
@@ -224,10 +232,10 @@ public class MaterialPrograms {
                 CanPipe.LOGGER.warn("Couldn't save \""+shaderLocation.toString()+"\" compilation error", e);
             }
             throw new RuntimeException("Couldn't compile \""+shaderLocation.toString()+"\": "+log);
-        };
+        };*/
 
-        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
-        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, enablePBR);
+        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
+        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
 
         // TODO
         /*((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
@@ -302,7 +310,7 @@ public class MaterialPrograms {
             uniformBindings
         );
 
-        return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline);
+        return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
     }
 
     private static String getVertexSrc(
@@ -313,6 +321,7 @@ public class MaterialPrograms {
         Collection<Material> materials,
         boolean shadow,
         boolean terrain,
+        boolean terrainMultidraw,
         boolean enablePBR
     ) {
         String vertexSrcOriginal = getShaderSource.apply(vertexShaderLocation).get();
@@ -360,6 +369,9 @@ public class MaterialPrograms {
         if (terrain) {
             vertexSrcBuilder.append("#define CANPIPE_TERRAIN\n");
         }
+        if (terrainMultidraw) {
+            vertexSrcBuilder.append("#define CANPIPE_TERRAIN_MULTIDRAW\n");
+        }
         if (shadow) {
             vertexSrcBuilder.append("#define DEPTH_PASS\n");
         }
@@ -384,6 +396,12 @@ public class MaterialPrograms {
         if (hasLightmapPos) {
             vertexSrcBuilder.append("#define CANPIPE_HAS_LIGHTMAP_POS\n");
             vertexSrcBuilder.append("in ivec2 in_lightmapPos;  // UV2\n");
+        }
+        if (terrainMultidraw) {
+            vertexSrcBuilder.append(
+                "in ivec3 ChunkPosition;\n"+
+                "in float ChunkVisibility;\n"
+            );
         }
         if (hasMaterialFlags) {
             vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
@@ -413,6 +431,7 @@ public class MaterialPrograms {
             "in vec4 in_tangent;\n" :
             "const vec4 in_tangent = vec4(1.0);\n"
         );
+
         vertexSrcBuilder.append(
         """
 
@@ -489,6 +508,10 @@ public class MaterialPrograms {
                 frx_texcoord = in_uv;
             #endif
 
+            #if defined CANPIPE_TERRAIN_MULTIDRAW
+                canpipe_chunkVisibility = ChunkVisibility;
+            #endif
+
             frx_pipelineVertex();
         }
         """
@@ -505,6 +528,7 @@ public class MaterialPrograms {
         Collection<Material> materials,
         boolean shadow,
         boolean terrain,
+        boolean terrainMultidraw,
         boolean enablePBR
     ) {
         String fragmentSrcOriginal = getShaderSource.apply(fragmentShaderLocation).get();
@@ -591,6 +615,9 @@ public class MaterialPrograms {
         }
         if (terrain) {
             fragmentSrcBuilder.append("#define CANPIPE_TERRAIN\n");
+        }
+        if (terrainMultidraw) {
+            fragmentSrcBuilder.append("#define CANPIPE_TERRAIN_MULTIDRAW\n");
         }
         if (shadow) {
             fragmentSrcBuilder.append("#define DEPTH_PASS\n");

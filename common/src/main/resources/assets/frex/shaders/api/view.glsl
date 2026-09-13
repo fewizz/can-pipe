@@ -1,5 +1,7 @@
-#ifdef CANPIPE_TERRAIN
-    #include minecraft:shaders/include/chunksection.glsl
+#if defined CANPIPE_TERRAIN
+    #if !defined CANPIPE_TERRAIN_MULTIDRAW
+        #include minecraft:shaders/include/chunksection.glsl
+    #endif
     #include minecraft:shaders/include/globals.glsl
     #include minecraft:shaders/include/terrainglobals.glsl
 #else
@@ -46,7 +48,11 @@ layout(std140) uniform frx_ub_shadow {
 #ifdef CANPIPE_TERRAIN
     #define frx_modelToCamera vec4(-CameraBlockPos + CameraOffset, 0.0)
     // alias to ChunkSection.ChunkVisibility
-    #define canpipe_chunkVisibility ChunkVisibility
+    #if !defined CANPIPE_TERRAIN_MULTIDRAW
+        #define canpipe_chunkVisibility ChunkVisibility
+    #endif
+    // else defined as a variable in vertex.glsl
+    
 #else
     #define frx_modelToCamera vec4(ModelOffset, 0.0)
 #endif

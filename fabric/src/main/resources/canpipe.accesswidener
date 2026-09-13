@@ -1,9 +1,8 @@
 accessWidener v2 official
 
 accessible  class  com/mojang/renderpearl/backend/opengl/GlDevice
-
 accessible  class  com/mojang/renderpearl/backend/opengl/GlCommandEncoder
-
+accessible  class  com/mojang/renderpearl/backend/opengl/GlRenderPass
 accessible  class  com/mojang/renderpearl/backend/opengl/GlStateManager$TextureState
 
 accessible  class  net/minecraft/client/renderer/rendertype/RenderSetup$TextureBinding

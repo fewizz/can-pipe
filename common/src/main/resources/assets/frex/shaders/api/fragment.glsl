@@ -28,6 +28,10 @@
         flat in ivec2 canpipe_overlayPos;
     #endif
 
+    #if defined CANPIPE_TERRAIN_MULTIDRAW
+        in float canpipe_chunkVisibility;
+    #endif
+
     vec4 frx_sampleColor = vec4(0.0);
     vec4 frx_fragColor = vec4(0.0);
     vec3 frx_fragLight = vec3(0.0);

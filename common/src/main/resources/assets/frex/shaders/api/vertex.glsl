@@ -27,6 +27,10 @@
         flat out ivec2 canpipe_overlayPos;
     #endif
 
+    #if defined CANPIPE_TERRAIN_MULTIDRAW
+        out float canpipe_chunkVisibility;
+    #endif
+
     #if defined DEPTH_PASS
         vec3 frx_vertexNormal = vec3(0.0);
     #else
