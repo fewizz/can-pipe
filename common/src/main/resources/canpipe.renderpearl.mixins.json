@@ -26,6 +26,7 @@
         "GlStateManagerAccessor",
         "GlStateManagerMixin",
         "GlTextureViewMixin",
+        "PipelineBuilderAccessor",
         "RenderPipelineAccessor",
         "RenderPipelineBuilderMixin",
         "RenderPipelineMixin",

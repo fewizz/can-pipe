@@ -1,6 +1,7 @@
 #ifdef CANPIPE_TERRAIN
     #include minecraft:shaders/include/chunksection.glsl
     #include minecraft:shaders/include/globals.glsl
+    #include minecraft:shaders/include/terrainglobals.glsl
 #else
     #include minecraft:shaders/include/dynamictransforms.glsl
 #endif

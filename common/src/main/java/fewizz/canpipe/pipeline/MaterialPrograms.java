@@ -10,7 +10,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.function.TriConsumer;
+import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -18,15 +20,21 @@ import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.ShaderSource;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.backend.api.BackendRenderPipeline;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
+import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
+import fewizz.canpipe.renderpearl.mixin.PipelineBuilderAccessor;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
@@ -75,8 +83,8 @@ public class MaterialPrograms {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormatBinding(0).toString());
         }
 
-        Identifier vertexShaderIDWithPostfix = vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh");
-        Identifier fragmentShaderIDWithPostfix = fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh");
+        // Identifier vertexShaderIDWithPostfix = vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh");
+        // Identifier fragmentShaderIDWithPostfix = fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh");
 
         Identifier location = Identifier.fromNamespaceAndPath(
             CanPipe.MOD_ID, (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
@@ -86,8 +94,8 @@ public class MaterialPrograms {
         {
             renderPipelineBuilder
                 .withLocation(location)
-                .withVertexShader(vertexShaderIDWithPostfix)
-                .withFragmentShader(fragmentShaderIDWithPostfix)
+                .withVertexShader(vertexShaderLocation)//vertexShaderIDWithPostfix)
+                .withFragmentShader(fragmentShaderLocation)//fragmentShaderIDWithPostfix)
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow ? originalRenderPipeline.isCull() : false)
                 .withVertexBinding(0, vertexFormat)
@@ -114,6 +122,7 @@ public class MaterialPrograms {
 
         if (terrain) {
             renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.CHUNK_SECTION);
+            renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.TERRAIN_INFO);
         }
         else {
             renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS);
@@ -240,6 +249,58 @@ public class MaterialPrograms {
             onCompilationError
         );*/
         // (RenderSystem.getDevice()).compilePipeline(renderPipeline, null, null)
+
+        RenderPipeline exampleRenderPipeline = renderPipelineBuilder.build();
+
+        var pipelineBuilder = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getPipelineBuilder();
+
+        ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos = new ReferenceArrayList<>();
+        Object2IntOpenHashMap<String> uniformBindings = new Object2IntOpenHashMap<>();
+
+        var renderPipelineCreateInfo = ((PipelineBuilderAccessor) pipelineBuilder).canpipe_invokeGenerateBackendCreateInfo(
+            exampleRenderPipeline,
+            new ShaderSource() {
+
+                @Override
+                public @Nullable String getShader(Identifier id, ShaderType type) {
+                    Identifier location;
+                    String src;
+                    if (type == ShaderType.VERTEX) {
+                        if (id != vertexShaderLocation) {
+                            throw new RuntimeException("Expected vertex shader location to be "+vertexShaderLocation+", but got "+id);
+                        }
+                        location = vertexShaderLocation;
+                        src = vertexSrc;
+                    }
+                    else if (type == ShaderType.FRAGMENT) {
+                        if (id != fragmentShaderLocation) {
+                            throw new RuntimeException("Expected fragment shader location to be "+fragmentShaderLocation+", but got "+id);
+                        }
+                        location = fragmentShaderLocation;
+                        src = fragmentSrc;
+                    }
+                    else {
+                        throw new NotImplementedException();
+                    }
+
+                    return Shaders.process(
+                        location, src, type, glslVersion, options, appliedOptions,
+                        getShaderSource, shadowMapSize, postprocess
+                    );
+                }
+
+                @Override
+                public @Nullable CachedIncludeSource getInclude(Identifier id) {
+                    return null;
+                }
+
+                @Override
+                public void close() {}
+                
+            },
+            shaderCreateInfos,
+            uniformBindings
+        );
 
         return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline);
     }

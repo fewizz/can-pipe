@@ -5,10 +5,12 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.renderpearl.frontend.FrontendGpuDevice;
+import com.mojang.renderpearl.frontend.shaders.PipelineBuilder;
 
 @Mixin(value = FrontendGpuDevice.class, priority = 1001)
 public interface FrontendGpuDeviceAccessor {
 
     @Accessor("backend") GpuDeviceBackend canpipe_getBackend();
+    @Accessor("pipelineBuilder") PipelineBuilder canpipe_getPipelineBuilder();
 
 }
