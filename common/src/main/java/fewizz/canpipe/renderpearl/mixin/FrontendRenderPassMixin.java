@@ -13,7 +13,9 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.frontend.FrontendRenderPass;
+import com.mojang.renderpearl.frontend.FrontendRenderPipeline;
 
 @Mixin(FrontendRenderPass.class)
 public class FrontendRenderPassMixin {
@@ -32,9 +34,11 @@ public class FrontendRenderPassMixin {
     )
     String moreDetailedMismatchedAttachmentCountError(
         String message,
-        @Local List<ColorTargetState> colorTargetStates
+        @Local List<ColorTargetState> colorTargetStates,
+        @Local CompiledRenderPipeline pipeline
     ) {
-        return message+" Expected "+colorTargetStates.size()+" color attachments, but got "+this.colorAttachments.size()+".";
+        FrontendRenderPipeline frontendRenderPipeline = (FrontendRenderPipeline) pipeline;
+        return message+" Expected "+colorTargetStates.size()+" color attachments, but got "+this.colorAttachments.size()+" for pipeline \""+frontendRenderPipeline.name()+"\"";
     }
 
     /*@ModifyArg(
