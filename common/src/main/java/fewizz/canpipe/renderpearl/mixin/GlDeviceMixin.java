@@ -3,13 +3,10 @@ package fewizz.canpipe.renderpearl.mixin;
 import java.nio.ByteBuffer;
 import java.util.OptionalDouble;
 
-import javax.management.RuntimeErrorException;
-
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL33C;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -19,7 +16,6 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.renderpearl.api.pipeline.CompareOp;
-import com.mojang.renderpearl.api.pipeline.ShaderSource;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
@@ -27,12 +23,9 @@ import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.opengl.GlDevice;
-import com.mojang.renderpearl.backend.opengl.GlShaderModule;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
 
 import fewizz.canpipe.renderpearl.GpuDeviceBackendExtended;
 import fewizz.canpipe.renderpearl.GpuShaderModule;
-import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 
 @Mixin(GlDevice.class)

@@ -8,12 +8,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.management.RuntimeErrorException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -23,6 +26,7 @@ import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 
+import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
@@ -33,6 +37,8 @@ import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.pipeline.ShaderSource;
+import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
@@ -48,10 +54,12 @@ import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
 
@@ -105,7 +113,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
-    public final Map<Pair<GpuFormat, RenderPipeline>, RenderPipeline> replacedRenderPipelines = new HashMap<>();
+    public final Map<Pair<GpuFormat, RenderPipeline>, CompiledRenderPipeline> replacedRenderPipelines = new HashMap<>();
 
     private final List<Pass>
         onInitPasses = new ArrayList<>(),
@@ -711,28 +719,33 @@ public class Pipeline implements AutoCloseable {
         return renderTarget;
     }*/
 
-    public RenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
-        if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return pipeline; }
+    public CompiledRenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
+        if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return null; }
 
         boolean patchReversedDepth = !this.awareOfDepthRangeChanges;
-        boolean patchAttachment = !colorAttachments.isEmpty() && colorAttachments.getFirst().textureView().texture().getFormat() != GpuFormat.RGBA8_UNORM;  //this.defaultFramebuffer.getColorTexture().getFormat() != GpuFormat.RGBA8_UNORM;
+        boolean patchAttachment = (
+            colorAttachments.size() != pipeline.getColorTargetStates().size() ||
+            (!colorAttachments.isEmpty() && colorAttachments.getFirst().textureView().texture().getFormat() != GpuFormat.RGBA8_UNORM)
+        );  //this.defaultFramebuffer.getColorTexture().getFormat() != GpuFormat.RGBA8_UNORM;
 
-        if (!patchAttachment && !patchReversedDepth) { return pipeline;}
+        if (!patchAttachment && !patchReversedDepth) { return null; }
+
+        // System.out.println("color attachments: "+colorAttachments +", pipeline color targets: "+pipeline.getColorTargetStates());
+        // throw new RuntimeException();
 
         GpuFormat firstColorAttachmentFormat = colorAttachments.isEmpty() ? null : colorAttachments.get(0).textureView().texture().getFormat();
 
         return this.replacedRenderPipelines.computeIfAbsent(Pair.of(firstColorAttachmentFormat, pipeline), _key -> {
             List<ColorTargetState> colorTargets = pipeline.getColorTargetStates();
             if (patchAttachment) {
-                List<ColorTargetState> colorTargetsList = new ArrayList<>();
+                colorTargets = new ArrayList<>();
                 for (var attachment : colorAttachments) {
-                    colorTargetsList.add(new ColorTargetState(
+                    colorTargets.add(new ColorTargetState(
                             pipeline.getColorTargetStates().get(0).blendFunction(),
                             attachment.textureView().texture().getFormat(),
                             pipeline.getColorTargetStates().get(0).writeMask()
                     ));
                 }
-                colorTargets = List.of(new ColorTargetState[0]);
             }
 
             DepthStencilState depthState = pipeline.getDepthStencilState();
@@ -745,7 +758,11 @@ public class Pipeline implements AutoCloseable {
                 );
             }
 
-            return new RenderPipeline(
+            Minecraft mc = Minecraft.getInstance();
+            Map<Pair<Identifier, ShaderType>, String> shaderSources = new HashMap<>();
+            Map<Identifier, ShaderSource.CachedIncludeSource> includeSourcesBuilder = new HashMap<>();
+
+            var newRenderPipeline = new RenderPipeline(
                 pipeline.getLocation(),
                 pipeline.getShaders(),
                 pipeline.getShaderDefines(),
@@ -759,6 +776,50 @@ public class Pipeline implements AutoCloseable {
                 pipeline.pushConstantSize(),
                 pipeline.getSortKey()
             ) {};
+
+            try {
+                for (Entry<Identifier, Resource> entry : mc.getResourceManager().listResources("shaders", p -> true).entrySet()) {
+                    Identifier location = entry.getKey();
+                    ShaderType shaderType = ShaderType.byLocation(location);
+                    Resource resource = entry.getValue();
+
+                    if (shaderType != null) {
+                        String contents = resource.readAllAsString();
+                        Identifier id = shaderType.idConverter().fileToId(location);
+                        shaderSources.put(Pair.of(id, shaderType), contents);
+                    }
+                    else if (ShaderManager.SHADER_INCLUDE_CONVERTER.matches(location)) {
+                        String contents = resource.readAllAsString();
+                        Identifier id = ShaderManager.SHADER_INCLUDE_CONVERTER.fileToId(location).withSuffix(ShaderManager.SHADER_INCLUDE_EXTENSION);
+                        includeSourcesBuilder.put(id, ShaderSource.CachedIncludeSource.create(id, contents));
+                    }
+                }
+
+                var device = RenderSystem.getDevice();
+                return device.compilePipeline(
+                    newRenderPipeline,
+                    new ShaderSource() {
+
+                        @Override
+                        public @Nullable String getShader(Identifier id, ShaderType type) {
+                            return shaderSources.get(Pair.of(id, type));
+                        }
+
+                        @Override
+                        public @Nullable CachedIncludeSource getInclude(Identifier id) {
+                            return includeSourcesBuilder.get(id);
+                        }
+
+                        @Override
+                        public void close() {
+                        }
+
+                    },
+                    (runnable) -> runnable.run()
+                ).get().finishCompile();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 

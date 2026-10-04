@@ -8,14 +8,12 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.renderpearl.api.textures.GpuTexture;
-import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.api.CommandEncoderBackend;
 import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import com.mojang.renderpearl.frontend.FrontendCommandEncoder;
 
 import fewizz.canpipe.renderpearl.CommandEncoderBackendExtended;
 import fewizz.canpipe.renderpearl.CommandEncoderExtended;
-import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 
 @Mixin(FrontendCommandEncoder.class)
 public class FrontendCommandEncoderMixin implements CommandEncoderExtended {
