@@ -53,6 +53,7 @@
         "SectionCompilerMixin",
         "SectionOcclusionGraphMixin",
         "ShaderManagerMixin",
+        "SharedConstantsMixin",
         "SubmitNodeCollectionMixin",
         "SubmitNodeStorageMixin",
         "TextureAtlasMixin",

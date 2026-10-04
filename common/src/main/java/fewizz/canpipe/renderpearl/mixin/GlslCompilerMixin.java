@@ -16,6 +16,7 @@ public class GlslCompilerMixin {
     )
     long onCreateBaseShaderOptions(long shaderOptionsHandle) {
         Shaderc.shaderc_compile_options_set_auto_map_locations(shaderOptionsHandle, true);
+        // Shaderc.shaderc_compile_options_set_preserve_bindings(shaderOptionsHandle, true);
         return shaderOptionsHandle;
     }
 
