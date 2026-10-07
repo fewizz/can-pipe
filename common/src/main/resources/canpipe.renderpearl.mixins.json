@@ -9,6 +9,7 @@
         "FrontendCommandEncoderMixin",
         "FrontendGpuDeviceAccessor",
         "FrontendGpuDeviceMixin",
+        "FrontendRenderPassAccessor",
         "FrontendRenderPassMixin",
         "GlCommandEncoderMixin",
         "GlConstMixin",

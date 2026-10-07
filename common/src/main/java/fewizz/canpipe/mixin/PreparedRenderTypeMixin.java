@@ -23,12 +23,15 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import fewizz.canpipe.renderpearl.mixin.FrontendRenderPassAccessor;
 import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 
 @Mixin(PreparedRenderType.class)
@@ -151,5 +154,51 @@ public class PreparedRenderTypeMixin {
         PreparedRenderType.Texture sampler0 = this.textures.stream().filter(t -> t.name().equals("Sampler0")).findFirst().orElse(null);
         Pipeline.bindSpritesExtentsSampler(renderPass, sampler0 != null ? sampler0.textureView() : null);
     }*/
+
+
+    @WrapOperation(
+        method = "draw",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/systems/RenderSystem;getCompiledPipeline("+
+                "Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;"+
+            ")Lcom/mojang/renderpearl/api/pipeline/CompiledRenderPipeline;"
+        )
+    )
+    CompiledRenderPipeline replaceRenderPipeline(
+        RenderPipeline renderPipeline,
+        Operation<CompiledRenderPipeline> operation,
+        @Local RenderPass renderPass
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            var loader = p.getMaterialProgramLoader(renderPipeline);
+            if (loader != null) {
+                var colorAttachments = ((FrontendRenderPassAccessor) renderPass).canpipe_getColorAttachments();
+                var colorFormats = colorAttachments.stream().map(cts -> cts.textureView().texture().getFormat()).toList();
+                var depthFormat = GpuFormat.D32_FLOAT;
+                return loader.getOrCreateCompiledRenderPipeline(Pair.of(colorFormats, depthFormat));
+            }
+        }
+        return operation.call(renderPipeline);
+    }
+
+    @Inject(
+        method = "draw",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/systems/RenderSystem;bindDefaultUniforms(Lcom/mojang/renderpearl/api/commands/RenderPass;)V"
+        )
+    )
+    void bindUniforms(CallbackInfo ci, @Local RenderPipeline renderPipeline, @Local RenderPass renderPass) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            var loader = p.getMaterialProgramLoader(renderPipeline);
+            if (loader != null) {
+                Pipeline.bindSpritesExtentsSampler(renderPass, p.solidFramebuffer.getColorTextureView());
+                p.bindUniforms(renderPass, p.solidFramebuffer, true);
+            }
+        }
+    }
 
 }

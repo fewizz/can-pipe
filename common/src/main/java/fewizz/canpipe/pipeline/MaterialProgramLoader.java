@@ -55,23 +55,6 @@ public class MaterialProgramLoader implements Closeable {
     public RenderPipeline createRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
         ((RenderPipelineBuilderExtended) this.pipelineBuilder).canpipe_resetActiveColorTargetStateCount();
         var colorFormats = formats.getLeft();
-        // var depthFormat = formats.getRight();
-
-        /*String postfix = "";
-        for (var colorAttachmentFormat : formats.getLeft()) {
-            if (colorAttachmentFormat != null) {
-                postfix += "-c-"+colorAttachmentFormat.toString();
-            }
-            else {
-                postfix += "-c-u";  // unused
-            }
-        }
-        if (formats.getRight() != null) {
-            postfix += "-d-"+formats.getRight().toString();
-        }
-        postfix = postfix.replace("_", "-").toLowerCase();
-
-        pipelineBuilder.withLocation(this.id.withSuffix(postfix));*/
 
         var originalBlendFunction = this.originalRenderPipeline.getColorTargetStates().get(0).blendFunction();
 
@@ -99,7 +82,7 @@ public class MaterialProgramLoader implements Closeable {
         return pipelineBuilder.build();
     }
 
-    public CompiledRenderPipeline getOrCompileRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
+    public CompiledRenderPipeline getOrCreateCompiledRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
         return this.renderPipelinesPerFormat.computeIfAbsent(formats, (_formats) -> {
             var pipeline = this.createRenderPipeline(formats);
 

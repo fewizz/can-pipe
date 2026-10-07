@@ -33,7 +33,7 @@ public class ChunkSectionsToRenderSeparateMixin {
         )) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                return loader.getOrCompileRenderPipeline(p.solidFramebuffer.getFormats());
+                return loader.getOrCreateCompiledRenderPipeline(p.solidFramebuffer.getFormats());
             }
         }
         return operation.call(pipeline);
