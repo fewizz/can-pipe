@@ -2,17 +2,21 @@ package fewizz.canpipe.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.pipeline.MaterialProgramLoader;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -52,8 +56,20 @@ public class ChunkSectionsToRenderIndirectMixin {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             Pipeline.bindSpritesExtentsSampler(renderPass, p.solidFramebuffer.getColorTextureView());
-            p.bindUniforms(renderPass, p.solidFramebuffer);
+            p.bindUniforms(renderPass, p.solidFramebuffer, false);
         }
+    }
+
+    @ModifyConstant (
+        method = "render",
+        constant = @Constant(longValue = 20)
+    )
+    long changeVertexSize(long size) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) {
+            // size = CanPipe.VertexFormats.BLOCK.getVertexSize();
+        }
+        return size;
     }
 
 }

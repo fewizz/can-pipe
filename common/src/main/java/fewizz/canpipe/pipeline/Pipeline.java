@@ -584,7 +584,7 @@ public class Pipeline implements AutoCloseable {
         descriptorBuilder.withRenderArea(renderArea);
         RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build());
 
-        this.bindUniforms(renderPass, framebuffer);
+        this.bindUniforms(renderPass, framebuffer, true);
 
         return renderPass;
     }
@@ -611,7 +611,7 @@ public class Pipeline implements AutoCloseable {
         );
     }
 
-    public void bindUniforms(RenderPass renderPass, Framebuffer framebuffer) {
+    public void bindUniforms(RenderPass renderPass, Framebuffer framebuffer, boolean bindVanillaTextures) {
         GameRendererExtended gre = (GameRendererExtended) Minecraft.getInstance().gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
 
@@ -636,10 +636,12 @@ public class Pipeline implements AutoCloseable {
 
         renderPass.setUniform("canpipe_ub_render_target", CanPipe.get0to3UBOBuffers()[renderTarget]);
 
-        // We don't know yet which render pipeline will be used
-        renderPass.setUniform("Sampler0", CanPipe.getWhiteTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
-        renderPass.setUniform("Sampler1", Minecraft.getInstance().gameRenderer.overlayTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
-        renderPass.setUniform("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
+        if (bindVanillaTextures) {
+            // We don't know yet which render pipeline will be used
+            renderPass.setUniform("Sampler0", CanPipe.getWhiteTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+            renderPass.setUniform("Sampler1", Minecraft.getInstance().gameRenderer.overlayTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
+            renderPass.setUniform("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
+        }
 
         for (var e : this.materialProgramSamplerTextures.entrySet()) {
             AbstractTexture texture = e.getValue();

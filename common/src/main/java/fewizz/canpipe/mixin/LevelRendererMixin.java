@@ -6,6 +6,7 @@ import java.util.OptionalDouble;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
@@ -25,11 +26,13 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
@@ -39,6 +42,7 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRenderStateExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
+import fewizz.canpipe.pipeline.MaterialProgramLoader;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.renderpearl.CommandEncoderExtended;
@@ -355,6 +359,22 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return commandEncoder.createRenderPass(descriptor.build());
         }
         return operation.call(commandEncoder, label, colorTexture, clearColor, depthTexture, clearDepth);
+    }
+
+    @ModifyExpressionValue(
+        method = "extractSectionDrawGroups",
+        at = @At(
+            value = "INVOKE",
+            target = "net/minecraft/client/renderer/chunk/ChunkSectionLayer.pipeline(Z)Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;"
+        )
+    )
+    RenderPipeline changeVertexSizeOnExtractSectionDrawGroups(RenderPipeline pipeline) {
+        var p = Pipelines.getCurrent();
+        if (p != null) {
+            MaterialProgramLoader programLoader = p.getMaterialProgramLoader(pipeline);
+            pipeline = programLoader.createRenderPipeline(Pair.of(List.of(), GpuFormat.D32_FLOAT));
+        }
+        return pipeline;
     }
 
 }

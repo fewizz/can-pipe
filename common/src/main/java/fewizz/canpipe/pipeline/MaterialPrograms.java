@@ -3,6 +3,7 @@ package fewizz.canpipe.pipeline;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,7 @@ import com.mojang.renderpearl.api.pipeline.ShaderSource;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormatElement;
 import com.mojang.renderpearl.backend.api.BackendRenderPipeline;
 
 import fewizz.canpipe.CanPipe;
@@ -60,27 +62,31 @@ public class MaterialPrograms {
         float shadowsOffsetBiasUnits,
         boolean awareOfDepthRangeChanges
     ) {
-        VertexFormat vertexFormat;
+        List<VertexFormat> vertexBindings = new ArrayList<>();
         if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.BLOCK) {
-            vertexFormat = CanPipe.VertexFormats.BLOCK;
+            vertexBindings.add(CanPipe.VertexFormats.BLOCK);
         }
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY) {
-            vertexFormat = !shadow ? CanPipe.VertexFormats.ENTITY : CanPipe.VertexFormats.ENTITY_SHADOW;
+            vertexBindings.add(!shadow ? CanPipe.VertexFormats.ENTITY : CanPipe.VertexFormats.ENTITY_SHADOW);
         }
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.PARTICLE) {
-            vertexFormat = !shadow ? CanPipe.VertexFormats.PARTICLE : CanPipe.VertexFormats.PARTICLE_SHADOW;
+            vertexBindings.add(!shadow ? CanPipe.VertexFormats.PARTICLE : CanPipe.VertexFormats.PARTICLE_SHADOW);
         }
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
-            vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_LIGHTMAP;
+            vertexBindings.add(CanPipe.VertexFormats.POSITION_COLOR_LIGHTMAP);
         }
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
-            vertexFormat = CanPipe.VertexFormats.POSITION_COLOR_TEX_LIGHTMAP;
+            vertexBindings.add(CanPipe.VertexFormats.POSITION_COLOR_TEX_LIGHTMAP);
         }
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR) {
-            vertexFormat = CanPipe.VertexFormats.POSITION_TEX_LIGHTMAP_COLOR;
+            vertexBindings.add(CanPipe.VertexFormats.POSITION_TEX_LIGHTMAP_COLOR);
         }
         else {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormatBinding(0).toString());
+        }
+
+        for (int bindingIndex = 1; bindingIndex < originalRenderPipeline.getVertexFormatBindings().size(); ++bindingIndex) {
+            vertexBindings.add(originalRenderPipeline.getVertexFormatBindings().get(bindingIndex));
         }
 
         // Identifier vertexShaderIDWithPostfix = vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh");
@@ -98,11 +104,10 @@ public class MaterialPrograms {
                 .withFragmentShader(fragmentShaderLocation)//fragmentShaderIDWithPostfix)
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow ? originalRenderPipeline.isCull() : false)
-                .withVertexBinding(0, vertexFormat)
                 .withPrimitiveTopology(originalRenderPipeline.getPrimitiveTopology());
 
-            for (int bindingIndex = 1; bindingIndex < originalRenderPipeline.getVertexFormatBindings().size(); ++bindingIndex) {
-                renderPipelineBuilder.withVertexBinding(bindingIndex, originalRenderPipeline.getVertexFormatBindings().get(bindingIndex));
+            for (int bindingIndex = 0; bindingIndex < vertexBindings.size(); ++bindingIndex) {
+                renderPipelineBuilder.withVertexBinding(bindingIndex, vertexBindings.get(bindingIndex));
             }
 
             ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_allowNoColorTargets();
@@ -234,8 +239,13 @@ public class MaterialPrograms {
             throw new RuntimeException("Couldn't compile \""+shaderLocation.toString()+"\": "+log);
         };*/
 
-        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
-        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, vertexFormat, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
+        List<String> attributeNames = vertexBindings.stream()
+            .flatMap((VertexFormat v) -> v == null ? List.<VertexFormatElement>of().stream() : v.getElements().stream())
+            .map((VertexFormatElement ve) -> ve.name())
+            .toList();
+
+        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
+        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
 
         // TODO
         /*((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
@@ -316,7 +326,7 @@ public class MaterialPrograms {
     private static String getVertexSrc(
         Identifier vertexShaderLocation,
         Function<Identifier, Optional<String>> getShaderSource,
-        VertexFormat vertexFormat,
+        List<String> attributeNames,
         RenderPipeline originalRenderPipeline,
         Collection<Material> materials,
         boolean shadow,
@@ -327,11 +337,11 @@ public class MaterialPrograms {
         String vertexSrcOriginal = getShaderSource.apply(vertexShaderLocation).get();
 
         boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
-        boolean hasTexturePos = vertexFormat.contains(DefaultVertexFormat.UV0_SEMANTIC_NAME);
-        boolean hasOverlayPos = vertexFormat.contains(DefaultVertexFormat.UV1_SEMANTIC_NAME);
-        boolean hasLightmapPos = vertexFormat.contains(DefaultVertexFormat.UV2_SEMANTIC_NAME);
-        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormats.MATERIAL_FLAGS_ATTRIBUTE_NAME);
-        boolean hasMaterialIndex = vertexFormat.contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME);
+        boolean hasTexturePos = attributeNames.contains(DefaultVertexFormat.UV0_SEMANTIC_NAME);
+        boolean hasOverlayPos = attributeNames.contains(DefaultVertexFormat.UV1_SEMANTIC_NAME);
+        boolean hasLightmapPos = attributeNames.contains(DefaultVertexFormat.UV2_SEMANTIC_NAME);
+        boolean hasMaterialFlags = attributeNames.contains(CanPipe.VertexFormats.MATERIAL_FLAGS_ATTRIBUTE_NAME);
+        boolean hasMaterialIndex = attributeNames.contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME);
 
         StringBuilder materialsFunctionsSrc = new StringBuilder();
         StringBuilder materialsSwitchSrc = new StringBuilder();
@@ -383,52 +393,52 @@ public class MaterialPrograms {
         }
         vertexSrcBuilder.append("\n");
         vertexSrcBuilder.append("\n");
-        vertexSrcBuilder.append("in vec3 in_vertex;  // Position\n");
-        vertexSrcBuilder.append("in vec4 in_color;  // Color\n");
+        vertexSrcBuilder.append("layout(location = "+attributeNames.indexOf("Position")+") in vec3 in_vertex;  // Position\n");
+        vertexSrcBuilder.append("layout(location = "+attributeNames.indexOf("Color")+") in vec4 in_color;  // Color\n");
         if (hasTexturePos) {
             vertexSrcBuilder.append("#define CANPIPE_HAS_TEXTURE_POS\n");
-            vertexSrcBuilder.append("in vec2 in_uv;  // UV0\n");
+            vertexSrcBuilder.append("layout(location = "+attributeNames.indexOf("UV0")+") in vec2 in_uv;  // UV0\n");
         }
         if (hasOverlayPos) {
             vertexSrcBuilder.append("#define CANPIPE_HAS_OVERLAY_POS\n");
-            vertexSrcBuilder.append("in ivec2 in_overlayPos;  // UV1\n");
+            vertexSrcBuilder.append("layout(location = "+attributeNames.indexOf("UV1")+") in ivec2 in_overlayPos;  // UV1\n");
         }
         if (hasLightmapPos) {
             vertexSrcBuilder.append("#define CANPIPE_HAS_LIGHTMAP_POS\n");
-            vertexSrcBuilder.append("in ivec2 in_lightmapPos;  // UV2\n");
+            vertexSrcBuilder.append("layout(location = "+attributeNames.indexOf("UV2")+") in ivec2 in_lightmapPos;  // UV2\n");
         }
         if (terrainMultidraw) {
             vertexSrcBuilder.append(
-                "in ivec3 ChunkPosition;\n"+
-                "in float ChunkVisibility;\n"
+                "layout(location = "+attributeNames.indexOf("ChunkPosition")+") in ivec3 ChunkPosition;\n"+
+                "layout(location = "+attributeNames.indexOf("ChunkVisibility")+") in float ChunkVisibility;\n"
             );
         }
         if (hasMaterialFlags) {
             vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_FLAGS\n");
-            vertexSrcBuilder.append("in int in_materialFlags;\n");
+            vertexSrcBuilder.append("layout(location = "+attributeNames.indexOf("in_materialFlags")+") in int in_materialFlags;\n");
         }
         if (hasMaterialIndex) {
             vertexSrcBuilder.append("#define CANPIPE_HAS_MATERIAL_INDEX\n");
-            vertexSrcBuilder.append("in int in_materialIndex;\n");
+            vertexSrcBuilder.append("layout(location = "+attributeNames.indexOf("in_materialIndex")+") in int in_materialIndex;\n");
         }
         vertexSrcBuilder.append(
-            vertexFormat.contains(DefaultVertexFormat.NORMAL_SEMANTIC_NAME) ?
-            "in vec3 in_normal; // Normal\n" :
+            attributeNames.contains(DefaultVertexFormat.NORMAL_SEMANTIC_NAME) ?
+            "layout(location = "+attributeNames.indexOf("Normal")+") in vec3 in_normal; // Normal\n" :
             "const vec3 in_normal = vec3(0.0, 1.0, 0.0);  // Normal\n"
         );
         vertexSrcBuilder.append(
-            vertexFormat.contains(CanPipe.VertexFormats.AO_ATTRIBUTE_NAME) ?
-            "in float in_ao;\n" :
+            attributeNames.contains(CanPipe.VertexFormats.AO_ATTRIBUTE_NAME) ?
+            "layout(location = "+attributeNames.indexOf("in_ao")+") in float in_ao;\n" :
             "const float in_ao = 1.0;\n"
         );
         vertexSrcBuilder.append(
-            vertexFormat.contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME) ?
-            "in int in_spriteIndex;\n" :
+            attributeNames.contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME) ?
+            "layout(location = "+attributeNames.indexOf("in_spriteIndex")+") in int in_spriteIndex;\n" :
             "const int in_spriteIndex = -1;\n"
         );
         vertexSrcBuilder.append(
-            vertexFormat.contains(CanPipe.VertexFormats.TANGENT_ATTRIBUTE_NAME) ?
-            "in vec4 in_tangent;\n" :
+            attributeNames.contains(CanPipe.VertexFormats.TANGENT_ATTRIBUTE_NAME) ?
+            "layout(location = "+attributeNames.indexOf("in_tangent")+") in vec4 in_tangent;\n" :
             "const vec4 in_tangent = vec4(1.0);\n"
         );
 
@@ -523,7 +533,7 @@ public class MaterialPrograms {
     private static String getFragmentSrc(
         Identifier fragmentShaderLocation,
         Function<Identifier, Optional<String>> getShaderSource,
-        VertexFormat vertexFormat,
+        List<String> attributeNames,
         RenderPipeline originalRenderPipeline,
         Collection<Material> materials,
         boolean shadow,
@@ -537,10 +547,10 @@ public class MaterialPrograms {
         StringBuilder materialsSwitchSrc = new StringBuilder();
 
         boolean flatVertexColor = originalRenderPipeline == RenderPipelines.LEASH;
-        boolean hasTexturePos = vertexFormat.contains(DefaultVertexFormat.UV0_SEMANTIC_NAME);
-        boolean hasOverlayPos = vertexFormat.contains(DefaultVertexFormat.UV1_SEMANTIC_NAME);
-        boolean hasMaterialFlags = vertexFormat.contains(CanPipe.VertexFormats.MATERIAL_FLAGS_ATTRIBUTE_NAME);
-        boolean hasMaterialIndex = vertexFormat.contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME);
+        boolean hasTexturePos = attributeNames.contains(DefaultVertexFormat.UV0_SEMANTIC_NAME);
+        boolean hasOverlayPos = attributeNames.contains(DefaultVertexFormat.UV1_SEMANTIC_NAME);
+        boolean hasMaterialFlags = attributeNames.contains(CanPipe.VertexFormats.MATERIAL_FLAGS_ATTRIBUTE_NAME);
+        boolean hasMaterialIndex = attributeNames.contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME);
 
         if (hasMaterialIndex) {
             materialsSwitchSrc.append("    switch (canpipe_materialIndex) {\n");

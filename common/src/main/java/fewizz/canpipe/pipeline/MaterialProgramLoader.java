@@ -52,52 +52,56 @@ public class MaterialProgramLoader implements Closeable {
         this.uniformBindings = uniformBindings;
     }
 
+    public RenderPipeline createRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
+        ((RenderPipelineBuilderExtended) this.pipelineBuilder).canpipe_resetActiveColorTargetStateCount();
+        var colorFormats = formats.getLeft();
+        // var depthFormat = formats.getRight();
+
+        /*String postfix = "";
+        for (var colorAttachmentFormat : formats.getLeft()) {
+            if (colorAttachmentFormat != null) {
+                postfix += "-c-"+colorAttachmentFormat.toString();
+            }
+            else {
+                postfix += "-c-u";  // unused
+            }
+        }
+        if (formats.getRight() != null) {
+            postfix += "-d-"+formats.getRight().toString();
+        }
+        postfix = postfix.replace("_", "-").toLowerCase();
+
+        pipelineBuilder.withLocation(this.id.withSuffix(postfix));*/
+
+        var originalBlendFunction = this.originalRenderPipeline.getColorTargetStates().get(0).blendFunction();
+
+        for (int i = 0; i < colorFormats.size(); ++i) {
+            var format = colorFormats.get(i);
+            if (format != null) {
+                boolean blend = !(
+                    format.componentType() == GpuFormat.ComponentType.SINT_8 ||
+                    format.componentType() == GpuFormat.ComponentType.UINT_8 ||
+                    format.componentType() == GpuFormat.ComponentType.SINT_16 ||
+                    format.componentType() == GpuFormat.ComponentType.UINT_16 ||
+                    format.componentType() == GpuFormat.ComponentType.SINT_32 ||
+                    format.componentType() == GpuFormat.ComponentType.UINT_32
+                );
+                pipelineBuilder.withColorTargetState(
+                    i,
+                    new ColorTargetState(blend ? originalBlendFunction : Optional.empty(), format, ColorTargetState.WRITE_ALL)
+                );
+            }
+            else {
+                pipelineBuilder.withUnusedColorTargetState(i);
+            }
+        }
+
+        return pipelineBuilder.build();
+    }
+
     public CompiledRenderPipeline getOrCompileRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
         return this.renderPipelinesPerFormat.computeIfAbsent(formats, (_formats) -> {
-            ((RenderPipelineBuilderExtended) this.pipelineBuilder).canpipe_resetActiveColorTargetStateCount();
-            var colorFormats = formats.getLeft();
-            // var depthFormat = formats.getRight();
-
-            /*String postfix = "";
-            for (var colorAttachmentFormat : formats.getLeft()) {
-                if (colorAttachmentFormat != null) {
-                    postfix += "-c-"+colorAttachmentFormat.toString();
-                }
-                else {
-                    postfix += "-c-u";  // unused
-                }
-            }
-            if (formats.getRight() != null) {
-                postfix += "-d-"+formats.getRight().toString();
-            }
-            postfix = postfix.replace("_", "-").toLowerCase();
-
-            pipelineBuilder.withLocation(this.id.withSuffix(postfix));*/
-
-            var originalBlendFunction = this.originalRenderPipeline.getColorTargetStates().get(0).blendFunction();
-
-            for (int i = 0; i < colorFormats.size(); ++i) {
-                var format = colorFormats.get(i);
-                if (format != null) {
-                    boolean blend = !(
-                        format.componentType() == GpuFormat.ComponentType.SINT_8 ||
-                        format.componentType() == GpuFormat.ComponentType.UINT_8 ||
-                        format.componentType() == GpuFormat.ComponentType.SINT_16 ||
-                        format.componentType() == GpuFormat.ComponentType.UINT_16 ||
-                        format.componentType() == GpuFormat.ComponentType.SINT_32 ||
-                        format.componentType() == GpuFormat.ComponentType.UINT_32
-                    );
-                    pipelineBuilder.withColorTargetState(
-                        i,
-                        new ColorTargetState(blend ? originalBlendFunction : Optional.empty(), format, ColorTargetState.WRITE_ALL)
-                    );
-                }
-                else {
-                    pipelineBuilder.withUnusedColorTargetState(i);
-                }
-            }
-
-            var pipeline = pipelineBuilder.build();
+            var pipeline = this.createRenderPipeline(formats);
 
             var deviceBackend = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
 

@@ -153,7 +153,7 @@ public class QuadParticleFeatureRendererMixin {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             Pipeline.bindSpritesExtentsSampler(renderPass, texture.getTextureView());
-            p.bindUniforms(renderPass, p.solidFramebuffer);
+            p.bindUniforms(renderPass, p.solidFramebuffer, true);
             // renderPass.setUniform("", null);
         }
     }

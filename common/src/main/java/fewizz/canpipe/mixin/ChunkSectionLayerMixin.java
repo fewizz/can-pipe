@@ -20,7 +20,6 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 @Mixin(ChunkSectionLayer.class)
 public class ChunkSectionLayerMixin {
 
-    // TODO
     /*@Shadow @Final private boolean translucent;
 
     @ModifyReturnValue(method = "pipeline", at = @At("RETURN"))
@@ -28,9 +27,11 @@ public class ChunkSectionLayerMixin {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(renderPipeline);
-            Framebuffer fb = p.shadowFramebufferOr(this.translucent ? p.translucentTerrainFramebuffer : p.solidFramebuffer);
-            var formats = fb.getFormats();
-            renderPipeline = loader.getOrCompileRenderPipeline(formats);
+            if (loader != null) {
+                Framebuffer fb = p.shadowFramebufferOr(this.translucent ? p.translucentTerrainFramebuffer : p.solidFramebuffer);
+                var formats = fb.getFormats();
+                renderPipeline = loader.createRenderPipeline(formats);
+            }
         }
         return renderPipeline;
     }

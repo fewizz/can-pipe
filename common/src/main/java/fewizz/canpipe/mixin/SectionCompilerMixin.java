@@ -9,13 +9,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.MaterialMap;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.chunk.SectionCompiler;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -100,6 +103,20 @@ public class SectionCompilerMixin {
         if (builder instanceof VertexConsumerExtended vce && vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME)) {
             vce.canpipe_setScopedMaterialSupplier(null);
         }
+    }
+
+    @ModifyExpressionValue(
+        method = "getOrBeginLayer",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/chunk/ChunkSectionLayer;vertexFormat()Lcom/mojang/renderpearl/api/vertex/VertexFormat;"
+        )
+    )
+    VertexFormat replaceVertexFormat(VertexFormat vertexFormat) {
+        if (Pipelines.getCurrent() != null) {
+            vertexFormat = CanPipe.VertexFormats.BLOCK;
+        }
+        return vertexFormat;
     }
 
 }

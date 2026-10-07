@@ -17,10 +17,12 @@ import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.UniformType;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout.UniformDescription;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
@@ -58,9 +60,11 @@ public class ProgramPass extends Pass {
         super(id);
         this.textures = new ArrayList<>();
 
-        var samplers = renderPipeline.getBindGroupLayouts().get(0)
-            .uniforms().stream().filter(u -> u.type() == UniformType.COMBINED_IMAGE_SAMPLER)
+        var samplers = renderPipeline.getBindGroupLayouts().stream()
+            .flatMap((BindGroupLayout g) -> g.uniforms().stream())
+            .filter(u -> u.type() == UniformType.COMBINED_IMAGE_SAMPLER)
             .toList();
+
         if (samplers.size() > samplerTextures.size()) {
             CanPipe.LOGGER.warn("Program \""+renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+id+"\"");
         }
@@ -138,8 +142,9 @@ public class ProgramPass extends Pass {
             ) {
                 renderPass.setPipeline(this.compiledRenderPipeline);
 
-                var samplers = this.renderPipeline.getBindGroupLayouts().get(0)
-                    .uniforms().stream().filter(u -> u.type() == UniformType.COMBINED_IMAGE_SAMPLER)
+                List<UniformDescription> samplers = this.renderPipeline.getBindGroupLayouts().stream()
+                    .flatMap((BindGroupLayout g) -> g.uniforms().stream())
+                    .filter(u -> u.type() == UniformType.COMBINED_IMAGE_SAMPLER)
                     .toList();
 
                 for (int i = 0; i < Math.min(samplers.size(), this.textures.size()); ++i) {
