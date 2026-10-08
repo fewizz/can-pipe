@@ -93,13 +93,13 @@ public class QuadParticleFeatureRendererMixin {
             QuadParticleFeatureRendererMixin.canpipe_selectedFramebuffer = null;
             return operation.call(instance, label, colorTexture, clearColor, depthTexture, clearDepth);
         }
-    }
+    }*/
 
     @ModifyExpressionValue(
         method = "lambda$prepareGroup$0",
         at = @At(
             value = "FIELD",
-            target = "Lcom/mojang/blaze3d/vertex/DefaultVertexFormat;PARTICLE:Lcom/mojang/blaze3d/vertex/VertexFormat;",
+            target = "Lcom/mojang/blaze3d/vertex/DefaultVertexFormat;PARTICLE:Lcom/mojang/renderpearl/api/vertex/VertexFormat;",
             opcode = Opcodes.GETSTATIC
         )
     )
@@ -111,7 +111,7 @@ public class QuadParticleFeatureRendererMixin {
                 : CanPipe.VertexFormats.PARTICLE;
         }
         return vertexFormat;
-    }*/
+    }
 
     // TODO
     @WrapOperation(
@@ -124,11 +124,13 @@ public class QuadParticleFeatureRendererMixin {
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null &&
-            pipeline == RenderPipelines.OPAQUE_PARTICLE
+            pipeline == RenderPipelines.OPAQUE_PARTICLE ||
+            pipeline == RenderPipelines.TRANSLUCENT_PARTICLE
         ) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                return loader.getOrCreateCompiledRenderPipeline(p.solidFramebuffer.getFormats());
+                Framebuffer fb = pipeline == RenderPipelines.OPAQUE_PARTICLE ? p.solidFramebuffer : p.translucentTerrainFramebuffer;  // TODO p.translucentParticlesFramebuffer;
+                return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
         }
         return operation.call(pipeline);
