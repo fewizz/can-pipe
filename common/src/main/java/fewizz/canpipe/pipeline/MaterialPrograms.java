@@ -70,6 +70,9 @@ public class MaterialPrograms {
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY) {
             vertexBindings.add(!shadow ? CanPipe.VertexFormats.ENTITY : CanPipe.VertexFormats.ENTITY_SHADOW);
         }
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY_GLINT_SPECIAL) {
+            vertexBindings.add(CanPipe.VertexFormats.ENTITY_GLINT_SPECIAL);
+        }
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.PARTICLE) {
             vertexBindings.add(!shadow ? CanPipe.VertexFormats.PARTICLE : CanPipe.VertexFormats.PARTICLE_SHADOW);
         }
@@ -598,7 +601,11 @@ public class MaterialPrograms {
             originalRenderPipeline == RenderPipelines.ENTITY_TRANSLUCENT_CULL ||
 
             originalRenderPipeline == RenderPipelines.ITEM_CUTOUT ||
+            originalRenderPipeline == RenderPipelines.ITEM_CUTOUT_GLINT ||
+            originalRenderPipeline == RenderPipelines.ITEM_CUTOUT_GLINT_SPECIAL ||
             originalRenderPipeline == RenderPipelines.ITEM_TRANSLUCENT ||
+            originalRenderPipeline == RenderPipelines.ITEM_TRANSLUCENT_GLINT ||
+            originalRenderPipeline == RenderPipelines.ITEM_TRANSLUCENT_GLINT_SPECIAL ||
 
             originalRenderPipeline == RenderPipelines.ARMOR_CUTOUT_NO_CULL ||
             originalRenderPipeline == RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL ||

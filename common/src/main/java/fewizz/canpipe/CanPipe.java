@@ -149,6 +149,21 @@ public class CanPipe {
             /* 46 + 2*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
             .build();
 
+        public static final VertexFormat ENTITY_GLINT_SPECIAL = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 1*4 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
+            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV1_SEMANTIC_NAME, DefaultVertexFormat.UV1_FORMAT)
+            /* 28 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
+            /* 32 + 4*2 */.addAttribute(DefaultVertexFormat.UV3_SEMANTIC_NAME, DefaultVertexFormat.UV3_FORMAT)
+            /* 40 + 4*1 */.addAttribute(DefaultVertexFormat.NORMAL_SEMANTIC_NAME, DefaultVertexFormat.NORMAL_FORMAT)
+
+            /* 44 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
+            /* 48 + 1*4 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
+            /* 52 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
+            /* 64 + 2*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
+            .build();
+
         /* Used when rendering shadow cascades, not a circular shadow under entities */
         public static final VertexFormat ENTITY_SHADOW = VertexFormat.builder(0)
             /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)

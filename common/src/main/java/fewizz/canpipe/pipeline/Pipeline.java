@@ -287,7 +287,11 @@ public class Pipeline implements AutoCloseable {
             RenderPipelines.BANNER_PATTERN,
 
             RenderPipelines.ITEM_CUTOUT,
+            RenderPipelines.ITEM_CUTOUT_GLINT,
+            RenderPipelines.ITEM_CUTOUT_GLINT_SPECIAL,
             RenderPipelines.ITEM_TRANSLUCENT,
+            RenderPipelines.ITEM_TRANSLUCENT_GLINT,
+            RenderPipelines.ITEM_TRANSLUCENT_GLINT_SPECIAL,
 
             RenderPipelines.EYES,
 

@@ -317,7 +317,7 @@ public class GameRendererMixin implements GameRendererExtended {
     }
 
     @ModifyExpressionValue(
-        method = {"mainRenderTarget", "processBlurEffect", "render", "renderLevel", "takeAutoScreenshot"},
+        method = {"mainRenderTarget", "processBlurEffect", "render", "renderLevel", "takeAutoScreenshot", "renderItemInHand", "render3dHud"},
         at = @At(
             value = "FIELD",
             target = "Lnet/minecraft/client/renderer/GameRenderer;mainRenderTarget:Lcom/mojang/blaze3d/pipeline/RenderTarget;"
