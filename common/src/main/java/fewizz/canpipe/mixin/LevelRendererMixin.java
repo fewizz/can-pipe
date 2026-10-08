@@ -18,11 +18,13 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.resource.GraphicsResourceAllocator;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -42,6 +44,7 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRenderStateExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
+import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.MaterialProgramLoader;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -53,6 +56,7 @@ import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
@@ -79,7 +83,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
     @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
-    // @Shadow public ChunkSectionsToRender prepareChunkRenders(Matrix4fc modelViewMatrix) { return null; }
+    @Shadow private void executeClassicTransparency(ChunkSectionsToRender chunkSectionsToRender, FeatureRenderDispatcher.PreparedFrame featureFrame, RenderPass renderPass) {}
 
     @Unique private int canpipe_currentShadowCascadeIdx = -1;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
@@ -148,7 +152,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(pt));
         this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(pt));
 
-        if (p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
+        if (true || p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
             return;
         }
 
@@ -340,25 +344,83 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     RenderPass onCreateSolidTerrainRenderPass(
         CommandEncoder commandEncoder,
         Supplier<String> label,
-		GpuTextureView colorTexture,
-		Optional<Vector4fc> clearColor,
-		@Nullable GpuTextureView depthTexture,
-		OptionalDouble clearDepth,
+        GpuTextureView colorTexture,
+        Optional<Vector4fc> clearColor,
+        @Nullable GpuTextureView depthTexture,
+        OptionalDouble clearDepth,
         Operation<RenderPass> operation
     ) {
         Pipeline p = Pipelines.getCurrent();
+
         if (p != null) {
+            final Framebuffer fb = p.solidFramebuffer;
+
             RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(label);
-            for (var colorAttachment : p.solidFramebuffer.colorTextureViews) {
-                descriptor.withColorAttachment(colorAttachment);
-            }
-            if (p.solidFramebuffer.getDepthTextureView() != null) {
-                descriptor.withDepthAttachment(p.solidFramebuffer.getDepthTextureView());
-            }
-            descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, colorTexture.getWidth(0), colorTexture.getHeight(0)));
+            for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+            if (fb.getDepthTextureView() != null) { descriptor.withDepthAttachment(fb.getDepthTextureView()); }
+            descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, fb.width, fb.height));
+
             return commandEncoder.createRenderPass(descriptor.build());
         }
+
         return operation.call(commandEncoder, label, colorTexture, clearColor, depthTexture, clearDepth);
+    }
+
+    @WrapOperation(
+        method = "lambda$addMainPass$0",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;executeClassicTransparency("+
+                "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"+
+                "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;"+
+                "Lcom/mojang/renderpearl/api/commands/RenderPass;"+
+            ")V"
+        )
+    )
+    void deferTranslucentTerrainRendering(
+        LevelRenderer instance, ChunkSectionsToRender chunkSectionsToRender, FeatureRenderDispatcher.PreparedFrame featureFrame, RenderPass renderPass,
+        Operation<Void> operation
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) return;
+
+        operation.call(instance, chunkSectionsToRender, featureFrame, renderPass);
+    }
+
+    @Inject(
+        method = "lambda$addMainPass$0",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;executeOutline("+
+                "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;"+
+            ")V"
+        )
+    )
+    void renderTranslucentTerrain(
+        CallbackInfo ci,
+        @Local ChunkSectionsToRender chunkSectionsToRender,
+        @Local FeatureRenderDispatcher.PreparedFrame featureFrame
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) return;
+
+        final Framebuffer fb = p.translucentTerrainFramebuffer;
+
+        var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+        commandEncoder.copyTextureToTexture(
+            p.solidFramebuffer.getDepthTexture(), fb.getDepthTexture(),
+            0, 0, 0, 0, 0, fb.width, fb.height
+        );
+
+        RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(() -> "Translucent");
+        for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        if (fb.getDepthTextureView() != null) { descriptor.withDepthAttachment(fb.getDepthTextureView()); }
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, fb.width, fb.height));
+
+        try (RenderPass newRenderPass = commandEncoder.createRenderPass(descriptor.build())) {
+            RenderSystem.bindDefaultUniforms(newRenderPass);
+            this.executeClassicTransparency(chunkSectionsToRender, featureFrame, newRenderPass);
+        }
     }
 
     @ModifyExpressionValue(

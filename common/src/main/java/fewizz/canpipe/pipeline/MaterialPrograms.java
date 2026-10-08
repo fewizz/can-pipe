@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -175,13 +176,13 @@ public class MaterialPrograms {
 
         Collection<Material> materials;
 
-        if (originalRenderPipeline == RenderPipelines.SOLID_TERRAIN || originalRenderPipeline == RenderPipelines.SOLID_BLOCK) {
+        if (Set.of(RenderPipelines.SOLID_BLOCK, RenderPipelines.SOLID_TERRAIN, RenderPipelines.SOLID_TERRAIN_MULTIDRAW).contains(originalRenderPipeline)) {
             materials = MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.SOLID);
         }
-        else if (originalRenderPipeline == RenderPipelines.CUTOUT_TERRAIN || originalRenderPipeline == RenderPipelines.CUTOUT_BLOCK) {
+        else if (Set.of(RenderPipelines.CUTOUT_BLOCK, RenderPipelines.CUTOUT_TERRAIN, RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW).contains(originalRenderPipeline)) {
             materials = MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.CUTOUT);
         }
-        else if (originalRenderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN || originalRenderPipeline == RenderPipelines.TRANSLUCENT_BLOCK) {
+        else if (Set.of(RenderPipelines.TRANSLUCENT_BLOCK, RenderPipelines.TRANSLUCENT_TERRAIN, RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW).contains(originalRenderPipeline)) {
             materials = MaterialMaps.getMaterialsUsedByChunkSectionLayer(ChunkSectionLayer.TRANSLUCENT);
         }
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY) {

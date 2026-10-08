@@ -8,6 +8,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
+import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.MaterialProgramLoader;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -33,7 +34,8 @@ public class ChunkSectionsToRenderSeparateMixin {
         )) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                return loader.getOrCreateCompiledRenderPipeline(p.solidFramebuffer.getFormats());
+                Framebuffer fb = pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.solidFramebuffer : p.translucentTerrainFramebuffer;
+                return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
         }
         return operation.call(pipeline);

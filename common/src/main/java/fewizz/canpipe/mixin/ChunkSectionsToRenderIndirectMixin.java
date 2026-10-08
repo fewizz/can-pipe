@@ -15,13 +15,17 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.MaterialProgramLoader;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 
 @Mixin(ChunkSectionsToRender.DrawIndirect.class)
 public class ChunkSectionsToRenderIndirectMixin {
@@ -42,7 +46,8 @@ public class ChunkSectionsToRenderIndirectMixin {
         )) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                return loader.getOrCreateCompiledRenderPipeline(p.solidFramebuffer.getFormats());
+                Framebuffer fb = pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.solidFramebuffer : p.translucentTerrainFramebuffer;
+                return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
         }
         return operation.call(pipeline);
@@ -55,7 +60,9 @@ public class ChunkSectionsToRenderIndirectMixin {
     void onSetPipeline(CallbackInfo ci, @Local RenderPass renderPass) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            Pipeline.bindSpritesExtentsSampler(renderPass, p.solidFramebuffer.getColorTextureView());
+            Minecraft mc = Minecraft.getInstance();
+            GpuTextureView blockAtlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
+            Pipeline.bindSpritesExtentsSampler(renderPass, blockAtlas);
             p.bindUniforms(renderPass, p.solidFramebuffer, false);
         }
     }
