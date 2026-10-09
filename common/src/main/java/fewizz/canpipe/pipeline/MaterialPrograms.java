@@ -577,14 +577,18 @@ public class MaterialPrograms {
         }
 
         Float alphaCutout = null;
+        var alphaCoutputValueStr = originalRenderPipeline.getShaderDefines().values().get("ALPHA_CUTOUT");
+        var alphaCoutputValue = alphaCoutputValueStr != null ? Float.parseFloat(alphaCoutputValueStr) : null;
 
         if (
             originalRenderPipeline == RenderPipelines.TRANSLUCENT_BLOCK ||
-            originalRenderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN
+            originalRenderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN ||
+            originalRenderPipeline == RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW
         ) {
             alphaCutout = 0.01F;
         }
         else if (
+            (alphaCoutputValue != null && alphaCoutputValue == 0.1F) ||
             originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.PARTICLE ||
 
             originalRenderPipeline == RenderPipelines.GLINT ||
@@ -619,8 +623,10 @@ public class MaterialPrograms {
             alphaCutout = 0.1F;
         }
         else if (
+            (alphaCoutputValue != null && alphaCoutputValue == 0.5F) ||
             originalRenderPipeline == RenderPipelines.CUTOUT_BLOCK ||
-            originalRenderPipeline == RenderPipelines.CUTOUT_TERRAIN
+            originalRenderPipeline == RenderPipelines.CUTOUT_TERRAIN ||
+            originalRenderPipeline == RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW
         ) {
             alphaCutout = 0.5F;
         }

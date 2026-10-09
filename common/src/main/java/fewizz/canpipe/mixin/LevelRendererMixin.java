@@ -205,18 +205,19 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             if (p.shadows.allowEntities()) {
                 this.submitEntities(poseStack, levelRenderState, submitNodeStorage);
-                levelRenderState.entityRenderStates.clear();
+                lrse.canpipe_getEntityRenderStates()[this.canpipe_currentShadowCascadeIdx].clear();
+
                 this.submitBlockEntities(poseStack, levelRenderState, submitNodeStorage);
-                levelRenderState.blockEntityRenderStates.clear();
+                lrse.canpipe_getBlockEntityRenderStates()[this.canpipe_currentShadowCascadeIdx].clear();
 
                 this.submitTransientBlocks(poseStack, submitNodeStorage, levelRenderState);
                 profiler.popPush("entities");
 
                 profiler.push("submit entities");
-                this.submitEntities(poseStack, this.levelRenderState, this.submitNodeStorage);
+                this.submitEntities(poseStack, this.levelRenderState, submitNodeStorage);
 
                 profiler.popPush("submit block entities");
-                this.submitBlockEntities(poseStack, this.levelRenderState, this.submitNodeStorage);
+                this.submitBlockEntities(poseStack, this.levelRenderState, submitNodeStorage);
 
                 this.checkPoseStack(poseStack);
 
@@ -227,15 +228,15 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 profiler.popPush("particles");
 
                 profiler.push("submit particles");
-                ParticlesRenderState state = lrse.canpipe_getParticlesRenderStates()[this.canpipe_currentShadowCascadeIdx];
-                state.submit(this.submitNodeStorage, levelRenderState.cameraRenderState);
 
+                ParticlesRenderState state = lrse.canpipe_getParticlesRenderStates()[this.canpipe_currentShadowCascadeIdx];
+                state.submit(submitNodeStorage, levelRenderState.cameraRenderState);
                 state.particles.clear();
 
                 profiler.pop();
             }
 
-            FeatureRenderDispatcher.PreparedFrame featureFrame = this.featureRenderDispatcher.prepareFrame(this.submitNodeStorage);
+            FeatureRenderDispatcher.PreparedFrame featureFrame = this.featureRenderDispatcher.prepareFrame(submitNodeStorage);
 
             var descriptorBuilder = RenderPassDescriptor.builder(() -> "can-pipe Shadow Cascade #"+this.canpipe_currentShadowCascadeIdx);
             descriptorBuilder.withDepthAttachment(fb.getDepthTextureView(), OptionalDouble.of(1.0));
@@ -271,36 +272,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         profiler.pop();
     }
-
-    // TODO
-    /*@WrapOperation(
-        method = "render",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;getTransparencyChain()Lnet/minecraft/client/renderer/PostChain;"
-        )
-    )
-    PostChain onTransparencyPostChainCreation(
-        LevelRenderer instance,
-        Operation<PostChain> operation,
-        @Local FrameGraphBuilder frame
-    ) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p == null) {
-            return operation.call(instance);  // Initialise transparency post chain normally
-        }
-        // Don't create transparency post chain, will be handled by pipeline
-
-        // this.targets.main = ...
-        // TODO
-        // this.targets.translucent = frame.importExternal("translucent", p.fabulousTargets.translucentTerrainFramebuffer());
-        // this.targets.itemEntity = frame.importExternal("item_entity", p.fabulousTargets.translucentItemEntityFramebuffer());
-        // this.targets.particles = frame.importExternal("particles", p.fabulousTargets.translucentParticlesFramebuffer());
-        // this.targets.weather = frame.importExternal("weather", p.fabulousTargets.weatherFramebuffer());
-        // this.targets.clouds = frame.importExternal("clouds", p.fabulousTargets.cloudsFramebuffer());
-
-        return null;
-    }*/
 
     @WrapOperation(
         method = "lambda$addMainPass$0",

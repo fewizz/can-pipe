@@ -123,10 +123,10 @@ public class QuadParticleFeatureRendererMixin {
         Operation<CompiledRenderPipeline> operation
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null &&
+        if (p != null && (
             pipeline == RenderPipelines.OPAQUE_PARTICLE ||
             pipeline == RenderPipelines.TRANSLUCENT_PARTICLE
-        ) {
+        )) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
                 Framebuffer fb = p.shadowFramebufferOr(pipeline == RenderPipelines.OPAQUE_PARTICLE ? p.solidFramebuffer : p.translucentTerrainFramebuffer);  // TODO p.translucentParticlesFramebuffer;
