@@ -129,7 +129,7 @@ public class QuadParticleFeatureRendererMixin {
         ) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                Framebuffer fb = pipeline == RenderPipelines.OPAQUE_PARTICLE ? p.solidFramebuffer : p.translucentTerrainFramebuffer;  // TODO p.translucentParticlesFramebuffer;
+                Framebuffer fb = p.shadowFramebufferOr(pipeline == RenderPipelines.OPAQUE_PARTICLE ? p.solidFramebuffer : p.translucentTerrainFramebuffer);  // TODO p.translucentParticlesFramebuffer;
                 return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
         }

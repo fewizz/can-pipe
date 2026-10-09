@@ -88,6 +88,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
     @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
+    @Shadow private void submitTransientBlocks(final PoseStack poseStack, final SubmitNodeCollector submitNodeCollector, final LevelRenderState levelRenderState) {}
     @Shadow private void executeClassicTransparency(ChunkSectionsToRender chunkSectionsToRender, FeatureRenderDispatcher.PreparedFrame featureFrame, RenderPass renderPass) {}
     @Shadow public ChunkSectionsToRender prepareChunkRendersIndirect(final Matrix4fc modelViewMatrix, final boolean respectTranslucentOrder) { return null; }
     @Shadow public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix, final boolean respectTranslucentOrder) { return null; }
@@ -183,14 +184,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         CommandEncoderExtended commandEncoderExtended = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
         LevelRenderStateExtended lrse = ((LevelRenderStateExtended) this.levelRenderState);
 
-        /*GpuTexture shadowTexture = p.shadows.framebuffers().get(0).getDepthTexture();
-        commandEncoderExtended.canpipe_clearDepthTexture(
-            shadowTexture,
-            1.0,
-            0, shadowTexture.getMipLevels(),
-            0, shadowTexture.getDepthOrLayers()
-        );*/
-
         GpuTextureView blockAtlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
 
         for (this.canpipe_currentShadowCascadeIdx = 0; this.canpipe_currentShadowCascadeIdx < p.shadows.cascadeRadii().size()+1; ++this.canpipe_currentShadowCascadeIdx) {
@@ -208,22 +201,15 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             }
             profiler.push("render sections");
 
-            var descriptorBuilder = RenderPassDescriptor.builder(() -> "can-pipe Shadow Cascade #"+this.canpipe_currentShadowCascadeIdx);
-            descriptorBuilder.withDepthAttachment(fb.getDepthTextureView(), OptionalDouble.of(1.0));
-            descriptorBuilder.withRenderArea(new RenderArea(0, 0, fb.width, fb.height));
+            SubmitNodeStorage submitNodeStorage = new SubmitNodeStorage();
 
-            try (RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())) {
-                RenderSystem.bindDefaultUniforms(renderPass);
-                chunkSectionsToRender.renderGroup(
-                    ChunkSectionLayerGroup.OPAQUE,
-                    renderPass,
-                    RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST),
-                    blockAtlas,
-                    false
-                );
-            }
+            if (p.shadows.allowEntities()) {
+                this.submitEntities(poseStack, levelRenderState, submitNodeStorage);
+                levelRenderState.entityRenderStates.clear();
+                this.submitBlockEntities(poseStack, levelRenderState, submitNodeStorage);
+                levelRenderState.blockEntityRenderStates.clear();
 
-            /*if (p.shadows.allowEntities()) {
+                this.submitTransientBlocks(poseStack, submitNodeStorage, levelRenderState);
                 profiler.popPush("entities");
 
                 profiler.push("submit entities");
@@ -247,12 +233,34 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 state.particles.clear();
 
                 profiler.pop();
-            }*/
+            }
 
-            profiler.popPush("render features");
-            // TODO
-            // this.featureRenderDispatcher.renderAllFeatures(this.submitNodeStorage);
-            profiler.pop();
+            FeatureRenderDispatcher.PreparedFrame featureFrame = this.featureRenderDispatcher.prepareFrame(this.submitNodeStorage);
+
+            var descriptorBuilder = RenderPassDescriptor.builder(() -> "can-pipe Shadow Cascade #"+this.canpipe_currentShadowCascadeIdx);
+            descriptorBuilder.withDepthAttachment(fb.getDepthTextureView(), OptionalDouble.of(1.0));
+            descriptorBuilder.withRenderArea(new RenderArea(0, 0, fb.width, fb.height));
+
+            try (RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())) {
+                RenderSystem.bindDefaultUniforms(renderPass);
+                chunkSectionsToRender.renderGroup(
+                    ChunkSectionLayerGroup.OPAQUE,
+                    renderPass,
+                    RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST),
+                    blockAtlas,
+                    false
+                );
+
+                profiler.popPush("render features");
+
+                featureFrame.executeSolid(renderPass);
+                featureFrame.executeTranslucent(renderPass);
+                featureFrame.executeTranslucentAfterTerrain(renderPass);
+
+                profiler.pop();
+            }
+
+            featureFrame.close();
         }
 
         this.canpipe_currentShadowCascadeIdx = -1;
