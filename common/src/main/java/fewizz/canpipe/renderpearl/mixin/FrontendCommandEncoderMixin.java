@@ -32,6 +32,11 @@ public class FrontendCommandEncoderMixin implements CommandEncoderExtended {
     }
 
     @Override
+    public void canpipe_copyTextureToTexture(GpuTexture source, GpuTexture destination, int mipLevel, int destX, int destY, int sourceX, int sourceY, int width, int height, int sourceLayer, int destinationLayer) {
+        ((CommandEncoderBackendExtended) this.backend).canpipe_copyTextureToTexture(source, destination, mipLevel, destX, destY, sourceX, sourceY, width, height, sourceLayer, destinationLayer);
+    }
+
+    @Override
     public void canpipe_blitImage(GpuTexture srcTexture, GpuTexture dstTexture) {
         ((CommandEncoderBackendExtended) this.backend).canpipe_blitImage(srcTexture, dstTexture);
     }

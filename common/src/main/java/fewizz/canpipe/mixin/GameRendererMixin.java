@@ -72,6 +72,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override public void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget) { this.canpipe_mainRenderTargetOverride = renderTarget; }
 
     @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
+    @Override public Vector4f[] canpipe_getShadowCenters() { return this.canpipe_shadowCenters; }
 
     @Override
     public void canpipe_onPipelineActivated() {
@@ -150,8 +151,6 @@ public class GameRendererMixin implements GameRendererExtended {
         var shadowRotationMatrix = new Matrix3f(this.canpipe_shadowViewMatrix);
         var inverseShadowViewMatrix = new Matrix4f(this.canpipe_shadowViewMatrix).invert();
 
-        float prevCascadeRadius = -1.0F;
-
         // from smallest to biggest
         for (int cascade = p.shadows.cascadeRadii().size(); cascade >= 0; --cascade) {
             float cascadeRadius;
@@ -161,10 +160,8 @@ public class GameRendererMixin implements GameRendererExtended {
                 cascadeRadius = maxCascadeRadius;
             }
             else {
-                cascadeRadius = p.shadows.cascadeRadii().get(cascade-1);
+                cascadeRadius = Math.min(maxCascadeRadius, p.shadows.cascadeRadii().get(cascade-1));
             }
-
-            prevCascadeRadius = Math.max(cascadeRadius, prevCascadeRadius);
 
             center = new Vector3f(mainCamera.forwardVector()).mul(cascadeRadius);
             center.mulProject(this.canpipe_shadowViewMatrix);

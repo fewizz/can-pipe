@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -36,6 +37,8 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
     @Unique private int canpipe_clearLevelCount = -1;
     @Unique private int canpipe_clearBaseLayer = -1;
     @Unique private int canpipe_clearLayerCount = -1;
+    @Unique private int canpipe_copySrcLayer = -1;
+    @Unique private int canpipe_copyDstLayer = -1;
 
     @ModifyExpressionValue(
         method = "setupDraw",
@@ -80,6 +83,22 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
             this.canpipe_clearLevelCount = -1;
             this.canpipe_clearBaseLayer = -1;
             this.canpipe_clearLayerCount = -1;
+        }
+    }
+
+    @Override
+    public void canpipe_copyTextureToTexture(
+        GpuTexture source, GpuTexture destination, int mipLevel, int destX, int destY, int sourceX, int sourceY, int width, int height,
+        int sourceLayer, int destinationLayer
+    ) {
+        try {
+            this.canpipe_copySrcLayer = sourceLayer;
+            this.canpipe_copyDstLayer = destinationLayer;
+            this.copyTextureToTexture(source, destination, mipLevel, destX, destY, sourceX, sourceY, width, height);
+        }
+        finally {
+            this.canpipe_copySrcLayer = -1;
+            this.canpipe_copyDstLayer = -1;
         }
     }
 
@@ -147,6 +166,38 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
                 operation.call(mask);  // GlStateManager._clear(GL33C.GL_DEPTH_BUFFER_BIT);
             }
         }
+    }
+
+    @ModifyArg(
+        method = "copyTextureToTexture",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/renderpearl/backend/opengl/DirectStateAccess;bindFrameBufferTextures(IIIII)V",
+            ordinal = 0  // src
+        ),
+        index = 3  // mipLevel
+    )
+    int setSrcLayer(int mipLevel) {
+        if (this.canpipe_copySrcLayer != -1) {
+            mipLevel |= this.canpipe_copySrcLayer << 16;
+        }
+        return mipLevel;
+    }
+
+    @ModifyArg(
+        method = "copyTextureToTexture",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/renderpearl/backend/opengl/DirectStateAccess;bindFrameBufferTextures(IIIII)V",
+            ordinal = 1  // dst
+        ),
+        index = 3  // mipLevel
+    )
+    int setDstLayer(int mipLevel) {
+        if (this.canpipe_copyDstLayer != -1) {
+            mipLevel |= this.canpipe_copyDstLayer << 16;
+        }
+        return mipLevel;
     }
 
     @ModifyExpressionValue(

@@ -1,6 +1,7 @@
 package fewizz.canpipe.mixininterface;
 
 import org.joml.Matrix4f;
+import org.joml.Vector4f;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 
@@ -14,6 +15,7 @@ public interface GameRendererExtended {
     Matrix4f canpipe_worldProjectionMatrix();
 
     ShadowFrustum[] canpipe_getShadowFrustums();
+    Vector4f[] canpipe_getShadowCenters();
 
     void canpipe_onPipelineActivated();
 

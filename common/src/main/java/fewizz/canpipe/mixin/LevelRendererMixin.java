@@ -51,6 +51,7 @@ import fewizz.canpipe.pipeline.MaterialProgramLoader;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.renderpearl.CommandEncoderExtended;
+import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -181,23 +182,39 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         PoseStack poseStack = new PoseStack();
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-        CommandEncoderExtended commandEncoderExtended = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
         LevelRenderStateExtended lrse = ((LevelRenderStateExtended) this.levelRenderState);
 
         GpuTextureView blockAtlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
 
         for (this.canpipe_currentShadowCascadeIdx = 0; this.canpipe_currentShadowCascadeIdx < p.shadows.cascadeRadii().size()+1; ++this.canpipe_currentShadowCascadeIdx) {
+            Framebuffer fb = p.shadows.framebuffers().get(this.canpipe_currentShadowCascadeIdx);
+
+            // Same cascade radius? Then just copy
+            {
+                float cascadeRadius = gre.canpipe_getShadowCenters()[this.canpipe_currentShadowCascadeIdx].w;
+                float prevCascadeRadius = this.canpipe_currentShadowCascadeIdx > 0 ? gre.canpipe_getShadowCenters()[this.canpipe_currentShadowCascadeIdx - 1].w : -1.0F;
+
+                if (cascadeRadius == prevCascadeRadius) {
+                    Framebuffer prevFb = p.shadows.framebuffers().get(this.canpipe_currentShadowCascadeIdx - 1);
+                    ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+                        prevFb.getDepthTexture(), fb.getDepthTexture(),
+                        0, 0, 0, 0, 0, fb.width, fb.height,
+                        ((GpuTextureViewExtended) prevFb.getDepthTextureView()).canpipe_baseArrayLayer(),
+                        ((GpuTextureViewExtended) fb.getDepthTextureView()).canpipe_baseArrayLayer()
+                    );
+                    continue;
+                }
+            }
+
             profiler.popPush("cascade " + this.canpipe_currentShadowCascadeIdx);
 
             profiler.push("prepare chunk sections to render");
 
-            Framebuffer fb = p.shadows.framebuffers().get(this.canpipe_currentShadowCascadeIdx);
-
             ChunkSectionsToRender chunkSectionsToRender;
             if (this.usingMultiDrawIndirectForTerrain) {
-                chunkSectionsToRender = this.prepareChunkRendersIndirect(viewMatrix, !mc.gameRenderer.useImprovedTransparency());
+                chunkSectionsToRender = this.prepareChunkRendersIndirect(viewMatrix, false);
             } else {
-                chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, !mc.gameRenderer.useImprovedTransparency());
+                chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, false);
             }
             profiler.push("render sections");
 

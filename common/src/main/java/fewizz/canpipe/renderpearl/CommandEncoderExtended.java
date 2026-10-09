@@ -16,6 +16,11 @@ public interface CommandEncoderExtended {
         int baseMipLevel, int levelCount, int baseArrayLayer, int layerCount  // added
     );
 
+    void canpipe_copyTextureToTexture(
+        GpuTexture source, GpuTexture destination, int mipLevel, int destX, int destY, int sourceX, int sourceY, int width, int height,
+        int sourceLayer, int destinationLayer  // added
+    );
+
     void canpipe_blitImage(
         GpuTexture srcTexture,
         GpuTexture dstTexture
