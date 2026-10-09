@@ -247,22 +247,28 @@ public class GameRendererMixin implements GameRendererExtended {
             ")V"
         )
     )
-    void beforeRenderLevel(CallbackInfo ci, @Local CameraRenderState cameraState) {
+    void beforeRenderLevel(
+        CallbackInfo ci,
+        @Local(name = "cameraState") CameraRenderState cameraState,
+        @Local(name = "projectionMatrix") Matrix4f projectionMatrix  // with bob
+    ) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
-        this.canpipe_viewMatrix = new Matrix4f(cameraState.viewRotationMatrix);
-        this.canpipe_projectionMatrix = new Matrix4f(cameraState.projectionMatrix);
+        Matrix4f viewMatrix = cameraState.viewRotationMatrix;
+
+        this.canpipe_viewMatrix = new Matrix4f(viewMatrix);
+        this.canpipe_projectionMatrix = new Matrix4f(projectionMatrix);
 
         if (this.canpipe_lastViewMatrix.get(0, 0) == Float.NEGATIVE_INFINITY) {
-            this.canpipe_lastViewMatrix.set(cameraState.viewRotationMatrix);
-            this.canpipe_lastProjectionMatrix.set(cameraState.projectionMatrix);
+            this.canpipe_lastViewMatrix.set(viewMatrix);
+            this.canpipe_lastProjectionMatrix.set(projectionMatrix);
         }
 
         float renderSeconds = (float)((System.nanoTime() - this.canpipe_renderStartNano) / 1_000_000_000.0);
 
         Uniforms.update(
-            cameraState.viewRotationMatrix, cameraState.projectionMatrix,
+            viewMatrix, projectionMatrix,
             this.canpipe_lastViewMatrix, this.canpipe_lastProjectionMatrix,
             this.canpipe_renderFrames, renderSeconds,
             this.canpipe_lastCameraPos,
