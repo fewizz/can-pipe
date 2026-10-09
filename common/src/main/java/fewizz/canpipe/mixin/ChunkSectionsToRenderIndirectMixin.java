@@ -11,6 +11,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.llamalad7.mixinextras.sugar.Share;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
@@ -36,7 +38,8 @@ public class ChunkSectionsToRenderIndirectMixin {
     )
     CompiledRenderPipeline onGetCompiledPipeline(
         RenderPipeline pipeline,
-        Operation<CompiledRenderPipeline> operation
+        Operation<CompiledRenderPipeline> operation,
+        @Share("canpipe_originalRenderPipeline") LocalRef<RenderPipeline> canpipe_originalRenderPipeline
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null && (
@@ -44,9 +47,10 @@ public class ChunkSectionsToRenderIndirectMixin {
             pipeline == RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW ||
             pipeline == RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW
         )) {
+            canpipe_originalRenderPipeline.set(pipeline);
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                Framebuffer fb = pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.solidFramebuffer : p.translucentTerrainFramebuffer;
+                Framebuffer fb = p.shadowFramebufferOr(pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.solidFramebuffer : p.translucentTerrainFramebuffer);
                 return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
         }
@@ -57,13 +61,19 @@ public class ChunkSectionsToRenderIndirectMixin {
         method = "render",
         at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/commands/RenderPass;setPipeline", shift = Shift.AFTER)
     )
-    void onSetPipeline(CallbackInfo ci, @Local RenderPass renderPass) {
+    void onSetPipeline(
+        CallbackInfo ci,
+        @Local RenderPass renderPass,
+        @Share("canpipe_originalRenderPipeline") LocalRef<RenderPipeline> canpipe_originalRenderPipeline
+    ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
+            RenderPipeline pipeline = canpipe_originalRenderPipeline.get();
+            Framebuffer fb = p.shadowFramebufferOr(pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.solidFramebuffer : p.translucentTerrainFramebuffer);
             Minecraft mc = Minecraft.getInstance();
             GpuTextureView blockAtlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
             Pipeline.bindSpritesExtentsSampler(renderPass, blockAtlas);
-            p.bindUniforms(renderPass, p.solidFramebuffer, false);
+            p.bindUniforms(renderPass, fb, false);
         }
     }
 

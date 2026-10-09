@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Matrix4fc;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
@@ -32,6 +33,7 @@ import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPass.RenderArea;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
@@ -56,6 +58,7 @@ import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -63,6 +66,7 @@ import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.client.renderer.state.level.ParticlesRenderState;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
@@ -79,11 +83,14 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
     @Shadow @Final private LevelTargetBundle targets;
     @Shadow @Final private RenderBuffers renderBuffers;
+    @Shadow private boolean usingMultiDrawIndirectForTerrain;
 
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
     @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
     @Shadow private void executeClassicTransparency(ChunkSectionsToRender chunkSectionsToRender, FeatureRenderDispatcher.PreparedFrame featureFrame, RenderPass renderPass) {}
+    @Shadow public ChunkSectionsToRender prepareChunkRendersIndirect(final Matrix4fc modelViewMatrix, final boolean respectTranslucentOrder) { return null; }
+    @Shadow public ChunkSectionsToRender prepareChunkRenders(final Matrix4fc modelViewMatrix, final boolean respectTranslucentOrder) { return null; }
 
     @Unique private int canpipe_currentShadowCascadeIdx = -1;
     @Unique private float canpipe_eyeBlockLight = 0.0F;
@@ -152,7 +159,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(pt));
         this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(pt));
 
-        if (true || p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
+        if (p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
             return;
         }
 
@@ -172,28 +179,51 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         PoseStack poseStack = new PoseStack();
 
-        CommandEncoderExtended commandEncoder = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+        CommandEncoderExtended commandEncoderExtended = (CommandEncoderExtended) RenderSystem.getDevice().createCommandEncoder();
         LevelRenderStateExtended lrse = ((LevelRenderStateExtended) this.levelRenderState);
 
-        GpuTexture shadowTexture = p.shadows.framebuffers().get(0).getDepthTexture();
-        commandEncoder.canpipe_clearDepthTexture(
+        /*GpuTexture shadowTexture = p.shadows.framebuffers().get(0).getDepthTexture();
+        commandEncoderExtended.canpipe_clearDepthTexture(
             shadowTexture,
             1.0,
             0, shadowTexture.getMipLevels(),
             0, shadowTexture.getDepthOrLayers()
-        );
+        );*/
+
+        GpuTextureView blockAtlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
 
         for (this.canpipe_currentShadowCascadeIdx = 0; this.canpipe_currentShadowCascadeIdx < p.shadows.cascadeRadii().size()+1; ++this.canpipe_currentShadowCascadeIdx) {
             profiler.popPush("cascade " + this.canpipe_currentShadowCascadeIdx);
 
             profiler.push("prepare chunk sections to render");
-            // TODO
-            // ChunkSectionsToRender sections = prepareChunkRenders(viewMatrix);
-            profiler.push("render sections");
-            // TODO
-            // sections.renderGroup(ChunkSectionLayerGroup.OPAQUE, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
 
-            if (p.shadows.allowEntities()) {
+            Framebuffer fb = p.shadows.framebuffers().get(this.canpipe_currentShadowCascadeIdx);
+
+            ChunkSectionsToRender chunkSectionsToRender;
+            if (this.usingMultiDrawIndirectForTerrain) {
+                chunkSectionsToRender = this.prepareChunkRendersIndirect(viewMatrix, !mc.gameRenderer.useImprovedTransparency());
+            } else {
+                chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, !mc.gameRenderer.useImprovedTransparency());
+            }
+            profiler.push("render sections");
+
+            var descriptorBuilder = RenderPassDescriptor.builder(() -> "can-pipe Shadow Cascade #"+this.canpipe_currentShadowCascadeIdx);
+            descriptorBuilder.withDepthAttachment(fb.getDepthTextureView(), OptionalDouble.of(1.0));
+            descriptorBuilder.withRenderArea(new RenderArea(0, 0, fb.width, fb.height));
+
+            try (RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())) {
+                RenderSystem.bindDefaultUniforms(renderPass);
+                chunkSectionsToRender.renderGroup(
+                    ChunkSectionLayerGroup.OPAQUE,
+                    renderPass,
+                    RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST),
+                    blockAtlas,
+                    false
+                );
+            }
+
+            /*if (p.shadows.allowEntities()) {
                 profiler.popPush("entities");
 
                 profiler.push("submit entities");
@@ -217,7 +247,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 state.particles.clear();
 
                 profiler.pop();
-            }
+            }*/
 
             profiler.popPush("render features");
             // TODO
@@ -353,7 +383,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Pipeline p = Pipelines.getCurrent();
 
         if (p != null) {
-            final Framebuffer fb = p.solidFramebuffer;
+            final Framebuffer fb = p.shadowFramebufferOr(p.solidFramebuffer);
 
             RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(label);
             for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }

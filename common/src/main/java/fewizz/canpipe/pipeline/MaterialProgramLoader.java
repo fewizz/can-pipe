@@ -30,7 +30,7 @@ import net.minecraft.resources.Identifier;
 
 public class MaterialProgramLoader implements Closeable {
 
-    private final Identifier id;
+    @SuppressWarnings("unused") private final Identifier id;
     private final RenderPipeline.Builder pipelineBuilder;
     private final RenderPipeline originalRenderPipeline;
     private final Map<Pair<List<GpuFormat>, GpuFormat>, CompiledRenderPipeline> renderPipelinesPerFormat = new HashMap<>();
