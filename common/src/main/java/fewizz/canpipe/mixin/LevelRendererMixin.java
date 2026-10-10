@@ -433,9 +433,23 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         final Framebuffer fb = p.translucentTerrainFramebuffer;
 
         var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-        commandEncoder.copyTextureToTexture(
-            p.solidFramebuffer.getDepthTexture(), fb.getDepthTexture(),
-            0, 0, 0, 0, 0, fb.width, fb.height
+        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+            p.solidFramebuffer.getDepthTexture(), p.translucentTerrainFramebuffer.getDepthTexture(),
+            0, 0, 0, 0, 0, fb.width, fb.height,
+            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.translucentTerrainFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
+        );
+        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+            p.solidFramebuffer.getDepthTexture(), p.translucentItemEntityFramebuffer.getDepthTexture(),
+            0, 0, 0, 0, 0, fb.width, fb.height,
+            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.translucentItemEntityFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
+        );
+        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+            p.solidFramebuffer.getDepthTexture(), p.translucentParticlesFramebuffer.getDepthTexture(),
+            0, 0, 0, 0, 0, fb.width, fb.height,
+            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.translucentParticlesFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
         );
 
         RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(() -> "Translucent");
