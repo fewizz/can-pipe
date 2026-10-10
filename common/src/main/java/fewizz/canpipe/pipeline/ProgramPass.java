@@ -129,17 +129,11 @@ public class ProgramPass extends Pass {
             }
 
             var descriptorBuilder = RenderPassDescriptor.builder(() -> "Program pass "+this.id);
-            for (var colorAttachment : this.framebuffer.colorTextureViews) {
-                descriptorBuilder.withColorAttachment(colorAttachment);
-            }
-            if (this.framebuffer.getDepthTextureView() != null) {
-                descriptorBuilder.withDepthAttachment(this.framebuffer.getDepthTextureView());
-            }
+            for (var colorAttachment : this.framebuffer.colorTextureViews) { descriptorBuilder.withColorAttachment(colorAttachment); }
+            if (this.framebuffer.getDepthTextureView() != null) { descriptorBuilder.withDepthAttachment(this.framebuffer.getDepthTextureView()); }
             descriptorBuilder.withRenderArea(new RenderPass.RenderArea(0, 0, w, h));
 
-            try (
-                RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())
-            ) {
+            try (RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())) {
                 renderPass.setPipeline(this.compiledRenderPipeline);
 
                 List<UniformDescription> samplers = this.renderPipeline.getBindGroupLayouts().stream()

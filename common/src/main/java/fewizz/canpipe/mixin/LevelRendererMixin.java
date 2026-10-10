@@ -19,7 +19,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -40,7 +39,6 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
-import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import fewizz.canpipe.mixininterface.GameRendererExtended;
@@ -134,7 +132,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
         final Minecraft mc = Minecraft.getInstance();
         final ProfilerFiller profiler = Profiler.get();
-        float pt = 0.0F; // deltaTracker.getGameTimeDeltaPartialTick(false);  // TODO
 
         var eyePosBlockPos = BlockPos.containing(mc.player.getEyePosition());
         int blockLight = mc.level.getLightEngine().getLayerListener(LightLayer.BLOCK).getLightValue(eyePosBlockPos);
@@ -158,8 +155,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             ? this.canpipe_eyeSkyLight
             : Mth.lerp(brightnessDelta, this.canpipe_smoothedEyeSkyLight, this.canpipe_eyeSkyLight);
 
-        this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(pt));
-        this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(pt));
+        this.canpipe_smoothedRainGradient = Mth.lerp(rainDelta, this.canpipe_smoothedRainGradient, mc.level.getRainLevel(this.levelRenderState.worldPartialTicks));
+        this.canpipe_smoothedThunderGradient = Mth.lerp(thunderDelta, this.canpipe_smoothedThunderGradient, mc.level.getThunderLevel(this.levelRenderState.worldPartialTicks));
 
         if (p.shadows == null || !mc.level.dimensionType().hasSkyLight()) {
             return;
@@ -184,6 +181,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
         LevelRenderStateExtended lrse = ((LevelRenderStateExtended) this.levelRenderState);
 
+        @SuppressWarnings("deprecation")
         GpuTextureView blockAtlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();
 
         for (this.canpipe_currentShadowCascadeIdx = 0; this.canpipe_currentShadowCascadeIdx < p.shadows.cascadeRadii().size()+1; ++this.canpipe_currentShadowCascadeIdx) {

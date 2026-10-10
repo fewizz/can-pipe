@@ -12,11 +12,8 @@ import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.management.RuntimeErrorException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -26,12 +23,10 @@ import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 
-import com.google.common.collect.ImmutableMap;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
-import com.mojang.renderpearl.api.commands.RenderPass.RenderArea;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
@@ -542,57 +537,6 @@ public class Pipeline implements AutoCloseable {
         }
     }
 
-    /*public RenderPipeline getReplacedRenderPipeline(RenderPipeline renderPipeline, Pair<List<GpuFormat>, GpuFormat> formats) {
-        MaterialProgramLoader loader = this.getMaterialProgramLoader(renderPipeline);
-
-        if (loader != null) {
-            renderPipeline = loader.getOrCompileRenderPipeline(formats);
-        }
-
-        return renderPipeline;
-    }*/
-
-    public RenderPass createRenderPass(CommandEncoder commandEncoder, Supplier<String> name, Framebuffer framebuffer) {
-        var descriptorBuilder = RenderPassDescriptor.builder(name);
-        for (int i = 0; i < framebuffer.colorTextureViews.length; ++i) {
-            var colorAttachment = framebuffer.colorTextureViews[i];
-            // TODO
-            /*if (RenderSystem.outputColorTextureOverride != null) {
-                colorAttachment = i == 0 ? RenderSystem.outputColorTextureOverride : null;
-            }*/
-
-            if (colorAttachment != null) {
-                descriptorBuilder.withColorAttachment(colorAttachment);
-            }
-            else {
-                descriptorBuilder.withUnusedColorAttachment();
-            }
-        }
-
-        var depthAttachment = framebuffer.getDepthTextureView();
-        // TODO
-        /*if (RenderSystem.outputDepthTextureOverride != null) {
-            depthAttachment = RenderSystem.outputDepthTextureOverride;
-        }*/
-        descriptorBuilder.withDepthAttachment(depthAttachment);
-
-        RenderArea renderArea;
-        // TODO
-        /*if (RenderSystem.outputColorTextureOverride != null) {
-            renderArea = new RenderArea(0, 0, RenderSystem.outputColorTextureOverride.getWidth(0), RenderSystem.outputColorTextureOverride.getHeight(0));
-        }
-        else {*/
-            renderArea = new RenderArea(0, 0, framebuffer.width, framebuffer.height);
-        // }
-
-        descriptorBuilder.withRenderArea(renderArea);
-        RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build());
-
-        this.bindUniforms(renderPass, framebuffer, true);
-
-        return renderPass;
-    }
-
     public static void bindSpritesExtentsSampler(RenderPass renderPass, @Nullable GpuTextureView sampler0) {
         var mc = Minecraft.getInstance();
         MutableObject<TextureAtlas> atlas = new MutableObject<>();
@@ -675,55 +619,6 @@ public class Pipeline implements AutoCloseable {
         int cascade = ((LevelRendererExtended) Minecraft.getInstance().levelRenderer).canpipe_getCurrentShadowCascadeIdx();
         return cascade >= 0 ? this.shadows.framebuffers.get(cascade) : or;
     }
-
-    // TODO
-    /*public RenderTarget replaceRenderTarget(RenderTarget renderTarget, RenderSetup renderSetup) {
-        RenderPipeline originalRenderPipeline = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getPipeline();
-
-        MaterialProgramLoader loader = this.getMaterialProgramLoader(originalRenderPipeline);
-        boolean renderPipelineIsReplaced = loader != null;
-
-        if (renderPipelineIsReplaced) {
-            OutputTarget outputTarget = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getOutputTarget();
-            if (outputTarget == OutputTarget.MAIN_TARGET) {
-                renderTarget = this.shadowFramebufferOr(this.solidFramebuffer);
-            }
-            else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
-                renderTarget = this.shadowFramebufferOr(this.translucentItemEntityFramebuffer);
-            }
-            else if (outputTarget == OutputTarget.WEATHER_TARGET) {
-                renderTarget = this.shadowFramebufferOr(this.weatherFramebuffer);
-            }
-            else {
-                throw new RuntimeException("Unexpected output target: "+outputTarget);
-            }
-        }
-
-        return renderTarget;
-    }
-
-    public RenderTarget replaceRenderTarget(RenderTarget renderTarget, RenderPipeline originalRenderPipeline, OutputTarget outputTarget) {
-
-        MaterialProgramLoader loader = this.getMaterialProgramLoader(originalRenderPipeline);
-        boolean renderPipelineIsReplaced = loader != null;
-
-        if (renderPipelineIsReplaced) {
-            if (outputTarget == OutputTarget.MAIN_TARGET) {
-                renderTarget = this.shadowFramebufferOr(this.solidFramebuffer);
-            }
-            else if (outputTarget == OutputTarget.ITEM_ENTITY_TARGET) {
-                renderTarget = this.shadowFramebufferOr(this.translucentItemEntityFramebuffer);
-            }
-            else if (outputTarget == OutputTarget.WEATHER_TARGET) {
-                renderTarget = this.shadowFramebufferOr(this.weatherFramebuffer);
-            }
-            else {
-                throw new RuntimeException("Unexpected output target: "+outputTarget);
-            }
-        }
-
-        return renderTarget;
-    }*/
 
     public CompiledRenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
         if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return null; }
