@@ -57,9 +57,8 @@ public abstract class ItemFeatureRendererMixin extends RenderTypeFeatureRenderer
         }
     }
 
-    // TODO
-    /*@ModifyExpressionValue(
-        method = "prepareFoilSubmit",
+    @ModifyExpressionValue(
+        method = "prepareMainSubmit",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/feature/ItemFeatureRenderer$Submit;foilType"
@@ -70,6 +69,6 @@ public abstract class ItemFeatureRendererMixin extends RenderTypeFeatureRenderer
             foilType = ItemStackRenderState.FoilType.NONE;
         }
         return foilType;
-    }*/
+    }
 
 }

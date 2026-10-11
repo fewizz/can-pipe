@@ -475,7 +475,9 @@ public class Pipeline implements AutoCloseable {
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
         this.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
-        this.shadows.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
+        if (shadows != null) {
+            this.shadows.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
+        }
     }
 
     public void onWindowSizeChanged() {

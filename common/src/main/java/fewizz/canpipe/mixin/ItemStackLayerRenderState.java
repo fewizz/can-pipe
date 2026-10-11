@@ -32,8 +32,7 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
         this.canpipe_itemStack = itemStack;
     }
 
-    // TODO
-    /*@Inject(
+    @Inject(
         method = "submit",
         at = @At(
             value = "INVOKE",
@@ -41,7 +40,7 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
                 "Lcom/mojang/blaze3d/vertex/PoseStack;"+
                 "Lnet/minecraft/world/item/ItemDisplayContext;"+
                 "III[I"+
-                "Ljava/util/List;"+
+                "Lnet/minecraft/client/resources/model/geometry/ItemQuads;"+
                 "Lnet/minecraft/client/renderer/item/ItemStackRenderState$FoilType;"+
             ")V"
         )
@@ -55,6 +54,6 @@ public class ItemStackLayerRenderState implements ItemStackLayerRenderStateExten
             }
             snce.canpipe_setPendingItemSubmitMaterialMap(materialMap);
         }
-    }*/
+    }
 
 }

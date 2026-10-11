@@ -57,7 +57,23 @@ public class SubmitNodeCollectionMixin implements SubmitNodeCollectorExtended {
         ),
         index = 6
     )
-    List<BakedQuad> onItemSubmit(List<BakedQuad> quads) {
+    List<BakedQuad> onTranslucentItemSubmit(List<BakedQuad> quads) {
+        if (this.canpipe_pendingItemSubmitMaterialMap != null) {
+            quads = new WrappedListWithExtraElement<>(quads, this.canpipe_pendingItemSubmitMaterialMap);
+        }
+        return quads;
+    }
+
+    @ModifyArg(
+        method = "submitItem",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/feature/ItemFeatureRenderer$Submit;<init>",
+            ordinal = 1
+        ),
+        index = 6
+    )
+    List<BakedQuad> onSolidItemSubmit(List<BakedQuad> quads) {
         if (this.canpipe_pendingItemSubmitMaterialMap != null) {
             quads = new WrappedListWithExtraElement<>(quads, this.canpipe_pendingItemSubmitMaterialMap);
         }

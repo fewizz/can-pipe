@@ -17,6 +17,7 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderSetup.TextureBinding;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.texture.UvMapping;
 
 @Mixin(ModelFeatureRenderer.class)
 public class ModelFeatureRendererMixin {
@@ -32,15 +33,15 @@ public class ModelFeatureRendererMixin {
         if (vc instanceof VertexConsumerExtended vce && submit.state() instanceof WrappedModelSubmitState wrapped) {
             EntityMaterialMap materialMap = wrapped.materialMap();
 
-            TextureAtlasSprite sprite = null;  // submit.sprite();  // TODO
+            UvMapping uvMapping = submit.uvMapping();
 
-            if (sprite != null) {
+            if (uvMapping != null && uvMapping instanceof TextureAtlasSprite sprite) {
                 vce.canpipe_setScopedSpriteSupplier(() -> sprite);
             }
 
             var renderType = submit.renderType();
             RenderSetup renderSetup = ((RenderTypeAccessor) renderType).canpipe_getState();
-            TextureBinding tex = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
+            TextureBinding textureBinding = ((RenderSetupAccessor) (Object) renderSetup).canpipe_getTextures().get("Sampler0");
 
             Material material;
 
@@ -49,7 +50,7 @@ public class ModelFeatureRendererMixin {
             }
             else {
                 var predicateCtx = new EntityMaterialMap.MaterialPedicateContext(
-                    tex != null ? tex.location() : null,
+                    textureBinding != null ? textureBinding.location() : null,
                     wrapped.spriteId() != null ? wrapped.spriteId().texture() : null,
                     renderType
                 );
