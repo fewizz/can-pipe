@@ -428,32 +428,32 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) return;
 
-        final Framebuffer fb = p.translucentTerrainFramebuffer;
+        var renderArea = new RenderPass.RenderArea(0, 0, p.defaultFramebuffer.width, p.defaultFramebuffer.height);
 
         var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
         ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
             p.solidFramebuffer.getDepthTexture(), p.translucentTerrainFramebuffer.getDepthTexture(),
-            0, 0, 0, 0, 0, fb.width, fb.height,
+            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
             ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
             ((GpuTextureViewExtended) p.translucentTerrainFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
         );
         ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
             p.solidFramebuffer.getDepthTexture(), p.translucentItemEntityFramebuffer.getDepthTexture(),
-            0, 0, 0, 0, 0, fb.width, fb.height,
+            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
             ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
             ((GpuTextureViewExtended) p.translucentItemEntityFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
         );
         ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
             p.solidFramebuffer.getDepthTexture(), p.translucentParticlesFramebuffer.getDepthTexture(),
-            0, 0, 0, 0, 0, fb.width, fb.height,
+            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
             ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
             ((GpuTextureViewExtended) p.translucentParticlesFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
         );
 
         RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(() -> "Translucent");
-        for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-        if (fb.getDepthTextureView() != null) { descriptor.withDepthAttachment(fb.getDepthTextureView()); }
-        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, fb.width, fb.height));
+        for (var colorAttachment : p.translucentTerrainFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.translucentTerrainFramebuffer.getDepthTextureView());
+        descriptor.withRenderArea(renderArea);
 
         try (RenderPass newRenderPass = commandEncoder.createRenderPass(descriptor.build())) {
             RenderSystem.bindDefaultUniforms(newRenderPass);
