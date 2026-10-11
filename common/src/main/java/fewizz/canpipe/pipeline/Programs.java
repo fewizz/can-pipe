@@ -32,6 +32,7 @@ import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.renderer.BindGroupLayouts;
+import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 
 
@@ -50,7 +51,8 @@ public class Programs {
         Map<Identifier, OptionGroup> options,
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Optional<Integer> shadowMapSize,
-        Framebuffer framebuffer
+        Framebuffer framebuffer,
+        boolean awareOfDepthRangeChanges
     ) {
         List<String> samplers = JanksonUtils.listOfStrings(json, "samplers");
 
@@ -75,6 +77,10 @@ public class Programs {
             .withCull(false)
             .withVertexBinding(0, CanPipe.VertexFormats.POSITION_TEX)
             .withPrimitiveTopology(PrimitiveTopology.QUADS);
+
+        if (!awareOfDepthRangeChanges && RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
+            renderPipelineBuilder.withShaderDefine("CANPIPE_CLIP_DEPTH_RANGE_PATCH");
+        }
 
         ((RenderPipelineBuilderExtended) renderPipelineBuilder).canpipe_allowNoColorTargets();
 

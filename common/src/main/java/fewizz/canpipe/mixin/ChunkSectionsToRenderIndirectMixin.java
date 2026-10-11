@@ -77,16 +77,4 @@ public class ChunkSectionsToRenderIndirectMixin {
         }
     }
 
-    @ModifyConstant (
-        method = "render",
-        constant = @Constant(longValue = 20)
-    )
-    long changeVertexSize(long size) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p != null) {
-            // size = CanPipe.VertexFormats.BLOCK.getVertexSize();
-        }
-        return size;
-    }
-
 }

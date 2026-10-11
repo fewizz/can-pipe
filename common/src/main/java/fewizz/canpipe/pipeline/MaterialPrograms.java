@@ -1,8 +1,5 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,7 +10,6 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -32,7 +28,6 @@ import com.mojang.renderpearl.backend.api.BackendRenderPipeline;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
-import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
 import fewizz.canpipe.renderpearl.mixin.PipelineBuilderAccessor;
@@ -93,9 +88,6 @@ public class MaterialPrograms {
             vertexBindings.add(originalRenderPipeline.getVertexFormatBindings().get(bindingIndex));
         }
 
-        // Identifier vertexShaderIDWithPostfix = vertexShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".vsh");
-        // Identifier fragmentShaderIDWithPostfix = fragmentShaderLocation.withSuffix("/"+originalRenderPipeline.getLocation().getPath()+".fsh");
-
         Identifier location = Identifier.fromNamespaceAndPath(
             CanPipe.MOD_ID, (!shadow ? "material" : "material_shadow")+"-"+originalRenderPipeline.getLocation().getPath()
         );
@@ -131,8 +123,14 @@ public class MaterialPrograms {
             }
         }
 
+        List<String> attributeNames = vertexBindings.stream()
+            .flatMap((VertexFormat v) -> v == null ? List.<VertexFormatElement>of().stream() : v.getElements().stream())
+            .map((VertexFormatElement ve) -> ve.name())
+            .toList();
+
         boolean terrain = originalRenderPipeline.getBindGroupLayouts().stream().anyMatch(bgl -> bgl == BindGroupLayouts.TERRAIN_INFO);
         boolean terrainMultidraw = terrain && !originalRenderPipeline.getBindGroupLayouts().stream().anyMatch(bgl -> bgl == BindGroupLayouts.CHUNK_SECTION);
+        boolean hasOverlayPos = attributeNames.contains(DefaultVertexFormat.UV1_SEMANTIC_NAME);
 
         if (terrain) {
             if (!terrainMultidraw) {
@@ -147,8 +145,12 @@ public class MaterialPrograms {
         renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.FOG);
         renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.GLOBALS);
 
-        // TODO
-        renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.SAMPLER0_SAMPLER1_SAMPLER2);
+        if (hasOverlayPos) {
+            renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.SAMPLER0_SAMPLER1_SAMPLER2);
+        }
+        else {
+            renderPipelineBuilder.withBindGroupLayout(BindGroupLayouts.SAMPLER0_SAMPLER2);
+        }
 
         var bindGroupLayoutBuilder = BindGroupLayout.builder()
             .withUniform("canpipe_ub_render_target", UniformType.UNIFORM_BUFFER)
@@ -243,11 +245,6 @@ public class MaterialPrograms {
             throw new RuntimeException("Couldn't compile \""+shaderLocation.toString()+"\": "+log);
         };*/
 
-        List<String> attributeNames = vertexBindings.stream()
-            .flatMap((VertexFormat v) -> v == null ? List.<VertexFormatElement>of().stream() : v.getElements().stream())
-            .map((VertexFormatElement ve) -> ve.name())
-            .toList();
-
         String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
         String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
 
@@ -271,6 +268,10 @@ public class MaterialPrograms {
             onCompilationError
         );*/
         // (RenderSystem.getDevice()).compilePipeline(renderPipeline, null, null)
+
+        if (!awareOfDepthRangeChanges && RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
+            renderPipelineBuilder.withShaderDefine("CANPIPE_CLIP_DEPTH_RANGE_PATCH");
+        }
 
         RenderPipeline exampleRenderPipeline = renderPipelineBuilder.build();
 

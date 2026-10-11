@@ -73,12 +73,11 @@
 
         "depth.CameraMixin",
         "depth.GameRendererMixin",
-        "depth.GlDeviceMixin",
+        "depth.GlslCompilerMixin",
         "depth.GuiItemAtlasMixin",
         "depth.LevelRendererMixin",
         "depth.PictureInPictureRendererMixin",
         "depth.ProjectionMixin",
-        "depth.VkDeviceMixin",
 
         "settings.AbstractSelectionListAccessor",
         "settings.DebugEntrySimplePerformanceImpactorsMixin",

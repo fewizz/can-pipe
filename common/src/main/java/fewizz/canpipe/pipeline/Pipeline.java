@@ -49,6 +49,7 @@ import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -427,7 +428,7 @@ public class Pipeline implements AutoCloseable {
                     return Programs.load(
                         programJson.get(), location, getShaderSource, glslVersion,
                         options, appliedOptions, shadowMapSize,
-                        fb
+                        fb, this.awareOfDepthRangeChanges
                     );
                 } catch (Exception e) {
                     throw new RuntimeException("Couldn't load program \""+name+"\"", e);
@@ -623,13 +624,13 @@ public class Pipeline implements AutoCloseable {
     public CompiledRenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
         if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return null; }
 
-        boolean patchReversedDepth = !this.awareOfDepthRangeChanges;
+        boolean patchDepth = !this.awareOfDepthRangeChanges;
         boolean patchAttachment = (
             colorAttachments.size() != pipeline.getColorTargetStates().size() ||
             (!colorAttachments.isEmpty() && colorAttachments.getFirst().textureView().texture().getFormat() != GpuFormat.RGBA8_UNORM)
         );  //this.defaultFramebuffer.getColorTexture().getFormat() != GpuFormat.RGBA8_UNORM;
 
-        if (!patchAttachment && !patchReversedDepth) { return null; }
+        if (!patchAttachment && !patchDepth) { return null; }
 
         // System.out.println("color attachments: "+colorAttachments +", pipeline color targets: "+pipeline.getColorTargetStates());
         // throw new RuntimeException();
@@ -650,7 +651,7 @@ public class Pipeline implements AutoCloseable {
             }
 
             DepthStencilState depthState = pipeline.getDepthStencilState();
-            if (patchReversedDepth && depthState != null) {
+            if (patchDepth && depthState != null) {
                 depthState = new DepthStencilState(
                     CanPipe.reverseCompareOp(depthState.depthTest()),
                     depthState.writeDepth(),
@@ -663,10 +664,15 @@ public class Pipeline implements AutoCloseable {
             Map<Pair<Identifier, ShaderType>, String> shaderSources = new HashMap<>();
             Map<Identifier, ShaderSource.CachedIncludeSource> includeSourcesBuilder = new HashMap<>();
 
+            var defines = pipeline.getShaderDefines();
+            if (patchDepth) {
+                defines.withOverrides(ShaderDefines.builder().define("CANPIPE_CLIP_DEPTH_RANGE_PATCH").build());
+            }
+
             var newRenderPipeline = new RenderPipeline(
                 pipeline.getLocation(),
                 pipeline.getShaders(),
-                pipeline.getShaderDefines(),
+                defines,
                 pipeline.getBindGroupLayouts(),
                 colorTargets.toArray(new ColorTargetState[0]),
                 depthState,

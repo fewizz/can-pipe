@@ -60,7 +60,8 @@ public class Shaders {
             "#define " + type.name() + "_SHADER\n\n";
 
         var raw = Pipelines.getCurrentRaw();
-        if (raw != null && Pipelines.getLoadingError() == null && raw.awareOfDepthRangeChanges) {
+        assert raw != null;
+        if (raw.awareOfDepthRangeChanges) {
             if (RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
                 header +=
                     "#define CANPIPE_Z_ZERO_TO_ONE\n";

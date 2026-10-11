@@ -38,7 +38,7 @@
         "VkCommandEncoderMixin",
         "VkDeviceAccessor",
         "VkDeviceMixin",
-        "VkFeaturesSets",
+        "VkFeaturesSetsMixin",
         "VkGpuTextureView",
         // "VkIntermediaryShaderModuleMixin",
         "VkSamplerMixin"

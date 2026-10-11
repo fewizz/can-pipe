@@ -2,9 +2,11 @@ package fewizz.canpipe.renderpearl.mixin;
 
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VK12;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkImageBlit;
+import org.lwjgl.vulkan.VkImageCopy;
 import org.lwjgl.vulkan.VkImageMemoryBarrier;
 import org.lwjgl.vulkan.VkImageSubresourceLayers;
 import org.lwjgl.vulkan.VkImageSubresourceRange;
@@ -13,8 +15,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.backend.vulkan.VulkanCommandEncoder;
 import com.mojang.renderpearl.backend.vulkan.VulkanConst;
@@ -29,6 +34,8 @@ public abstract class VkCommandEncoderMixin implements CommandEncoderBackendExte
     @Unique private int canpipe_clearLevelCount = -1;
     @Unique private int canpipe_clearBaseLayer = -1;
     @Unique private int canpipe_clearLayerCount = -1;
+    @Unique private int canpipe_copySrcLayer = -1;
+    @Unique private int canpipe_copyDstLayer = -1;
 
     @Shadow private VkCommandBuffer commandBuffer() { return null; }
 
@@ -70,6 +77,23 @@ public abstract class VkCommandEncoderMixin implements CommandEncoderBackendExte
         }
     }
 
+    @Override
+    public void canpipe_copyTextureToTexture(
+        GpuTexture source, GpuTexture destination, int mipLevel, int destX, int destY, int sourceX, int sourceY, int width, int height,
+        int sourceLayer, int destinationLayer
+    ) {
+        try {
+            this.canpipe_copySrcLayer = sourceLayer;
+            this.canpipe_copyDstLayer = destinationLayer;
+            this.copyTextureToTexture(source, destination, mipLevel, destX, destY, sourceX, sourceY, width, height);
+        }
+        finally {
+            this.canpipe_copySrcLayer = -1;
+            this.canpipe_copyDstLayer = -1;
+        }
+    }
+
+    @Override
     public void canpipe_blitImage(
         GpuTexture srcTexture,
         GpuTexture dstTexture
@@ -172,6 +196,26 @@ public abstract class VkCommandEncoderMixin implements CommandEncoderBackendExte
     )
     int setClearLayerCount(int layerCount) {
         return this.canpipe_clearLayerCount != -1 ? this.canpipe_clearLayerCount : layerCount;
+    }
+
+    @Inject(
+        method = "copyTextureToTexture",
+        at = @At(value = "INVOKE", target = "Lorg/lwjgl/vulkan/VK12;vkCmdCopyImage("+
+            "Lorg/lwjgl/vulkan/VkCommandBuffer;"+
+            "JIJILorg/lwjgl/vulkan/VkImageCopy$Buffer;"+
+        ")V")
+    )
+    void extendTextureToTextureCopy(CallbackInfo ci, @Local VkImageCopy.Buffer regions, @Local MemoryStack stack) {
+        if (this.canpipe_copySrcLayer != -1 || this.canpipe_copyDstLayer != -1) {
+            VkImageSubresourceLayers srcSubresource = regions.srcSubresource();
+
+            VkImageSubresourceLayers dstSubresource = VkImageSubresourceLayers.calloc(stack);
+            MemoryUtil.memCopy(srcSubresource, dstSubresource);
+            regions.get(0).dstSubresource(dstSubresource);
+
+            srcSubresource.baseArrayLayer(this.canpipe_copySrcLayer);
+            dstSubresource.baseArrayLayer(this.canpipe_copyDstLayer);
+        }
     }
 
 }

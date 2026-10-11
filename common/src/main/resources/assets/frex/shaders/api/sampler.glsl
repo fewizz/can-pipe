@@ -1,11 +1,14 @@
 #if defined CANPIPE_MATERIAL_SHADER
 
     #define frxs_baseColor Sampler0
-    #define canpipe_overlay Sampler1
-    #define frxs_lightmap Sampler2
-
     uniform sampler2D frxs_baseColor;
-    uniform sampler2D canpipe_overlay;
+
+    #if defined CANPIPE_HAS_OVERLAY_POS
+        #define canpipe_overlay Sampler1
+        uniform sampler2D canpipe_overlay;
+    #endif
+
+    #define frxs_lightmap Sampler2
     uniform sampler2D frxs_lightmap;
 
     #if defined FRAGMENT_SHADER && defined SHADOW_MAP_PRESENT && !defined DEPTH_PASS
