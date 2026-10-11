@@ -180,17 +180,15 @@ final public class Pipelines implements PreparableReloadListener {
     public static void setLoadedPipeline(Pipeline loadedPipeline) {
         Minecraft mc = Minecraft.getInstance();
 
-        // TODO
         ((GameRendererExtended) mc.gameRenderer).canpipe_setMainRenderTargetOverride(
             loadedPipeline != null ? loadedPipeline.defaultFramebuffer : null
         );
-
-        Pipeline prevPipeline = Pipelines.current;
 
         if (Pipelines.current != null) {
             Pipelines.current.close();
         }
 
+        Pipeline prevPipeline = Pipelines.current;
         Pipelines.current = loadedPipeline;
 
         if (Pipelines.current != null) {

@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.GameRenderer;
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
 
-    @ModifyConstant(method = {"render", "renderLevel"}, constant = @Constant(doubleValue = 0.0))
+    @ModifyConstant(method = {"render", "renderLevel", "render3dHud"}, constant = @Constant(doubleValue = 0.0))
     double replaceDepthClearValue(double value) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null && !p.awareOfDepthRangeChanges) {

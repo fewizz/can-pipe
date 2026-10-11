@@ -472,6 +472,10 @@ public class Pipeline implements AutoCloseable {
 
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
+
+        this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
+        this.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
+        this.shadows.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
     }
 
     public void onWindowSizeChanged(int w, int h) {

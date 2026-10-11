@@ -6,8 +6,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -28,11 +26,9 @@ import com.mojang.renderpearl.api.pipeline.UniformType;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.renderer.BindGroupLayouts;
-import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
 
 

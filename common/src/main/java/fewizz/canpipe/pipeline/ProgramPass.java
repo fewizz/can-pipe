@@ -164,6 +164,7 @@ public class ProgramPass extends Pass {
     @Override
     public void close() {
         this.passUbo.close();
+        this.compiledRenderPipeline.close();
     };
 
     static Optional<Pass> load(

@@ -1,7 +1,6 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,8 +120,9 @@ public class MaterialProgramLoader implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         this.shaderCreateInfos.forEach(shaderModule -> shaderModule.module().close());
+        this.renderPipelinesPerFormat.values().forEach(CompiledRenderPipeline::close);
     }
 
 }
