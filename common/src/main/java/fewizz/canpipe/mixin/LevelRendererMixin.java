@@ -32,7 +32,6 @@ import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
-import com.mojang.renderpearl.api.commands.RenderPass.RenderArea;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
@@ -51,12 +50,16 @@ import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.renderpearl.CommandEncoderExtended;
 import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.CloudRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.WeatherEffectRenderer;
+import net.minecraft.client.renderer.WorldBorderRenderer;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
@@ -65,12 +68,15 @@ import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.client.renderer.state.level.ParticlesRenderState;
+import net.minecraft.client.renderer.state.level.WeatherRenderState;
+import net.minecraft.client.renderer.state.level.WorldBorderRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.phys.Vec3;
 
 
 @Mixin(value = LevelRenderer.class, priority = 1001)
@@ -83,6 +89,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private LevelTargetBundle targets;
     @Shadow @Final private RenderBuffers renderBuffers;
     @Shadow private boolean usingMultiDrawIndirectForTerrain;
+    @Shadow private @Nullable GpuSampler chunkLayerSampler;
 
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
@@ -255,7 +262,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             var descriptorBuilder = RenderPassDescriptor.builder(() -> "can-pipe Shadow Cascade #"+this.canpipe_currentShadowCascadeIdx);
             descriptorBuilder.withDepthAttachment(fb.getDepthTextureView(), OptionalDouble.of(1.0));
-            descriptorBuilder.withRenderArea(new RenderArea(0, 0, fb.width, fb.height));
+            descriptorBuilder.withRenderArea(new RenderPass.RenderArea(0, 0, fb.width, fb.height));
 
             try (RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())) {
                 RenderSystem.bindDefaultUniforms(renderPass);
@@ -286,6 +293,259 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         mc.options.entityShadows().set(entityShadowsOptionValue);
 
         profiler.pop();
+    }
+
+    @WrapOperation(
+        method = "lambda$addMainPass$0",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/renderpearl/api/commands/CommandEncoder;createRenderPass"
+        )
+    )
+    RenderPass onCreateSolidTerrainRenderPass(
+        CommandEncoder commandEncoder,
+        Supplier<String> label,
+        GpuTextureView colorTexture,
+        Optional<Vector4fc> clearColor,
+        @Nullable GpuTextureView depthTexture,
+        OptionalDouble clearDepth,
+        Operation<RenderPass> operation
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+
+        if (p != null) {
+            final Framebuffer fb = p.shadowFramebufferOr(p.solidFramebuffer);
+
+            RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(label);
+            for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+            descriptor.withDepthAttachment(fb.getDepthTextureView());
+            descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, fb.width, fb.height));
+
+            return commandEncoder.createRenderPass(descriptor.build());
+        }
+
+        return operation.call(commandEncoder, label, colorTexture, clearColor, depthTexture, clearDepth);
+    }
+
+    @WrapOperation(
+        method = "lambda$addMainPass$0",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;executeClassicTransparency("+
+                "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"+
+                "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;"+
+                "Lcom/mojang/renderpearl/api/commands/RenderPass;"+
+            ")V"
+        )
+    )
+    void deferTranslucentTerrainRendering(
+        LevelRenderer instance, ChunkSectionsToRender chunkSectionsToRender, FeatureRenderDispatcher.PreparedFrame featureFrame, RenderPass renderPass,
+        Operation<Void> operation
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p != null) return;
+
+        operation.call(instance, chunkSectionsToRender, featureFrame, renderPass);
+    }
+
+    @Inject(
+        method = "lambda$addMainPass$0",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/renderer/LevelRenderer;executeOutline("+
+                "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;"+
+            ")V"
+        )
+    )
+    void renderTranslucentTerrain(
+        CallbackInfo ci,
+        @Local ChunkSectionsToRender chunkSectionsToRender,
+        @Local FeatureRenderDispatcher.PreparedFrame featureFrame
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        var renderArea = new RenderPass.RenderArea(0, 0, p.defaultFramebuffer.width, p.defaultFramebuffer.height);
+
+        var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
+        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+            p.solidFramebuffer.getDepthTexture(), p.translucentTerrainFramebuffer.getDepthTexture(),
+            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
+            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.translucentTerrainFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
+        );
+        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+            p.solidFramebuffer.getDepthTexture(), p.translucentItemEntityFramebuffer.getDepthTexture(),
+            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
+            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.translucentItemEntityFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
+        );
+        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+            p.solidFramebuffer.getDepthTexture(), p.translucentParticlesFramebuffer.getDepthTexture(),
+            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
+            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.translucentParticlesFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
+        );
+
+        this.executeClassicTransparency(chunkSectionsToRender, featureFrame, null /* no renderpass, see mixins below */);
+    }
+
+    @WrapOperation(
+        method = "executeClassicTransparency",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;executeTranslucent(Lcom/mojang/renderpearl/api/commands/RenderPass;)V")
+    )
+    void createRenderPassForTranslucentFeatures(
+        FeatureRenderDispatcher.PreparedFrame instance, RenderPass renderPass, Operation<Void> operation
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) return;
+        if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
+
+        var descriptor = RenderPassDescriptor.builder(() -> "Translucent Features");
+        for (var colorAttachment : p.solidFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.solidFramebuffer.getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.solidFramebuffer.width, p.solidFramebuffer.height));
+
+        try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
+            RenderSystem.bindDefaultUniforms(newRenderPass);
+            operation.call(instance, newRenderPass);
+        }
+    }
+
+    @WrapOperation(
+        method = "executeClassicTransparency",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;renderGroup("+
+            "Lnet/minecraft/client/renderer/chunk/ChunkSectionLayerGroup;"+
+            "Lcom/mojang/renderpearl/api/commands/RenderPass;"+
+            "Lcom/mojang/renderpearl/api/textures/GpuSampler;"+
+            "Lcom/mojang/renderpearl/api/textures/GpuTextureView;"+
+            "Z"+
+        ")V")
+    )
+    void createRenderPassForTranslucentTerrain(
+        ChunkSectionsToRender instance, ChunkSectionLayerGroup group, RenderPass renderPass, GpuSampler sampler, GpuTextureView blockAtlas, boolean renderWireframeTerrain,
+        Operation<Void> operation
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) return;
+        if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
+
+        var descriptor = RenderPassDescriptor.builder(() -> "Translucent Terrain");
+        for (var colorAttachment : p.translucentTerrainFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.translucentTerrainFramebuffer.getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.translucentTerrainFramebuffer.width, p.translucentTerrainFramebuffer.height));
+
+        try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
+            RenderSystem.bindDefaultUniforms(newRenderPass);
+            operation.call(instance, group, newRenderPass, sampler, blockAtlas, renderWireframeTerrain);
+        }
+    }
+
+    @WrapOperation(
+        method = "executeClassicTransparency",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;executeTranslucentAfterTerrain(Lcom/mojang/renderpearl/api/commands/RenderPass;)V")
+    )
+    void createRenderPassForAfterTerrainTranslucent(FeatureRenderDispatcher.PreparedFrame instance, RenderPass renderPass, Operation<Void> operation) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) return;
+        if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
+
+        var descriptor = RenderPassDescriptor.builder(() -> "Translucent Particles");
+        for (var colorAttachment : p.translucentParticlesFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.translucentParticlesFramebuffer.getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.translucentParticlesFramebuffer.width, p.translucentParticlesFramebuffer.height));
+
+        try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
+            RenderSystem.bindDefaultUniforms(newRenderPass);
+            operation.call(instance, newRenderPass);
+        }
+    }
+
+    @WrapOperation(
+        method = "executeClassicTransparency",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/CloudRenderer;render(Lnet/minecraft/client/CloudStatus;Lcom/mojang/renderpearl/api/commands/RenderPass;)V")
+    )
+    void createRenderPassForClouds(CloudRenderer instance, CloudStatus cloudStatus, RenderPass renderPass, Operation<Void> operation) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) return;
+        if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
+
+        var descriptor = RenderPassDescriptor.builder(() -> "Translucent Particles");
+        for (var colorAttachment : p.cloudsFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.cloudsFramebuffer.getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.cloudsFramebuffer.width, p.cloudsFramebuffer.height));
+
+        try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
+            RenderSystem.bindDefaultUniforms(newRenderPass);
+            operation.call(instance, cloudStatus, newRenderPass);
+        }
+    }
+
+    @WrapOperation(
+        method = "executeClassicTransparency",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/WeatherEffectRenderer;render("+
+            "Lnet/minecraft/client/renderer/state/level/WeatherRenderState;"+
+            "Lcom/mojang/renderpearl/api/commands/RenderPass;"+
+        ")V")
+    )
+    void createRenderPassForWeather(WeatherEffectRenderer instance, WeatherRenderState state, RenderPass renderPass, Operation<Void> operation) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) return;
+        if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
+
+        var descriptor = RenderPassDescriptor.builder(() -> "Weather");
+        for (var colorAttachment : p.weatherFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.weatherFramebuffer.getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.weatherFramebuffer.width, p.weatherFramebuffer.height));
+
+        try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
+            RenderSystem.bindDefaultUniforms(newRenderPass);
+            operation.call(instance, state, newRenderPass);
+        }
+    }
+
+    @WrapOperation(
+        method = "executeClassicTransparency",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/WorldBorderRenderer;render("+
+            "Lnet/minecraft/client/renderer/state/level/WorldBorderRenderState;"+
+            "Lcom/mojang/renderpearl/api/commands/RenderPass;"+
+            "Lnet/minecraft/world/phys/Vec3;"+
+            "D"+
+        ")V")
+    )
+    void createRenderPassForWorldBorder(
+        WorldBorderRenderer instance, WorldBorderRenderState state, RenderPass renderPass, Vec3 cameraPos, double renderDistance, Operation<Void> operation
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+        if (p == null) return;
+        if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
+
+        var descriptor = RenderPassDescriptor.builder(() -> "World Border");
+        for (var colorAttachment : p.weatherFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.weatherFramebuffer.getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.weatherFramebuffer.width, p.weatherFramebuffer.height));
+
+        try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
+            RenderSystem.bindDefaultUniforms(newRenderPass);
+            operation.call(instance, state, newRenderPass, cameraPos, renderDistance);
+        }
+    }
+
+    @ModifyExpressionValue(
+        method = "extractSectionDrawGroups",
+        at = @At(
+            value = "INVOKE",
+            target = "net/minecraft/client/renderer/chunk/ChunkSectionLayer.pipeline(Z)Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;"
+        )
+    )
+    RenderPipeline changeVertexSizeOnExtractSectionDrawGroups(RenderPipeline pipeline) {
+        var p = Pipelines.getCurrent();
+        if (p != null) {
+            MaterialProgramLoader programLoader = p.getMaterialProgramLoader(pipeline);
+            pipeline = programLoader.createRenderPipeline(Pair.of(List.of(), GpuFormat.D32_FLOAT));
+        }
+        return pipeline;
     }
 
     @WrapOperation(
@@ -356,125 +616,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return ((LevelRenderStateExtended) this.levelRenderState).canpipe_getEntityRenderStates()[cascade];
         }
         return entityRenderStates;
-    }
-
-    @WrapOperation(
-        method = "lambda$addMainPass$0",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/api/commands/CommandEncoder;createRenderPass"
-        )
-    )
-    RenderPass onCreateSolidTerrainRenderPass(
-        CommandEncoder commandEncoder,
-        Supplier<String> label,
-        GpuTextureView colorTexture,
-        Optional<Vector4fc> clearColor,
-        @Nullable GpuTextureView depthTexture,
-        OptionalDouble clearDepth,
-        Operation<RenderPass> operation
-    ) {
-        Pipeline p = Pipelines.getCurrent();
-
-        if (p != null) {
-            final Framebuffer fb = p.shadowFramebufferOr(p.solidFramebuffer);
-
-            RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(label);
-            for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-            if (fb.getDepthTextureView() != null) { descriptor.withDepthAttachment(fb.getDepthTextureView()); }
-            descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, fb.width, fb.height));
-
-            return commandEncoder.createRenderPass(descriptor.build());
-        }
-
-        return operation.call(commandEncoder, label, colorTexture, clearColor, depthTexture, clearDepth);
-    }
-
-    @WrapOperation(
-        method = "lambda$addMainPass$0",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;executeClassicTransparency("+
-                "Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;"+
-                "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;"+
-                "Lcom/mojang/renderpearl/api/commands/RenderPass;"+
-            ")V"
-        )
-    )
-    void deferTranslucentTerrainRendering(
-        LevelRenderer instance, ChunkSectionsToRender chunkSectionsToRender, FeatureRenderDispatcher.PreparedFrame featureFrame, RenderPass renderPass,
-        Operation<Void> operation
-    ) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p != null) return;
-
-        operation.call(instance, chunkSectionsToRender, featureFrame, renderPass);
-    }
-
-    @Inject(
-        method = "lambda$addMainPass$0",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/renderer/LevelRenderer;executeOutline("+
-                "Lnet/minecraft/client/renderer/feature/FeatureRenderDispatcher$PreparedFrame;"+
-            ")V"
-        )
-    )
-    void renderTranslucentTerrain(
-        CallbackInfo ci,
-        @Local ChunkSectionsToRender chunkSectionsToRender,
-        @Local FeatureRenderDispatcher.PreparedFrame featureFrame
-    ) {
-        Pipeline p = Pipelines.getCurrent();
-        if (p == null) return;
-
-        var renderArea = new RenderPass.RenderArea(0, 0, p.defaultFramebuffer.width, p.defaultFramebuffer.height);
-
-        var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.solidFramebuffer.getDepthTexture(), p.translucentTerrainFramebuffer.getDepthTexture(),
-            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.translucentTerrainFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
-        );
-        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.solidFramebuffer.getDepthTexture(), p.translucentItemEntityFramebuffer.getDepthTexture(),
-            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.translucentItemEntityFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
-        );
-        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.solidFramebuffer.getDepthTexture(), p.translucentParticlesFramebuffer.getDepthTexture(),
-            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.translucentParticlesFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
-        );
-
-        RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(() -> "Translucent");
-        for (var colorAttachment : p.translucentTerrainFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-        descriptor.withDepthAttachment(p.translucentTerrainFramebuffer.getDepthTextureView());
-        descriptor.withRenderArea(renderArea);
-
-        try (RenderPass newRenderPass = commandEncoder.createRenderPass(descriptor.build())) {
-            RenderSystem.bindDefaultUniforms(newRenderPass);
-            this.executeClassicTransparency(chunkSectionsToRender, featureFrame, newRenderPass);
-        }
-    }
-
-    @ModifyExpressionValue(
-        method = "extractSectionDrawGroups",
-        at = @At(
-            value = "INVOKE",
-            target = "net/minecraft/client/renderer/chunk/ChunkSectionLayer.pipeline(Z)Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;"
-        )
-    )
-    RenderPipeline changeVertexSizeOnExtractSectionDrawGroups(RenderPipeline pipeline) {
-        var p = Pipelines.getCurrent();
-        if (p != null) {
-            MaterialProgramLoader programLoader = p.getMaterialProgramLoader(pipeline);
-            pipeline = programLoader.createRenderPipeline(Pair.of(List.of(), GpuFormat.D32_FLOAT));
-        }
-        return pipeline;
     }
 
 }
