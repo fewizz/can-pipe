@@ -1,9 +1,15 @@
 package fewizz.canpipe.mixin;
 
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.function.Supplier;
+
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.joml.Vector4fc;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -15,11 +21,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.renderpearl.api.commands.CommandEncoder;
+import com.mojang.renderpearl.api.commands.RenderPass;
+import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import fewizz.canpipe.mixininterface.CameraExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
+import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.pipeline.Uniforms;
@@ -99,11 +112,12 @@ public class GameRendererMixin implements GameRendererExtended {
     }
 
     @Inject(method = "resize", at = @At("HEAD"))
-    void onResize(int w, int h, CallbackInfo ci) {
+    void onResize(CallbackInfo ci) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) { return; }
-        p.onWindowSizeChanged(w, h);
-        this.canpipe_runResizePasses = true;
+        if (p != null) {
+            p.onWindowSizeChanged();
+            this.canpipe_runResizePasses = true;
+        }
     }
 
     @Inject(
@@ -339,6 +353,35 @@ public class GameRendererMixin implements GameRendererExtended {
     )
     boolean useImprovedTransparency(boolean value) {
         return value && Pipelines.getCurrent() == null;
+    }
+
+    @WrapOperation(
+        method = "renderItemInHand",
+        at = @At(value = "INVOKE", target = "Lcom/mojang/renderpearl/api/commands/CommandEncoder;createRenderPass")
+    )
+    RenderPass replaceItemInHandRenderPass(
+        CommandEncoder commandEncoder,
+        Supplier<String> label,
+        GpuTextureView colorTexture,
+        Optional<Vector4fc> clearColor,
+        @Nullable GpuTextureView depthTexture,
+        OptionalDouble clearDepth,
+        Operation<RenderPass> operation
+    ) {
+        Pipeline p = Pipelines.getCurrent();
+
+        if (p != null) {
+            final Framebuffer fb = p.solidFramebuffer;
+
+            RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(label);
+            for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+            descriptor.withDepthAttachment(fb.getDepthTextureView());
+            descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, fb.width, fb.height));
+
+            return commandEncoder.createRenderPass(descriptor.build());
+        }
+
+        return operation.call(commandEncoder, label, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
 }

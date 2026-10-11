@@ -365,7 +365,6 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) return;
 
-        Minecraft mc = Minecraft.getInstance();
         var renderArea = new RenderPass.RenderArea(0, 0, p.defaultFramebuffer.width, p.defaultFramebuffer.height);
 
         var commandEncoder = RenderSystem.getDevice().createCommandEncoder();

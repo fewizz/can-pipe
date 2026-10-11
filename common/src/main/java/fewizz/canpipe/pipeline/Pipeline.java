@@ -6,9 +6,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -478,9 +478,9 @@ public class Pipeline implements AutoCloseable {
         this.shadows.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
     }
 
-    public void onWindowSizeChanged(int w, int h) {
-        this.textures.forEach((n, t) -> t.onWindowSizeChanged());
-        this.framebuffers.forEach((n, f) -> f.onWindowSizeChanged());
+    public void onWindowSizeChanged() {
+        this.textures.values().forEach(Texture::onWindowSizeChanged);
+        this.framebuffers.values().forEach(Framebuffer::onWindowSizeChanged);
     }
 
     public void onBeforeRenderingLevel(boolean runResizePasses, boolean runInitPasses) {
