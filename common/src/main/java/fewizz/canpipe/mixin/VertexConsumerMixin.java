@@ -28,9 +28,6 @@ public interface VertexConsumerMixin {
             if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME)) {
                 vce.canpipe_setScopedSpriteSupplier(() -> quad.materialInfo().sprite());
             }
-            // if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormatElements.AO)) {
-            //     vce.canpipe_setPendingAO(((QuadInstanceExtended) instance).canpipe_getSeparatedShade(vertexIndex));
-            // }
         }
     }
 

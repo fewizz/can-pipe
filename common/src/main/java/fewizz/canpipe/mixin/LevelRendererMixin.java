@@ -169,7 +169,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             return;
         }
 
-        profiler.popPush("can-pipe shadows");
+        profiler.push("can-pipe shadows");
         profiler.push("preparations");
 
         GameRendererExtended gre = ((GameRendererExtended) mc.gameRenderer);
@@ -221,43 +221,32 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
             } else {
                 chunkSectionsToRender = this.prepareChunkRenders(viewMatrix, false);
             }
-            profiler.push("render sections");
 
             SubmitNodeStorage submitNodeStorage = new SubmitNodeStorage();
 
             if (p.shadows.allowEntities()) {
-                this.submitEntities(poseStack, levelRenderState, submitNodeStorage);
+                profiler.popPush("submit entities");
+
+                this.submitEntities(poseStack, this.levelRenderState, submitNodeStorage);
                 lrse.canpipe_getEntityRenderStates()[this.canpipe_currentShadowCascadeIdx].clear();
 
-                this.submitBlockEntities(poseStack, levelRenderState, submitNodeStorage);
+                this.submitBlockEntities(poseStack, this.levelRenderState, submitNodeStorage);
                 lrse.canpipe_getBlockEntityRenderStates()[this.canpipe_currentShadowCascadeIdx].clear();
 
                 this.submitTransientBlocks(poseStack, submitNodeStorage, levelRenderState);
-                profiler.popPush("entities");
-
-                profiler.push("submit entities");
-                this.submitEntities(poseStack, this.levelRenderState, submitNodeStorage);
-
-                profiler.popPush("submit block entities");
-                this.submitBlockEntities(poseStack, this.levelRenderState, submitNodeStorage);
 
                 this.checkPoseStack(poseStack);
-
-                profiler.pop();
             }
 
             if (p.shadows.allowParticles()) {
-                profiler.popPush("particles");
-
-                profiler.push("submit particles");
+                profiler.popPush("submit particles");
 
                 ParticlesRenderState state = lrse.canpipe_getParticlesRenderStates()[this.canpipe_currentShadowCascadeIdx];
                 state.submit(submitNodeStorage, levelRenderState.cameraRenderState);
                 state.particles.clear();
-
-                profiler.pop();
             }
 
+            profiler.popPush("prepare frame");
             FeatureRenderDispatcher.PreparedFrame featureFrame = this.featureRenderDispatcher.prepareFrame(submitNodeStorage);
 
             var descriptorBuilder = RenderPassDescriptor.builder(() -> "can-pipe Shadow Cascade #"+this.canpipe_currentShadowCascadeIdx);
@@ -266,6 +255,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
 
             try (RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())) {
                 RenderSystem.bindDefaultUniforms(renderPass);
+
+                profiler.popPush("render terrain");
+
                 chunkSectionsToRender.renderGroup(
                     ChunkSectionLayerGroup.OPAQUE,
                     renderPass,
@@ -279,9 +271,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 featureFrame.executeSolid(renderPass);
                 featureFrame.executeTranslucent(renderPass);
                 featureFrame.executeTranslucentAfterTerrain(renderPass);
-
-                profiler.pop();
             }
+
+            profiler.pop();
 
             featureFrame.close();
         }
@@ -289,6 +281,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         this.canpipe_currentShadowCascadeIdx = -1;
         modelViewMatrixStack.popMatrix();
         mc.options.entityShadows().set(entityShadowsOptionValue);
+        profiler.pop();
         profiler.pop();
     }
 

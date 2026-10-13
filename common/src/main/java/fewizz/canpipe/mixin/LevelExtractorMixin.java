@@ -63,8 +63,9 @@ public class LevelExtractorMixin {
         try {
             lre.canpipe_setCurrentShadowCascadeIdx(0);
             for (; lre.canpipe_getCurrentShadowCascadeIdx() < p.shadows.cascadeRadii().size()+1; lre.canpipe_setCurrentShadowCascadeIdx(lre.canpipe_getCurrentShadowCascadeIdx()+1)) {
-                profiler.popPush("can-pipe cascade "+lre.canpipe_getCurrentShadowCascadeIdx());
+                profiler.push("can-pipe cascade "+lre.canpipe_getCurrentShadowCascadeIdx());
 
+                profiler.push("apply frustum");
                 ShadowFrustum frustum = gre.canpipe_getShadowFrustums()[lre.canpipe_getCurrentShadowCascadeIdx()];
                 this.applyFrustum(frustum);
 
@@ -78,6 +79,7 @@ public class LevelExtractorMixin {
                 ParticlesRenderState state = lrse.canpipe_getParticlesRenderStates()[lre.canpipe_getCurrentShadowCascadeIdx()];
                 this.minecraft.particleEngine.extract(state, frustum, camera, dt);
 
+                profiler.pop();
                 profiler.pop();
             }
         } finally {
