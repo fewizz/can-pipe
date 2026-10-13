@@ -75,10 +75,10 @@ public class Pipeline implements AutoCloseable {
 
     public static record FabulousTargets(
         Framebuffer translucentTerrainFramebuffer,
-		Framebuffer translucentItemEntityFramebuffer,
+        Framebuffer translucentItemEntityFramebuffer,
         Framebuffer translucentParticlesFramebuffer,
-		Framebuffer weatherFramebuffer,
-		Framebuffer cloudsFramebuffer
+        Framebuffer weatherFramebuffer,
+        Framebuffer cloudsFramebuffer
     ) {}
 
     public final Identifier location;
@@ -649,9 +649,9 @@ public class Pipeline implements AutoCloseable {
                 colorTargets = new ArrayList<>();
                 for (var attachment : colorAttachments) {
                     colorTargets.add(new ColorTargetState(
-                            pipeline.getColorTargetStates().get(0).blendFunction(),
-                            attachment.textureView().texture().getFormat(),
-                            pipeline.getColorTargetStates().get(0).writeMask()
+                        pipeline.getColorTargetStates().get(0).blendFunction(),
+                        attachment.textureView().texture().getFormat(),
+                        pipeline.getColorTargetStates().get(0).writeMask()
                     ));
                 }
             }
@@ -672,7 +672,7 @@ public class Pipeline implements AutoCloseable {
 
             var defines = pipeline.getShaderDefines();
             if (patchDepth) {
-                defines.withOverrides(ShaderDefines.builder().define("CANPIPE_CLIP_DEPTH_RANGE_PATCH").build());
+                defines = defines.withOverrides(ShaderDefines.builder().define("CANPIPE_CLIP_DEPTH_RANGE_PATCH").build());
             }
 
             var newRenderPipeline = new RenderPipeline(

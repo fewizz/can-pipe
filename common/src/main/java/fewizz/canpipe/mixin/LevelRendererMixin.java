@@ -287,11 +287,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         }
 
         this.canpipe_currentShadowCascadeIdx = -1;
-
         modelViewMatrixStack.popMatrix();
-
         mc.options.entityShadows().set(entityShadowsOptionValue);
-
         profiler.pop();
     }
 
