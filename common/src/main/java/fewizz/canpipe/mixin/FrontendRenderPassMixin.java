@@ -16,13 +16,11 @@ import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.frontend.FrontendRenderPass;
-import com.mojang.renderpearl.frontend.FrontendRenderPipeline;
 
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.renderpearl.PipelineCacheExtended;
 import fewizz.canpipe.renderpearl.mixin.RenderSystemAccessor;
-import net.minecraft.resources.Identifier;
 
 @Mixin(FrontendRenderPass.class)
 public class FrontendRenderPassMixin {

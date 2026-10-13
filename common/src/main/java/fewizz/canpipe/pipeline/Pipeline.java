@@ -109,7 +109,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
-    public final Map<Pair<GpuFormat, RenderPipeline>, CompiledRenderPipeline> replacedRenderPipelines = new HashMap<>();
+    public final Map<Pair<List<GpuFormat>, RenderPipeline>, CompiledRenderPipeline> replacedRenderPipelines = new HashMap<>();
 
     private final List<Pass>
         onInitPasses = new ArrayList<>(),
@@ -634,16 +634,13 @@ public class Pipeline implements AutoCloseable {
         boolean patchAttachment = (
             colorAttachments.size() != pipeline.getColorTargetStates().size() ||
             (!colorAttachments.isEmpty() && colorAttachments.getFirst().textureView().texture().getFormat() != GpuFormat.RGBA8_UNORM)
-        );  //this.defaultFramebuffer.getColorTexture().getFormat() != GpuFormat.RGBA8_UNORM;
+        );
 
         if (!patchAttachment && !patchDepth) { return null; }
 
-        // System.out.println("color attachments: "+colorAttachments +", pipeline color targets: "+pipeline.getColorTargetStates());
-        // throw new RuntimeException();
+        var colorFormats = colorAttachments.stream().map(a -> a.textureView().texture().getFormat()).toList();
 
-        GpuFormat firstColorAttachmentFormat = colorAttachments.isEmpty() ? null : colorAttachments.get(0).textureView().texture().getFormat();
-
-        return this.replacedRenderPipelines.computeIfAbsent(Pair.of(firstColorAttachmentFormat, pipeline), _key -> {
+        return this.replacedRenderPipelines.computeIfAbsent(Pair.of(colorFormats, pipeline), _key -> {
             List<ColorTargetState> colorTargets = pipeline.getColorTargetStates();
             if (patchAttachment) {
                 colorTargets = new ArrayList<>();
