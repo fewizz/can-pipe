@@ -30,6 +30,7 @@ import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 
 
 public class Programs {
@@ -180,7 +181,7 @@ public class Programs {
         CompiledRenderPipeline compiledRenderPipeline = null;
 
         try {
-            compiledRenderPipeline = RenderSystem.getDevice().compilePipeline(pipeline, new ShaderSource() {
+            var pending = RenderSystem.getDevice().compilePipeline(pipeline, new ShaderSource() {
 
                 @Override
                 public @Nullable String getShader(Identifier id, ShaderType type) {
@@ -224,7 +225,9 @@ public class Programs {
                 @Override
                 public void close() {}
 
-            }, (runnable) -> runnable.run()).get().finishCompile();
+            }, Util.backgroundExecutor()).get();
+
+            compiledRenderPipeline = pending.finishCompile();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

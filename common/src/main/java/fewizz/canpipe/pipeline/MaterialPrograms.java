@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -37,12 +38,13 @@ import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 
 public class MaterialPrograms {
 
     private MaterialPrograms() {}
 
-    static MaterialProgramLoader load(
+    static CompletableFuture<MaterialProgramLoader> load(
         RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
@@ -280,50 +282,56 @@ public class MaterialPrograms {
         ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos = new ReferenceArrayList<>();
         Object2IntOpenHashMap<String> uniformBindings = new Object2IntOpenHashMap<>();
 
-        var renderPipelineCreateInfo = ((PipelineBuilderAccessor) pipelineBuilder).canpipe_invokeGenerateBackendCreateInfo(
-            exampleRenderPipeline,
-            new ShaderSource() {
+        var shaderSource = new ShaderSource() {
 
-                @Override
-                public @Nullable String getShader(Identifier id, ShaderType type) {
-                    Identifier location;
-                    String src;
-                    if (type == ShaderType.VERTEX) {
-                        if (id != vertexShaderLocation) {
-                            throw new RuntimeException("Expected vertex shader location to be "+vertexShaderLocation+", but got "+id);
-                        }
-                        location = vertexShaderLocation;
-                        src = vertexSrc;
+            @Override
+            public @Nullable String getShader(Identifier id, ShaderType type) {
+                Identifier location;
+                String src;
+                if (type == ShaderType.VERTEX) {
+                    if (id != vertexShaderLocation) {
+                        throw new RuntimeException("Expected vertex shader location to be "+vertexShaderLocation+", but got "+id);
                     }
-                    else if (type == ShaderType.FRAGMENT) {
-                        if (id != fragmentShaderLocation) {
-                            throw new RuntimeException("Expected fragment shader location to be "+fragmentShaderLocation+", but got "+id);
-                        }
-                        location = fragmentShaderLocation;
-                        src = fragmentSrc;
+                    location = vertexShaderLocation;
+                    src = vertexSrc;
+                }
+                else if (type == ShaderType.FRAGMENT) {
+                    if (id != fragmentShaderLocation) {
+                        throw new RuntimeException("Expected fragment shader location to be "+fragmentShaderLocation+", but got "+id);
                     }
-                    else {
-                        throw new NotImplementedException();
-                    }
-
-                    return Shaders.process(
-                        location, src, type, glslVersion, options, appliedOptions,
-                        getShaderSource, shadowMapSize, postprocess
-                    );
+                    location = fragmentShaderLocation;
+                    src = fragmentSrc;
+                }
+                else {
+                    throw new NotImplementedException();
                 }
 
-                @Override
-                public @Nullable CachedIncludeSource getInclude(Identifier id) { return null; }
+                return Shaders.process(
+                    location, src, type, glslVersion, options, appliedOptions,
+                    getShaderSource, shadowMapSize, postprocess
+                );
+            }
 
-                @Override
-                public void close() {}
-                
+            @Override
+            public @Nullable CachedIncludeSource getInclude(Identifier id) { return null; }
+
+            @Override
+            public void close() {}
+
+        };
+
+        return CompletableFuture.supplyAsync(
+            () -> {
+                var renderPipelineCreateInfo = ((PipelineBuilderAccessor) pipelineBuilder).canpipe_invokeGenerateBackendCreateInfo(
+                    exampleRenderPipeline,
+                    shaderSource,
+                    shaderCreateInfos,
+                    uniformBindings
+                );
+                return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
             },
-            shaderCreateInfos,
-            uniformBindings
+            Util.backgroundExecutor()
         );
-
-        return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
     }
 
     private static String getVertexSrc(

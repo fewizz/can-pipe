@@ -120,6 +120,10 @@ public class MaterialProgramLoader implements Closeable {
         return ((RenderPipelineBuilderAccessor) this.pipelineBuilder).canpipe_getVertexFormatPerBuffer()[0];
     }
 
+    public RenderPipeline originalRenderPipeline() {
+        return this.originalRenderPipeline;
+    }
+
     @Override
     public void close() {
         this.shaderCreateInfos.forEach(shaderModule -> shaderModule.module().close());

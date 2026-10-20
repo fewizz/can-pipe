@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -324,16 +325,16 @@ public class Pipeline implements AutoCloseable {
             samplers.add("frxs_shadowMap");
             samplers.add("frxs_shadowMapTexture");
         }
-        this.materialProgramsLoaders = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
-            renderPipeline -> renderPipeline,
-            renderPipeline -> MaterialPrograms.load(
+        this.materialProgramsLoaders = Stream.of(renderPipelines)
+            .map(renderPipeline -> MaterialPrograms.load(
                 renderPipeline, glslVersion, enablePBR, false, shadowMapSize,
                 materialVertexShaderLocation, materialFragmentShaderLocation,
                 options, appliedOptions, samplers, getShaderSource,
                 0.0F, 0.0F,
                 this.awareOfDepthRangeChanges
-            )
-        ));
+            ))
+            .map(CompletableFuture::join)
+            .collect(Collectors.toUnmodifiableMap(loader -> loader.originalRenderPipeline(), loader -> loader));
 
         var samplerImagesNames = JanksonUtils.listOfStrings(materialProgram, "samplerImages");
         Map<String, AbstractTexture> samplerToTexture = new HashMap<>();
@@ -389,9 +390,8 @@ public class Pipeline implements AutoCloseable {
 
             var vertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "vertexSource"));
             var fragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "fragmentSource"));
-            var materialProgramsLoaders = Stream.of(renderPipelines).collect(Collectors.toUnmodifiableMap(
-                renderPipeline -> renderPipeline,
-                renderPipeline -> MaterialPrograms.load(
+            var materialProgramsLoaders = Stream.of(renderPipelines)
+                .map(renderPipeline -> MaterialPrograms.load(
                     renderPipeline, glslVersion, enablePBR, true, shadowMapSize,
                     vertexShaderLocation, fragmentShaderLocation, options, appliedOptions,
                     List.of(),
@@ -399,8 +399,10 @@ public class Pipeline implements AutoCloseable {
                     shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
                     shadowsJson.getFloat("offsetBiasUnits", 4.0F),
                     this.awareOfDepthRangeChanges
-                )
-            ));
+                ))
+                .map(CompletableFuture::join)
+                .collect(Collectors.toUnmodifiableMap(loader -> loader.originalRenderPipeline(), loader -> loader));
+
             this.shadows = new Shadows(
                 materialProgramsLoaders,
                 framebuffers,
