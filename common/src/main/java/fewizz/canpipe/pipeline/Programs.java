@@ -185,7 +185,7 @@ public class Programs {
                 @Override
                 public @Nullable String getShader(Identifier id, ShaderType type) {
                     String result = getShaderSource.apply(id).orElse(null);
-                    
+
                     if (result != null && type == ShaderType.VERTEX) {
                         result = Shaders.process(
                             id, result, ShaderType.VERTEX, glslVersion, options, appliedOptions,
@@ -198,7 +198,7 @@ public class Programs {
                                     src = "in vec2 in_uv;\n\n"+src;
                                 }
 
-                                src = 
+                                src =
                                     "#define in_vertex Position\n"+
                                     "#define in_uv UV0\n\n"+
                                     src;
@@ -219,9 +219,7 @@ public class Programs {
                 }
 
                 @Override
-                public @Nullable CachedIncludeSource getInclude(Identifier id) {
-                    return null;
-                }
+                public @Nullable CachedIncludeSource getInclude(Identifier id) { return null; }
 
                 @Override
                 public void close() {}

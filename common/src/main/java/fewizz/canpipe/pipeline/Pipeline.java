@@ -273,13 +273,13 @@ public class Pipeline implements AutoCloseable {
 
             RenderPipelines.ENTITY_SOLID,
             RenderPipelines.ENTITY_SOLID_Z_OFFSET_FORWARD,
-            RenderPipelines.ENTITY_CUTOUT,
             RenderPipelines.ENTITY_CUTOUT_CULL,
+            RenderPipelines.ENTITY_CUTOUT,
             RenderPipelines.ENTITY_CUTOUT_Z_OFFSET,
             RenderPipelines.ENTITY_CUTOUT_DISSOLVE,
             RenderPipelines.ENTITY_TRANSLUCENT,
-            RenderPipelines.ENTITY_TRANSLUCENT_CULL,
             RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE,
+            RenderPipelines.ENTITY_TRANSLUCENT_CULL,
             RenderPipelines.BANNER_PATTERN,
 
             RenderPipelines.ITEM_CUTOUT,

@@ -101,7 +101,8 @@ public class MaterialProgramLoader implements Closeable {
                 this.createInfo.primitiveTopology()
             ));
 
-            var backendPipeline = pending.finishCompile();
+            var backendPipeline = pending.finishCompile();  // Sorry for stutters, but we have to wait
+
             return new FrontendRenderPipeline(
                 pipeline.getLocation().toString(),
                 backendPipeline,

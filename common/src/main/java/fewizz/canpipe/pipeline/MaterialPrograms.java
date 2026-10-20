@@ -313,9 +313,7 @@ public class MaterialPrograms {
                 }
 
                 @Override
-                public @Nullable CachedIncludeSource getInclude(Identifier id) {
-                    return null;
-                }
+                public @Nullable CachedIncludeSource getInclude(Identifier id) { return null; }
 
                 @Override
                 public void close() {}
