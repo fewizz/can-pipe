@@ -280,4 +280,16 @@ public class CanPipe {
         return op;
     }
 
+    public static boolean textureFormatSupportsBlend(GpuFormat format) {
+        return
+            format.componentType() != GpuFormat.ComponentType.SINT_8 &&
+            format.componentType() != GpuFormat.ComponentType.UINT_8 &&
+            format.componentType() != GpuFormat.ComponentType.SINT_16 &&
+            format.componentType() != GpuFormat.ComponentType.UINT_16 &&
+            format.componentType() != GpuFormat.ComponentType.SINT_32 &&
+            format.componentType() != GpuFormat.ComponentType.UINT_32 &&
+            format != GpuFormat.RGB10A2_UINT &&
+            format.componentCount() != 3;
+    }
+
 }

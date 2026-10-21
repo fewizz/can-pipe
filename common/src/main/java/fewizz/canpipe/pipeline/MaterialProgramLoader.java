@@ -18,6 +18,7 @@ import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.renderpearl.backend.api.BackendRenderPipeline;
 import com.mojang.renderpearl.frontend.FrontendRenderPipeline;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixin.RenderPipelineBuilderAccessor;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
@@ -60,14 +61,7 @@ public class MaterialProgramLoader implements Closeable {
         for (int i = 0; i < colorFormats.size(); ++i) {
             var format = colorFormats.get(i);
             if (format != null) {
-                boolean blend = !(
-                    format.componentType() == GpuFormat.ComponentType.SINT_8 ||
-                    format.componentType() == GpuFormat.ComponentType.UINT_8 ||
-                    format.componentType() == GpuFormat.ComponentType.SINT_16 ||
-                    format.componentType() == GpuFormat.ComponentType.UINT_16 ||
-                    format.componentType() == GpuFormat.ComponentType.SINT_32 ||
-                    format.componentType() == GpuFormat.ComponentType.UINT_32
-                );
+                boolean blend = CanPipe.textureFormatSupportsBlend(format);
                 pipelineBuilder.withColorTargetState(
                     i,
                     new ColorTargetState(blend ? originalBlendFunction : Optional.empty(), format, ColorTargetState.WRITE_ALL)
@@ -87,6 +81,7 @@ public class MaterialProgramLoader implements Closeable {
 
             var deviceBackend = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
 
+            // Sorry for stutters here
             var pending = deviceBackend.compilePipeline(new BackendRenderPipeline.CreateInfo(
                 this.createInfo.name(),
                 this.createInfo.shaders(),
@@ -101,7 +96,7 @@ public class MaterialProgramLoader implements Closeable {
                 this.createInfo.primitiveTopology()
             ));
 
-            var backendPipeline = pending.finishCompile();  // Sorry for stutters, but we have to wait
+            var backendPipeline = pending.finishCompile();  // and here
 
             return new FrontendRenderPipeline(
                 pipeline.getLocation().toString(),

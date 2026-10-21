@@ -7,9 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.CompletableFuture;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -106,7 +107,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders;
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
-    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, Pair<RenderPipeline, CompiledRenderPipeline>> programs = new HashMap<>();
+    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, Programs.Pending> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
@@ -419,7 +420,7 @@ public class Pipeline implements AutoCloseable {
         }
 
         // "programs"
-        BiFunction<String, Framebuffer, Pair<RenderPipeline, CompiledRenderPipeline>> getOrLoadProgram = (String name, Framebuffer fb) -> {
+        BiFunction<String, Framebuffer, Programs.Pending> getOrLoadProgram = (String name, Framebuffer fb) -> {
             return this.programs.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();
@@ -459,6 +460,11 @@ public class Pipeline implements AutoCloseable {
         loadPasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
         loadPasses.accept("fabulous", this.fabulousPasses);
         loadPasses.accept("afterRenderHand", this.afterRenderHandPasses);
+
+        this.programs.values().forEach(pending -> {
+            pending.future.join();
+            pending.finishCompile();
+        });
     } catch (Exception e) {
         this.close();
         throw e;
@@ -474,6 +480,18 @@ public class Pipeline implements AutoCloseable {
 
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
+
+        this.programs.values().forEach(pending -> pending.future.cancel(false));
+        this.programs.values().forEach(pending -> {
+            try {
+                pending.future.get();
+                pending.close();
+            } catch (CancellationException e) {
+                // ..
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
         this.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
@@ -646,11 +664,17 @@ public class Pipeline implements AutoCloseable {
             List<ColorTargetState> colorTargets = pipeline.getColorTargetStates();
             if (patchAttachment) {
                 colorTargets = new ArrayList<>();
-                for (var attachment : colorAttachments) {
+                for (int idx = 0; idx < colorAttachments.size(); ++idx) {
+                    var attachment  = colorAttachments.get(idx);
+                    var format = attachment.textureView().texture().getFormat();
+                    boolean blend = CanPipe.textureFormatSupportsBlend(format);
+                    var colorTargetState = pipeline.getColorTargetStates().get(
+                        idx < pipeline.getColorTargetStates().size() ? idx : 0  // questionable
+                    );
                     colorTargets.add(new ColorTargetState(
-                        pipeline.getColorTargetStates().get(0).blendFunction(),
-                        attachment.textureView().texture().getFormat(),
-                        pipeline.getColorTargetStates().get(0).writeMask()
+                        blend ? colorTargetState.blendFunction() : Optional.empty(),
+                        format,
+                        colorTargetState.writeMask()
                     ));
                 }
             }

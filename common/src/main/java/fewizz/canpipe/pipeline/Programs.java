@@ -1,17 +1,13 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.function.TriConsumer;
-import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -40,7 +36,7 @@ public class Programs {
 
     private Programs() {}
 
-    static Pair<RenderPipeline, CompiledRenderPipeline> load(
+    static Pending load(
         JsonObject json,
         Identifier pipelineLocation,
         Function<Identifier, Optional<String>> getShaderSource,
@@ -133,106 +129,95 @@ public class Programs {
             return src;
         };
 
-        TriConsumer<String, Identifier, String> onCompilationError = (String log, Identifier location, String src) -> {
-            Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
-            try {
-                Files.createDirectories(compilationErrorsPath);
-                Files.writeString(
-                    compilationErrorsPath.resolve(location.toString().replace("/", "--").replace(":", "--")),
-                    src+"\n"+log
-                );
-            } catch (IOException e) {
-                CanPipe.LOGGER.warn("Couldn't save \""+location.toString()+"\" compilation error", e);
-            }
-            throw new RuntimeException("Couldn't compile \""+location.toString()+"\": "+log);
-        };
-
-        // TODO
-        // ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
-        //     vertexLocation,
-        //     Shaders.process(
-        //         vertexLocation, getShaderSource.apply(vertexLocation).get(), ShaderType.VERTEX, glslVersion, options, appliedOptions,
-        //         getShaderSource, shadowMapSize, (src) -> {
-        //             // some shaderpacks define them, some - not
-        //             if (!CONTAINS_VERTEX_IN.test(src)) {
-        //                 src = "in vec3 in_vertex;\n\n"+src;
-        //             }
-        //             if (!CONTAINS_UV_IN.test(src)) {
-        //                 src = "in vec2 in_uv;\n\n"+src;
-        //             }
-
-        //             src = 
-        //                 "#define in_vertex Position\n"+
-        //                 "#define in_uv UV0\n\n"+
-        //                 src;
-
-        //             return postprocess.apply(src);
-        //         }
-        //     ), ShaderType.VERTEX, onCompilationError
-        // );
-        // ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
-        //     fragmentLocation,
-        //     Shaders.process(
-        //         fragmentLocation, getShaderSource.apply(fragmentLocation).get(), ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
-        //         getShaderSource, shadowMapSize, postprocess
-        //     ), ShaderType.FRAGMENT, onCompilationError
-        // );
-
-        CompiledRenderPipeline compiledRenderPipeline = null;
-
-        try {
-            var pending = RenderSystem.getDevice().compilePipeline(pipeline, new ShaderSource() {
-
-                @Override
-                public @Nullable String getShader(Identifier id, ShaderType type) {
-                    String result = getShaderSource.apply(id).orElse(null);
-
-                    if (result != null && type == ShaderType.VERTEX) {
-                        result = Shaders.process(
-                            id, result, ShaderType.VERTEX, glslVersion, options, appliedOptions,
-                            getShaderSource, shadowMapSize, (src) -> {
-                                // some shaderpacks define them, some - not
-                                if (!CONTAINS_VERTEX_IN.test(src)) {
-                                    src = "in vec3 in_vertex;\n\n"+src;
-                                }
-                                if (!CONTAINS_UV_IN.test(src)) {
-                                    src = "in vec2 in_uv;\n\n"+src;
-                                }
-
-                                src =
-                                    "#define in_vertex Position\n"+
-                                    "#define in_uv UV0\n\n"+
-                                    src;
-
-                                return postprocess.apply(src);
-                            }
-                        );
-                    }
-
-                    if (result != null && type == ShaderType.FRAGMENT) {
-                        result = Shaders.process(
-                            id, result, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
-                            getShaderSource, shadowMapSize, postprocess
-                        );
-                    }
-
-                    return result;
+        String vertexSrc0 = getShaderSource.apply(vertexLocation).orElse(null);
+        String vertexSrc = Shaders.process(
+            vertexLocation, vertexSrc0, ShaderType.VERTEX, glslVersion, options, appliedOptions,
+            getShaderSource, shadowMapSize, (src) -> {
+                // some shaderpacks define them, some - not
+                if (!CONTAINS_VERTEX_IN.test(src)) {
+                    src = "in vec3 in_vertex;\n\n"+src;
+                }
+                if (!CONTAINS_UV_IN.test(src)) {
+                    src = "in vec2 in_uv;\n\n"+src;
                 }
 
-                @Override
-                public @Nullable CachedIncludeSource getInclude(Identifier id) { return null; }
+                src =
+                    "#define in_vertex Position\n"+
+                    "#define in_uv UV0\n\n"+
+                    src;
 
-                @Override
-                public void close() {}
+                return postprocess.apply(src);
+            }
+        );
 
-            }, Util.backgroundExecutor()).get();
+        String fragmentSrc0 = getShaderSource.apply(fragmentLocation).orElse(null);
+        String fragmentSrc = Shaders.process(
+            fragmentLocation, fragmentSrc0, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
+            getShaderSource, shadowMapSize, postprocess
+        );
 
-            compiledRenderPipeline = pending.finishCompile();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        var futurePending = RenderSystem.getDevice().compilePipeline(pipeline, new ShaderSource() {
+
+            @Override
+            public @Nullable String getShader(Identifier id, ShaderType type) {
+                if (type == ShaderType.VERTEX) {
+                    return vertexSrc;
+                }
+                if (type == ShaderType.FRAGMENT) {
+                    return fragmentSrc;
+                }
+                throw new RuntimeException();
+            }
+
+            @Override
+            public @Nullable CachedIncludeSource getInclude(Identifier id) { return null; }
+
+            @Override
+            public void close() {}
+
+        }, Util.backgroundExecutor());
+
+        return new Pending(futurePending, pipeline);
+    }
+
+    static class Pending implements CompiledRenderPipeline.Pending, AutoCloseable {
+
+        // private final CompiledRenderPipeline.Pending pending;
+        public final CompletableFuture<CompiledRenderPipeline.Pending> future;
+        public final RenderPipeline renderPipeline;
+        private CompiledRenderPipeline compiledRenderPipeline = null;
+
+        public Pending(CompletableFuture<CompiledRenderPipeline.Pending> futurePending, RenderPipeline renderPipeline) {
+            this.future = futurePending;
+            this.renderPipeline = renderPipeline;
         }
 
-        return Pair.of(pipeline, compiledRenderPipeline);
+        @Override
+        public @Nullable CompiledRenderPipeline finishCompile() {
+            if (this.compiledRenderPipeline != null) {
+                throw new RuntimeException("Pipeline is already finished compiling");
+            }
+            this.compiledRenderPipeline = this.future.resultNow().finishCompile();
+            return this.compiledRenderPipeline;
+        }
+
+        public CompiledRenderPipeline compiledRenderPipeline() {
+            if (this.compiledRenderPipeline == null) {
+                throw new RuntimeException("Pipeline isn't finished compiling");
+            }
+            return this.compiledRenderPipeline;
+        }
+
+        @Override
+        public void close() throws Exception {
+            if (!this.future.isDone()) {
+                throw new RuntimeException("Future isn't completed");
+            }
+            if (this.compiledRenderPipeline != null) {
+                this.compiledRenderPipeline.close();
+            }
+        }
+
     }
 
 }

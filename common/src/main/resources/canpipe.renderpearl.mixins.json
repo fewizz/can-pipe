@@ -40,7 +40,6 @@
         "VkDeviceMixin",
         "VkFeaturesSetsMixin",
         "VkGpuTextureView",
-        // "VkIntermediaryShaderModuleMixin",
         "VkSamplerMixin"
     ]
 }
