@@ -4,6 +4,6 @@ import org.joml.Matrix4f;
 
 public interface CameraExtended {
 
-    Matrix4f canpipe_createProjectionMatrixForCulling(float depthFar);
+    Matrix4f canpipe_createProjectionMatrixForCulling(float depthFar, boolean zZeroToOne);
 
 }

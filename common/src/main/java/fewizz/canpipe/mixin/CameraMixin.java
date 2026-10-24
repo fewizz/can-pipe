@@ -34,7 +34,7 @@ public class CameraMixin implements CameraExtended {
     }
 
     @Override
-    public Matrix4f canpipe_createProjectionMatrixForCulling(float depthFar) {
+    public Matrix4f canpipe_createProjectionMatrixForCulling(float depthFar, boolean zZeroToOne) {
         float fovForCulling = Math.max(this.fov, this.minecraft.options.fov().get().intValue());
         Matrix4f projection = new Matrix4f();
         return projection.perspective(
@@ -42,7 +42,7 @@ public class CameraMixin implements CameraExtended {
             (float) this.minecraft.getWindow().getWidth() / this.minecraft.getWindow().getHeight(),
             0.05F,
             depthFar,
-            RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()
+            zZeroToOne
         );
     }
 

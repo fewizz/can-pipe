@@ -61,13 +61,13 @@ public class ShadowFrustum extends Frustum {
     // Still has some false positives, but it is good enough
     public ShadowFrustum(
         Matrix4f shadowViewMatrix, Matrix4f shadowProjectionView,
-        Matrix4f shortendedViewProjectionMatrix, Vector3f toSunDir
+        Matrix4f shortenedViewProjectionMatrix, Vector3f toSunDir
     ) {
         super(shadowViewMatrix, shadowProjectionView);
 
         var frustumCorners = new Vector3f[8];
         for (int cornerIdx = 0; cornerIdx < 8; ++cornerIdx) {
-            frustumCorners[cornerIdx] = shortendedViewProjectionMatrix.frustumCorner(cornerIdx, new Vector3f());
+            frustumCorners[cornerIdx] = shortenedViewProjectionMatrix.frustumCorner(cornerIdx, new Vector3f());
         }
 
         Set<IntIntPair> edgeCornerIndices = new HashSet<>();
@@ -85,7 +85,7 @@ public class ShadowFrustum extends Frustum {
         Set<Vector3f> corners = new HashSet<>();  // Btw It's possible to deduplicate them without using Set, but I'm too stupid for that
 
         for (int planeIdx = 0; planeIdx < 6; ++planeIdx) {
-            var plane = shortendedViewProjectionMatrix.frustumPlane(planeIdx, new Vector4f());
+            var plane = shortenedViewProjectionMatrix.frustumPlane(planeIdx, new Vector4f());
             var primaryPlane = new Plane(
                 plane.xyz(new Vector3f()).mul(-plane.w),
                 plane.xyz(new Vector3f())
