@@ -131,8 +131,8 @@ public class CanPipe {
             /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
             /* 36 + 4*1 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
             /* 40 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
-            /* 42 + 1*1 */.addAttribute(AO_ATTRIBUTE_NAME, AO_FORMAT)
-            /* 43 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
+            /* 42 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
+            /* 43 + 1*1 */.addAttribute(AO_ATTRIBUTE_NAME, AO_FORMAT)
             .build();
 
         public static final VertexFormat BLOCK_SHADOW = VertexFormat.builder(0)
@@ -142,10 +142,10 @@ public class CanPipe {
             /* 24 + 2*2 */
             /* 28 + 4*1 */
 
-            /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, 4+4+2+1+1, SPRITE_INDEX_FORMAT)
+            /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, 4+4, SPRITE_INDEX_FORMAT)
             /* 36 + 4*1 */
-            /* 40 + 1*2 */
-            /* 42 + 1*1 */
+            /* 40 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
+            /* 42 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 1+1, MATERIAL_FLAGS_FORMAT)
             /* 43 + 1*1 */
             .build();
 
