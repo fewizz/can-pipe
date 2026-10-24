@@ -39,7 +39,9 @@ import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 
+import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRenderStateExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
@@ -525,16 +527,15 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         method = "extractSectionDrawGroups",
         at = @At(
             value = "INVOKE",
-            target = "net/minecraft/client/renderer/chunk/ChunkSectionLayer.pipeline(Z)Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;"
+            target = "Lcom/mojang/renderpearl/api/pipeline/RenderPipeline;getVertexFormatBinding(I)Lcom/mojang/renderpearl/api/vertex/VertexFormat;"
         )
     )
-    RenderPipeline changeVertexSizeOnExtractSectionDrawGroups(RenderPipeline pipeline) {
+    VertexFormat changeVertexSizeOnExtractSectionDrawGroups(VertexFormat vertexFormat) {
         var p = Pipelines.getCurrent();
         if (p != null) {
-            MaterialProgramLoader programLoader = p.getMaterialProgramLoader(pipeline);
-            pipeline = programLoader.createRenderPipeline(Pair.of(List.of(), GpuFormat.D32_FLOAT));
+            vertexFormat = CanPipe.VertexFormats.BLOCK;  // Used only for vertexFormat.getVertexSize()
         }
-        return pipeline;
+        return vertexFormat;
     }
 
     @WrapOperation(
