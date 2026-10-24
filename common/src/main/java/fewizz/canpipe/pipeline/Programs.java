@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
@@ -21,7 +22,6 @@ import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 
 import blue.endless.jankson.JsonObject;
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.renderer.BindGroupLayouts;
@@ -68,7 +68,7 @@ public class Programs {
             .withVertexShader(vertexLocation)
             .withFragmentShader(fragmentLocation)
             .withCull(false)
-            .withVertexBinding(0, CanPipe.VertexFormats.POSITION_TEX)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
             .withPrimitiveTopology(PrimitiveTopology.QUADS);
 
         if (!awareOfDepthRangeChanges && RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {

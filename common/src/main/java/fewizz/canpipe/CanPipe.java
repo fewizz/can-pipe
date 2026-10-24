@@ -60,8 +60,8 @@ public class CanPipe {
     public static void afterRendererInit() {
         GpuDevice device = RenderSystem.getDevice();
 
-        try (ByteBufferBuilder byteBufferBuilder = new ByteBufferBuilder(CanPipe.VertexFormats.POSITION_TEX.getVertexSize() * 4)) {
-            BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, PrimitiveTopology.QUADS, CanPipe.VertexFormats.POSITION_TEX);
+        try (ByteBufferBuilder byteBufferBuilder = new ByteBufferBuilder(DefaultVertexFormat.POSITION_TEX.getVertexSize() * 4)) {
+            BufferBuilder bufferBuilder = new BufferBuilder(byteBufferBuilder, PrimitiveTopology.QUADS, DefaultVertexFormat.POSITION_TEX);
             bufferBuilder.addVertex(0.0F, 0.0F, 0.0F).setUv(0.0F, 0.0F);
             bufferBuilder.addVertex(1.0F, 0.0F, 0.0F).setUv(1.0F, 0.0F);
             bufferBuilder.addVertex(1.0F, 1.0F, 0.0F).setUv(1.0F, 1.0F);
@@ -135,6 +135,20 @@ public class CanPipe {
             /* 43 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, MATERIAL_FLAGS_FORMAT)
             .build();
 
+        public static final VertexFormat BLOCK_SHADOW = VertexFormat.builder(0)
+            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
+            /* 12 + 1*4 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
+            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, 8+4+4, DefaultVertexFormat.UV0_FORMAT)
+            /* 24 + 2*2 */
+            /* 28 + 4*1 */
+
+            /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, 4+4+2+1+1, SPRITE_INDEX_FORMAT)
+            /* 36 + 4*1 */
+            /* 40 + 1*2 */
+            /* 42 + 1*1 */
+            /* 43 + 1*1 */
+            .build();
+
         public static final VertexFormat ENTITY = VertexFormat.builder(0)
             /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
             /* 12 + 1*4 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
@@ -147,21 +161,6 @@ public class CanPipe {
             /* 40 + 1*4 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
             /* 44 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
             /* 46 + 2*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
-            .build();
-
-        public static final VertexFormat ENTITY_GLINT_SPECIAL = VertexFormat.builder(0)
-            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
-            /* 12 + 1*4 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
-            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
-            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV1_SEMANTIC_NAME, DefaultVertexFormat.UV1_FORMAT)
-            /* 28 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
-            /* 32 + 4*2 */.addAttribute(DefaultVertexFormat.UV3_SEMANTIC_NAME, DefaultVertexFormat.UV3_FORMAT)
-            /* 40 + 4*1 */.addAttribute(DefaultVertexFormat.NORMAL_SEMANTIC_NAME, DefaultVertexFormat.NORMAL_FORMAT)
-
-            /* 44 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
-            /* 48 + 1*4 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
-            /* 52 + 1*2 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
-            /* 64 + 2*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
             .build();
 
         /* Used when rendering shadow cascades, not a circular shadow under entities */
@@ -183,7 +182,7 @@ public class CanPipe {
             /* 32 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
             /* 36 + 4*1 */.addAttribute(TANGENT_ATTRIBUTE_NAME, TANGENT_FORMAT)
             /* 40 + 2*1 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
-            /* 42 + 2*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
+            /* 42 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 1+1, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
             .build();
 
         public static final VertexFormat PARTICLE_SHADOW = VertexFormat.builder(0)
@@ -192,35 +191,6 @@ public class CanPipe {
             /* 20 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
             /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
             /* 28 + 1*4 */.addAttribute(SPRITE_INDEX_ATTRIBUTE_NAME, SPRITE_INDEX_FORMAT)
-            .build();
-
-        public static final VertexFormat POSITION_COLOR_LIGHTMAP = VertexFormat.builder(0)
-            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
-            /* 12 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
-            /* 16 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
-            .build();
-
-        public static final VertexFormat POSITION_COLOR_TEX_LIGHTMAP = VertexFormat.builder(0)
-            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
-            /* 12 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
-            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
-            /* 24 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
-            /* 28 + 2*1 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
-            /* 30 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
-            .build();
-
-        public static final VertexFormat POSITION_TEX_LIGHTMAP_COLOR = VertexFormat.builder(0)
-            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
-            /* 12 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
-            /* 20 + 2*2 */.addAttribute(DefaultVertexFormat.UV2_SEMANTIC_NAME, DefaultVertexFormat.UV2_FORMAT)
-            /* 24 + 4*1 */.addAttribute(DefaultVertexFormat.COLOR_SEMANTIC_NAME, DefaultVertexFormat.COLOR_FORMAT)
-            /* 28 + 2*1 */.addAttribute(MATERIAL_INDEX_ATTRIBUTE_NAME, MATERIAL_INDEX_FORMAT)
-            /* 30 + 1*1 */.addAttribute(MATERIAL_FLAGS_ATTRIBUTE_NAME, 2, MATERIAL_FLAGS_FORMAT)  // two bytes, for alignment
-            .build();
-
-        public static final VertexFormat POSITION_TEX = VertexFormat.builder(0)
-            /* 0  + 3*4 */.addAttribute(DefaultVertexFormat.POSITION_SEMANTIC_NAME, DefaultVertexFormat.POSITION_FORMAT)
-            /* 16 + 2*4 */.addAttribute(DefaultVertexFormat.UV0_SEMANTIC_NAME, DefaultVertexFormat.UV0_FORMAT)
             .build();
 
     }

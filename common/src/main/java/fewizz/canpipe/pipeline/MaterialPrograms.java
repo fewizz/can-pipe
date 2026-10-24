@@ -60,27 +60,26 @@ public class MaterialPrograms {
         float shadowsOffsetBiasUnits,
         boolean awareOfDepthRangeChanges
     ) {
+
         List<VertexFormat> vertexBindings = new ArrayList<>();
+
         if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.BLOCK) {
-            vertexBindings.add(CanPipe.VertexFormats.BLOCK);
+            vertexBindings.add(!shadow ? CanPipe.VertexFormats.BLOCK : CanPipe.VertexFormats.BLOCK_SHADOW);
         }
-        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY) {
+        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY || originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY_GLINT_SPECIAL) {
             vertexBindings.add(!shadow ? CanPipe.VertexFormats.ENTITY : CanPipe.VertexFormats.ENTITY_SHADOW);
-        }
-        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.ENTITY_GLINT_SPECIAL) {
-            vertexBindings.add(CanPipe.VertexFormats.ENTITY_GLINT_SPECIAL);
         }
         else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.PARTICLE) {
             vertexBindings.add(!shadow ? CanPipe.VertexFormats.PARTICLE : CanPipe.VertexFormats.PARTICLE_SHADOW);
         }
-        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP) {
-            vertexBindings.add(CanPipe.VertexFormats.POSITION_COLOR_LIGHTMAP);
-        }
-        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
-            vertexBindings.add(CanPipe.VertexFormats.POSITION_COLOR_TEX_LIGHTMAP);
-        }
-        else if (originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR) {
-            vertexBindings.add(CanPipe.VertexFormats.POSITION_TEX_LIGHTMAP_COLOR);
+        else if (
+            Set.of(
+                DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
+                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
+                DefaultVertexFormat.POSITION_TEX_LIGHTMAP_COLOR
+            ).contains(originalRenderPipeline.getVertexFormatBinding(0))
+        ) {
+            vertexBindings.add(originalRenderPipeline.getVertexFormatBinding(0));
         }
         else {
             throw new RuntimeException("Unexpected vertex format to replace: "+originalRenderPipeline.getVertexFormatBinding(0).toString());
