@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector3f;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,11 +22,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
-import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.Material;
@@ -33,6 +32,7 @@ import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.TextureAtlasSpriteExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.util.NormalAndTangent;
+import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 @Mixin(BufferBuilder.class)
@@ -41,11 +41,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow private int vertices;
     @Shadow private int elementsToFill;
     @Shadow @Final private PrimitiveTopology primitiveTopology;
-    @Shadow @Final private ByteBufferBuilder buffer;
-    @Shadow @Final private VertexFormat format;
     @Shadow @Final private int vertexSize;
-    @Shadow private long vertexPointer = -1L;
+    @Shadow @Final private @Nullable VertexFormatElement[] elements;
     @Shadow @Final @Mutable private static String[] elementNames;
+    @Shadow private long vertexPointer = -1L;
 
     @Shadow private long beginElement(int semanticID) { return -1; }
     @Shadow private static byte normalIntValue(float f) { return 0; }
@@ -68,13 +67,15 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private int canpipe_normalOffset;
     @Unique private int canpipe_tangentOffset;
 
-    @Unique private static int canpipe_materialFlagsSemanticID;
-    @Unique private static int canpipe_materialIndexSemanticID;
-    @Unique private static int canpipe_spriteIndexSemanticID;
-    @Unique private static int canpipe_tangentSemanticID;
-    @Unique private static int canpipe_aoID;
+    @Unique private static int CANPIPE_MATERIAL_FLAGS_SEMANTIC_ID;
+    @Unique private static int CANPIPE_MATERIAL_INDEX_SEMANTIC_ID;
+    @Unique private static int CANPIPE_SPRITE_INDEX_SEMANTIC_ID;
+    @Unique private static int CANPIPE_TANGENT_SEMANTIC_ID;
+    @Unique private static int CANPIPE_AO_SEMANTIC_ID;
 
-    @Override public VertexFormat canpipe_getVertexFormat() { return this.format; }
+    @Override public boolean canpipe_hasMaterialIndex() { return this.canpipe_materialIndexOffset != -1; }
+    @Override public boolean canpipe_hasSpriteIndex() { return this.canpipe_spriteIndexOffset != -1; }
+    @Override public boolean canpipe_hasAO() { return this.canpipe_aoOffset != -1; }
 
     @Unique
     private static byte canpipe_normalIntValueWithoutClamp(float value) {
@@ -84,33 +85,33 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Inject(method = "<clinit>", at = @At("RETURN"))
     static private void extendFormats(CallbackInfo ci) {
         var list = new ArrayList<>(Arrays.asList(elementNames));
-        canpipe_materialFlagsSemanticID = list.size();
+        CANPIPE_MATERIAL_FLAGS_SEMANTIC_ID = list.size();
         list.add(CanPipe.VertexFormats.MATERIAL_FLAGS_ATTRIBUTE_NAME);
-        canpipe_materialIndexSemanticID = list.size();
+        CANPIPE_MATERIAL_INDEX_SEMANTIC_ID = list.size();
         list.add(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME);
-        canpipe_spriteIndexSemanticID = list.size();
+        CANPIPE_SPRITE_INDEX_SEMANTIC_ID = list.size();
         list.add(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME);
-        canpipe_tangentSemanticID = list.size();
+        CANPIPE_TANGENT_SEMANTIC_ID = list.size();
         list.add(CanPipe.VertexFormats.TANGENT_ATTRIBUTE_NAME);
-        canpipe_aoID = list.size();
+        CANPIPE_AO_SEMANTIC_ID = list.size();
         list.add(CanPipe.VertexFormats.AO_ATTRIBUTE_NAME);
         elementNames = list.toArray(new String[]{});
     }
 
     @Inject(method = "<init>", at = @At("RETURN"))
     void onInit(CallbackInfo ci) {
-        Function<String, Integer> getOffset = (String name) -> {
-            var element = this.format.getElement(name);
+        Int2IntFunction getOffset = (int semanticID) -> {
+            var element = this.elements[semanticID];
             return element != null ? element.offset() : -1;
         };
-        this.canpipe_aoOffset = getOffset.apply(CanPipe.VertexFormats.AO_ATTRIBUTE_NAME);
-        this.canpipe_uv0Offset = getOffset.apply(DefaultVertexFormat.UV0_SEMANTIC_NAME);
-        this.canpipe_positionOffset = getOffset.apply(DefaultVertexFormat.POSITION_SEMANTIC_NAME);
-        this.canpipe_spriteIndexOffset = getOffset.apply(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME);
-        this.canpipe_materialIndexOffset = getOffset.apply(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME);
-        this.canpipe_materialFlagsOffset = getOffset.apply(CanPipe.VertexFormats.MATERIAL_FLAGS_ATTRIBUTE_NAME);
-        this.canpipe_normalOffset = getOffset.apply(DefaultVertexFormat.NORMAL_SEMANTIC_NAME);
-        this.canpipe_tangentOffset = getOffset.apply(CanPipe.VertexFormats.TANGENT_ATTRIBUTE_NAME);
+        this.canpipe_aoOffset = getOffset.apply(CANPIPE_AO_SEMANTIC_ID);
+        this.canpipe_uv0Offset = getOffset.apply(BufferBuilder.UV0_SEMANTIC_ID);
+        this.canpipe_positionOffset = getOffset.apply(BufferBuilder.POSITION_SEMANTIC_ID);
+        this.canpipe_spriteIndexOffset = getOffset.apply(CANPIPE_SPRITE_INDEX_SEMANTIC_ID);
+        this.canpipe_materialIndexOffset = getOffset.apply(CANPIPE_MATERIAL_INDEX_SEMANTIC_ID);
+        this.canpipe_materialFlagsOffset = getOffset.apply(CANPIPE_MATERIAL_FLAGS_SEMANTIC_ID);
+        this.canpipe_normalOffset = getOffset.apply(BufferBuilder.NORMAL_SEMANTIC_ID);
+        this.canpipe_tangentOffset = getOffset.apply(CANPIPE_TANGENT_SEMANTIC_ID);
 
         if (this.canpipe_materialIndexOffset == -1 && this.canpipe_materialFlagsOffset != -1) {
             throw new RuntimeException("in_materialIndex should be enabled with in_materialFlags");
@@ -270,7 +271,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Inject(method = "addVertex(FFF)Lcom/mojang/blaze3d/vertex/VertexConsumer;", at = @At("RETURN"))
     private void onAddVertex(CallbackInfoReturnable<VertexConsumer> cir) {
-        var ptr = this.beginElement(canpipe_aoID);
+        var ptr = this.beginElement(CANPIPE_AO_SEMANTIC_ID);
         if (ptr != -1) {
             float ao = this.canpipe_aoPending != null ? this.canpipe_aoPending : 1.0F;
             MemoryUtil.memPutByte(this.vertexPointer + this.canpipe_aoOffset, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
@@ -285,7 +286,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
 
         long normalPtr = this.beginElement(BufferBuilder.NORMAL_SEMANTIC_ID);
-        long tangentPtr = this.beginElement(canpipe_tangentSemanticID);
+        long tangentPtr = this.beginElement(CANPIPE_TANGENT_SEMANTIC_ID);
 
         boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
 
@@ -305,9 +306,9 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         )
     )
     void afterUVSet(float u, float v, CallbackInfoReturnable<VertexConsumer> cir) {
-        long spriteIndexPtr = this.beginElement(canpipe_spriteIndexSemanticID);
-        long materialIndexPtr = this.beginElement(canpipe_materialIndexSemanticID);
-        long materialFlagsPtr = this.beginElement(canpipe_materialFlagsSemanticID);
+        long spriteIndexPtr = this.beginElement(CANPIPE_SPRITE_INDEX_SEMANTIC_ID);
+        long materialIndexPtr = this.beginElement(CANPIPE_MATERIAL_INDEX_SEMANTIC_ID);
+        long materialFlagsPtr = this.beginElement(CANPIPE_MATERIAL_FLAGS_SEMANTIC_ID);
 
         boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
         if (lastVertex) {
@@ -326,7 +327,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
 
         if (lastVertex) {
-            long tangentPtr = this.beginElement(canpipe_tangentSemanticID);
+            long tangentPtr = this.beginElement(CANPIPE_TANGENT_SEMANTIC_ID);
             canpipe_setNormalAndTangent(this.canpipe_recomputeNormal ? normalPtr : -1, normalX, normalY, normalZ, tangentPtr);
         }
 

@@ -44,10 +44,7 @@ public class FluidRendererMixin {
         VertexConsumer vc,
         @Local(argsOnly = true) FluidState fluidState
     ) {
-        if (
-            vc instanceof VertexConsumerExtended vce &&
-            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME)
-        ) {
+        if (vc instanceof VertexConsumerExtended vce && vce.canpipe_hasSpriteIndex()) {
 
             TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
             var sprites = ((TextureAtlasExtended) atlas).canpipe_getSprites();

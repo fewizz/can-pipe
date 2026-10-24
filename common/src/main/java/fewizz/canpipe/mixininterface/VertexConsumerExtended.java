@@ -4,14 +4,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import fewizz.canpipe.material.Material;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 public interface VertexConsumerExtended extends VertexConsumer {
 
-    VertexFormat canpipe_getVertexFormat();
+    boolean canpipe_hasMaterialIndex();
+    boolean canpipe_hasSpriteIndex();
+    boolean canpipe_hasAO();
 
     /**
      * Will be applied on next <code>addVertex()</code> only

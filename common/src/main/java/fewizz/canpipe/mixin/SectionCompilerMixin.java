@@ -73,7 +73,7 @@ public class SectionCompilerMixin {
         )
     )
     void beforePuttingQuad(CallbackInfo ci, @Local BufferBuilder builder) {
-        if (builder instanceof VertexConsumerExtended vce && vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME)) {
+        if (builder instanceof VertexConsumerExtended vce && vce.canpipe_hasMaterialIndex()) {
             var blockStateAndMaterialMap = this.canpipe_capturedBlockState.get();
             if (blockStateAndMaterialMap.right == null) {
                 blockStateAndMaterialMap.right = MaterialMaps.getForBlockState(blockStateAndMaterialMap.left);
@@ -100,7 +100,7 @@ public class SectionCompilerMixin {
         )
     )
     void afterPuttingQuad(CallbackInfo ci, @Local BufferBuilder builder) {
-        if (builder instanceof VertexConsumerExtended vce && vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.MATERIAL_INDEX_ATTRIBUTE_NAME)) {
+        if (builder instanceof VertexConsumerExtended vce && vce.canpipe_hasMaterialIndex()) {
             vce.canpipe_setScopedMaterialSupplier(null);
         }
     }

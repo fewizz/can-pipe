@@ -10,7 +10,6 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.QuadInstance;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.QuadInstanceExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
@@ -24,10 +23,8 @@ public interface VertexConsumerMixin {
         @Local(argsOnly = true) BakedQuad quad,
         @Local(argsOnly = true) QuadInstance instance
     ) {
-        if (this instanceof VertexConsumerExtended vce) {
-            if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME)) {
-                vce.canpipe_setScopedSpriteSupplier(() -> quad.materialInfo().sprite());
-            }
+        if (this instanceof VertexConsumerExtended vce && vce.canpipe_hasSpriteIndex()) {
+            vce.canpipe_setScopedSpriteSupplier(() -> quad.materialInfo().sprite());
         }
     }
 
@@ -40,20 +37,15 @@ public interface VertexConsumerMixin {
         index = 0
     )
     default int setAO(int vertexIndex, @Local(argsOnly = true) QuadInstance instance) {
-        if (this instanceof VertexConsumerExtended vce) {
-            if (vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.AO_ATTRIBUTE_NAME)) {
-                vce.canpipe_setPendingAO(((QuadInstanceExtended) instance).canpipe_getSeparatedShade(vertexIndex));
-            }
+        if (this instanceof VertexConsumerExtended vce && vce.canpipe_hasAO()) {
+            vce.canpipe_setPendingAO(((QuadInstanceExtended) instance).canpipe_getSeparatedShade(vertexIndex));
         }
         return vertexIndex;
     }
 
     @Inject(method = {"putBlockBakedQuad", "putBakedQuad"}, at = @At("RETURN"))
     default void resetSpriteIndex(CallbackInfo ci) {
-        if (
-            this instanceof VertexConsumerExtended vce &&
-            vce.canpipe_getVertexFormat().contains(CanPipe.VertexFormats.SPRITE_INDEX_ATTRIBUTE_NAME)
-        ) {
+        if (this instanceof VertexConsumerExtended vce && vce.canpipe_hasSpriteIndex()) {
             vce.canpipe_setScopedSpriteSupplier(null);
         }
     }
