@@ -110,7 +110,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Stream.generate(() -> new ObjectArrayList<SectionRenderDispatcher.RenderSection>(10000))
         .limit(4).toArray(ObjectArrayList[]::new);
 
-    @Unique private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSectionsSink = new ObjectArrayList<>(50);
+    @Unique final private ObjectArrayList<SectionRenderDispatcher.RenderSection> canpipe_nearbyVisibleSectionsSink = new ObjectArrayList<>(50);
 
     @Override public int canpipe_getCurrentShadowCascadeIdx() { return this.canpipe_currentShadowCascadeIdx; }
     @Override public void canpipe_setCurrentShadowCascadeIdx(int cascade) { this.canpipe_currentShadowCascadeIdx = cascade; }
