@@ -39,7 +39,6 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
     @Shadow private int vertices;
-    @Shadow private int elementsToFill;
     @Shadow @Final private PrimitiveTopology primitiveTopology;
     @Shadow @Final private int vertexSize;
     @Shadow @Final private @Nullable VertexFormatElement[] elements;
@@ -47,7 +46,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow private long vertexPointer = -1L;
 
     @Shadow private long beginElement(int semanticID) { return -1; }
-    @Shadow private static byte normalIntValue(float f) { return 0; }
 
     @Unique private short canpipe_pendingMaterialIndex = -1;
     @Unique private Function<TextureAtlasSprite, Material> canpipe_materialSupplier = null;
@@ -63,9 +61,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private int canpipe_positionOffset;
     @Unique private int canpipe_spriteIndexOffset;
     @Unique private int canpipe_materialIndexOffset;
-    @Unique private int canpipe_materialFlagsOffset;
-    @Unique private int canpipe_normalOffset;
-    @Unique private int canpipe_tangentOffset;
 
     @Unique private static int CANPIPE_MATERIAL_FLAGS_SEMANTIC_ID;
     @Unique private static int CANPIPE_MATERIAL_INDEX_SEMANTIC_ID;
@@ -109,16 +104,18 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         this.canpipe_positionOffset = getOffset.apply(BufferBuilder.POSITION_SEMANTIC_ID);
         this.canpipe_spriteIndexOffset = getOffset.apply(CANPIPE_SPRITE_INDEX_SEMANTIC_ID);
         this.canpipe_materialIndexOffset = getOffset.apply(CANPIPE_MATERIAL_INDEX_SEMANTIC_ID);
-        this.canpipe_materialFlagsOffset = getOffset.apply(CANPIPE_MATERIAL_FLAGS_SEMANTIC_ID);
-        this.canpipe_normalOffset = getOffset.apply(BufferBuilder.NORMAL_SEMANTIC_ID);
-        this.canpipe_tangentOffset = getOffset.apply(CANPIPE_TANGENT_SEMANTIC_ID);
 
-        if (this.canpipe_materialIndexOffset == -1 && this.canpipe_materialFlagsOffset != -1) {
+        boolean hasMaterialIndex = this.canpipe_materialIndexOffset != -1;
+        boolean hasMaterialFlags = this.elements[CANPIPE_MATERIAL_FLAGS_SEMANTIC_ID] != null;
+        boolean hasNormal = this.elements[BufferBuilder.NORMAL_SEMANTIC_ID] != null;
+        boolean hasTangent = this.elements[CANPIPE_TANGENT_SEMANTIC_ID] != null;
+
+        if (hasMaterialFlags && !hasMaterialIndex) {
             throw new RuntimeException("in_materialIndex should be enabled with in_materialFlags");
         }
 
-        if (this.canpipe_normalOffset == -1 && this.canpipe_tangentOffset != -1) {
-            throw new RuntimeException("in_tangent should be enabled with in_tangent");
+        if (hasTangent && !hasNormal) {
+            throw new RuntimeException("Normal should be enabled with in_tangent");
         }
     }
 
@@ -323,12 +320,12 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;beginElement(I)J"
         )
     )
-    private long onSetNormal(long normalPtr, float normalX, float normalY, float normalZ) {
+    private long onSetNormal(long normalPtr, float x, float y, float z) {
         boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
 
         if (lastVertex) {
             long tangentPtr = this.beginElement(CANPIPE_TANGENT_SEMANTIC_ID);
-            canpipe_setNormalAndTangent(this.canpipe_recomputeNormal ? normalPtr : -1, normalX, normalY, normalZ, tangentPtr);
+            canpipe_setNormalAndTangent(this.canpipe_recomputeNormal ? normalPtr : -1, x, y, z, tangentPtr);
         }
 
         return this.canpipe_recomputeNormal ? -1 : normalPtr;
@@ -382,15 +379,15 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_uv0Offset + vertexOffset*this.vertexSize + 1*Float.BYTES);
     }
 
-    private final float canpipe_getPosX(int vertexOffset) {
+    @Unique private float canpipe_getPosX(int vertexOffset) {
         return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_positionOffset + vertexOffset*this.vertexSize + 0*Float.BYTES);
     }
 
-    private final float canpipe_getPosY(int vertexOffset) {
+    @Unique private float canpipe_getPosY(int vertexOffset) {
         return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_positionOffset + vertexOffset*this.vertexSize + 1*Float.BYTES);
     }
 
-    private final float canpipe_getPosZ(int vertexOffset) {
+    @Unique private float canpipe_getPosZ(int vertexOffset) {
         return MemoryUtil.memGetFloat(this.vertexPointer + this.canpipe_positionOffset + vertexOffset*this.vertexSize + 2*Float.BYTES);
     }
 

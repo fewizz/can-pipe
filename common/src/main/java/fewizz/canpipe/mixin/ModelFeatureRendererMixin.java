@@ -49,7 +49,7 @@ public class ModelFeatureRendererMixin {
                 material = null;
             }
             else {
-                var predicateCtx = new EntityMaterialMap.MaterialPedicateContext(
+                var predicateCtx = new EntityMaterialMap.MaterialPredicateContext(
                     textureBinding != null ? textureBinding.location() : null,
                     wrapped.spriteId() != null ? wrapped.spriteId().texture() : null,
                     renderType

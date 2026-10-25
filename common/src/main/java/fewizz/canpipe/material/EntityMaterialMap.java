@@ -22,14 +22,14 @@ public record EntityMaterialMap(
     List<MaterialPredicates> materialsByPredicates
 ) {
 
-    public record MaterialPedicateContext(
+    public record MaterialPredicateContext(
         @Nullable Identifier textureID,
         @Nullable Identifier spriteTextureID,
         RenderType renderType
     ) {}
 
     public interface MaterialPredicate {
-        boolean test(MaterialPedicateContext ctx);
+        boolean test(MaterialPredicateContext ctx);
     }
 
     public record MaterialPredicates(

@@ -108,7 +108,7 @@ final public class MaterialMaps implements PreparableReloadListener {
             .thenAcceptAsync(MaterialMaps::loadRaw, applyExecutor);
     }
 
-    record MaterialMapsJsons(
+    public record MaterialMapsJsons(
         Map<Identifier, List<JsonObject>> blockEntities,
         Map<Identifier, List<JsonObject>> entities,
         Map<Identifier, JsonObject> blocks,

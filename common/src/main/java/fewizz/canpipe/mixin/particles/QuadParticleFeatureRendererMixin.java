@@ -4,7 +4,6 @@ import java.util.Map.Entry;
 
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -33,8 +32,6 @@ import net.minecraft.client.renderer.texture.AbstractTexture;
 
 @Mixin(QuadParticleFeatureRenderer.class)
 public class QuadParticleFeatureRendererMixin {
-
-    @Unique private static Framebuffer canpipe_selectedFramebuffer;
 
     @ModifyExpressionValue(
         method = "lambda$prepareGroup$0",
@@ -69,7 +66,6 @@ public class QuadParticleFeatureRendererMixin {
         )) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                // TODO p.translucentParticlesFramebuffer;
                 Framebuffer fb = p.shadowFramebufferOr(pipeline == RenderPipelines.OPAQUE_PARTICLE ? p.solidFramebuffer : p.translucentParticlesFramebuffer);
                 return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
