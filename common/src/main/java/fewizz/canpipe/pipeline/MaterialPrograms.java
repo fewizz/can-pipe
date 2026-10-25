@@ -10,16 +10,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import org.apache.commons.lang3.NotImplementedException;
-import org.jspecify.annotations.Nullable;
-
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.pipeline.ShaderSource;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
@@ -32,19 +28,19 @@ import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
 import fewizz.canpipe.renderpearl.mixin.PipelineBuilderAccessor;
+import fewizz.canpipe.util.SimpleShaderSource;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Util;
 
 public class MaterialPrograms {
 
     private MaterialPrograms() {}
 
-    static CompletableFuture<MaterialProgramLoader> load(
+    static MaterialProgramLoader load(
         RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
@@ -231,44 +227,8 @@ public class MaterialPrograms {
             return src;
         };
 
-        // TODO
-        /*TriConsumer<String, Identifier, String> onCompilationError = (String log, Identifier shaderLocation, String src) -> {
-            Path compilationErrorsPath = CanPipe.getCompilationErrorsDirPath();
-            try {
-                Files.createDirectories(compilationErrorsPath);
-                Files.writeString(
-                    compilationErrorsPath.resolve(shaderLocation.toString().replace("/", "--").replace(":", "--")),
-                    src+"\n"+log
-                );
-            } catch (IOException e) {
-                CanPipe.LOGGER.warn("Couldn't save \""+shaderLocation.toString()+"\" compilation error", e);
-            }
-            throw new RuntimeException("Couldn't compile \""+shaderLocation.toString()+"\": "+log);
-        };*/
-
         String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
         String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
-
-        // TODO
-        /*((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
-            vertexShaderIDWithPostfix,
-            Shaders.process(
-                vertexShaderLocation, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
-                getShaderSource, shadowMapSize, postprocess
-            ),
-            ShaderType.VERTEX,
-            onCompilationError
-        );
-        ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_precompileShaderModule(
-            fragmentShaderIDWithPostfix,
-            Shaders.process(
-                fragmentShaderLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
-                getShaderSource, shadowMapSize, postprocess
-            ),
-            ShaderType.FRAGMENT,
-            onCompilationError
-        );*/
-        // (RenderSystem.getDevice()).compilePipeline(renderPipeline, null, null)
 
         if (!awareOfDepthRangeChanges && RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
             renderPipelineBuilder.withShaderDefine("CANPIPE_CLIP_DEPTH_RANGE_PATCH");
@@ -281,43 +241,17 @@ public class MaterialPrograms {
         ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos = new ReferenceArrayList<>();
         Object2IntOpenHashMap<String> uniformBindings = new Object2IntOpenHashMap<>();
 
-        var shaderSource = new ShaderSource() {
+        String vertexSrcProcessed = Shaders.process(
+            location, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
+            getShaderSource, shadowMapSize, postprocess
+        );
 
-            @Override
-            public @Nullable String getShader(Identifier id, ShaderType type) {
-                Identifier location;
-                String src;
-                if (type == ShaderType.VERTEX) {
-                    if (id != vertexShaderLocation) {
-                        throw new RuntimeException("Expected vertex shader location to be "+vertexShaderLocation+", but got "+id);
-                    }
-                    location = vertexShaderLocation;
-                    src = vertexSrc;
-                }
-                else if (type == ShaderType.FRAGMENT) {
-                    if (id != fragmentShaderLocation) {
-                        throw new RuntimeException("Expected fragment shader location to be "+fragmentShaderLocation+", but got "+id);
-                    }
-                    location = fragmentShaderLocation;
-                    src = fragmentSrc;
-                }
-                else {
-                    throw new NotImplementedException();
-                }
+        String fragmentSrcProcessed = Shaders.process(
+            location, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
+            getShaderSource, shadowMapSize, postprocess
+        );
 
-                return Shaders.process(
-                    location, src, type, glslVersion, options, appliedOptions,
-                    getShaderSource, shadowMapSize, postprocess
-                );
-            }
-
-            @Override
-            public @Nullable CachedIncludeSource getInclude(Identifier id) { return null; }
-
-            @Override
-            public void close() {}
-
-        };
+        var shaderSource = new SimpleShaderSource(vertexShaderLocation, vertexSrcProcessed, fragmentShaderLocation, fragmentSrcProcessed);
 
         return CompletableFuture.supplyAsync(
             () -> {
@@ -329,8 +263,8 @@ public class MaterialPrograms {
                 );
                 return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
             },
-            Util.backgroundExecutor()
-        );
+            Runnable::run  // TODO
+        ).join();
     }
 
     private static String getVertexSrc(

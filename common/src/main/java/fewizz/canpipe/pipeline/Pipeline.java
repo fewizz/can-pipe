@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -334,7 +332,6 @@ public class Pipeline implements AutoCloseable {
                 0.0F, 0.0F,
                 this.awareOfDepthRangeChanges
             ))
-            .map(CompletableFuture::join)
             .collect(Collectors.toUnmodifiableMap(loader -> loader.originalRenderPipeline(), loader -> loader));
 
         var samplerImagesNames = JanksonUtils.listOfStrings(materialProgram, "samplerImages");
@@ -401,7 +398,6 @@ public class Pipeline implements AutoCloseable {
                     shadowsJson.getFloat("offsetBiasUnits", 4.0F),
                     this.awareOfDepthRangeChanges
                 ))
-                .map(CompletableFuture::join)
                 .collect(Collectors.toUnmodifiableMap(loader -> loader.originalRenderPipeline(), loader -> loader));
 
             this.shadows = new Shadows(
@@ -460,11 +456,6 @@ public class Pipeline implements AutoCloseable {
         loadPasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
         loadPasses.accept("fabulous", this.fabulousPasses);
         loadPasses.accept("afterRenderHand", this.afterRenderHandPasses);
-
-        this.programs.values().forEach(pending -> {
-            pending.future.join();
-            pending.finishCompile();
-        });
     } catch (Exception e) {
         this.close();
         throw e;
@@ -481,17 +472,7 @@ public class Pipeline implements AutoCloseable {
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
 
-        this.programs.values().forEach(pending -> pending.future.cancel(false));
-        this.programs.values().forEach(pending -> {
-            try {
-                pending.future.get();
-                pending.close();
-            } catch (CancellationException e) {
-                // ..
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+        this.programs.values().forEach(pending -> { pending.close(); });
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
         this.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);

@@ -17,16 +17,15 @@ import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.pipeline.ShaderSource;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.util.JanksonUtils;
+import fewizz.canpipe.util.SimpleShaderSource;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Util;
 
 
 public class Programs {
@@ -129,9 +128,9 @@ public class Programs {
             return src;
         };
 
-        String vertexSrc0 = getShaderSource.apply(vertexLocation).orElse(null);
-        String vertexSrc = Shaders.process(
-            vertexLocation, vertexSrc0, ShaderType.VERTEX, glslVersion, options, appliedOptions,
+        String vertexSrc = getShaderSource.apply(vertexLocation).orElse(null);
+        String vertexSrcProcessed = Shaders.process(
+            vertexLocation, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
             getShaderSource, shadowMapSize, (src) -> {
                 // some shaderpacks define them, some - not
                 if (!CONTAINS_VERTEX_IN.test(src)) {
@@ -150,39 +149,25 @@ public class Programs {
             }
         );
 
-        String fragmentSrc0 = getShaderSource.apply(fragmentLocation).orElse(null);
-        String fragmentSrc = Shaders.process(
-            fragmentLocation, fragmentSrc0, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
+        String fragmentSrc = getShaderSource.apply(fragmentLocation).orElse(null);
+        String fragmentSrcProcessed = Shaders.process(
+            fragmentLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
             getShaderSource, shadowMapSize, postprocess
         );
 
-        var futurePending = RenderSystem.getDevice().compilePipeline(pipeline, new ShaderSource() {
+        var shaderSource = new SimpleShaderSource(vertexLocation, vertexSrcProcessed, fragmentLocation, fragmentSrcProcessed);
+        var futurePending = RenderSystem.getDevice().compilePipeline(
+            pipeline, shaderSource, Runnable::run  // TODO
+        );
 
-            @Override
-            public @Nullable String getShader(Identifier id, ShaderType type) {
-                if (type == ShaderType.VERTEX) {
-                    return vertexSrc;
-                }
-                if (type == ShaderType.FRAGMENT) {
-                    return fragmentSrc;
-                }
-                throw new RuntimeException();
-            }
-
-            @Override
-            public @Nullable CachedIncludeSource getInclude(Identifier id) { return null; }
-
-            @Override
-            public void close() {}
-
-        }, Util.backgroundExecutor());
-
-        return new Pending(futurePending, pipeline);
+        var pending = new Pending(futurePending, pipeline);
+        pending.future.join();
+        pending.finishCompile();
+        return pending;
     }
 
     static class Pending implements CompiledRenderPipeline.Pending, AutoCloseable {
 
-        // private final CompiledRenderPipeline.Pending pending;
         public final CompletableFuture<CompiledRenderPipeline.Pending> future;
         public final RenderPipeline renderPipeline;
         private CompiledRenderPipeline compiledRenderPipeline = null;
@@ -209,7 +194,7 @@ public class Programs {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
             if (!this.future.isDone()) {
                 throw new RuntimeException("Future isn't completed");
             }

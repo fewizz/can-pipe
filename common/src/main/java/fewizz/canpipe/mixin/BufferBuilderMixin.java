@@ -99,6 +99,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             var element = this.elements[semanticID];
             return element != null ? element.offset() : -1;
         };
+
         this.canpipe_aoOffset = getOffset.apply(CANPIPE_AO_SEMANTIC_ID);
         this.canpipe_uv0Offset = getOffset.apply(BufferBuilder.UV0_SEMANTIC_ID);
         this.canpipe_positionOffset = getOffset.apply(BufferBuilder.POSITION_SEMANTIC_ID);
