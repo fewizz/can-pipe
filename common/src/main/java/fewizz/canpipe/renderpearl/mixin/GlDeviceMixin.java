@@ -93,42 +93,6 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         }
     }
 
-    // TODO
-    /*@ModifyExpressionValue(
-        method = "compileShader",
-        at = @At(value = "CONSTANT", args = "intValue=32768")
-    )
-    int extendMaxLogLength(int original, @Local(ordinal = 0) int shaderId) {
-        return GlStateManager.glGetShaderi(shaderId, GL33C.GL_INFO_LOG_LENGTH);
-    }*/
-
-    // TODO
-    /*@ModifyExpressionValue(
-        method = "compileShader",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/backend/opengl/GlStateManager;glGetShaderInfoLog(II)Ljava/lang/String;"
-        )
-    )
-    String catchLog(String log) {
-        this.canpipe_compilationLog = log;
-        return log;
-    }*/
-
-    // TODO
-    /*@ModifyReturnValue(method = "compileShader", at = @At("RETURN"))
-    GlShaderModule onCompilationError(
-        GlShaderModule module,
-        @Local(ordinal = 0) String source,
-        @Local(ordinal = 0) GlDevice.ShaderCompilationKey key
-    ) {
-        if (module == GlShaderModule.INVALID_SHADER && this.canpipe_onCompilationError != null) {
-            this.canpipe_onCompilationError.accept(this.canpipe_compilationLog, key.id(), source);
-        }
-        return module;
-    }*/
-
-    // TODO
     @Inject(
         method = "createTexture("+
             "Ljava/lang/String;ILcom/mojang/renderpearl/api/GpuFormat;IIII"+

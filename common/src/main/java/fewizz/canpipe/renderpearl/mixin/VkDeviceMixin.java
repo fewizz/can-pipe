@@ -22,8 +22,6 @@ import net.minecraft.resources.Identifier;
 @Mixin(VulkanDevice.class)
 public abstract class VkDeviceMixin implements GpuDeviceBackendExtended {
 
-    // @Shadow abstract IntermediaryShaderModule getOrCompileShader(final Identifier id, final ShaderType type, final ShaderDefines defines, final ShaderSource shaderSource);
-
     @Unique private TriConsumer<String, Identifier, String> canpipe_onCompilationError = null;
     @Unique private String canpipe_compilationLog = null;
 

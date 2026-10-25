@@ -42,7 +42,7 @@ public class ProgramPass extends Pass {
 
     private final UniformBufferStruct pass = new UniformBufferStruct();
     private final IVec2Uniform frxSizeUniform = pass.add(new IVec2Uniform());
-    private final IntUniform frxLoadUniform = pass.add(new IntUniform());
+    private final IntUniform frxLodUniform = pass.add(new IntUniform());
     private final IntUniform frxLayerUniform = pass.add(new IntUniform());
     private final Mat4Uniform frxFrameProjectionMatrix = pass.add(new Mat4Uniform());
     private final GpuBuffer passUbo;
@@ -89,7 +89,7 @@ public class ProgramPass extends Pass {
         this.framebuffer = framebuffer;
         this.extent = extent;
 
-        this.frxLoadUniform.set(lod);
+        this.frxLodUniform.set(lod);
         this.frxLayerUniform.set(layer);
         this.frxSizeUniform.set(-1);
     }
@@ -105,8 +105,8 @@ public class ProgramPass extends Pass {
             if (w == 0) w = mc.gameRenderer.mainRenderTarget().width;
             if (h == 0) h = mc.gameRenderer.mainRenderTarget().height;
 
-            w >>= this.frxLoadUniform.get();
-            h >>= this.frxLoadUniform.get();
+            w >>= this.frxLodUniform.get();
+            h >>= this.frxLodUniform.get();
 
             var autoStorageIndexBuffer = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
             var indexBuffer = autoStorageIndexBuffer.getBuffer(6);

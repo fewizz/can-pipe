@@ -52,18 +52,4 @@ public class FrontendCommandEncoderMixin implements CommandEncoderExtended {
         return 1;  // 1 == 1
     }
 
-    /*@ModifyExpressionValue(
-        method = "createRenderPass(Lcom/mojang/renderpearl/api/commands/RenderPassDescriptor;)Lcom/mojang/renderpearl/api/commands/RenderPass;",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/api/commands/RenderPassDescriptor$Attachment;textureView()Lcom/mojang/renderpearl/api/textures/GpuTextureView;"
-        )
-    )
-    GpuTextureView checkTextureViewLayersCount(GpuTextureView textureView) {
-        if (((GpuTextureViewExtended) textureView).canpipe_layerCount() > 1) {
-            throw new IllegalStateException("Some attachment uses more than 1 array layers");
-        }
-        return textureView;
-    }*/
-
 }

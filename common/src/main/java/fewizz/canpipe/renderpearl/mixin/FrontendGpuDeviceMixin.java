@@ -28,7 +28,7 @@ import net.minecraft.resources.Identifier;
 @Mixin(FrontendGpuDevice.class)
 public class FrontendGpuDeviceMixin implements GpuDeviceExtended {
 
-    @Final @Shadow  private GpuDeviceBackend backend;
+    @Final @Shadow private GpuDeviceBackend backend;
 
     @Override
     public GpuSampler canpipe_createSampler(

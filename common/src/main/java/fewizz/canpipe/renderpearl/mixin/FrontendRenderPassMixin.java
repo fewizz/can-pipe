@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import com.llamalad7.mixinextras.sugar.Local;
+import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
@@ -41,7 +42,7 @@ public class FrontendRenderPassMixin {
         return message+" Expected "+colorTargetStates.size()+" color attachments, but got "+this.colorAttachments.size()+" for pipeline \""+frontendRenderPipeline.name()+"\"";
     }
 
-    /*@ModifyArg(
+    @ModifyArg(
         method = "setPipeline",
         at = @At(
             value = "INVOKE",
@@ -54,10 +55,14 @@ public class FrontendRenderPassMixin {
         String message,
         @Local ColorTargetState colorTargetState,
         @Local RenderPassDescriptor.Attachment<Optional<Vector4fc>> attachment,
-        @Local RenderPipeline renderPipeline
+        @Local CompiledRenderPipeline pipeline
     ) {
-        return message+" Expected format \""+colorTargetState.format()+"\", but got \""+attachment.textureView().texture().getFormat()+"\"."
-            +" Texture: \""+attachment.textureView().texture().getLabel()+"\", Render pipeline: \""+renderPipeline+"\".";
-    }*/
+        String pipelineName = ((FrontendRenderPipeline) pipeline).name();
+        String textureName = attachment.textureView().texture().getLabel();
+        GpuFormat gotFormat = attachment.textureView().texture().getFormat();
+
+        return message+" Expected format \""+colorTargetState.format()+"\", but got \""+gotFormat+"\"."
+            +" Texture: \""+textureName+"\", Render pipeline: \""+pipelineName+"\".";
+    }
 
 }
