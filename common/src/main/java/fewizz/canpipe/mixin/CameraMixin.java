@@ -8,8 +8,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-
 import fewizz.canpipe.mixininterface.CameraExtended;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;

@@ -12,9 +12,6 @@ import net.minecraft.client.renderer.rendertype.RenderSetup;
 @Mixin(RenderSetup.class)
 public interface RenderSetupAccessor {
 
-    // TODO
-    // @Accessor("outputTarget") OutputTarget canpipe_getOutputTarget();
-
     @Accessor("textures") Map<String, RenderSetup.TextureBinding> canpipe_getTextures();
 
     @Accessor("pipeline") RenderPipeline canpipe_getPipeline();
