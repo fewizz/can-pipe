@@ -694,12 +694,12 @@ public class Pipeline implements AutoCloseable {
                 pipeline.getSortKey()
             ) {};
 
-            try {
-                for (Entry<Identifier, Resource> entry : mc.getResourceManager().listResources("shaders", p -> true).entrySet()) {
-                    Identifier location = entry.getKey();
-                    ShaderType shaderType = ShaderType.byLocation(location);
-                    Resource resource = entry.getValue();
+            for (Entry<Identifier, Resource> entry : mc.getResourceManager().listResources("shaders", p -> true).entrySet()) {
+                Identifier location = entry.getKey();
+                ShaderType shaderType = ShaderType.byLocation(location);
+                Resource resource = entry.getValue();
 
+                try {
                     if (shaderType != null) {
                         String contents = resource.readAllAsString();
                         Identifier id = shaderType.idConverter().fileToId(location);
@@ -711,32 +711,33 @@ public class Pipeline implements AutoCloseable {
                         includeSourcesBuilder.put(id, ShaderSource.CachedIncludeSource.create(id, contents));
                     }
                 }
-
-                var device = RenderSystem.getDevice();
-                return device.compilePipeline(
-                    newRenderPipeline,
-                    new ShaderSource() {
-
-                        @Override
-                        public @Nullable String getShader(Identifier id, ShaderType type) {
-                            return shaderSources.get(Pair.of(id, type));
-                        }
-
-                        @Override
-                        public @Nullable CachedIncludeSource getInclude(Identifier id) {
-                            return includeSourcesBuilder.get(id);
-                        }
-
-                        @Override
-                        public void close() {
-                        }
-
-                    },
-                    (runnable) -> runnable.run()
-                ).get().finishCompile();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
+            var device = RenderSystem.getDevice();
+            return device.compilePipeline(
+                newRenderPipeline,
+                new ShaderSource() {
+
+                    @Override
+                    public @Nullable String getShader(Identifier id, ShaderType type) {
+                        return shaderSources.get(Pair.of(id, type));
+                    }
+
+                    @Override
+                    public @Nullable CachedIncludeSource getInclude(Identifier id) {
+                        return includeSourcesBuilder.get(id);
+                    }
+
+                    @Override
+                    public void close() {
+                    }
+
+                },
+                (runnable) -> runnable.run()  // TODO?
+            ).join().finishCompile();
         });
     }
 

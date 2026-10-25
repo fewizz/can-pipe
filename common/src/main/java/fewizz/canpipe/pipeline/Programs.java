@@ -162,7 +162,10 @@ public class Programs {
 
         var pending = new Pending(futurePending, pipeline);
         pending.future.join();
-        pending.finishCompile();
+        CompiledRenderPipeline compiledRenderPipeline = pending.finishCompile();
+        if (compiledRenderPipeline == null) {
+            throw new RuntimeException("Couldn't compile pipeline \""+pipelineLocation+"\"");
+        }
         return pending;
     }
 

@@ -386,7 +386,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         FeatureRenderDispatcher.PreparedFrame instance, RenderPass renderPass, Operation<Void> operation
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) return;
+        if (p == null) {
+            operation.call(instance, renderPass);
+            return;
+        }
+
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Translucent Features");
@@ -415,7 +419,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Operation<Void> operation
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) return;
+        if (p == null) {
+            operation.call(instance, group, renderPass, sampler, blockAtlas, renderWireframeTerrain);
+            return;
+        }
+
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Translucent Terrain");
@@ -435,7 +443,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     void createRenderPassForAfterTerrainTranslucent(FeatureRenderDispatcher.PreparedFrame instance, RenderPass renderPass, Operation<Void> operation) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) return;
+        if (p == null) {
+            operation.call(instance, renderPass);
+            return;
+        }
+
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Translucent Particles");
@@ -455,7 +467,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     void createRenderPassForClouds(CloudRenderer instance, CloudStatus cloudStatus, RenderPass renderPass, Operation<Void> operation) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) return;
+        if (p == null) {
+            operation.call(instance, cloudStatus, renderPass);
+            return;
+        }
+
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Translucent Particles");
@@ -478,7 +494,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     )
     void createRenderPassForWeather(WeatherEffectRenderer instance, WeatherRenderState state, RenderPass renderPass, Operation<Void> operation) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) return;
+        if (p == null) {
+            operation.call(instance, state, renderPass);
+            return;
+        }
+
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Weather");
@@ -505,7 +525,11 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         WorldBorderRenderer instance, WorldBorderRenderState state, RenderPass renderPass, Vec3 cameraPos, double renderDistance, Operation<Void> operation
     ) {
         Pipeline p = Pipelines.getCurrent();
-        if (p == null) return;
+        if (p == null) {
+            operation.call(instance, state, renderPass, cameraPos, renderDistance);
+            return;
+        }
+
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "World Border");
