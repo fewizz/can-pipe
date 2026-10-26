@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
@@ -30,8 +29,9 @@ import net.minecraft.resources.Identifier;
 
 public class Programs {
 
-    static final Predicate<String> CONTAINS_VERTEX_IN = Pattern.compile("\\s*in\\s+vec(3|4)\\s+in_vertex").asPredicate();
-    static final Predicate<String> CONTAINS_UV_IN = Pattern.compile("\\s*in\\s+vec2\\s+in_uv").asPredicate();
+    static final Pattern IN_VERTEX_VEC4_PATTERN = Pattern.compile("in\\s+vec4\\s+in_vertex\\s*;");
+    static final Pattern IN_VERTEX_VEC3_PATTERN = Pattern.compile("in\\s+vec3\\s+in_vertex\\s*;");
+    static final Pattern IN_UV_PATTERN = Pattern.compile("in\\s+vec2\\s+in_uv\\s*;");
 
     private Programs() {}
 
@@ -132,18 +132,25 @@ public class Programs {
         String vertexSrcProcessed = Shaders.process(
             vertexLocation, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
             getShaderSource, shadowMapSize, (src) -> {
-                // some shaderpacks define them, some - not
-                if (!CONTAINS_VERTEX_IN.test(src)) {
-                    src = "in vec3 in_vertex;\n\n"+src;
-                }
-                if (!CONTAINS_UV_IN.test(src)) {
-                    src = "in vec2 in_uv;\n\n"+src;
+                src =
+                    "in vec3 Position;\n"+
+                    "in vec2 UV0;\n\n"+
+                    src;
+
+                var inPositionVec4Matcher = IN_VERTEX_VEC4_PATTERN.matcher(src);
+                if (inPositionVec4Matcher.find()) {
+                    src = inPositionVec4Matcher.replaceFirst("#define in_vertex (vec4(Position, 1.0))");
                 }
 
-                src =
-                    "#define in_vertex Position\n"+
-                    "#define in_uv UV0\n\n"+
-                    src;
+                var inPositionVec3Matcher = IN_VERTEX_VEC3_PATTERN.matcher(src);
+                if (inPositionVec3Matcher.find()) {
+                    src = inPositionVec3Matcher.replaceFirst("#define in_vertex Position");
+                }
+
+                var uvMatcher = IN_UV_PATTERN.matcher(src);
+                if (uvMatcher.find()) {
+                    src = uvMatcher.replaceFirst("#define in_uv UV0");
+                }
 
                 return postprocess.apply(src);
             }
