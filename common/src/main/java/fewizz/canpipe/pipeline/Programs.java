@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
+import org.lwjgl.util.spvc.Spvc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -20,7 +21,10 @@ import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 
 import blue.endless.jankson.JsonObject;
+import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
+import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
 import fewizz.canpipe.util.JanksonUtils;
 import fewizz.canpipe.util.SimpleShaderSource;
 import net.minecraft.client.renderer.BindGroupLayouts;
@@ -138,18 +142,23 @@ public class Programs {
                     src;
 
                 var inPositionVec4Matcher = IN_VERTEX_VEC4_PATTERN.matcher(src);
+                var inPositionVec3Matcher = IN_VERTEX_VEC3_PATTERN.matcher(src);
                 if (inPositionVec4Matcher.find()) {
                     src = inPositionVec4Matcher.replaceFirst("#define in_vertex (vec4(Position, 1.0))");
                 }
-
-                var inPositionVec3Matcher = IN_VERTEX_VEC3_PATTERN.matcher(src);
-                if (inPositionVec3Matcher.find()) {
+                else if (inPositionVec3Matcher.find()) {
                     src = inPositionVec3Matcher.replaceFirst("#define in_vertex Position");
+                }
+                else {
+                    src = "#define in_vertex Position\n\n" + src;
                 }
 
                 var uvMatcher = IN_UV_PATTERN.matcher(src);
                 if (uvMatcher.find()) {
                     src = uvMatcher.replaceFirst("#define in_uv UV0");
+                }
+                else {
+                    src = "#define in_uv UV0\n\n" + src;
                 }
 
                 return postprocess.apply(src);
@@ -163,8 +172,13 @@ public class Programs {
         );
 
         var shaderSource = new SimpleShaderSource(vertexLocation, vertexSrcProcessed, fragmentLocation, fragmentSrcProcessed);
-        var futurePending = RenderSystem.getDevice().compilePipeline(
-            pipeline, shaderSource, Runnable::run  // TODO
+
+        var pipelineBuilder = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getPipelineBuilder();
+        var futurePending = ((PipelineBuilderExtended) pipelineBuilder).canpipe_compilePipeline(
+            pipeline, shaderSource, Runnable::run, (descriptor) -> {
+                var type = descriptor.resourceType() == Spvc.SPVC_RESOURCE_TYPE_SAMPLED_IMAGE ? "Sampler" : "Uniform";
+                CanPipe.LOGGER.warn(type+" \""+descriptor.name()+"\" isn't handled by program \""+name+"\"");
+            }
         );
 
         var pending = new Pending(futurePending, pipeline);
