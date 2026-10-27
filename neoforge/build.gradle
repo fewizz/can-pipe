@@ -29,9 +29,9 @@ compileJava.source project(":common").sourceSets.main.allSource
 dependencies {
     jarJar implementation("blue.endless:jankson:1.2.3")
 
-    implementation "maven.modrinth:rrtt217-s-hdr-mod:3.2.0-26.2+neoforge"
-    implementation "maven.modrinth:cloth-config:26.2.155+neoforge"
-    implementation "maven.modrinth:modmenu:20.0.1"
+    compileOnly "maven.modrinth:rrtt217-s-hdr-mod:3.2.0-26.2+neoforge"
+    compileOnly "maven.modrinth:cloth-config:26.2.155+neoforge"
+    compileOnly "maven.modrinth:modmenu:20.0.1"
 }
 
 neoForge {

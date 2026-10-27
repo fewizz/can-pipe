@@ -170,11 +170,18 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
 
     @ModifyArg(
         method = "copyTextureToTexture",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/backend/opengl/DirectStateAccess;bindFrameBufferTextures(IIIII)V",
-            ordinal = 0  // src
-        ),
+        at = {
+            @At(
+                value = "INVOKE",
+                target = "Lcom/mojang/renderpearl/backend/opengl/DirectStateAccess;bindFrameBufferTextures(IIIII)V",
+                ordinal = 0  // src
+            ),
+            @At(  // NeoForge
+                value = "INVOKE",
+                target = "Lcom/mojang/renderpearl/backend/opengl/DirectStateAccess;bindFrameBufferTextures(IIIIIII)V",
+                ordinal = 0  // src
+            )
+        },
         index = 3  // mipLevel
     )
     int setSrcLayer(int mipLevel) {
@@ -186,11 +193,18 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
 
     @ModifyArg(
         method = "copyTextureToTexture",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/renderpearl/backend/opengl/DirectStateAccess;bindFrameBufferTextures(IIIII)V",
-            ordinal = 1  // dst
-        ),
+        at = {
+            @At(
+                value = "INVOKE",
+                target = "Lcom/mojang/renderpearl/backend/opengl/DirectStateAccess;bindFrameBufferTextures(IIIII)V",
+                ordinal = 1  // dst
+            ),
+            @At(  // NeoForge
+                value = "INVOKE",
+                target = "Lcom/mojang/renderpearl/backend/opengl/DirectStateAccess;bindFrameBufferTextures(IIIIIII)V",
+                ordinal = 1  // dst
+            )
+        },
         index = 3  // mipLevel
     )
     int setDstLayer(int mipLevel) {
