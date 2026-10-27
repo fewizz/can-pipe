@@ -10,8 +10,10 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.BiConsumer;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -58,6 +60,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.util.Util;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
 
@@ -107,7 +110,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders;
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
-    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, Programs.Pending> programs = new HashMap<>();
+    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>>> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
@@ -418,7 +421,14 @@ public class Pipeline implements AutoCloseable {
         }
 
         // "programs"
-        BiFunction<String, Framebuffer, Programs.Pending> getOrLoadProgram = (String name, Framebuffer fb) -> {
+
+        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
+        Executor localExecutor = runnable -> { tasks.add(runnable); };
+
+        BiFunction<
+            String, Framebuffer,
+            Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>>
+        > getOrLoadProgram = (String name, Framebuffer fb) -> {
             return this.programs.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();
@@ -429,7 +439,8 @@ public class Pipeline implements AutoCloseable {
                     return Programs.load(
                         programJson.get(), location, getShaderSource, glslVersion,
                         options, appliedOptions, shadowMapSize,
-                        fb, this.awareOfDepthRangeChanges
+                        fb, this.awareOfDepthRangeChanges,
+                        localExecutor
                     );
                 } catch (Exception e) {
                     throw new RuntimeException("Couldn't load program \""+name+"\"", e);
@@ -438,50 +449,53 @@ public class Pipeline implements AutoCloseable {
         };
 
         // passes
-        BiConsumer<String, List<Pass>> loadPasses = (name, passes) -> {
+
+        AtomicBoolean passesAreReady = new AtomicBoolean();
+
+        BiFunction<String, List<Pass>, CompletableFuture<Void>> loadPasses = (name, passes) -> {
             JsonObject passesJson = pipelineJson.getObject(name);
-            if (passesJson != null) {
-                for (var passJson : JanksonUtils.listOfObjects(passesJson, "passes")) {
-                    ProgramPass.load(
-                        location,
-                        passJson, optionValueByName,
-                        getOrLoadOptionalFramebuffer,
-                        getOrLoadProgram,
-                        getOrLoadPipelineOrResourcepackTexture
-                    ).ifPresent(passes::add);
-                }
+            if (passesJson == null) {
+                return CompletableFuture.completedFuture(null);
             }
+
+            List<CompletableFuture<Optional<Pass>>> passessFutures = new ArrayList<>();
+
+            for (var passJson : JanksonUtils.listOfObjects(passesJson, "passes")) {
+                passessFutures.add(ProgramPass.load(
+                    location,
+                    passJson, optionValueByName,
+                    getOrLoadOptionalFramebuffer,
+                    getOrLoadProgram,
+                    getOrLoadPipelineOrResourcepackTexture,
+                    localExecutor
+                ));
+            }
+
+            return Util.sequence(passessFutures).thenAcceptAsync(
+                (List<Optional<Pass>> resultingPasses) -> {
+                    passes.addAll(
+                        resultingPasses.stream()
+                            .filter(optional -> optional.isPresent())
+                            .map(optional -> optional.get())
+                            .toList()
+                    );
+                },
+                localExecutor
+            );
         };
 
-        loadPasses.accept("onInit", this.onInitPasses);
-        loadPasses.accept("onResize", this.onResizePasses);
-        loadPasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
-        loadPasses.accept("fabulous", this.fabulousPasses);
-        loadPasses.accept("afterRenderHand", this.afterRenderHandPasses);
-
-        BlockingQueue<Pair<Programs.Pending, Throwable>> pendings = new LinkedBlockingQueue<>();
-
-        this.programs.values().stream()
-            .forEach(f -> f.handle((CompiledRenderPipeline.Pending p, Throwable t) -> {
-                pendings.add(Pair.of(f, t));
-                return null;
-            }));
-
-        while (true) {
-            var unfinishedFutures = this.programs.values().stream()
-                .filter(p -> !p.finishedCompiling())
-                .toList();
-
-            if (unfinishedFutures.isEmpty()) {
-                break;
+        CompletableFuture.allOf(
+            new CompletableFuture[]{
+                loadPasses.apply("onInit", this.onInitPasses),
+                loadPasses.apply("onResize", this.onResizePasses),
+                loadPasses.apply("beforeWorldRender", this.beforeWorldRenderPasses),
+                loadPasses.apply("fabulous", this.fabulousPasses),
+                loadPasses.apply("afterRenderHand", this.afterRenderHandPasses)
             }
+        ).thenRun(() -> passesAreReady.setRelease(true));
 
-            var pendingAndThrowable = pendings.take();
-            if (pendingAndThrowable.getRight() != null) {
-                throw new RuntimeException(pendingAndThrowable.getRight());
-            }
-            var pending = pendingAndThrowable.getLeft();
-            pending.finishCompile();
+        while (!passesAreReady.getAcquire() || !tasks.isEmpty()) {
+            tasks.take().run();
         }
 
     } catch (Exception e) {
@@ -500,7 +514,9 @@ public class Pipeline implements AutoCloseable {
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
 
-        // this.programs.values().forEach(pending -> { pending.close(); });
+        this.programs.values().stream()
+            .map(p -> p.getValue())
+            .forEach(future -> future.thenAccept(CompiledRenderPipeline::close));
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
         this.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);

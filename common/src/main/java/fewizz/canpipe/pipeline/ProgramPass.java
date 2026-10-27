@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector2i;
 import org.lwjgl.system.MemoryStack;
 
@@ -17,8 +20,10 @@ import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout.UniformDescription;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.UniformType;
 
 import blue.endless.jankson.JsonObject;
@@ -34,7 +39,8 @@ import net.minecraft.resources.Identifier;
 public class ProgramPass extends Pass {
 
     private final Framebuffer framebuffer;
-    private final Programs.Pending pending;
+    private final RenderPipeline renderPipeline;
+    private final CompiledRenderPipeline compiledRenderPipeline;
     // Textures (specified in "samplers": ["X", "Y"]) may not exist,
     // and that's ok if program doesn't actually use them
     private final List<AbstractTexture> textures;
@@ -49,24 +55,26 @@ public class ProgramPass extends Pass {
 
     private ProgramPass(
         Identifier id, Framebuffer framebuffer,
-        Programs.Pending pending,
+        RenderPipeline renderPipeline,
+        CompiledRenderPipeline compiledRenderPipeline,
         List<Optional<AbstractTexture>> samplerTextures,
         Vector2i extent, int lod, int layer
     ) {
         super(id);
         this.textures = new ArrayList<>();
-        this.pending = pending;
+        this.renderPipeline = renderPipeline;
+        this.compiledRenderPipeline = compiledRenderPipeline;
 
-        var samplers = this.pending.renderPipeline.getBindGroupLayouts().stream()
+        var samplers = this.renderPipeline.getBindGroupLayouts().stream()
             .flatMap((BindGroupLayout g) -> g.uniforms().stream())
             .filter(u -> u.type() == UniformType.COMBINED_IMAGE_SAMPLER)
             .toList();
 
         if (samplers.size() > samplerTextures.size()) {
-            CanPipe.LOGGER.warn("Program \""+this.pending.renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+id+"\"");
+            CanPipe.LOGGER.warn("Program \""+this.renderPipeline.getLocation()+"\" has more samplers than textures provided by pass \""+id+"\"");
         }
         if (samplers.size() < samplerTextures.size()) {
-            CanPipe.LOGGER.warn("Program \""+this.pending.renderPipeline.getLocation()+"\" has less samplers than textures provided by pass \""+id+"\"");
+            CanPipe.LOGGER.warn("Program \""+this.renderPipeline.getLocation()+"\" has less samplers than textures provided by pass \""+id+"\"");
         }
         for (int i = 0; i < Math.min(samplers.size(), samplerTextures.size()); ++i) {
             String sampler = samplers.get(i).name();
@@ -129,9 +137,9 @@ public class ProgramPass extends Pass {
             descriptorBuilder.withRenderArea(new RenderPass.RenderArea(0, 0, w, h));
 
             try (RenderPass renderPass = commandEncoder.createRenderPass(descriptorBuilder.build())) {
-                renderPass.setPipeline(this.pending.compiledRenderPipeline());
+                renderPass.setPipeline(this.compiledRenderPipeline);
 
-                List<UniformDescription> samplers = this.pending.renderPipeline.getBindGroupLayouts().stream()
+                List<UniformDescription> samplers = this.renderPipeline.getBindGroupLayouts().stream()
                     .flatMap((BindGroupLayout g) -> g.uniforms().stream())
                     .filter(u -> u.type() == UniformType.COMBINED_IMAGE_SAMPLER)
                     .toList();
@@ -152,7 +160,7 @@ public class ProgramPass extends Pass {
                 renderPass.drawIndexed(6, 1, 0, 0, 0);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Couldn't apply program pass \""+this.id+"\" with render pipeline \""+this.pending.renderPipeline+"\"", e);
+            throw new RuntimeException("Couldn't apply program pass \""+this.id+"\" with render pipeline \""+this.renderPipeline+"\"", e);
         }
     }
 
@@ -161,19 +169,20 @@ public class ProgramPass extends Pass {
         this.passUbo.close();
     };
 
-    static Optional<Pass> load(
+    static CompletableFuture<Optional<Pass>> load(
         Identifier pipelineId,
         JsonObject json,
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
-        BiFunction<String, Framebuffer, Programs.Pending> getOrLoadProgram,
-        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture
+        BiFunction<String, Framebuffer, Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>>> getOrLoadProgram,
+        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture,
+        Executor executor
     ) {
         String toggleConfig = json.get(String.class, "toggleConfig");
 
         // pass is disabled, skipping
         if (toggleConfig != null && !(boolean) optionValueByName.apply(toggleConfig)) {
-            return Optional.empty();
+            return CompletableFuture.completedFuture(Optional.empty());
         }
 
         String passName = json.get(String.class, "name");
@@ -183,7 +192,7 @@ public class ProgramPass extends Pass {
         if (framebuffer.isEmpty()) {
             // canvas behaviour
             CanPipe.LOGGER.warn("Couldn't find framebuffer \""+framebufferName +"\", pass \""+passName+"\" will be skipped");
-            return Optional.empty();
+            return CompletableFuture.completedFuture(Optional.empty());
         }
 
         String programName = json.get(String.class, "program");
@@ -191,10 +200,8 @@ public class ProgramPass extends Pass {
         var id = Identifier.fromNamespaceAndPath(pipelineId.getNamespace(), passName);
 
         if (programName.equals("frex_clear")) {
-            return Optional.of(new ClearPass(id, framebuffer.get()));
+            return CompletableFuture.completedFuture(Optional.of(new ClearPass(id, framebuffer.get())));
         }
-
-        var renderPipelinePair = getOrLoadProgram.apply(programName, framebuffer.get());
 
         List<Optional<AbstractTexture>> samplerTextures = new ArrayList<>();
         for (String s : JanksonUtils.listOfStrings(json, "samplerImages")) {
@@ -209,7 +216,16 @@ public class ProgramPass extends Pass {
         int lod = json.getInt("lod", 0);
         int layer = json.getInt("layer", 0);
 
-        return Optional.of(new ProgramPass(id, framebuffer.get(), renderPipelinePair, samplerTextures, extent, lod, layer));
+        var pipelineAndFuture = getOrLoadProgram.apply(programName, framebuffer.get());
+        RenderPipeline renderPipeline = pipelineAndFuture.getKey();
+        var future = pipelineAndFuture.getValue();
+
+        return future.thenApplyAsync(
+            (CompiledRenderPipeline compiledRenderPipeline) -> {
+                return Optional.of(new ProgramPass(id, framebuffer.get(), renderPipeline, compiledRenderPipeline, samplerTextures, extent, lod, layer));
+            },
+            executor
+        );
     }
 
 }

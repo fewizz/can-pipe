@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.util.spvc.Spvc;
 
@@ -40,7 +42,7 @@ public class Programs {
 
     private Programs() {}
 
-    static Pending load(
+    static Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>> load(
         JsonObject json,
         Identifier pipelineLocation,
         Function<Identifier, Optional<String>> getShaderSource,
@@ -49,7 +51,8 @@ public class Programs {
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Optional<Integer> shadowMapSize,
         Framebuffer framebuffer,
-        boolean awareOfDepthRangeChanges
+        boolean awareOfDepthRangeChanges,
+        Executor executor
     ) {
         List<String> samplers = JanksonUtils.listOfStrings(json, "samplers");
 
@@ -175,19 +178,23 @@ public class Programs {
         var shaderSource = new SimpleShaderSource(vertexLocation, vertexSrcProcessed, fragmentLocation, fragmentSrcProcessed);
 
         var pipelineBuilder = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getPipelineBuilder();
-        var futurePending = ((PipelineBuilderExtended) pipelineBuilder).canpipe_compilePipeline(
+
+        var future = ((PipelineBuilderExtended) pipelineBuilder).canpipe_compilePipeline(
             pipeline, shaderSource,
-            Util.backgroundExecutor(), // !!!
+            Util.backgroundExecutor(),  // !!!
             (descriptor) -> {
                 var type = descriptor.resourceType() == Spvc.SPVC_RESOURCE_TYPE_SAMPLED_IMAGE ? "Sampler" : "Uniform";
                 CanPipe.LOGGER.warn(type+" \""+descriptor.name()+"\" isn't handled by program \""+name+"\"");
             },
             true  // autoMapLocations
+        ).thenApplyAsync(
+            pending -> {
+                return pending.finishCompile();
+            },
+            executor
         );
 
-        var pending = new Pending(pipeline);
-        futurePending.handle((p, t) -> t != null ? pending.completeExceptionally(t) : pending.complete(p));
-        return pending;
+        return Pair.of(pipeline, future);
     }
 
     static class Pending extends CompletableFuture<CompiledRenderPipeline.Pending> implements CompiledRenderPipeline.Pending, AutoCloseable {
