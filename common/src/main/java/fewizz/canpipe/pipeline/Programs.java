@@ -29,6 +29,7 @@ import fewizz.canpipe.util.JanksonUtils;
 import fewizz.canpipe.util.SimpleShaderSource;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 
 
 public class Programs {
@@ -175,7 +176,8 @@ public class Programs {
 
         var pipelineBuilder = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getPipelineBuilder();
         var futurePending = ((PipelineBuilderExtended) pipelineBuilder).canpipe_compilePipeline(
-            pipeline, shaderSource, Runnable::run,
+            pipeline, shaderSource,
+            Util.backgroundExecutor(), // !!!
             (descriptor) -> {
                 var type = descriptor.resourceType() == Spvc.SPVC_RESOURCE_TYPE_SAMPLED_IMAGE ? "Sampler" : "Uniform";
                 CanPipe.LOGGER.warn(type+" \""+descriptor.name()+"\" isn't handled by program \""+name+"\"");
@@ -183,23 +185,17 @@ public class Programs {
             true  // autoMapLocations
         );
 
-        var pending = new Pending(futurePending, pipeline);
-        pending.future.join();
-        CompiledRenderPipeline compiledRenderPipeline = pending.finishCompile();
-        if (compiledRenderPipeline == null) {
-            throw new RuntimeException("Couldn't compile pipeline \""+pipelineLocation+"\"");
-        }
+        var pending = new Pending(pipeline);
+        futurePending.handle((p, t) -> t != null ? pending.completeExceptionally(t) : pending.complete(p));
         return pending;
     }
 
-    static class Pending implements CompiledRenderPipeline.Pending, AutoCloseable {
+    static class Pending extends CompletableFuture<CompiledRenderPipeline.Pending> implements CompiledRenderPipeline.Pending, AutoCloseable {
 
-        public final CompletableFuture<CompiledRenderPipeline.Pending> future;
         public final RenderPipeline renderPipeline;
         private CompiledRenderPipeline compiledRenderPipeline = null;
 
-        public Pending(CompletableFuture<CompiledRenderPipeline.Pending> futurePending, RenderPipeline renderPipeline) {
-            this.future = futurePending;
+        public Pending(RenderPipeline renderPipeline) {
             this.renderPipeline = renderPipeline;
         }
 
@@ -208,7 +204,10 @@ public class Programs {
             if (this.compiledRenderPipeline != null) {
                 throw new RuntimeException("Pipeline is already finished compiling");
             }
-            this.compiledRenderPipeline = this.future.resultNow().finishCompile();
+            this.compiledRenderPipeline = this.resultNow().finishCompile();
+            if (this.compiledRenderPipeline == null) {
+                throw new RuntimeException("Couldn't compile pipeline \""+this.renderPipeline.getLocation()+"\"");
+            }
             return this.compiledRenderPipeline;
         }
 
@@ -219,9 +218,13 @@ public class Programs {
             return this.compiledRenderPipeline;
         }
 
+        public boolean finishedCompiling() {
+            return this.compiledRenderPipeline != null;
+        }
+
         @Override
         public void close() {
-            if (!this.future.isDone()) {
+            if (!this.isDone()) {
                 throw new RuntimeException("Future isn't completed");
             }
             if (this.compiledRenderPipeline != null) {

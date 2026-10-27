@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -118,7 +120,7 @@ public class Pipeline implements AutoCloseable {
         afterRenderHandPasses = new ArrayList<>(),
         onResizePasses = new ArrayList<>();
 
-    Pipeline(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) { try {
+    Pipeline(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) throws Exception { try {
         this.location = rawPipeline.location;
         this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
 
@@ -456,6 +458,32 @@ public class Pipeline implements AutoCloseable {
         loadPasses.accept("beforeWorldRender", this.beforeWorldRenderPasses);
         loadPasses.accept("fabulous", this.fabulousPasses);
         loadPasses.accept("afterRenderHand", this.afterRenderHandPasses);
+
+        BlockingQueue<Pair<Programs.Pending, Throwable>> pendings = new LinkedBlockingQueue<>();
+
+        this.programs.values().stream()
+            .forEach(f -> f.handle((CompiledRenderPipeline.Pending p, Throwable t) -> {
+                pendings.add(Pair.of(f, t));
+                return null;
+            }));
+
+        while (true) {
+            var unfinishedFutures = this.programs.values().stream()
+                .filter(p -> !p.finishedCompiling())
+                .toList();
+
+            if (unfinishedFutures.isEmpty()) {
+                break;
+            }
+
+            var pendingAndThrowable = pendings.take();
+            if (pendingAndThrowable.getRight() != null) {
+                throw new RuntimeException(pendingAndThrowable.getRight());
+            }
+            var pending = pendingAndThrowable.getLeft();
+            pending.finishCompile();
+        }
+
     } catch (Exception e) {
         this.close();
         throw e;
@@ -472,7 +500,7 @@ public class Pipeline implements AutoCloseable {
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
 
-        this.programs.values().forEach(pending -> { pending.close(); });
+        // this.programs.values().forEach(pending -> { pending.close(); });
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
         this.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);

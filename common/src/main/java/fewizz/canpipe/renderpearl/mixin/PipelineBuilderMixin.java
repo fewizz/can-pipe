@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -13,6 +14,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -111,6 +113,30 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
         if (autoMapLocations != null && autoMapLocations) {
             ((GlslCompilerExtended) this.compiler).canpipe_enableAutoMapLocationsForPendingCompilation();
         }
+    }
+
+    @ModifyArg(
+        method = "compilePipeline",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/util/concurrent/CompletableFuture;supplyAsync"
+        ),
+        index = 0
+    )
+    Supplier<CompiledRenderPipeline.Pending> onSupplyAsync(Supplier<CompiledRenderPipeline.Pending> supplier) {
+        Boolean autoMapLocations = this.canpipe_autoMapLocations.get();
+        if (autoMapLocations != null && autoMapLocations) {
+            return () -> {  // Wrap, enable autoMapLocations
+                this.canpipe_autoMapLocations.set(true);
+                try {
+                    return supplier.get();
+                }
+                finally {
+                    this.canpipe_autoMapLocations.remove();
+                }
+            };
+        }
+        return supplier;
     }
 
 }
