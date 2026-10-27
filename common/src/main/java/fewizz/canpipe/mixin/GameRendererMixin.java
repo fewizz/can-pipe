@@ -320,10 +320,15 @@ public class GameRendererMixin implements GameRendererExtended {
         p.onAfterWorldRender();
     }
 
-    @Inject(method = "renderLevel", at = @At("TAIL"))
-    void onRenderLevelEnd(CallbackInfo ci) {
+    @Inject(
+        method = "render3dHud",
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;renderItemInHand", shift = Shift.AFTER)
+    )
+    void onRenderLevelEnd(CallbackInfo ci, @Local ProfilerFiller profiler) {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
+
+        profiler.popPush("can-pipe after redner hand");
 
         this.canpipe_isRenderingHand = false;
         p.onAfterRenderHand();
