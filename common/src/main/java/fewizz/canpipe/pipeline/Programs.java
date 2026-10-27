@@ -175,10 +175,12 @@ public class Programs {
 
         var pipelineBuilder = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getPipelineBuilder();
         var futurePending = ((PipelineBuilderExtended) pipelineBuilder).canpipe_compilePipeline(
-            pipeline, shaderSource, Runnable::run, (descriptor) -> {
+            pipeline, shaderSource, Runnable::run,
+            (descriptor) -> {
                 var type = descriptor.resourceType() == Spvc.SPVC_RESOURCE_TYPE_SAMPLED_IMAGE ? "Sampler" : "Uniform";
                 CanPipe.LOGGER.warn(type+" \""+descriptor.name()+"\" isn't handled by program \""+name+"\"");
-            }
+            },
+            true  // autoMapLocations
         );
 
         var pending = new Pending(futurePending, pipeline);

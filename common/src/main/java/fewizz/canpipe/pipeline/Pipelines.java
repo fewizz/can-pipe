@@ -161,7 +161,6 @@ final public class Pipelines implements PreparableReloadListener {
         // Flushes main command buffer
         // Main command buffer could already be created at this point, for example because of texture loading
         RenderSystem.getDevice().createCommandEncoder().submit();
-        // RenderSystem.getDevice().clearPipelineCache();  // TODO
 
         if (raw != null) {
             try {
@@ -169,7 +168,6 @@ final public class Pipelines implements PreparableReloadListener {
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't load pipeline \""+raw.location+"\"", e);
                 Pipelines.loadingError = e;
-                // RenderSystem.getDevice().clearPipelineCache();  // TODO
             }
         }
 

@@ -17,9 +17,9 @@ public interface PipelineBuilderAccessor {
     @Invoker("generateBackendCreateInfo")
     BackendRenderPipeline.CreateInfo canpipe_invokeGenerateBackendCreateInfo(
         RenderPipeline pipeline,
-		ShaderSource shaderSource,
-		ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos,
-		Object2IntOpenHashMap<String> uniformBindings
+        ShaderSource shaderSource,
+        ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos,
+        Object2IntOpenHashMap<String> uniformBindings
     );
 
 }

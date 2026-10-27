@@ -21,7 +21,6 @@ import com.mojang.renderpearl.frontend.FrontendRenderPipeline;
 @Mixin(FrontendRenderPass.class)
 public class FrontendRenderPassMixin {
 
-    // TODO
     @Shadow @Final private List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments;
 
     @ModifyArg(

@@ -25,9 +25,9 @@ import com.mojang.renderpearl.backend.api.BackendRenderPipeline;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
-import fewizz.canpipe.renderpearl.mixin.PipelineBuilderAccessor;
 import fewizz.canpipe.util.SimpleShaderSource;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
@@ -255,11 +255,12 @@ public class MaterialPrograms {
 
         return CompletableFuture.supplyAsync(
             () -> {
-                var renderPipelineCreateInfo = ((PipelineBuilderAccessor) pipelineBuilder).canpipe_invokeGenerateBackendCreateInfo(
+                var renderPipelineCreateInfo = ((PipelineBuilderExtended) pipelineBuilder).canpipe_generateBackendCreateInfo(
                     exampleRenderPipeline,
                     shaderSource,
                     shaderCreateInfos,
-                    uniformBindings
+                    uniformBindings,
+                    true  // autoMapLocations
                 );
                 return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
             },

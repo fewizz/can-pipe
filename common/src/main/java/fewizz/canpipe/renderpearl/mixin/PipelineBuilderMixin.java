@@ -7,10 +7,13 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import org.jspecify.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
@@ -18,33 +21,61 @@ import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.ShaderSource;
+import com.mojang.renderpearl.backend.api.BackendRenderPipeline;
 import com.mojang.renderpearl.backend.api.SpvModule;
+import com.mojang.renderpearl.frontend.shaders.GlslCompiler;
 import com.mojang.renderpearl.frontend.shaders.PipelineBuilder;
 
+import fewizz.canpipe.renderpearl.GlslCompilerExtended;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 
 @Mixin(PipelineBuilder.class)
 public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
 
-    @Unique private ThreadLocal<Consumer<SpvModule.Reflection.Descriptor>> canpipe_onUnhandledUniform = new ThreadLocal<>();
+    @Shadow @Final private GlslCompiler compiler;
 
     @Shadow abstract CompletableFuture<CompiledRenderPipeline.Pending> compilePipeline(RenderPipeline pipeline, ShaderSource shaderSource, Executor executor);
+    @Shadow private BackendRenderPipeline.CreateInfo generateBackendCreateInfo(RenderPipeline pipeline, ShaderSource shaderSource, ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos, Object2IntOpenHashMap<String> uniformBindings) { return null; }
+
+    @Unique private ThreadLocal<Consumer<SpvModule.Reflection.Descriptor>> canpipe_onUnhandledUniform = new ThreadLocal<>();
+    @Unique private ThreadLocal<Boolean> canpipe_autoMapLocations = new ThreadLocal<>();
 
     @Override
     public CompletableFuture<CompiledRenderPipeline.Pending> canpipe_compilePipeline(
         RenderPipeline pipeline, ShaderSource shaderSource, Executor executor,
-        @Nullable Consumer<SpvModule.Reflection.Descriptor> onUnhandledUniform
+        @Nullable Consumer<SpvModule.Reflection.Descriptor> onUnhandledUniform,
+        boolean autoMapLocations
     ) {
         try {
             this.canpipe_onUnhandledUniform.set(onUnhandledUniform);
+            this.canpipe_autoMapLocations.set(autoMapLocations);
             return this.compilePipeline(pipeline, shaderSource, executor);
         }
         finally {
             this.canpipe_onUnhandledUniform.remove();
+            this.canpipe_autoMapLocations.remove();
         }
     }
 
-    @ModifyExpressionValue (
+    @Override
+    public BackendRenderPipeline.CreateInfo canpipe_generateBackendCreateInfo(
+        RenderPipeline pipeline, ShaderSource shaderSource,
+        ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos,
+        Object2IntOpenHashMap<String> uniformBindings,
+        boolean autoMapLocations  // added
+    ) {
+        try {
+            this.canpipe_autoMapLocations.set(autoMapLocations);
+            return this.generateBackendCreateInfo(pipeline, shaderSource, shaderCreateInfos, uniformBindings);
+        }
+        finally {
+            this.canpipe_autoMapLocations.remove();
+        }
+    }
+
+    @ModifyExpressionValue(
         method = "generateBackendCreateInfo",
         at = @At(
             value = "INVOKE",
@@ -66,6 +97,20 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
             }).toList();
         }
         return result;
+    }
+
+    @Inject(
+        method = "generateBackendCreateInfo",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/renderpearl/frontend/shaders/GlslCompiler;compileToSpv"
+        )
+    )
+    void extendedCompileToSpv(CallbackInfoReturnable<BackendRenderPipeline.CreateInfo> ci) {
+        Boolean autoMapLocations = this.canpipe_autoMapLocations.get();
+        if (autoMapLocations != null && autoMapLocations) {
+            ((GlslCompilerExtended) this.compiler).canpipe_enableAutoMapLocationsForPendingCompilation();
+        }
     }
 
 }

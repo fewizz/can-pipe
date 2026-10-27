@@ -736,7 +736,7 @@ public class Pipeline implements AutoCloseable {
                     }
 
                 },
-                (runnable) -> runnable.run()  // TODO?
+                Runnable::run  // TODO?
             ).join().finishCompile();
         });
     }
