@@ -22,7 +22,7 @@ public class ProjectionMixin {
     @Shadow private ProjectionType projectionType = ProjectionType.PERSPECTIVE;
     @Shadow @Final private Matrix4f matrix;
     @Shadow private float zNear;
-	@Shadow private float zFar;
+    @Shadow private float zFar;
 
     @Shadow
     private boolean isMatrixDirty;

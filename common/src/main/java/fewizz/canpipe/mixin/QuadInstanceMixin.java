@@ -16,9 +16,9 @@ import net.minecraft.util.ARGB;
 public class QuadInstanceMixin implements QuadInstanceExtended {
 
     @Shadow private int color0;
-	@Shadow private int color1;
-	@Shadow private int color2;
-	@Shadow private int color3;
+    @Shadow private int color1;
+    @Shadow private int color2;
+    @Shadow private int color3;
 
     @Unique boolean canpipe_separateShade = false;
     @Unique int canpipe_separatedShade0 = -1;

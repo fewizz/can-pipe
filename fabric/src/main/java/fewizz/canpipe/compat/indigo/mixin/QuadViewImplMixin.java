@@ -33,16 +33,6 @@ public abstract class QuadViewImplMixin implements QuadViewExtended {
     @Override public int[] canpipe_getExtraData() { return this.canpipe_extraData; }
     @Override public void canpipe_setExtraData(int[] data) { this.canpipe_extraData = data; }
 
-    // TODO
-    /*@ModifyReturnValue(method = "diffuseShade", at = @At("RETURN"))
-    boolean hasShade(boolean original) {
-        // diffuse lighting is handled by pipeline
-        if (Pipelines.getCurrent() != null) {
-            return false;
-        }
-        return original;
-    }*/
-
     @Inject(
         method = "buffer*",
         at = @At(
