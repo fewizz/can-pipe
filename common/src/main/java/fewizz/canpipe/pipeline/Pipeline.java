@@ -13,10 +13,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
@@ -107,7 +105,7 @@ public class Pipeline implements AutoCloseable {
     public final @Nullable Shadows shadows;
     public final @Nullable FabulousTargets fabulousTargets;
 
-    private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders;
+    private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders = new HashMap<>();
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
     private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>>> programs = new HashMap<>();
@@ -126,6 +124,8 @@ public class Pipeline implements AutoCloseable {
     Pipeline(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) throws Exception { try {
         this.location = rawPipeline.location;
         this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
+
+        Minecraft mc = Minecraft.getInstance();
 
         JsonObject pipelineJson = rawPipeline.getPipelineJson(appliedOptions);
 
@@ -175,7 +175,6 @@ public class Pipeline implements AutoCloseable {
         Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture = (String name) -> {
             AbstractTexture texture = null;
             if (name.contains(":")) {
-                var mc = Minecraft.getInstance();
                 var id = CanPipe.upgradeIdentifier(Identifier.parse(name));
 
                 if (id.equals(Identifier.withDefaultNamespace("textures/environment/moon_phases.png"))) {
@@ -247,9 +246,10 @@ public class Pipeline implements AutoCloseable {
         Map<Identifier, String> shaderSourceCache = new HashMap<>();
 
         Function<Identifier, Optional<String>> getShaderSource = (Identifier location) -> {
+            RenderSystem.assertOnRenderThread();
+
             String source = shaderSourceCache.computeIfAbsent(location, (loc) -> {
                 try {
-                    Minecraft mc = Minecraft.getInstance();
                     var resource = mc.getResourceManager().getResource(location);
                     if (resource.isEmpty()) {
                         return null;
@@ -329,15 +329,28 @@ public class Pipeline implements AutoCloseable {
             samplers.add("frxs_shadowMap");
             samplers.add("frxs_shadowMapTexture");
         }
-        this.materialProgramsLoaders = Stream.of(renderPipelines)
-            .map(renderPipeline -> MaterialPrograms.load(
-                renderPipeline, glslVersion, enablePBR, false, shadowMapSize,
-                materialVertexShaderLocation, materialFragmentShaderLocation,
-                options, appliedOptions, samplers, getShaderSource,
-                0.0F, 0.0F,
-                this.awareOfDepthRangeChanges
-            ))
-            .collect(Collectors.toUnmodifiableMap(loader -> loader.originalRenderPipeline(), loader -> loader));
+
+        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
+        Executor localExecutor = runnable -> { tasks.add(runnable); };
+
+        CompletableFuture<Void> materialProgramLoadersAreReady = CompletableFuture.allOf(
+            Stream.of(renderPipelines)
+            .map(
+                renderPipeline -> MaterialPrograms.load(
+                    renderPipeline, glslVersion, enablePBR, false, shadowMapSize,
+                    materialVertexShaderLocation, materialFragmentShaderLocation,
+                    options, appliedOptions, samplers, getShaderSource,
+                    0.0F, 0.0F,
+                    this.awareOfDepthRangeChanges
+                ).whenCompleteAsync(
+                    (materialProgramLoader, throwable) -> {
+                        if (throwable != null) { throw new RuntimeException(throwable); }
+                        this.materialProgramsLoaders.put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
+                    },
+                    localExecutor
+                )
+            ).toArray(CompletableFuture[]::new)
+        );
 
         var samplerImagesNames = JanksonUtils.listOfStrings(materialProgram, "samplerImages");
         Map<String, AbstractTexture> samplerToTexture = new HashMap<>();
@@ -393,20 +406,9 @@ public class Pipeline implements AutoCloseable {
 
             var vertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "vertexSource"));
             var fragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "fragmentSource"));
-            var materialProgramsLoaders = Stream.of(renderPipelines)
-                .map(renderPipeline -> MaterialPrograms.load(
-                    renderPipeline, glslVersion, enablePBR, true, shadowMapSize,
-                    vertexShaderLocation, fragmentShaderLocation, options, appliedOptions,
-                    List.of(),
-                    getShaderSource,
-                    shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
-                    shadowsJson.getFloat("offsetBiasUnits", 4.0F),
-                    this.awareOfDepthRangeChanges
-                ))
-                .collect(Collectors.toUnmodifiableMap(loader -> loader.originalRenderPipeline(), loader -> loader));
 
             this.shadows = new Shadows(
-                materialProgramsLoaders,
+                new HashMap<>(),
                 framebuffers,
                 cascadeRadii,
                 shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
@@ -415,6 +417,27 @@ public class Pipeline implements AutoCloseable {
                 shadowsJson.getBoolean("allowEntities", true),
                 shadowsJson.getBoolean("allowParticles", true)
             );
+
+            materialProgramLoadersAreReady = CompletableFuture.allOf(materialProgramLoadersAreReady, CompletableFuture.allOf(
+                Stream.of(renderPipelines)
+                .map(
+                    renderPipeline -> MaterialPrograms.load(
+                        renderPipeline, glslVersion, enablePBR, true, shadowMapSize,
+                        vertexShaderLocation, fragmentShaderLocation, options, appliedOptions,
+                        List.of(),
+                        getShaderSource,
+                        shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
+                        shadowsJson.getFloat("offsetBiasUnits", 4.0F),
+                        this.awareOfDepthRangeChanges
+                    ).whenCompleteAsync(
+                        (materialProgramLoader, throwable) -> {
+                            if (throwable != null) { throw new RuntimeException(throwable); }
+                            this.shadows.materialProgramsLoaders.put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
+                        },
+                        localExecutor
+                    )
+                ).toArray(CompletableFuture[]::new)
+            ));
         }
         else {
             this.shadows = null;
@@ -422,13 +445,12 @@ public class Pipeline implements AutoCloseable {
 
         // "programs"
 
-        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
-        Executor localExecutor = runnable -> { tasks.add(runnable); };
-
         BiFunction<
             String, Framebuffer,
             Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>>
         > getOrLoadProgram = (String name, Framebuffer fb) -> {
+            RenderSystem.assertOnRenderThread();
+
             return this.programs.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();
@@ -450,13 +472,9 @@ public class Pipeline implements AutoCloseable {
 
         // passes
 
-        AtomicBoolean passesAreReady = new AtomicBoolean();
-
         BiFunction<String, List<Pass>, CompletableFuture<Void>> loadPasses = (name, passes) -> {
             JsonObject passesJson = pipelineJson.getObject(name);
-            if (passesJson == null) {
-                return CompletableFuture.completedFuture(null);
-            }
+            if (passesJson == null) { return CompletableFuture.completedFuture(null); }
 
             List<CompletableFuture<Optional<Pass>>> passessFutures = new ArrayList<>();
 
@@ -484,17 +502,17 @@ public class Pipeline implements AutoCloseable {
             );
         };
 
-        CompletableFuture.allOf(
-            new CompletableFuture[]{
+        CompletableFuture<Void> passesAreLoaded = CompletableFuture.allOf(
+            new CompletableFuture[] {
                 loadPasses.apply("onInit", this.onInitPasses),
                 loadPasses.apply("onResize", this.onResizePasses),
                 loadPasses.apply("beforeWorldRender", this.beforeWorldRenderPasses),
                 loadPasses.apply("fabulous", this.fabulousPasses),
                 loadPasses.apply("afterRenderHand", this.afterRenderHandPasses)
             }
-        ).thenRun(() -> passesAreReady.setRelease(true));
+        );
 
-        while (!passesAreReady.getAcquire() || !tasks.isEmpty()) {
+        while (!passesAreLoaded.isDone() || !materialProgramLoadersAreReady.isDone() || !tasks.isEmpty()) {
             tasks.take().run();
         }
 

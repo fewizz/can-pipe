@@ -35,12 +35,13 @@ import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 
 public class MaterialPrograms {
 
     private MaterialPrograms() {}
 
-    static MaterialProgramLoader load(
+    static CompletableFuture<MaterialProgramLoader> load(
         RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
@@ -264,8 +265,8 @@ public class MaterialPrograms {
                 );
                 return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
             },
-            Runnable::run  // TODO
-        ).join();
+            Util.backgroundExecutor()
+        );
     }
 
     private static String getVertexSrc(
