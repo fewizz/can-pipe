@@ -14,7 +14,7 @@ public class GuiItemAtlasMixin {
     @ModifyConstant(method = {"<init>", "drawToSlot"}, constant = @Constant(doubleValue = 0.0))
     double replaceDepthClearValue(double value) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null && !p.awareOfDepthRangeChanges) {
+        if (p != null && !p.settings.awareOfDepthRangeChanges()) {
             value = 1.0;
         }
         return value;

@@ -1,7 +1,5 @@
 package fewizz.canpipe.renderpearl.mixin;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL33C;
 import org.slf4j.Logger;

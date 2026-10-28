@@ -376,7 +376,7 @@ public class GameRendererMixin implements GameRendererExtended {
         Pipeline p = Pipelines.getCurrent();
 
         if (p != null) {
-            final Framebuffer fb = p.solidFramebuffer;
+            final Framebuffer fb = p.targets.solid();
 
             RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(label);
             for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }

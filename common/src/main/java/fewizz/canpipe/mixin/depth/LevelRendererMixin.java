@@ -14,7 +14,7 @@ public class LevelRendererMixin {
     @ModifyConstant(method = {"lambda$addMainPass$0", "lambda$render$0"}, constant = @Constant(doubleValue = 0.0))
     double replaceDepthClearValue(double value) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null && !p.awareOfDepthRangeChanges) {
+        if (p != null && !p.settings.awareOfDepthRangeChanges()) {
             value = 1.0;
         }
         return value;

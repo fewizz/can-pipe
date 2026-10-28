@@ -179,7 +179,7 @@ final public class Pipelines implements PreparableReloadListener {
         Minecraft mc = Minecraft.getInstance();
 
         ((GameRendererExtended) mc.gameRenderer).canpipe_setMainRenderTargetOverride(
-            loadedPipeline != null ? loadedPipeline.defaultFramebuffer : null
+            loadedPipeline != null ? loadedPipeline.targets.main() : null
         );
 
         if (Pipelines.current != null) {

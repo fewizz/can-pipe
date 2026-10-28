@@ -66,7 +66,7 @@ public class QuadParticleFeatureRendererMixin {
         )) {
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                Framebuffer fb = p.shadowFramebufferOr(pipeline == RenderPipelines.OPAQUE_PARTICLE ? p.solidFramebuffer : p.translucentParticlesFramebuffer);
+                Framebuffer fb = p.shadowFramebufferOr(pipeline == RenderPipelines.OPAQUE_PARTICLE ? p.targets.solid() : p.targets.translucentParticles());
                 return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
         }
@@ -94,7 +94,7 @@ public class QuadParticleFeatureRendererMixin {
         if (p != null) {
             RenderPipeline renderPipeline = entry.getKey().pipeline();
             Pipeline.bindSpritesExtentsSampler(renderPass, texture.getTextureView());
-            p.bindUniforms(renderPass, renderPipeline == RenderPipelines.OPAQUE_PARTICLE ? p.solidFramebuffer : p.translucentParticlesFramebuffer, true);
+            p.bindUniforms(renderPass, renderPipeline == RenderPipelines.OPAQUE_PARTICLE ? p.targets.solid() : p.targets.translucentParticles(), true);
         }
     }
 

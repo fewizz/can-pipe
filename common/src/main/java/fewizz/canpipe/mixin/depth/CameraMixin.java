@@ -18,7 +18,7 @@ public class CameraMixin {
     )
     boolean canpipe_replaceIsZZeroToZone(boolean value) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null && !p.awareOfDepthRangeChanges) {
+        if (p != null && !p.settings.awareOfDepthRangeChanges()) {
             value = false;
         }
         return value;

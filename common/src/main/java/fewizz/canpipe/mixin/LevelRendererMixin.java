@@ -146,17 +146,17 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         this.canpipe_eyeBlockLight = blockLight / 15.0F;
         this.canpipe_eyeSkyLight = skyLight / 15.0F;
 
-        float brightnessDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.brightnessSmoothingFrames);
-        float rainDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.rainSmoothingFrames);
-        float thunderDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.thunderSmoothingFrames);
+        float brightnessDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.settings.brightnessSmoothingFrames());
+        float rainDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.settings.rainSmoothingFrames());
+        float thunderDelta = 1.0F - (float) Math.pow(Math.E, -1.0 / p.settings.thunderSmoothingFrames());
 
         this.canpipe_smoothedEyeBlockLight =
-            this.canpipe_eyeBlockLight > this.canpipe_smoothedEyeBlockLight && !p.smoothBrightnessBidirectionally
+            this.canpipe_eyeBlockLight > this.canpipe_smoothedEyeBlockLight && !p.settings.smoothBrightnessBidirectionally()
             ? this.canpipe_eyeBlockLight
             : Mth.lerp(brightnessDelta, this.canpipe_smoothedEyeBlockLight, this.canpipe_eyeBlockLight);
 
         this.canpipe_smoothedEyeSkyLight =
-            this.canpipe_eyeSkyLight > this.canpipe_smoothedEyeSkyLight && !p.smoothBrightnessBidirectionally
+            this.canpipe_eyeSkyLight > this.canpipe_smoothedEyeSkyLight && !p.settings.smoothBrightnessBidirectionally()
             ? this.canpipe_eyeSkyLight
             : Mth.lerp(brightnessDelta, this.canpipe_smoothedEyeSkyLight, this.canpipe_eyeSkyLight);
 
@@ -302,7 +302,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Pipeline p = Pipelines.getCurrent();
 
         if (p != null) {
-            final Framebuffer fb = p.shadowFramebufferOr(p.solidFramebuffer);
+            final Framebuffer fb = p.shadowFramebufferOr(p.targets.solid());
 
             RenderPassDescriptor.Builder descriptor = RenderPassDescriptor.builder(label);
             for (var colorAttachment : fb.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
@@ -353,26 +353,26 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) return;
 
-        var renderArea = new RenderPass.RenderArea(0, 0, p.defaultFramebuffer.width, p.defaultFramebuffer.height);
+        var renderArea = new RenderPass.RenderArea(0, 0, p.targets.main().width, p.targets.main().height);
 
         var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
         ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.solidFramebuffer.getDepthTexture(), p.translucentTerrainFramebuffer.getDepthTexture(),
+            p.targets.solid().getDepthTexture(), p.targets.translucentTerrain().getDepthTexture(),
             0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.translucentTerrainFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
+            ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.targets.translucentTerrain().getDepthTextureView()).canpipe_baseArrayLayer()
         );
         ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.solidFramebuffer.getDepthTexture(), p.translucentItemEntityFramebuffer.getDepthTexture(),
+            p.targets.solid().getDepthTexture(), p.targets.translucentItemEntity().getDepthTexture(),
             0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.translucentItemEntityFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
+            ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.targets.translucentItemEntity().getDepthTextureView()).canpipe_baseArrayLayer()
         );
         ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.solidFramebuffer.getDepthTexture(), p.translucentParticlesFramebuffer.getDepthTexture(),
+            p.targets.solid().getDepthTexture(), p.targets.translucentParticles().getDepthTexture(),
             0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.solidFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.translucentParticlesFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer()
+            ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
+            ((GpuTextureViewExtended) p.targets.translucentParticles().getDepthTextureView()).canpipe_baseArrayLayer()
         );
 
         this.executeClassicTransparency(chunkSectionsToRender, featureFrame, null /* no renderpass, see mixins below */);
@@ -394,9 +394,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Translucent Features");
-        for (var colorAttachment : p.solidFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-        descriptor.withDepthAttachment(p.solidFramebuffer.getDepthTextureView());
-        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.solidFramebuffer.width, p.solidFramebuffer.height));
+        for (var colorAttachment : p.targets.solid().colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.targets.solid().getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.targets.solid().width, p.targets.solid().height));
 
         try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
             RenderSystem.bindDefaultUniforms(newRenderPass);
@@ -427,9 +427,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Translucent Terrain");
-        for (var colorAttachment : p.translucentTerrainFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-        descriptor.withDepthAttachment(p.translucentTerrainFramebuffer.getDepthTextureView());
-        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.translucentTerrainFramebuffer.width, p.translucentTerrainFramebuffer.height));
+        for (var colorAttachment : p.targets.translucentTerrain().colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.targets.translucentTerrain().getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.targets.translucentTerrain().width, p.targets.translucentTerrain().height));
 
         try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
             RenderSystem.bindDefaultUniforms(newRenderPass);
@@ -451,9 +451,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Translucent Particles");
-        for (var colorAttachment : p.translucentParticlesFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-        descriptor.withDepthAttachment(p.translucentParticlesFramebuffer.getDepthTextureView());
-        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.translucentParticlesFramebuffer.width, p.translucentParticlesFramebuffer.height));
+        for (var colorAttachment : p.targets.translucentParticles().colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.targets.translucentParticles().getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.targets.translucentParticles().width, p.targets.translucentParticles().height));
 
         try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
             RenderSystem.bindDefaultUniforms(newRenderPass);
@@ -475,9 +475,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Translucent Particles");
-        for (var colorAttachment : p.cloudsFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-        descriptor.withDepthAttachment(p.cloudsFramebuffer.getDepthTextureView());
-        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.cloudsFramebuffer.width, p.cloudsFramebuffer.height));
+        for (var colorAttachment : p.targets.clouds().colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.targets.clouds().getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.targets.clouds().width, p.targets.clouds().height));
 
         try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
             RenderSystem.bindDefaultUniforms(newRenderPass);
@@ -502,9 +502,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "Weather");
-        for (var colorAttachment : p.weatherFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-        descriptor.withDepthAttachment(p.weatherFramebuffer.getDepthTextureView());
-        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.weatherFramebuffer.width, p.weatherFramebuffer.height));
+        for (var colorAttachment : p.targets.weather().colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.targets.weather().getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.targets.weather().width, p.targets.weather().height));
 
         try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
             RenderSystem.bindDefaultUniforms(newRenderPass);
@@ -533,9 +533,9 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (renderPass != null) throw new RuntimeException("Expected renderPass to be null");
 
         var descriptor = RenderPassDescriptor.builder(() -> "World Border");
-        for (var colorAttachment : p.weatherFramebuffer.colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
-        descriptor.withDepthAttachment(p.weatherFramebuffer.getDepthTextureView());
-        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.weatherFramebuffer.width, p.weatherFramebuffer.height));
+        for (var colorAttachment : p.targets.weather().colorTextureViews) { descriptor.withColorAttachment(colorAttachment); }
+        descriptor.withDepthAttachment(p.targets.weather().getDepthTextureView());
+        descriptor.withRenderArea(new RenderPass.RenderArea(0, 0, p.targets.weather().width, p.targets.weather().height));
 
         try (RenderPass newRenderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(descriptor.build())) {
             RenderSystem.bindDefaultUniforms(newRenderPass);

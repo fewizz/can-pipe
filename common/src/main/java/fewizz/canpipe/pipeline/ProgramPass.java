@@ -61,6 +61,7 @@ public class ProgramPass extends Pass {
         Vector2i extent, int lod, int layer
     ) {
         super(id);
+
         this.textures = new ArrayList<>();
         this.renderPipeline = renderPipeline;
         this.compiledRenderPipeline = compiledRenderPipeline;

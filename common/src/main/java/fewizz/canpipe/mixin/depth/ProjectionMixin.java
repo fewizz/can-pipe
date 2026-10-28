@@ -23,9 +23,8 @@ public class ProjectionMixin {
     @Shadow @Final private Matrix4f matrix;
     @Shadow private float zNear;
     @Shadow private float zFar;
+    @Shadow private boolean isMatrixDirty;
 
-    @Shadow
-    private boolean isMatrixDirty;
     @Unique private boolean canpipe_awareOfDepthRangeChanges = false;
 
     @Inject(
@@ -36,7 +35,7 @@ public class ProjectionMixin {
         Pipeline p = Pipelines.getCurrent();
         boolean awareOfDepthRangeChanges =
             p == null ||  // ofc vanilla is aware of depth range changes
-            p.awareOfDepthRangeChanges;
+            p.settings.awareOfDepthRangeChanges();
         if (awareOfDepthRangeChanges != this.canpipe_awareOfDepthRangeChanges) {
             this.zNear += 42;  // Evil :)
         }
@@ -48,7 +47,7 @@ public class ProjectionMixin {
     )
     float replaceNear(float value) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null && !p.awareOfDepthRangeChanges) {
+        if (p != null && !p.settings.awareOfDepthRangeChanges()) {
             value = this.zFar;
         }
         return value;
@@ -59,7 +58,7 @@ public class ProjectionMixin {
     )
     float replaceFar(float value) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null && !p.awareOfDepthRangeChanges) {
+        if (p != null && !p.settings.awareOfDepthRangeChanges()) {
             value = this.zNear;
         }
         return value;
@@ -71,7 +70,7 @@ public class ProjectionMixin {
     )
     boolean replaceIsZZeroToOne(boolean value) {
         Pipeline p = Pipelines.getCurrent();
-        if (p != null && !p.awareOfDepthRangeChanges) {
+        if (p != null && !p.settings.awareOfDepthRangeChanges()) {
             value = false;
         }
         return value;

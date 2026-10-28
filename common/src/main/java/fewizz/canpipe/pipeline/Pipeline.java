@@ -65,6 +65,24 @@ import net.minecraft.world.level.Level;
 
 public class Pipeline implements AutoCloseable {
 
+    public static record Targets(
+        Framebuffer main,
+        Framebuffer solid,
+        Framebuffer translucentTerrain,
+        Framebuffer translucentItemEntity,
+        Framebuffer translucentParticles,
+        Framebuffer weather,
+        Framebuffer clouds
+    ) {}
+
+    public static record FabulousTargets(
+        Framebuffer translucentTerrain,
+        Framebuffer translucentItemEntity,
+        Framebuffer translucentParticles,
+        Framebuffer weather,
+        Framebuffer clouds
+    ) {}
+
     public static record Shadows(
         Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders,
         List<Framebuffer> framebuffers,
@@ -76,34 +94,22 @@ public class Pipeline implements AutoCloseable {
         boolean allowParticles  // isn't used in canvas
     ) {}
 
-    public static record FabulousTargets(
-        Framebuffer translucentTerrainFramebuffer,
-        Framebuffer translucentItemEntityFramebuffer,
-        Framebuffer translucentParticlesFramebuffer,
-        Framebuffer weatherFramebuffer,
-        Framebuffer cloudsFramebuffer
+    public static record Settings(
+        float defaultZenithAngle,
+        boolean smoothBrightnessBidirectionally,
+        int brightnessSmoothingFrames,  // I wonder why smoothing is frame dependent, not time?
+        int rainSmoothingFrames,
+        int thunderSmoothingFrames,
+        boolean awareOfDepthRangeChanges
     ) {}
 
     public final Identifier location;
     public final Map<OptionGroup.Element<?>, Object> appliedOptions;
 
-    public final float defaultZenithAngle;
-    public final boolean smoothBrightnessBidirectionally;
-    public final int brightnessSmoothingFrames;  // I wonder why smoothing is frame dependent, not time?
-    public final int rainSmoothingFrames;
-    public final int thunderSmoothingFrames;
-    public final boolean awareOfDepthRangeChanges;
-
-    public final Framebuffer defaultFramebuffer;
-    public final Framebuffer solidFramebuffer;
-    public final Framebuffer translucentTerrainFramebuffer;
-    public final Framebuffer translucentItemEntityFramebuffer;
-    public final Framebuffer translucentParticlesFramebuffer;
-    public final Framebuffer weatherFramebuffer;
-    public final Framebuffer cloudsFramebuffer;
-
-    public final @Nullable Shadows shadows;
+    public final Settings settings;
+    public final Targets targets;
     public final @Nullable FabulousTargets fabulousTargets;
+    public final @Nullable Shadows shadows;
 
     private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders = new HashMap<>();
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
@@ -141,12 +147,14 @@ public class Pipeline implements AutoCloseable {
             return appliedOptions.getOrDefault(element, element.defaultValue);
         };
 
-        this.defaultZenithAngle = (float) Math.toRadians(JanksonUtils.objectOrEmpty(pipelineJson, "sky").getFloat("defaultZenithAngle", 0.0F));
-        this.smoothBrightnessBidirectionally = pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false);
-        this.brightnessSmoothingFrames = pipelineJson.getInt("brightnessSmoothingFrames", 20);
-        this.rainSmoothingFrames = pipelineJson.getInt("rainSmoothingFrames", 500);
-        this.thunderSmoothingFrames = pipelineJson.getInt("thunderSmoothingFrames", 500);
-        this.awareOfDepthRangeChanges = rawPipeline.awareOfDepthRangeChanges;
+        this.settings = new Settings(
+            (float) Math.toRadians(JanksonUtils.objectOrEmpty(pipelineJson, "sky").getFloat("defaultZenithAngle", 0.0F)),
+            pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false),
+            pipelineJson.getInt("brightnessSmoothingFrames", 20),
+            pipelineJson.getInt("rainSmoothingFrames", 500),
+            pipelineJson.getInt("thunderSmoothingFrames", 500),
+            rawPipeline.awareOfDepthRangeChanges
+        );
 
         // "images"
         Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
@@ -215,21 +223,25 @@ public class Pipeline implements AutoCloseable {
             return result.get();
         };
 
-        this.defaultFramebuffer = getOrLoadFramebuffer.apply(pipelineJson.get(String.class, "defaultFramebuffer"));
-        if (this.defaultFramebuffer.colorTextures.length != 1) {
-            throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" has "+this.defaultFramebuffer.colorTextures.length+" color attachments, should have only one");
+        var defaultFramebuffer = getOrLoadFramebuffer.apply(pipelineJson.get(String.class, "defaultFramebuffer"));
+        if (defaultFramebuffer.colorTextures.length != 1) {
+            throw new RuntimeException("Default framebuffer \""+defaultFramebuffer.name+"\" has "+defaultFramebuffer.colorTextures.length+" color attachments, should have only one");
         }
-        if (this.defaultFramebuffer.getDepthTexture() == null) {
-            throw new RuntimeException("Default framebuffer \""+this.defaultFramebuffer.name+"\" doesn't have depth attachment");
+        if (defaultFramebuffer.getDepthTexture() == null) {
+            throw new RuntimeException("Default framebuffer \""+defaultFramebuffer.name+"\" doesn't have depth attachment");
         }
 
         JsonObject targetsJson = JanksonUtils.objectOrThrow(pipelineJson, "drawTargets");
-        this.solidFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "solidTerrain"));
-        this.translucentTerrainFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentTerrain"));
-        this.translucentItemEntityFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentEntity"));
-        this.translucentParticlesFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentParticles"));
-        this.weatherFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "weather"));
-        this.cloudsFramebuffer = getOrLoadFramebuffer.apply(targetsJson.get(String.class, "clouds"));
+
+        this.targets = new Targets(
+            defaultFramebuffer,
+            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "solidTerrain")),
+            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentTerrain")),
+            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentEntity")),
+            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentParticles")),
+            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "weather")),
+            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "clouds"))
+        );
 
         JsonObject fabulousTargetsJson = pipelineJson.getObject("fabulousTargets");
         this.fabulousTargets = fabulousTargetsJson == null ? null : new FabulousTargets(
@@ -341,7 +353,7 @@ public class Pipeline implements AutoCloseable {
                     materialVertexShaderLocation, materialFragmentShaderLocation,
                     options, appliedOptions, samplers, getShaderSource,
                     0.0F, 0.0F,
-                    this.awareOfDepthRangeChanges
+                    this.settings.awareOfDepthRangeChanges
                 ).whenCompleteAsync(
                     (materialProgramLoader, throwable) -> {
                         if (throwable != null) { throw new RuntimeException(throwable); }
@@ -428,7 +440,7 @@ public class Pipeline implements AutoCloseable {
                         getShaderSource,
                         shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
                         shadowsJson.getFloat("offsetBiasUnits", 4.0F),
-                        this.awareOfDepthRangeChanges
+                        this.settings.awareOfDepthRangeChanges
                     ).whenCompleteAsync(
                         (materialProgramLoader, throwable) -> {
                             if (throwable != null) { throw new RuntimeException(throwable); }
@@ -461,7 +473,7 @@ public class Pipeline implements AutoCloseable {
                     return Programs.load(
                         programJson.get(), location, getShaderSource, glslVersion,
                         options, appliedOptions, shadowMapSize,
-                        fb, this.awareOfDepthRangeChanges,
+                        fb, this.settings.awareOfDepthRangeChanges,
                         localExecutor
                     );
                 } catch (Exception e) {
@@ -642,13 +654,13 @@ public class Pipeline implements AutoCloseable {
         }
 
         int renderTarget = 0;
-        if (framebuffer == this.translucentTerrainFramebuffer) {
+        if (framebuffer == this.targets.translucentTerrain) {
             renderTarget = 1;
         }
-        if (framebuffer == this.translucentItemEntityFramebuffer) {
+        if (framebuffer == this.targets.translucentItemEntity) {
             renderTarget = 2;
         }
-        if (framebuffer == this.translucentParticlesFramebuffer) {
+        if (framebuffer == this.targets.translucentParticles) {
             renderTarget = 3;
         }
 
@@ -674,8 +686,8 @@ public class Pipeline implements AutoCloseable {
 
         result.set(
             (float) (-Math.sin(hourAngle)),
-            (float) ( Math.cos(hourAngle) *  Math.cos(this.defaultZenithAngle)),
-            (float) ( Math.cos(hourAngle) * -Math.sin(this.defaultZenithAngle))
+            (float) ( Math.cos(hourAngle) *  Math.cos(this.settings.defaultZenithAngle)),
+            (float) ( Math.cos(hourAngle) * -Math.sin(this.settings.defaultZenithAngle))
         );
 
         if (ticks > 13000L && ticks < 23000L) {  // moon
@@ -693,7 +705,7 @@ public class Pipeline implements AutoCloseable {
     public CompiledRenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
         if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return null; }
 
-        boolean patchDepth = !this.awareOfDepthRangeChanges;
+        boolean patchDepth = !this.settings.awareOfDepthRangeChanges;
         boolean patchAttachment = (
             colorAttachments.size() != pipeline.getColorTargetStates().size() ||
             (!colorAttachments.isEmpty() && colorAttachments.getFirst().textureView().texture().getFormat() != GpuFormat.RGBA8_UNORM)

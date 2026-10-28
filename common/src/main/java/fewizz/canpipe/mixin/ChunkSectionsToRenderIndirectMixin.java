@@ -46,7 +46,7 @@ public class ChunkSectionsToRenderIndirectMixin {
             canpipe_originalRenderPipeline.set(pipeline);
             MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
-                Framebuffer fb = p.shadowFramebufferOr(pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.solidFramebuffer : p.translucentTerrainFramebuffer);
+                Framebuffer fb = p.shadowFramebufferOr(pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.targets.solid() : p.targets.translucentTerrain());
                 return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
         }
@@ -65,7 +65,7 @@ public class ChunkSectionsToRenderIndirectMixin {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
             RenderPipeline pipeline = canpipe_originalRenderPipeline.get();
-            Framebuffer fb = p.shadowFramebufferOr(pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.solidFramebuffer : p.translucentTerrainFramebuffer);
+            Framebuffer fb = p.shadowFramebufferOr(pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.targets.solid() : p.targets.translucentTerrain());
             Minecraft mc = Minecraft.getInstance();
             @SuppressWarnings("deprecation")
             GpuTextureView blockAtlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS).getTextureView();

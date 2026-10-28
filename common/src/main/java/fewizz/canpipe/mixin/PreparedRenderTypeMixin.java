@@ -69,8 +69,8 @@ public class PreparedRenderTypeMixin {
         if (p != null) {
             var loader = p.getMaterialProgramLoader(renderPipeline);
             if (loader != null) {
-                Pipeline.bindSpritesExtentsSampler(renderPass, p.solidFramebuffer.getColorTextureView());
-                p.bindUniforms(renderPass, p.solidFramebuffer, true);
+                Pipeline.bindSpritesExtentsSampler(renderPass, p.targets.solid().getColorTextureView());
+                p.bindUniforms(renderPass, p.targets.solid(), true);
             }
         }
     }
