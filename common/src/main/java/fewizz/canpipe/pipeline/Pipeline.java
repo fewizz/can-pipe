@@ -114,7 +114,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders = new HashMap<>();
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
-    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>>> programs = new HashMap<>();
+    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompletableFuture<CompiledRenderPipeline>> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
@@ -457,10 +457,7 @@ public class Pipeline implements AutoCloseable {
 
         // "programs"
 
-        BiFunction<
-            String, Framebuffer,
-            Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>>
-        > getOrLoadProgram = (String name, Framebuffer fb) -> {
+        BiFunction<String, Framebuffer, CompletableFuture<CompiledRenderPipeline>> getOrLoadProgram = (String name, Framebuffer fb) -> {
             RenderSystem.assertOnRenderThread();
 
             return this.programs.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
@@ -545,7 +542,6 @@ public class Pipeline implements AutoCloseable {
         this.textures.values().forEach(Texture::close);
 
         this.programs.values().stream()
-            .map(p -> p.getValue())
             .forEach(future -> future.thenAccept(CompiledRenderPipeline::close));
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);

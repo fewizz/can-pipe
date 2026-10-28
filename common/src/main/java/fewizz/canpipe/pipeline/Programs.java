@@ -8,7 +8,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.util.spvc.Spvc;
 
@@ -42,7 +41,7 @@ public class Programs {
 
     private Programs() {}
 
-    static Pair<RenderPipeline, CompletableFuture<CompiledRenderPipeline>> load(
+    static CompletableFuture<CompiledRenderPipeline> load(
         JsonObject json,
         Identifier pipelineLocation,
         Function<Identifier, Optional<String>> getShaderSource,
@@ -179,7 +178,7 @@ public class Programs {
 
         var pipelineBuilder = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getPipelineBuilder();
 
-        var future = ((PipelineBuilderExtended) pipelineBuilder).canpipe_compilePipeline(
+        return ((PipelineBuilderExtended) pipelineBuilder).canpipe_compilePipeline(
             pipeline, shaderSource,
             Util.backgroundExecutor(),  // !!!
             (descriptor) -> {
@@ -193,8 +192,6 @@ public class Programs {
             },
             executor
         );
-
-        return Pair.of(pipeline, future);
     }
 
     static class Pending extends CompletableFuture<CompiledRenderPipeline.Pending> implements CompiledRenderPipeline.Pending, AutoCloseable {
