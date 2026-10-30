@@ -76,11 +76,6 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             this.canpipe_pipelineSettingsButtonXOffset = switchButtonWidth;
             padded = true;
         }
-        if (showWarningSign) {
-            switchButtonWidth -= 20 + (padded ? 5 : 0);
-            this.canpipe_pipelineWarningXOffset = switchButtonWidth;
-            padded = true;
-        }
 
         switchButtonWidth -= padded ? 5 : 0;
 
@@ -247,7 +242,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.setPosition(left, this.getContentY());
                 VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.extractRenderState(graphics, mouseX, mouseY, a);
 
-                VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.setPosition(left + VideoSettingsScreenMixin.this.canpipe_pipelineWarningXOffset, this.getContentY());
+                VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.setPosition(left - 25, this.getContentY());
                 VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign.extractRenderState(graphics, mouseX, mouseY, a);
 
                 VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButton.setPosition(left + VideoSettingsScreenMixin.this.canpipe_pipelineSettingsButtonXOffset, this.getContentY());
