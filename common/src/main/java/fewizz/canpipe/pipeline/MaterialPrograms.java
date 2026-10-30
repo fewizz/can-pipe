@@ -263,6 +263,9 @@ public class MaterialPrograms {
                     uniformBindings,
                     true  // autoMapLocations
                 );
+                if (renderPipelineCreateInfo == null) {
+                    throw new RuntimeException("Couldn't compile material program \""+location+"\"");
+                }
                 return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
             },
             Util.backgroundExecutor()

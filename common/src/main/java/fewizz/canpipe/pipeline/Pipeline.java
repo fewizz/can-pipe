@@ -15,6 +15,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
@@ -58,7 +59,6 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.util.Util;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
 
@@ -114,7 +114,7 @@ public class Pipeline implements AutoCloseable {
     private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders = new HashMap<>();
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
-    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompletableFuture<CompiledRenderPipeline>> programs = new HashMap<>();
+    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompiledRenderPipeline> programs = new HashMap<>();
     private final Map<String, Texture> textures = new HashMap<>();
     private final Map<String, Framebuffer> framebuffers = new HashMap<>();
 
@@ -127,7 +127,7 @@ public class Pipeline implements AutoCloseable {
         afterRenderHandPasses = new ArrayList<>(),
         onResizePasses = new ArrayList<>();
 
-    Pipeline(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) throws Exception { try {
+    Pipeline(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) throws Throwable { try {
         this.location = rawPipeline.location;
         this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
 
@@ -443,8 +443,9 @@ public class Pipeline implements AutoCloseable {
                         this.settings.awareOfDepthRangeChanges
                     ).whenCompleteAsync(
                         (materialProgramLoader, throwable) -> {
-                            if (throwable != null) { throw new RuntimeException(throwable); }
-                            this.shadows.materialProgramsLoaders.put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
+                            if (materialProgramLoader != null) {
+                                this.shadows.materialProgramsLoaders.put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
+                            }
                         },
                         localExecutor
                     )
@@ -457,10 +458,12 @@ public class Pipeline implements AutoCloseable {
 
         // "programs"
 
+        Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompletableFuture<CompiledRenderPipeline>> futurePrograms = new HashMap<>();
+
         BiFunction<String, Framebuffer, CompletableFuture<CompiledRenderPipeline>> getOrLoadProgram = (String name, Framebuffer fb) -> {
             RenderSystem.assertOnRenderThread();
 
-            return this.programs.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
+            return futurePrograms.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
                 List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
                 Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();
                 if (programJson.isEmpty()) {
@@ -471,6 +474,14 @@ public class Pipeline implements AutoCloseable {
                         programJson.get(), location, getShaderSource, glslVersion,
                         options, appliedOptions, shadowMapSize,
                         fb, this.settings.awareOfDepthRangeChanges,
+                        localExecutor
+                    ).thenApplyAsync(
+                        compiledRenderPipeline -> {
+                            if (compiledRenderPipeline == null) {
+                                throw new RuntimeException("Couldn't compile program \""+name+"\"");
+                            }
+                            return compiledRenderPipeline;
+                        },
                         localExecutor
                     );
                 } catch (Exception e) {
@@ -485,49 +496,72 @@ public class Pipeline implements AutoCloseable {
             JsonObject passesJson = pipelineJson.getObject(name);
             if (passesJson == null) { return CompletableFuture.completedFuture(null); }
 
-            List<CompletableFuture<Optional<Pass>>> passessFutures = new ArrayList<>();
+            List<CompletableFuture<Optional<Pass>>> futures = new ArrayList<>();
 
             for (var passJson : JanksonUtils.listOfObjects(passesJson, "passes")) {
-                passessFutures.add(ProgramPass.load(
+                var future = ProgramPass.load(
                     location,
                     passJson, optionValueByName,
                     getOrLoadOptionalFramebuffer,
                     getOrLoadProgram,
                     getOrLoadPipelineOrResourcepackTexture,
                     localExecutor
-                ));
+                );
+                futures.add(future);
             }
 
-            return Util.sequence(passessFutures).thenAcceptAsync(
-                (List<Optional<Pass>> resultingPasses) -> {
+            return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenCompleteAsync(
+                (_, _) -> {
+                    RenderSystem.assertOnRenderThread();
                     passes.addAll(
-                        resultingPasses.stream()
-                            .filter(optional -> optional.isPresent())
-                            .map(optional -> optional.get())
-                            .toList()
-                    );
+                        futures.stream()
+                        .filter(f -> !f.isCompletedExceptionally() && f.join().isPresent())
+                        .map(f -> f.join().get())
+                        .collect(Collectors.toList()));
                 },
                 localExecutor
             );
         };
 
         CompletableFuture<Void> passesAreLoaded = CompletableFuture.allOf(
-            new CompletableFuture[] {
-                loadPasses.apply("onInit", this.onInitPasses),
-                loadPasses.apply("onResize", this.onResizePasses),
-                loadPasses.apply("beforeWorldRender", this.beforeWorldRenderPasses),
-                loadPasses.apply("fabulous", this.fabulousPasses),
-                loadPasses.apply("afterRenderHand", this.afterRenderHandPasses)
-            }
+            loadPasses.apply("onInit", this.onInitPasses),
+            loadPasses.apply("onResize", this.onResizePasses),
+            loadPasses.apply("beforeWorldRender", this.beforeWorldRenderPasses),
+            loadPasses.apply("fabulous", this.fabulousPasses),
+            loadPasses.apply("afterRenderHand", this.afterRenderHandPasses)
         );
 
+        List<Throwable> throwables = new ArrayList<>();
+
         while (!passesAreLoaded.isDone() || !materialProgramLoadersAreReady.isDone() || !tasks.isEmpty()) {
-            tasks.take().run();
+            try {
+                tasks.take().run();
+            } catch (Throwable t) {
+                CanPipe.LOGGER.error("Exception occured while compiling render pipelines", t);
+                throwables.add(t);
+            }
         }
 
-    } catch (Exception e) {
+        if (materialProgramLoadersAreReady.isCompletedExceptionally()) {
+            throwables.add(materialProgramLoadersAreReady.exceptionNow());
+        }
+
+        futurePrograms.forEach((formats, futureCompiledProgram) -> {
+            if (futureCompiledProgram.isCompletedExceptionally()) {
+                throwables.add(futureCompiledProgram.exceptionNow());
+            }
+            else {
+                this.programs.put(formats, futureCompiledProgram.join());
+            }
+        });
+
+        if (!throwables.isEmpty()) {
+            throw throwables.get(0);
+        }
+
+    } catch (Throwable t) {
         this.close();
-        throw e;
+        throw t;
     }}
 
     @Override
@@ -541,12 +575,12 @@ public class Pipeline implements AutoCloseable {
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
 
-        this.programs.values().stream()
-            .forEach(future -> future.thenAccept(CompiledRenderPipeline::close));
+        this.programs.values().stream().forEach(CompiledRenderPipeline::close);
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
         this.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
-        if (shadows != null) {
+
+        if (this.shadows != null) {
             this.shadows.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
         }
     }

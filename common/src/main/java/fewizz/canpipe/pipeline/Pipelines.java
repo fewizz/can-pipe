@@ -165,7 +165,7 @@ final public class Pipelines implements PreparableReloadListener {
         if (raw != null) {
             try {
                 loadedPipeline = new Pipeline(raw, appliedOptions);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 CanPipe.LOGGER.error("Couldn't load pipeline \""+raw.location+"\"", e);
                 Pipelines.loadingError = e;
             }
