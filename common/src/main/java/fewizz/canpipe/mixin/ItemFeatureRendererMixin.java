@@ -54,6 +54,7 @@ public abstract class ItemFeatureRendererMixin extends RenderTypeFeatureRenderer
         VertexConsumer vc = this.getVertexBuilder(renderType);
         if (vc instanceof VertexConsumerExtended vce) {
             vce.canpipe_setScopedGlint(false);
+            vce.canpipe_setScopedMaterialSupplier(null);
         }
     }
 
