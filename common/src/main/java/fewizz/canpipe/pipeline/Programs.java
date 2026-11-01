@@ -185,7 +185,7 @@ public class Programs {
                 var type = descriptor.resourceType() == Spvc.SPVC_RESOURCE_TYPE_SAMPLED_IMAGE ? "Sampler" : "Uniform";
                 CanPipe.LOGGER.warn(type+" \""+descriptor.name()+"\" isn't handled by program \""+name+"\"");
             },
-            true  // autoMapLocations
+            true  // compute locations
         ).thenApplyAsync(
             pending -> {
                 return pending.finishCompile();

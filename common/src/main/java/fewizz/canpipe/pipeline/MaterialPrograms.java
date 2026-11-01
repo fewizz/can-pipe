@@ -261,7 +261,7 @@ public class MaterialPrograms {
                     shaderSource,
                     shaderCreateInfos,
                     uniformBindings,
-                    true  // autoMapLocations
+                    true  // compute locations
                 );
                 if (renderPipelineCreateInfo == null) {
                     throw new RuntimeException("Couldn't compile material program \""+location+"\"");

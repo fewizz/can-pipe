@@ -20,14 +20,14 @@ public interface PipelineBuilderExtended {
     CompletableFuture<CompiledRenderPipeline.Pending> canpipe_compilePipeline(
         RenderPipeline pipeline, ShaderSource shaderSource, Executor executor,
         @Nullable Consumer<SpvModule.Reflection.Descriptor> onUnhandledUniform,
-        boolean autoMapLocations  // added
+        boolean computeLocations  // added
     );
 
     BackendRenderPipeline.CreateInfo canpipe_generateBackendCreateInfo(
         RenderPipeline pipeline, ShaderSource shaderSource,
         ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos,
         Object2IntOpenHashMap<String> uniformBindings,
-        boolean autoMapLocations  // added
+        boolean computeLocations  // added
     );
 
 }
