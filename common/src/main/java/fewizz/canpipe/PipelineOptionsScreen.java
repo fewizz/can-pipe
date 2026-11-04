@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableList;
 
 import fewizz.canpipe.mixininterface.VideoSettingsScreenExtended;
 import fewizz.canpipe.pipeline.OptionGroup;
-import fewizz.canpipe.pipeline.PipelineRaw;
+import fewizz.canpipe.pipeline.RawPipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
@@ -43,13 +43,13 @@ import net.minecraft.resources.Identifier;
 
 public class PipelineOptionsScreen extends OptionsSubScreen {
 
-    private final PipelineRaw raw;
+    private final RawPipeline raw;
     private final Map<OptionGroup.Element<?>, Object> appliedOptions;
     private PipelineOptionsList list;
 
     public PipelineOptionsScreen(
         Screen previousScreen,
-        PipelineRaw raw,
+        RawPipeline raw,
         Map<OptionGroup.Element<?>, Object> appliedOptions
     ) {
         super(previousScreen, Minecraft.getInstance().options, Component.empty());
@@ -91,7 +91,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
         public PipelineOptionsList(
             PipelineOptionsScreen screen,
             Minecraft minecraft,
-            PipelineRaw raw,
+            RawPipeline raw,
             Map<OptionGroup.Element<?>, Object> appliedOptions
         ) {
             super(minecraft, screen.width, screen.layout.getContentHeight(), screen.layout.getHeaderHeight(), 18);
@@ -102,7 +102,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                 for (OptionGroup.Element<?> e : o.elements().values()) {
                     Consumer<Object> applyOptionValue = (@Nullable Object value) -> {
-                        Pipelines.loadAndSetPipeline(raw, Pair.of(e, value));
+                        Pipelines.loadAndApply(raw, Pair.of(e, value));
                         if (
                             minecraft.gui.screen() instanceof PipelineOptionsScreen &&
                             Pipelines.getCurrent() == null

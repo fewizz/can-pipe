@@ -34,7 +34,7 @@ import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.OptionGroup;
 import fewizz.canpipe.pipeline.Pass;
 import fewizz.canpipe.pipeline.Pipeline;
-import fewizz.canpipe.pipeline.PipelineRaw;
+import fewizz.canpipe.pipeline.RawPipeline;
 import fewizz.canpipe.pipeline.Texture;
 import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
@@ -47,7 +47,7 @@ import net.minecraft.resources.Identifier;
 
 public class PipelineLodader {
 
-    public static Pipeline load(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) throws Throwable {
+    public static Pipeline load(RawPipeline rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) throws Throwable {
         Map<String, Texture> textures = new HashMap<>();
         Map<String, Framebuffer> framebuffers = new HashMap<>();
         Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders = new HashMap<>();

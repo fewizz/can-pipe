@@ -23,7 +23,7 @@ public class ShaderManagerMixin {
         But some mods (or, for example, fabric-model-loading-api-v1) can defer "apply" stage of resource listeners ordered before `Pipelines`
         */
         if (Pipelines.getCurrent() != null) {
-            Pipelines.loadAndSetPipeline(null, null, false /* don't override saved selected pipeline */);
+            Pipelines.loadAndApply(null, null, false /* don't override saved selected pipeline */);
         }
     }
 

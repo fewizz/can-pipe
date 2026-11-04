@@ -88,7 +88,7 @@ public class CanPipe {
     }
 
     public static void beforeRendererClose() {
-        Pipelines.setPipeline(null);
+        Pipelines.apply(null);
 
         CanPipe.quadVertexUvBuffer.close();
         CanPipe.whitePixelTextureView.close();

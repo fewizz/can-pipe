@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import fewizz.canpipe.PipelineOptionsScreen;
 import fewizz.canpipe.mixininterface.VideoSettingsScreenExtended;
 import fewizz.canpipe.pipeline.Pipeline;
-import fewizz.canpipe.pipeline.PipelineRaw;
+import fewizz.canpipe.pipeline.RawPipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.TextureFilteringMethod;
@@ -44,7 +44,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
 
     VideoSettingsScreenMixin() { super(null, null, null); }
 
-    @Unique private CycleButton<Optional<PipelineRaw>> canpipe_pipelineSwitchButton = null;
+    @Unique private CycleButton<Optional<RawPipeline>> canpipe_pipelineSwitchButton = null;
     @Unique private ImageWidget canpipe_pipelineWarningSign = null;
     @Unique private Button canpipe_pipelineSettingsButton = null;
 
@@ -55,7 +55,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         assert this.list != null;
 
         Pipeline pipeline = Pipelines.getCurrent();
-        PipelineRaw rawPipeline = Pipelines.getCurrentRaw();
+        RawPipeline rawPipeline = Pipelines.getCurrentRaw();
 
         boolean showPipelineSettingsButton = pipeline != null && !rawPipeline.options.isEmpty();
 
@@ -159,9 +159,9 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
         ) {};
         settingsButton.setTooltip(Tooltip.create(PIPELINE_SETTINGS));
 
-        var pipelineButton = (CycleButton<Optional<PipelineRaw>>) new OptionInstance<Optional<PipelineRaw>>(
+        var pipelineButton = (CycleButton<Optional<RawPipeline>>) new OptionInstance<Optional<RawPipeline>>(
             "canpipe.video_settings.pipeline",
-            (Optional<PipelineRaw> p) -> {  // widget tooltip
+            (Optional<RawPipeline> p) -> {  // widget tooltip
                 var e = Pipelines.getLoadingError();
                 if (e != null) {
                     return Tooltip.create(Component.literal(
@@ -173,7 +173,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 };
                 return null;
             },
-            (Component c, Optional<PipelineRaw> p) -> {  // widget's new message, before on value changed
+            (Component c, Optional<RawPipeline> p) -> {  // widget's new message, before on value changed
                 // no pipeline is loaded
                 if (p.isEmpty()) return NONE;
 
@@ -185,9 +185,9 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 }
                 return component;
             },
-            new OptionInstance.LazyEnum<Optional<PipelineRaw>>(
+            new OptionInstance.LazyEnum<Optional<RawPipeline>>(
                 () -> {  // possible values
-                    var values = new ArrayList<Optional<PipelineRaw>>();
+                    var values = new ArrayList<Optional<RawPipeline>>();
                     values.add(Optional.empty());
                     values.addAll(
                         Pipelines.RAW_PIPELINES.values().stream()
@@ -200,10 +200,10 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
                 null
             ),
             Optional.ofNullable(Pipelines.getCurrentRaw()),  // current widget value
-            (Optional<PipelineRaw> p) -> {  // on widget value changed
+            (Optional<RawPipeline> p) -> {  // on widget value changed
                 if (Pipelines.getCurrentRaw() == p.orElse(null)) return;
 
-                Pipelines.loadAndSetPipeline(p.orElse(null), null);
+                Pipelines.loadAndApply(p.orElse(null), null);
                 // update value to update label
                 // first check is to avoid recursive pipeline loading
                 canpipe_onPipelineLoaded();

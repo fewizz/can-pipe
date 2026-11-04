@@ -20,7 +20,7 @@ public record OptionGroup(  // Or option category
         @Nullable
         public final String descriptionKey;
 
-        Element(String name, T defaultValue, String nameKey, @Nullable String descriptionKey) {
+        public Element(String name, T defaultValue, String nameKey, @Nullable String descriptionKey) {
             this.name = name;
             this.defaultValue = defaultValue;
             this.nameKey = nameKey;
@@ -33,7 +33,7 @@ public record OptionGroup(  // Or option category
 
     public static class BooleanElement extends Element<Boolean> {
 
-        BooleanElement(String name, Boolean defaultValue, String nameKey, String descriptionKey) {
+        public BooleanElement(String name, Boolean defaultValue, String nameKey, String descriptionKey) {
             super(name, defaultValue, nameKey, descriptionKey);
         }
 
@@ -47,7 +47,7 @@ public record OptionGroup(  // Or option category
         public final String prefix;
         public final List<String> choices;
 
-        EnumElement(
+        public EnumElement(
             String name, String defaultValue, String nameKey, String descriptionKey,
             String prefix, List<String> choices
         ) {
@@ -67,7 +67,7 @@ public record OptionGroup(  // Or option category
         public final T min;
         public final T max;
 
-        NumberElement(
+        public NumberElement(
             String name, T defaultValue, String nameKey, String descriptionKey,
             T min, T max
         ) {
@@ -79,7 +79,7 @@ public record OptionGroup(  // Or option category
 
     public static class FloatElement extends NumberElement<Double> {
 
-        FloatElement(
+        public FloatElement(
             String name, Double defaultValue, String nameKey, String descriptionKey,
             Double min, Double max
         ) {
@@ -94,7 +94,7 @@ public record OptionGroup(  // Or option category
 
     public static class IntegerElement extends NumberElement<Long> {
 
-        IntegerElement(
+        public IntegerElement(
             String name, Long defaultValue, String nameKey, String descriptionKey,
             Long min, Long max
         ) {

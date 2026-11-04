@@ -1,36 +1,25 @@
-package fewizz.canpipe.pipeline;
+package fewizz.canpipe.pipeline.load;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
 
 import blue.endless.jankson.Jankson;
-import blue.endless.jankson.JsonArray;
-import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
+import fewizz.canpipe.pipeline.OptionGroup;
+import fewizz.canpipe.pipeline.RawPipeline;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.jspecify.annotations.NonNull;
 
-public class PipelineRaw {
-    public final Identifier location;
-    public final String nameKey;
-    public final String descriptionKey;
-    public final Map<Identifier, OptionGroup> options;
-    private final JsonObject json;
-    public final boolean awareOfDepthRangeChanges;
+public class RawPipelineLoader {
 
-    PipelineRaw(
-        @NonNull JsonObject pipelineJson,
-        @NonNull Identifier pipelineLocation,
-        ResourceManager resourceManager
-    ) {
+    public static RawPipeline load(JsonObject json, Identifier location, ResourceManager resourceManager) {
+
         Map<String, JsonObject> includes = new HashMap<>();
 
         class ProcessIncludes { private static void doProcess(
@@ -54,11 +43,11 @@ public class PipelineRaw {
                 JanksonUtils.mergeJsonObjectB2A(object, toInclude);
             }
         }};
-        ProcessIncludes.doProcess(pipelineLocation, pipelineJson, includes, resourceManager);
+        ProcessIncludes.doProcess(location, json, includes, resourceManager);
 
         Map<Identifier, OptionGroup> options = new LinkedHashMap<>();
 
-        for (var optionsA : JanksonUtils.listOfObjects(pipelineJson, "options")) {
+        for (var optionsA : JanksonUtils.listOfObjects(json, "options")) {
             Identifier includeToken = Identifier.parse(optionsA.get(String.class, "includeToken"));
             var elementsO = optionsA.getObject("elements");
             if (elementsO == null) {  // compat
@@ -121,90 +110,15 @@ public class PipelineRaw {
             options.put(includeToken, new OptionGroup(includeToken, categoryKey, elements));
         }
 
-        pipelineJson.remove("options");
+        json.remove("options");
 
-        this.location = pipelineLocation;
-        this.nameKey = pipelineJson.get(String.class, "nameKey");
-        this.descriptionKey = pipelineJson.get(String.class, "descriptionKey");
+        String nameKey = json.get(String.class, "nameKey");
+        String descriptionKey = json.get(String.class, "descriptionKey");
 
-        this.options = Collections.unmodifiableMap(options);
-        this.json = pipelineJson;
-        this.awareOfDepthRangeChanges = JanksonUtils.booleanOrDefault(json, "awareOfDepthRangeChanges", false);
-    }
+        var unmodifiableOptions = Collections.unmodifiableMap(options);
 
-    public OptionGroup.Element<?> optionElementByName(String name) {
-        for (var o : options.values()) {
-            if (o.elements().containsKey(name)) {
-                return o.elements().get(name);
-            }
-        }
-        return null;
-    }
+        return new RawPipeline(location, json, nameKey, descriptionKey, unmodifiableOptions);
 
-    public JsonObject getPipelineJson(Map<OptionGroup.Element<?>, Object> appliedOptions) {
-        JsonObject pipelineJson = this.json.clone();
-
-        Function<String, Object> optionValueByName = (String name) -> {
-            var element = optionElementByName(name);
-            if (element == null) {
-                return null;
-            }
-            return appliedOptions.getOrDefault(element, element.defaultValue);
-        };
-
-        this.applyOptionsOnJson(pipelineJson, optionValueByName);
-
-        return pipelineJson;
-    }
-
-    private JsonElement applyOptionsOnJson(JsonElement e, Function<String, Object> optionValueByName) {
-        if (e instanceof JsonObject vo) {
-            if (vo.size() == 1 && vo.containsKey("option")) {
-                String optionName = vo.get(String.class, "option");
-                return new JsonPrimitive(optionValueByName.apply(optionName));
-            }
-
-            if (vo.size() == 2 && vo.containsKey("default")) {
-                if (vo.containsKey("option")) {
-                    String optionElementName = (String) ((JsonPrimitive) vo.get("option")).getValue();
-                    var value = optionValueByName.apply(optionElementName);
-                    if (value != null) {
-                        return new JsonPrimitive(value);
-                    }
-                }
-                if (vo.containsKey("optionMap")) {
-                    JsonObject optionO = (JsonObject) vo.get("optionMap");
-                    String optionElementName = optionO.keySet().iterator().next();
-                    var value = optionValueByName.apply(optionElementName);
-                    if (value != null) {
-                        for (JsonObject variant : JanksonUtils.listOfObjects(optionO, optionElementName)) {
-                            if (variant.get(String.class, "from").equals(value)) {
-                                return (JsonPrimitive) variant.get("to");
-                            }
-                        }
-                    }
-                }
-                return vo.get("default");
-            }
-
-            var ifDepthIsReversedElement = vo.remove("ifDepthIsReversed");
-            if (this.awareOfDepthRangeChanges && ifDepthIsReversedElement != null) {
-                if (!(ifDepthIsReversedElement instanceof JsonObject ifDepthIsReversed)) {
-                    throw new RuntimeException("Expected value of \"ifDepthIsReversed\" to be an object");
-                }
-                JanksonUtils.mergeJsonObjectB2A(vo, ifDepthIsReversed);
-            }
-
-            for (var kv : vo.entrySet()) {
-                kv.setValue(this.applyOptionsOnJson(kv.getValue(), optionValueByName));
-            }
-        }
-        if (e instanceof JsonArray va) {
-            for (int i = 0; i < va.size(); ++i) {
-                va.set(i, this.applyOptionsOnJson(va.get(i), optionValueByName));
-            }
-        }
-        return e;
     }
 
 }

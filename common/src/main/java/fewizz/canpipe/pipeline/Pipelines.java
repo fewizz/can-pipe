@@ -33,6 +33,7 @@ import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.pipeline.load.PipelineLodader;
+import fewizz.canpipe.pipeline.load.RawPipelineLoader;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -44,30 +45,21 @@ final public class Pipelines implements PreparableReloadListener {
     public static final Pipelines INSTANCE = new Pipelines();
     private Pipelines() {}
 
-    @Override
-    public @NonNull CompletableFuture<Void> reload(
-        PreparableReloadListener.@NonNull SharedState sharedState,
-        @NonNull Executor loadExecutor,
-        PreparableReloadListener.PreparationBarrier preparationBarrier,
-        @NonNull Executor applyExecutor
-    ) {
-        return CompletableFuture
-            .supplyAsync(() -> Pipelines.readRaw(sharedState.resourceManager()), loadExecutor)
-            .thenCompose(preparationBarrier::wait)
-            .thenAcceptAsync(Pipelines::loadRaw, applyExecutor);
-    }
+    public static final Map<Identifier, RawPipeline> RAW_PIPELINES = new LinkedHashMap<>();
 
-    public static final Map<Identifier, PipelineRaw> RAW_PIPELINES = new LinkedHashMap<>();
-
-    private static @Nullable PipelineRaw currentRaw = null;
+    private static @Nullable RawPipeline currentRaw = null;
     private static @Nullable Throwable loadingError = null;
     private static @Nullable Pipeline current = null;
 
-    public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Pair<OptionGroup.Element<?>, @Nullable Object> optionsChanges) {
-        loadAndSetPipeline(raw, optionsChanges, true /* save selected pipeline, i.e. it will be selected on next game reload */);
+    public static @Nullable Pipeline getCurrent() { return current;}
+    public static @Nullable RawPipeline getCurrentRaw() { return currentRaw; }
+    public static @Nullable Throwable getLoadingError() { return loadingError; }
+
+    public static void loadAndApply(@Nullable RawPipeline raw, Pair<OptionGroup.Element<?>, @Nullable Object> optionsChanges) {
+        loadAndApply(raw, optionsChanges, true /* save selected pipeline, i.e. it will be selected on next game reload */);
     }
 
-    public static void loadAndSetPipeline(@Nullable PipelineRaw raw, Pair<OptionGroup.Element<?>, @Nullable Object> optionsChanges, boolean saveSelectedPipeline) {
+    public static void loadAndApply(@Nullable RawPipeline raw, Pair<OptionGroup.Element<?>, @Nullable Object> optionsChanges, boolean saveSelectedPipeline) {
         assert RenderSystem.isOnRenderThread();
 
         Pipelines.loadingError = null;
@@ -172,11 +164,10 @@ final public class Pipelines implements PreparableReloadListener {
             }
         }
 
-        // "set" part
-        Pipelines.setPipeline(loadedPipeline);
+        Pipelines.apply(loadedPipeline);
     }
 
-    public static void setPipeline(Pipeline loadedPipeline) {
+    public static void apply(Pipeline loadedPipeline) {
         Minecraft mc = Minecraft.getInstance();
 
         ((GameRendererExtended) mc.gameRenderer).canpipe_setMainRenderTargetOverride(
@@ -208,8 +199,17 @@ final public class Pipelines implements PreparableReloadListener {
         ((GuiRendererAccessor) guiRenderer).canpipe_invalidateItemAtlas();
     }
 
-    private static Map<Identifier, PipelineRaw> readRaw(ResourceManager resourceManager) {
-        Map<Identifier, PipelineRaw> rawPipelines = new LinkedHashMap<>();
+    public static void reloadCurrent() {
+        Minecraft mc = Minecraft.getInstance();
+        var resourceManager = mc.getResourceManager();
+        Lights.loadRaw(Lights.readRaw(resourceManager));
+        Materials.loadRaw(Materials.readRaw(resourceManager));
+        MaterialMaps.loadRaw(MaterialMaps.readRaw(resourceManager));
+        Pipelines.loadRaw(Pipelines.readRaw(resourceManager));
+    }
+
+    private static Map<Identifier, RawPipeline> readRaw(ResourceManager resourceManager) {
+        Map<Identifier, RawPipeline> rawPipelines = new LinkedHashMap<>();
         resourceManager.listResources(
             "pipelines",
             (Identifier pipelineLocation) -> {
@@ -219,7 +219,7 @@ final public class Pipelines implements PreparableReloadListener {
         ).forEach((location, pipelineJson) -> {
             try {
                 JsonObject json = Jankson.builder().build().load(pipelineJson.open());
-                rawPipelines.put(location, new PipelineRaw(json, location, resourceManager));
+                rawPipelines.put(location, RawPipelineLoader.load(json, location, resourceManager));
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't parse pipeline json file \""+location+"\"", e);
             }
@@ -227,10 +227,10 @@ final public class Pipelines implements PreparableReloadListener {
         return rawPipelines;
     }
 
-    private static void loadRaw(Map<Identifier, PipelineRaw> rawPipelines) {
+    private static void loadRaw(Map<Identifier, RawPipeline> rawPipelines) {
         RAW_PIPELINES.clear();
         RAW_PIPELINES.putAll(rawPipelines);
-        PipelineRaw selected = null;
+        RawPipeline selected = null;
         if (Files.exists(CanPipe.getConfigurationFilePath())) {
             try {
                 JsonObject readOptions = Jankson.builder().build().load(
@@ -245,28 +245,20 @@ final public class Pipelines implements PreparableReloadListener {
             }
         }
 
-        loadAndSetPipeline(selected, null);
+        loadAndApply(selected, null);
     }
 
-    public static void reloadCurrent() {
-        Minecraft mc = Minecraft.getInstance();
-        var resourceManager = mc.getResourceManager();
-        Lights.loadRaw(Lights.readRaw(resourceManager));
-        Materials.loadRaw(Materials.readRaw(resourceManager));
-        MaterialMaps.loadRaw(MaterialMaps.readRaw(resourceManager));
-        Pipelines.loadRaw(Pipelines.readRaw(resourceManager));
-    }
-
-    public static @Nullable Pipeline getCurrent() {
-        return current;
-    }
-
-    public static @Nullable PipelineRaw getCurrentRaw() {
-        return currentRaw;
-    }
-
-    public static @Nullable Throwable getLoadingError() {
-        return loadingError;
+    @Override
+    public @NonNull CompletableFuture<Void> reload(
+        PreparableReloadListener.@NonNull SharedState sharedState,
+        @NonNull Executor loadExecutor,
+        PreparableReloadListener.PreparationBarrier preparationBarrier,
+        @NonNull Executor applyExecutor
+    ) {
+        return CompletableFuture
+            .supplyAsync(() -> Pipelines.readRaw(sharedState.resourceManager()), loadExecutor)
+            .thenCompose(preparationBarrier::wait)
+            .thenAcceptAsync(Pipelines::loadRaw, applyExecutor);
     }
 
 }
