@@ -52,32 +52,29 @@ public class MaterialProgramLoader implements Closeable {
         this.uniformBindings = uniformBindings;
     }
 
-    public RenderPipeline createRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
-        ((RenderPipelineBuilderExtended) this.pipelineBuilder).canpipe_resetActiveColorTargetStateCount();
-        var colorFormats = formats.getLeft();
-
-        var originalBlendFunction = this.originalRenderPipeline.getColorTargetStates().get(0).blendFunction();
-
-        for (int i = 0; i < colorFormats.size(); ++i) {
-            var format = colorFormats.get(i);
-            if (format != null) {
-                boolean blend = CanPipe.textureFormatSupportsBlend(format);
-                pipelineBuilder.withColorTargetState(
-                    i,
-                    new ColorTargetState(blend ? originalBlendFunction : Optional.empty(), format, ColorTargetState.WRITE_ALL)
-                );
-            }
-            else {
-                pipelineBuilder.withUnusedColorTargetState(i);
-            }
-        }
-
-        return pipelineBuilder.build();
-    }
-
     public CompiledRenderPipeline getOrCreateCompiledRenderPipeline(Pair<List<GpuFormat>, GpuFormat> formats) {
         return this.renderPipelinesPerFormat.computeIfAbsent(formats, (_formats) -> {
-            var pipeline = this.createRenderPipeline(formats);
+
+            ((RenderPipelineBuilderExtended) this.pipelineBuilder).canpipe_resetActiveColorTargetStateCount();
+
+            var colorFormats = formats.getLeft();
+            var originalBlendFunction = this.originalRenderPipeline.getColorTargetStates().get(0).blendFunction();
+
+            for (int i = 0; i < colorFormats.size(); ++i) {
+                var format = colorFormats.get(i);
+                if (format != null) {
+                    boolean blend = CanPipe.textureFormatSupportsBlend(format);
+                    pipelineBuilder.withColorTargetState(
+                        i,
+                        new ColorTargetState(blend ? originalBlendFunction : Optional.empty(), format, ColorTargetState.WRITE_ALL)
+                    );
+                }
+                else {
+                    pipelineBuilder.withUnusedColorTargetState(i);
+                }
+            }
+
+            RenderPipeline renderPipeline = pipelineBuilder.build();
 
             var deviceBackend = ((FrontendGpuDeviceAccessor) RenderSystem.getDevice()).canpipe_getBackend();
 
@@ -92,21 +89,21 @@ public class MaterialProgramLoader implements Closeable {
                 this.createInfo.depthStencilState(),
                 this.createInfo.polygonMode(),
                 this.createInfo.cull(),
-                pipeline.getColorTargetStates(),
+                renderPipeline.getColorTargetStates(),
                 this.createInfo.primitiveTopology()
             ));
 
             var backendPipeline = pending.finishCompile();  // and here
 
             return new FrontendRenderPipeline(
-                pipeline.getLocation().toString(),
+                renderPipeline.getLocation().toString(),
                 backendPipeline,
-                ReferenceLists.unmodifiable(new ReferenceArrayList<>(pipeline.getVertexFormatBindings())),
+                ReferenceLists.unmodifiable(new ReferenceArrayList<>(renderPipeline.getVertexFormatBindings())),
                 Object2IntMaps.unmodifiable(uniformBindings),
-                BindGroupLayout.flattenUniforms(pipeline.getBindGroupLayouts()),
-                ReferenceLists.unmodifiable(new ReferenceArrayList<>(pipeline.getColorTargetStates())),
-                pipeline.wantsDepthTexture(),
-                pipeline.pushConstantSize()
+                BindGroupLayout.flattenUniforms(renderPipeline.getBindGroupLayouts()),
+                ReferenceLists.unmodifiable(new ReferenceArrayList<>(renderPipeline.getColorTargetStates())),
+                renderPipeline.wantsDepthTexture(),
+                renderPipeline.pushConstantSize()
             );
         });
     }

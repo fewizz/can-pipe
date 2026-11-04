@@ -95,8 +95,8 @@ public class MaterialPrograms {
         {
             renderPipelineBuilder
                 .withLocation(location)
-                .withVertexShader(vertexShaderLocation)//vertexShaderIDWithPostfix)
-                .withFragmentShader(fragmentShaderLocation)//fragmentShaderIDWithPostfix)
+                .withVertexShader(vertexShaderLocation)
+                .withFragmentShader(fragmentShaderLocation)
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow && originalRenderPipeline.isCull())
                 .withPrimitiveTopology(originalRenderPipeline.getPrimitiveTopology());

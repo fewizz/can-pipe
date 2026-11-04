@@ -101,7 +101,7 @@ public class Shaders {
         for (
             Pair<String, Int2BooleanFunction> lc :
             (Iterable<Pair<String, Int2BooleanFunction>>)
-            () -> linesIterator(includePreprocessedLinesIterator(
+            () -> commentedLinesIterator(includePreprocessedLinesIterator(
                 source, sourceLocation, preprocessed, options, appliedOptions, getShaderSource
             ))
         ) {
@@ -172,7 +172,7 @@ public class Shaders {
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource
     ) {
-        var linesIter = linesIterator(source.lines().iterator());
+        var linesIter = commentedLinesIterator(source.lines().iterator());
 
         return new Iterator<String>() {
             Iterator<String> innerIter = Collections.emptyIterator();
@@ -280,11 +280,10 @@ public class Shaders {
 
     /** Iteration element is Pair of:<br>
      * 1. line<br>
-     * 2. function, which takes position (int) in the line and returns true
-     * if code is commented out at that position, false otherwise
+     * 2. function, which takes position (int) in the line and returns true if code is commented out at that position, false otherwise
     */
     private static Iterator<Pair<String, Int2BooleanFunction>>
-    linesIterator(Iterator<String> lines) {
+    commentedLinesIterator(Iterator<String> lines) {
         return new Iterator<Pair<String, Int2BooleanFunction>>() {
             boolean prevLineIsCommented = false;
 
@@ -323,7 +322,6 @@ public class Shaders {
                 };
 
                 prevLineIsCommented = isMultilineCommentedAt.get(initialLine.length());
-
                 return Pair.of(line, isCommentedAt);
             }
         };
