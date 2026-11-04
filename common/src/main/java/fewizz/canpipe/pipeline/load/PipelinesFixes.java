@@ -1,4 +1,4 @@
-package fewizz.canpipe.pipeline;
+package fewizz.canpipe.pipeline.load;
 
 import blue.endless.jankson.JsonArray;
 import blue.endless.jankson.JsonElement;

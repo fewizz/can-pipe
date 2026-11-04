@@ -6,10 +6,10 @@ import fewizz.canpipe.renderpearl.CommandEncoderExtended;
 import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import net.minecraft.resources.Identifier;
 
-class ClearPass extends Pass {
+public class ClearPass extends Pass {
     final Framebuffer framebuffer;
 
-    ClearPass(Identifier id, Framebuffer framebuffer) {
+    public ClearPass(Identifier id, Framebuffer framebuffer) {
         super(id);
         this.framebuffer = framebuffer;
     }

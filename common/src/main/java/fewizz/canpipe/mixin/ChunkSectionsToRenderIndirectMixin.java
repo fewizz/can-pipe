@@ -17,7 +17,7 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import fewizz.canpipe.pipeline.Framebuffer;
-import fewizz.canpipe.pipeline.MaterialProgramLoader;
+import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
@@ -44,7 +44,7 @@ public class ChunkSectionsToRenderIndirectMixin {
             pipeline == RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW
         )) {
             canpipe_originalRenderPipeline.set(pipeline);
-            MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
+            MaterialProgramProvider loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
                 Framebuffer fb = p.shadowFramebufferOr(pipeline != RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW ? p.targets.solid() : p.targets.translucentTerrain());
                 return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());

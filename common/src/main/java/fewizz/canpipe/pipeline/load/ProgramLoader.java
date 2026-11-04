@@ -1,4 +1,4 @@
-package fewizz.canpipe.pipeline;
+package fewizz.canpipe.pipeline.load;
 
 import java.util.List;
 import java.util.Map;
@@ -8,7 +8,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import org.jspecify.annotations.Nullable;
 import org.lwjgl.util.spvc.Spvc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -23,6 +22,10 @@ import com.mojang.renderpearl.api.pipeline.UniformType;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.pipeline.Framebuffer;
+import fewizz.canpipe.pipeline.OptionGroup;
+import fewizz.canpipe.pipeline.Shaders;
+import fewizz.canpipe.pipeline.Uniforms;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
@@ -33,15 +36,15 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 
 
-public class Programs {
+public class ProgramLoader {
 
     static final Pattern IN_VERTEX_VEC4_PATTERN = Pattern.compile("in\\s+vec4\\s+in_vertex\\s*;");
     static final Pattern IN_VERTEX_VEC3_PATTERN = Pattern.compile("in\\s+vec3\\s+in_vertex\\s*;");
     static final Pattern IN_UV_PATTERN = Pattern.compile("in\\s+vec2\\s+in_uv\\s*;");
 
-    private Programs() {}
+    private ProgramLoader() {}
 
-    static CompletableFuture<CompiledRenderPipeline> load(
+    public static CompletableFuture<CompiledRenderPipeline> load(
         JsonObject json,
         Identifier pipelineLocation,
         Function<Identifier, Optional<String>> getShaderSource,
@@ -190,50 +193,6 @@ public class Programs {
             pending -> pending.finishCompile(),
             executor
         );
-    }
-
-    static class Pending extends CompletableFuture<CompiledRenderPipeline.Pending> implements CompiledRenderPipeline.Pending, AutoCloseable {
-
-        public final RenderPipeline renderPipeline;
-        private CompiledRenderPipeline compiledRenderPipeline = null;
-
-        public Pending(RenderPipeline renderPipeline) {
-            this.renderPipeline = renderPipeline;
-        }
-
-        @Override
-        public @Nullable CompiledRenderPipeline finishCompile() {
-            if (this.compiledRenderPipeline != null) {
-                throw new RuntimeException("Pipeline is already finished compiling");
-            }
-            this.compiledRenderPipeline = this.resultNow().finishCompile();
-            if (this.compiledRenderPipeline == null) {
-                throw new RuntimeException("Couldn't compile pipeline \""+this.renderPipeline.getLocation()+"\"");
-            }
-            return this.compiledRenderPipeline;
-        }
-
-        public CompiledRenderPipeline compiledRenderPipeline() {
-            if (this.compiledRenderPipeline == null) {
-                throw new RuntimeException("Pipeline isn't finished compiling");
-            }
-            return this.compiledRenderPipeline;
-        }
-
-        public boolean finishedCompiling() {
-            return this.compiledRenderPipeline != null;
-        }
-
-        @Override
-        public void close() {
-            if (!this.isDone()) {
-                throw new RuntimeException("Future isn't completed");
-            }
-            if (this.compiledRenderPipeline != null) {
-                this.compiledRenderPipeline.close();
-            }
-        }
-
     }
 
 }

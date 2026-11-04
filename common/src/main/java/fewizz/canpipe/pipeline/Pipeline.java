@@ -2,27 +2,15 @@ package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 
@@ -38,21 +26,14 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.ShaderSource;
 import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.textures.FilterMode;
-import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 
-import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
-import fewizz.canpipe.renderpearl.GpuDeviceExtended;
-import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
-import fewizz.canpipe.util.JanksonUtils;
-import fewizz.canpipe.util.MoonPhasesTexture;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -85,7 +66,7 @@ public class Pipeline implements AutoCloseable {
     ) {}
 
     public static record Shadows(
-        Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders,
+        Map<RenderPipeline, MaterialProgramProvider> materialProgramsLoaders,
         List<Framebuffer> framebuffers,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
@@ -104,6 +85,25 @@ public class Pipeline implements AutoCloseable {
         boolean awareOfDepthRangeChanges
     ) {}
 
+    public static record Passes(
+        List<Pass> onInit,
+        List<Pass> beforeWorldRender,
+        List<Pass> fabulous,
+        List<Pass> afterRenderHand,
+        List<Pass> onResize
+    ) implements AutoCloseable {
+
+        @Override
+        public void close() {
+            this.onInit.forEach(Pass::close);
+            this.onResize.forEach(Pass::close);
+            this.beforeWorldRender.forEach(Pass::close);
+            this.fabulous.forEach(Pass::close);
+            this.afterRenderHand.forEach(Pass::close);
+        }
+
+    }
+
     public final Identifier location;
     public final Map<OptionGroup.Element<?>, Object> appliedOptions;
 
@@ -112,466 +112,48 @@ public class Pipeline implements AutoCloseable {
     public final @Nullable FabulousTargets fabulousTargets;
     public final @Nullable Shadows shadows;
 
-    private final Map<RenderPipeline, MaterialProgramLoader> materialProgramsLoaders = new HashMap<>();
+    private final Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders;
     private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
 
-    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompiledRenderPipeline> programs = new HashMap<>();
-    private final Map<String, Texture> textures = new HashMap<>();
-    private final Map<String, Framebuffer> framebuffers = new HashMap<>();
+    private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompiledRenderPipeline> programs;
+    private final Map<String, Texture> textures;
+    private final Map<String, Framebuffer> framebuffers;
+    private final Passes passes;
 
     public final Map<Pair<List<GpuFormat>, RenderPipeline>, CompiledRenderPipeline> replacedRenderPipelines = new HashMap<>();
 
-    private final List<Pass>
-        onInitPasses = new ArrayList<>(),
-        beforeWorldRenderPasses = new ArrayList<>(),
-        fabulousPasses = new ArrayList<>(),
-        afterRenderHandPasses = new ArrayList<>(),
-        onResizePasses = new ArrayList<>();
+    public Pipeline(
+        Identifier location,
+        Map<OptionGroup.Element<?>, Object> appliedOptions,
+        Pipeline.Settings settings,
+        Pipeline.Passes passes,
+        Pipeline.Shadows shadows,
+        Pipeline.Targets targets,
+        Pipeline.FabulousTargets fabulousTargets,
+        Map<String, Texture> textures,
+        Map<String, Framebuffer> framebuffers,
+        Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders,
+        Map<String, AbstractTexture> materialProgramSamplerTextures,
+        Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompiledRenderPipeline> programs
+    ) {
+        this.location = location;
+        this.appliedOptions = appliedOptions;
+        this.settings = settings;
+        this.passes = passes;
+        this.shadows = shadows;
+        this.targets = targets;
+        this.fabulousTargets = fabulousTargets;
 
-    Pipeline(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) throws Throwable { try {
-        this.location = rawPipeline.location;
-        this.appliedOptions = Collections.unmodifiableMap(appliedOptions);
-
-        Minecraft mc = Minecraft.getInstance();
-
-        JsonObject pipelineJson = rawPipeline.getPipelineJson(appliedOptions);
-
-        PipelinesFixes.fix(this.location, pipelineJson);
-
-        var options = rawPipeline.options;
-
-        Function<String, Object> optionValueByName = (String name) -> {
-            var element = rawPipeline.optionElementByName(name);
-            if (element == null) {
-                return null;
-            }
-            return appliedOptions.getOrDefault(element, element.defaultValue);
-        };
-
-        this.settings = new Settings(
-            (float) Math.toRadians(JanksonUtils.objectOrEmpty(pipelineJson, "sky").getFloat("defaultZenithAngle", 0.0F)),
-            pipelineJson.getBoolean("smoothBrightnessBidirectionaly", false),
-            pipelineJson.getInt("brightnessSmoothingFrames", 20),
-            pipelineJson.getInt("rainSmoothingFrames", 500),
-            pipelineJson.getInt("thunderSmoothingFrames", 500),
-            rawPipeline.awareOfDepthRangeChanges
-        );
-
-        // "images"
-        Function<String, Optional<Texture>> getOrLoadOptionalTexture = (String name) -> {
-            return Optional.ofNullable(this.textures.computeIfAbsent(name, _name -> {
-                List<JsonObject> textures = JanksonUtils.listOfObjects(pipelineJson, "images");
-                Optional<JsonObject> possibleJson = textures.stream().filter(t -> JanksonUtils.stringOrThrow(t, "name").equals(name)).findFirst();
-                if (possibleJson.isEmpty()) {
-                    return null;
-                }
-                try {
-                    return Texture.load(possibleJson.get(), location);
-                } catch(Exception e) {
-                    throw new RuntimeException("Couldn't load texture \""+name+"\"", e);
-                }
-            }));
-        };
-
-        Function<String, Texture> getOrLoadTexture = (String name) -> {
-            var result = getOrLoadOptionalTexture.apply(name);
-            if (result.isEmpty()) {
-                throw new RuntimeException("Couldn't find texture \""+name+"\"");
-            }
-            return result.get();
-        };
-
-        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture = (String name) -> {
-            AbstractTexture texture = null;
-            if (name.contains(":")) {
-                var id = CanPipe.upgradeIdentifier(Identifier.parse(name));
-
-                if (id.equals(Identifier.withDefaultNamespace("textures/environment/moon_phases.png"))) {
-                    texture = textures.computeIfAbsent(id.toString(), k -> new MoonPhasesTexture());
-                }
-                if (texture == null) {
-                    texture = mc.getTextureManager().getTexture(id);
-                }
-            }
-            else {
-                texture = getOrLoadOptionalTexture.apply(name).orElse(null);
-            }
-            return Optional.ofNullable(texture);
-        };
-
-        // "framebuffers"
-        Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer = (String name) -> {
-            return Optional.ofNullable(this.framebuffers.computeIfAbsent(name, _name -> {
-                try {
-                    List<JsonObject> framebuffers = JanksonUtils.listOfObjects(pipelineJson, "framebuffers");
-                    Optional<JsonObject> possibleJson = framebuffers.stream().filter(t -> JanksonUtils.stringOrThrow(t, "name").equals(name)).findFirst();
-                    if (possibleJson.isEmpty()) {
-                        return null;
-                    }
-                    return Framebuffer.load(possibleJson.get(), location, getOrLoadTexture);
-                }
-                catch (Exception e) {
-                    throw new RuntimeException("Couldn't load framebuffer \""+name+"\"", e);
-                }
-            }));
-        };
-
-        Function<String, Framebuffer> getOrLoadFramebuffer = (String name) -> {
-            var result = getOrLoadOptionalFramebuffer.apply(name);
-            if (result.isEmpty()) {
-                throw new RuntimeException("Couldn't find framebuffer \""+name+"\"");
-            }
-            return result.get();
-        };
-
-        var defaultFramebuffer = getOrLoadFramebuffer.apply(pipelineJson.get(String.class, "defaultFramebuffer"));
-        if (defaultFramebuffer.colorTextures.length != 1) {
-            throw new RuntimeException("Default framebuffer \""+defaultFramebuffer.name+"\" has "+defaultFramebuffer.colorTextures.length+" color attachments, should have only one");
-        }
-        if (defaultFramebuffer.getDepthTexture() == null) {
-            throw new RuntimeException("Default framebuffer \""+defaultFramebuffer.name+"\" doesn't have depth attachment");
-        }
-
-        JsonObject targetsJson = JanksonUtils.objectOrThrow(pipelineJson, "drawTargets");
-
-        this.targets = new Targets(
-            defaultFramebuffer,
-            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "solidTerrain")),
-            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentTerrain")),
-            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentEntity")),
-            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "translucentParticles")),
-            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "weather")),
-            getOrLoadFramebuffer.apply(targetsJson.get(String.class, "clouds"))
-        );
-
-        JsonObject fabulousTargetsJson = pipelineJson.getObject("fabulousTargets");
-        this.fabulousTargets = fabulousTargetsJson == null ? null : new FabulousTargets(
-            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "translucent")),
-            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "entity")),
-            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "particles")),
-            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "weather")),
-            getOrLoadFramebuffer.apply(fabulousTargetsJson.get(String.class, "clouds"))
-        );
-        if (pipelineJson.containsKey("fabulous") && this.fabulousTargets == null) {
-            throw new RuntimeException("To use \"fabulous\" passes, \"fabulousTargets\" should be defined");
-        }
-
-        Map<Identifier, String> shaderSourceCache = new HashMap<>();
-
-        Function<Identifier, Optional<String>> getShaderSource = (Identifier location) -> {
-            RenderSystem.assertOnRenderThread();
-
-            String source = shaderSourceCache.computeIfAbsent(location, (loc) -> {
-                try {
-                    var resource = mc.getResourceManager().getResource(location);
-                    if (resource.isEmpty()) {
-                        return null;
-                    }
-                    return IOUtils.toString(resource.get().openAsReader());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            return Optional.ofNullable(source);
-        };
-
-        // "materialProgram"
-        boolean enablePBR = pipelineJson.getBoolean("enablePBR", false);
-        int glslVersion = pipelineJson.getInt("glslVersion", 330);
-
-        var renderPipelines = new RenderPipeline[] {
-            RenderPipelines.SOLID_BLOCK, RenderPipelines.SOLID_TERRAIN, RenderPipelines.SOLID_TERRAIN_MULTIDRAW,
-            RenderPipelines.CUTOUT_BLOCK, RenderPipelines.CUTOUT_TERRAIN, RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW,
-            RenderPipelines.TRANSLUCENT_BLOCK, RenderPipelines.TRANSLUCENT_TERRAIN, RenderPipelines.TRANSLUCENT_TERRAIN_MULTIDRAW,
-            RenderPipelines.BEACON_BEAM_OPAQUE,
-            RenderPipelines.BEACON_BEAM_TRANSLUCENT,
-
-            RenderPipelines.ARMOR_CUTOUT_NO_CULL,
-            RenderPipelines.ARMOR_DECAL_CUTOUT_NO_CULL,
-
-            RenderPipelines.ENTITY_SOLID,
-            RenderPipelines.ENTITY_SOLID_Z_OFFSET_FORWARD,
-            RenderPipelines.ENTITY_CUTOUT_CULL,
-            RenderPipelines.ENTITY_CUTOUT,
-            RenderPipelines.ENTITY_CUTOUT_Z_OFFSET,
-            RenderPipelines.ENTITY_CUTOUT_DISSOLVE,
-            RenderPipelines.ENTITY_TRANSLUCENT,
-            RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE,
-            RenderPipelines.ENTITY_TRANSLUCENT_CULL,
-            RenderPipelines.BANNER_PATTERN,
-
-            RenderPipelines.ITEM_CUTOUT,
-            RenderPipelines.ITEM_CUTOUT_GLINT,
-            RenderPipelines.ITEM_CUTOUT_GLINT_SPECIAL,
-            RenderPipelines.ITEM_TRANSLUCENT,
-            RenderPipelines.ITEM_TRANSLUCENT_GLINT,
-            RenderPipelines.ITEM_TRANSLUCENT_GLINT_SPECIAL,
-
-            RenderPipelines.EYES,
-
-            RenderPipelines.LEASH,
-
-            RenderPipelines.OPAQUE_PARTICLE,
-            RenderPipelines.TRANSLUCENT_PARTICLE,
-
-            RenderPipelines.TEXT,
-            RenderPipelines.TEXT_POLYGON_OFFSET
-        };
-
-        Framebuffer shadowFramebuffer = null;
-        JsonObject shadowsJson = pipelineJson.getObject("skyShadows");
-
-        if (shadowsJson != null) {
-            shadowFramebuffer = getOrLoadFramebuffer.apply(shadowsJson.get(String.class, "framebuffer"));
-            Objects.requireNonNull(shadowFramebuffer.getDepthTexture());
-            Objects.requireNonNull(shadowFramebuffer.getDepthTextureView());
-        }
-
-        Optional<Integer> shadowMapSize = (
-            shadowFramebuffer != null ?
-            Optional.of(shadowFramebuffer.getDepthTexture().getWidth(0)) :
-            Optional.empty()
-        );
-
-        JsonObject materialProgram = JanksonUtils.objectOrThrow(pipelineJson, "materialProgram");
-        var materialVertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(materialProgram, "vertexSource"));
-        var materialFragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(materialProgram, "fragmentSource"));
-
-        List<String> samplers = new ArrayList<>(JanksonUtils.listOfStrings(materialProgram, "samplers"));
-        if (shadowFramebuffer != null) {
-            samplers.add("frxs_shadowMap");
-            samplers.add("frxs_shadowMapTexture");
-        }
-
-        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
-        Executor localExecutor = runnable -> { tasks.add(runnable); };
-
-        CompletableFuture<Void> materialProgramLoadersAreReady = CompletableFuture.allOf(
-            Stream.of(renderPipelines)
-            .map(
-                renderPipeline -> MaterialPrograms.load(
-                    renderPipeline, glslVersion, enablePBR, false, shadowMapSize,
-                    materialVertexShaderLocation, materialFragmentShaderLocation,
-                    options, appliedOptions, samplers, getShaderSource,
-                    0.0F, 0.0F,
-                    this.settings.awareOfDepthRangeChanges
-                ).whenCompleteAsync(
-                    (materialProgramLoader, throwable) -> {
-                        if (throwable != null) { throw new RuntimeException(throwable); }
-                        this.materialProgramsLoaders.put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
-                    },
-                    localExecutor
-                )
-            ).toArray(CompletableFuture[]::new)
-        );
-
-        var samplerImagesNames = JanksonUtils.listOfStrings(materialProgram, "samplerImages");
-        Map<String, AbstractTexture> samplerToTexture = new HashMap<>();
-        for (int i = 0; i < Math.min(samplers.size(), samplerImagesNames.size()); ++i) {
-            String sampler = samplers.get(i);
-            var samplerImage = getOrLoadPipelineOrResourcepackTexture.apply(samplerImagesNames.get(i));
-            if (samplerImage.isEmpty()) {
-                throw new RuntimeException("Couldn't find material program sampler image \""+samplerImagesNames.get(i)+"\"");
-            }
-            samplerToTexture.put(sampler, samplerImage.get());
-        }
-        if (shadowFramebuffer != null) {
-            String shadowMapTextureName = shadowFramebuffer.getDepthTexture().getLabel();
-            Optional<AbstractTexture> shadowMapTexture = getOrLoadPipelineOrResourcepackTexture.apply(shadowMapTextureName);
-            if (shadowMapTexture.isEmpty()) {
-                throw new RuntimeException("Couldn't find material program shadowmap image \""+shadowMapTextureName+"\"");
-            }
-            samplerToTexture.put("frxs_shadowMap", shadowMapTexture.get());
-            samplerToTexture.put("frxs_shadowMapTexture", shadowMapTexture.get());
-        }
-        this.materialProgramSamplerTextures = samplerToTexture;
-
-        if (shadowsJson != null) {
-            // Instead of one shadow framebuffer, we create N (= number of cascades) framebuffers for different layers
-            List<Framebuffer> framebuffers = new ArrayList<>();
-            int baseArrayLayer = ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_baseArrayLayer();
-            int layerCount = ((GpuTextureViewExtended) shadowFramebuffer.getDepthTextureView()).canpipe_layerCount();
-            var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
-            for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
-                final int cascade = i;
-                GpuTexture shadowMapTexture = shadowFramebuffer.getDepthTexture();
-                GpuTextureView shadowMapTextureView = shadowFramebuffer.getDepthTextureView();
-                Framebuffer fb = new Framebuffer(
-                    location,
-                    shadowFramebuffer.name+"_"+(cascade+1),
-                    (idx) -> { throw new RuntimeException("Color texture getter should not be called"); },
-                    new Vector4f[]{},  // clear colors
-                    () -> {
-                        var shadowMapCascadeTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
-                            shadowMapTexture,
-                            shadowMapTextureView.baseMipLevel(),
-                            shadowMapTextureView.mipLevels(),
-                            baseArrayLayer + layerCount * cascade,
-                            layerCount
-                        );
-                        return Pair.of(shadowMapTexture, shadowMapCascadeTextureView);
-                    },
-                    shadowFramebuffer.depthTextureClearDepth
-                );
-                framebuffers.add(fb);
-                this.framebuffers.put(fb.name, fb);
-            }
-
-            var vertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "vertexSource"));
-            var fragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "fragmentSource"));
-
-            this.shadows = new Shadows(
-                new HashMap<>(),
-                framebuffers,
-                cascadeRadii,
-                shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
-                shadowsJson.getFloat("offsetBiasUnits", 4.0F),
-                shadowsJson.getBoolean("supportForwardRender", true),
-                shadowsJson.getBoolean("allowEntities", true),
-                shadowsJson.getBoolean("allowParticles", true)
-            );
-
-            materialProgramLoadersAreReady = CompletableFuture.allOf(materialProgramLoadersAreReady, CompletableFuture.allOf(
-                Stream.of(renderPipelines)
-                .map(
-                    renderPipeline -> MaterialPrograms.load(
-                        renderPipeline, glslVersion, enablePBR, true, shadowMapSize,
-                        vertexShaderLocation, fragmentShaderLocation, options, appliedOptions,
-                        List.of(),
-                        getShaderSource,
-                        shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
-                        shadowsJson.getFloat("offsetBiasUnits", 4.0F),
-                        this.settings.awareOfDepthRangeChanges
-                    ).whenCompleteAsync(
-                        (materialProgramLoader, throwable) -> {
-                            if (materialProgramLoader != null) {
-                                this.shadows.materialProgramsLoaders.put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
-                            }
-                        },
-                        localExecutor
-                    )
-                ).toArray(CompletableFuture[]::new)
-            ));
-        }
-        else {
-            this.shadows = null;
-        }
-
-        // "programs"
-
-        Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompletableFuture<CompiledRenderPipeline>> futurePrograms = new HashMap<>();
-
-        BiFunction<String, Framebuffer, CompletableFuture<CompiledRenderPipeline>> getOrLoadProgram = (String name, Framebuffer fb) -> {
-            RenderSystem.assertOnRenderThread();
-
-            return futurePrograms.computeIfAbsent(Pair.of(name, fb.getFormats()), _name -> {
-                List<JsonObject> programs = JanksonUtils.listOfObjects(pipelineJson, "programs");
-                Optional<JsonObject> programJson = programs.stream().filter(program -> JanksonUtils.stringOrThrow(program, "name").equals(name)).findFirst();
-                if (programJson.isEmpty()) {
-                    throw new RuntimeException("Couldn't find program \""+name+"\"");
-                }
-                try {
-                    return Programs.load(
-                        programJson.get(), location, getShaderSource, glslVersion,
-                        options, appliedOptions, shadowMapSize,
-                        fb, this.settings.awareOfDepthRangeChanges,
-                        localExecutor
-                    ).thenApplyAsync(
-                        compiledRenderPipeline -> {
-                            if (compiledRenderPipeline == null) {
-                                throw new RuntimeException("Couldn't compile program \""+name+"\"");
-                            }
-                            return compiledRenderPipeline;
-                        },
-                        localExecutor
-                    );
-                } catch (Exception e) {
-                    throw new RuntimeException("Couldn't load program \""+name+"\"", e);
-                }
-            });
-        };
-
-        // passes
-
-        BiFunction<String, List<Pass>, CompletableFuture<Void>> loadPasses = (name, passes) -> {
-            JsonObject passesJson = pipelineJson.getObject(name);
-            if (passesJson == null) { return CompletableFuture.completedFuture(null); }
-
-            List<CompletableFuture<Optional<Pass>>> futures = new ArrayList<>();
-
-            for (var passJson : JanksonUtils.listOfObjects(passesJson, "passes")) {
-                var future = ProgramPass.load(
-                    location,
-                    passJson, optionValueByName,
-                    getOrLoadOptionalFramebuffer,
-                    getOrLoadProgram,
-                    getOrLoadPipelineOrResourcepackTexture,
-                    localExecutor
-                );
-                futures.add(future);
-            }
-
-            return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenCompleteAsync(
-                (_, _) -> {
-                    RenderSystem.assertOnRenderThread();
-                    passes.addAll(
-                        futures.stream()
-                        .filter(f -> !f.isCompletedExceptionally() && f.join().isPresent())
-                        .map(f -> f.join().get())
-                        .collect(Collectors.toList()));
-                },
-                localExecutor
-            );
-        };
-
-        CompletableFuture<Void> passesAreLoaded = CompletableFuture.allOf(
-            loadPasses.apply("onInit", this.onInitPasses),
-            loadPasses.apply("onResize", this.onResizePasses),
-            loadPasses.apply("beforeWorldRender", this.beforeWorldRenderPasses),
-            loadPasses.apply("fabulous", this.fabulousPasses),
-            loadPasses.apply("afterRenderHand", this.afterRenderHandPasses)
-        );
-
-        List<Throwable> throwables = new ArrayList<>();
-
-        while (!passesAreLoaded.isDone() || !materialProgramLoadersAreReady.isDone() || !tasks.isEmpty()) {
-            try {
-                tasks.take().run();
-            } catch (Throwable t) {
-                CanPipe.LOGGER.error("Exception occured while compiling render pipelines", t);
-                throwables.add(t);
-            }
-        }
-
-        if (materialProgramLoadersAreReady.isCompletedExceptionally()) {
-            throwables.add(materialProgramLoadersAreReady.exceptionNow());
-        }
-
-        futurePrograms.forEach((formats, futureCompiledProgram) -> {
-            if (futureCompiledProgram.isCompletedExceptionally()) {
-                throwables.add(futureCompiledProgram.exceptionNow());
-            }
-            else {
-                this.programs.put(formats, futureCompiledProgram.join());
-            }
-        });
-
-        if (!throwables.isEmpty()) {
-            throw throwables.get(0);
-        }
-
-    } catch (Throwable t) {
-        this.close();
-        throw t;
-    }}
+        this.textures = textures;
+        this.framebuffers = framebuffers;
+        this.materialProgramProviders = materialProgramProviders;
+        this.materialProgramSamplerTextures = materialProgramSamplerTextures;
+        this.programs = programs;
+    }
 
     @Override
     public void close() {
-        this.onInitPasses.forEach(Pass::close);
-        this.onResizePasses.forEach(Pass::close);
-        this.beforeWorldRenderPasses.forEach(Pass::close);
-        this.fabulousPasses.forEach(Pass::close);
-        this.afterRenderHandPasses.forEach(Pass::close);
+        this.passes.close();
 
         this.framebuffers.values().forEach(Framebuffer::destroyBuffers);
         this.textures.values().forEach(Texture::close);
@@ -579,10 +161,10 @@ public class Pipeline implements AutoCloseable {
         this.programs.values().stream().forEach(CompiledRenderPipeline::close);
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
-        this.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
+        this.materialProgramProviders.values().forEach(MaterialProgramProvider::close);
 
         if (this.shadows != null) {
-            this.shadows.materialProgramsLoaders.values().forEach(MaterialProgramLoader::close);
+            this.shadows.materialProgramsLoaders.values().forEach(MaterialProgramProvider::close);
         }
     }
 
@@ -597,18 +179,18 @@ public class Pipeline implements AutoCloseable {
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
         if (runInitPasses) {
-            for (Pass pass : this.onInitPasses) {
+            for (Pass pass : this.passes.onInit) {
                 pass.apply(commandEncoder);
             }
         }
 
         if (runResizePasses) {
-            for (Pass pass : this.onResizePasses) {
+            for (Pass pass : this.passes.onResize) {
                 pass.apply(commandEncoder);
             }
         }
 
-        for (Pass pass : this.beforeWorldRenderPasses) {
+        for (Pass pass : this.passes.beforeWorldRender) {
             pass.apply(commandEncoder);
         }
 
@@ -620,7 +202,7 @@ public class Pipeline implements AutoCloseable {
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
-        for (Pass pass : this.fabulousPasses) {
+        for (Pass pass : this.passes.fabulous) {
             pass.apply(commandEncoder);
         }
 
@@ -632,21 +214,21 @@ public class Pipeline implements AutoCloseable {
 
         CommandEncoder commandEncoder = RenderSystem.getDevice().createCommandEncoder();
 
-        for (Pass pass : this.afterRenderHandPasses) {
+        for (Pass pass : this.passes.afterRenderHand) {
             pass.apply(commandEncoder);
         }
 
         Profiler.get().pop();
     }
 
-    public MaterialProgramLoader getMaterialProgramLoader(RenderPipeline renderPipeline) {
+    public MaterialProgramProvider getMaterialProgramLoader(RenderPipeline renderPipeline) {
         Minecraft mc = Minecraft.getInstance();
 
         if (this.shadows != null && ((LevelRendererExtended) mc.levelRenderer).canpipe_getCurrentShadowCascadeIdx() >= 0) {
             return this.shadows.materialProgramsLoaders().get(renderPipeline);
         }
         else {
-            return this.materialProgramsLoaders.get(renderPipeline);
+            return this.materialProgramProviders.get(renderPipeline);
         }
     }
 

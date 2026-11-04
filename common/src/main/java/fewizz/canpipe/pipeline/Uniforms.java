@@ -179,7 +179,7 @@ public class Uniforms {
         UniformBufferStruct struct, GpuBuffer ubo, Runnable updater
     ) {};
 
-    static final Map<String, ExternalUBO> EXTERNAL_UBOS = new HashMap<>();
+    public static final Map<String, ExternalUBO> EXTERNAL_UBOS = new HashMap<>();
 
 
     public static void update(

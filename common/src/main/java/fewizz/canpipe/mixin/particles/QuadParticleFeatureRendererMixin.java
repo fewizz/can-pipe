@@ -20,7 +20,7 @@ import com.mojang.renderpearl.api.vertex.VertexFormat;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
-import fewizz.canpipe.pipeline.MaterialProgramLoader;
+import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Minecraft;
@@ -64,7 +64,7 @@ public class QuadParticleFeatureRendererMixin {
             pipeline == RenderPipelines.OPAQUE_PARTICLE ||
             pipeline == RenderPipelines.TRANSLUCENT_PARTICLE
         )) {
-            MaterialProgramLoader loader = p.getMaterialProgramLoader(pipeline);
+            MaterialProgramProvider loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
                 Framebuffer fb = p.shadowFramebufferOr(pipeline == RenderPipelines.OPAQUE_PARTICLE ? p.targets.solid() : p.targets.translucentParticles());
                 return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());

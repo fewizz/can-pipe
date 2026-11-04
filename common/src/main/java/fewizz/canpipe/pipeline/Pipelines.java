@@ -32,6 +32,7 @@ import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
+import fewizz.canpipe.pipeline.load.PipelineLodader;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -164,7 +165,7 @@ final public class Pipelines implements PreparableReloadListener {
 
         if (raw != null) {
             try {
-                loadedPipeline = new Pipeline(raw, appliedOptions);
+                loadedPipeline = PipelineLodader.load(raw, appliedOptions);
             } catch (Throwable e) {
                 CanPipe.LOGGER.error("Couldn't load pipeline \""+raw.location+"\"", e);
                 Pipelines.loadingError = e;

@@ -28,7 +28,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceLists;
 import net.minecraft.resources.Identifier;
 
-public class MaterialProgramLoader implements Closeable {
+public class MaterialProgramProvider implements Closeable {
 
     @SuppressWarnings("unused") private final Identifier id;
     private final RenderPipeline.Builder pipelineBuilder;
@@ -39,7 +39,7 @@ public class MaterialProgramLoader implements Closeable {
     private final ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos;
     private final Object2IntOpenHashMap<String> uniformBindings;
 
-    MaterialProgramLoader(
+    public MaterialProgramProvider(
         Identifier id, RenderPipeline.Builder pipelineBuilder, RenderPipeline originalRenderPipeline,
         BackendRenderPipeline.CreateInfo createInfo, ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos, Object2IntOpenHashMap<String> uniformBindings
     ) {

@@ -40,7 +40,7 @@ public class Shaders {
         "^\\s*(#if)\\s+("+FLOAT_PATTERN.pattern()+"|[[A-Za-z][0-9]_]+)\\s+([<>]|!=|==)\\s+("+FLOAT_PATTERN.pattern()+"|[[A-Za-z][0-9]_]+)"
     );
 
-    static String process(
+    public static String process(
         Identifier location, String source, ShaderType type, int version,
         Map<Identifier, OptionGroup> options,
         Map<OptionGroup.Element<?>, Object> appliedOptions,

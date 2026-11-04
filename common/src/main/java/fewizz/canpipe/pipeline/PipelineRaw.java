@@ -27,9 +27,9 @@ public class PipelineRaw {
     public final boolean awareOfDepthRangeChanges;
 
     PipelineRaw(
-            @NonNull JsonObject pipelineJson,
-            @NonNull Identifier pipelineLocation,
-            ResourceManager resourceManager
+        @NonNull JsonObject pipelineJson,
+        @NonNull Identifier pipelineLocation,
+        ResourceManager resourceManager
     ) {
         Map<String, JsonObject> includes = new HashMap<>();
 

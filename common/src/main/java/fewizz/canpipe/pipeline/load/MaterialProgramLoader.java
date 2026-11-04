@@ -1,4 +1,4 @@
-package fewizz.canpipe.pipeline;
+package fewizz.canpipe.pipeline.load;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,6 +26,10 @@ import com.mojang.renderpearl.backend.api.BackendRenderPipeline;
 import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
+import fewizz.canpipe.pipeline.MaterialProgramProvider;
+import fewizz.canpipe.pipeline.OptionGroup;
+import fewizz.canpipe.pipeline.Shaders;
+import fewizz.canpipe.pipeline.Uniforms;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
@@ -38,11 +42,9 @@ import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 
-public class MaterialPrograms {
+public class MaterialProgramLoader {
 
-    private MaterialPrograms() {}
-
-    static CompletableFuture<MaterialProgramLoader> load(
+    public static CompletableFuture<MaterialProgramProvider> load(
         RenderPipeline originalRenderPipeline,
         int glslVersion,
         boolean enablePBR,
@@ -267,7 +269,7 @@ public class MaterialPrograms {
                 if (renderPipelineCreateInfo == null) {
                     throw new RuntimeException("Couldn't compile material program \""+location+"\"");
                 }
-                return new MaterialProgramLoader(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
+                return new MaterialProgramProvider(location, renderPipelineBuilder, originalRenderPipeline, renderPipelineCreateInfo, shaderCreateInfos, uniformBindings);
             },
             Util.backgroundExecutor()
         );
