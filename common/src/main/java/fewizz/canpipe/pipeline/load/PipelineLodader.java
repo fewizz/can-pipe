@@ -373,9 +373,9 @@ public class PipelineLodader {
                         shadowsJson.getFloat("offsetBiasUnits", 4.0F),
                         settingsForLambda.awareOfDepthRangeChanges()
                     ).whenCompleteAsync(
-                        (materialProgramLoader, throwable) -> {
-                            if (materialProgramLoader != null) {
-                                shadowsForLambda.materialProgramsLoaders().put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
+                        (materialProgramProvider, throwable) -> {
+                            if (materialProgramProvider != null) {
+                                shadowsForLambda.materialProgramProviders().put(materialProgramProvider.originalRenderPipeline(), materialProgramProvider);
                             }
                         },
                         localExecutor
@@ -498,7 +498,7 @@ public class PipelineLodader {
             materialProgramProviders.values().forEach(MaterialProgramProvider::close);
 
             if (shadows != null) {
-                shadows.materialProgramsLoaders().values().forEach(MaterialProgramProvider::close);
+                shadows.materialProgramProviders().values().forEach(MaterialProgramProvider::close);
             }
         }
 

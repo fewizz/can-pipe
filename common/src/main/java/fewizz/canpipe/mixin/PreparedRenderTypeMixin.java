@@ -14,6 +14,7 @@ import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 
+import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import fewizz.canpipe.renderpearl.mixin.FrontendRenderPassAccessor;
@@ -38,12 +39,12 @@ public class PreparedRenderTypeMixin {
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            var loader = p.getMaterialProgramLoader(pipeline);
-            if (loader != null) {
+            MaterialProgramProvider prover = p.getMaterialProgramProvider(pipeline);
+            if (prover != null) {
                 var colorAttachments = ((FrontendRenderPassAccessor) renderPass).canpipe_getColorAttachments();
                 var colorFormats = colorAttachments.stream().map(cts -> cts.textureView().texture().getFormat()).toList();
                 var depthFormat = GpuFormat.D32_FLOAT;
-                return loader.getOrCreateCompiledRenderPipeline(Pair.of(colorFormats, depthFormat));
+                return prover.getOrCreateCompiledRenderPipeline(Pair.of(colorFormats, depthFormat));
             }
         }
         return operation.call(pipeline);
@@ -59,8 +60,8 @@ public class PreparedRenderTypeMixin {
     void bindUniforms(CallbackInfo ci, @Local RenderPipeline renderPipeline, @Local RenderPass renderPass) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            var loader = p.getMaterialProgramLoader(renderPipeline);
-            if (loader != null) {
+            MaterialProgramProvider provider = p.getMaterialProgramProvider(renderPipeline);
+            if (provider != null) {
                 Pipeline.bindSpritesExtentsSampler(renderPass, p.targets.solid().getColorTextureView());
                 p.bindUniforms(renderPass, p.targets.solid(), true);
             }

@@ -6,8 +6,10 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
 
+import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -25,10 +27,10 @@ public class RenderTypeMixin {
     VertexFormat replaceRenderPipeline(VertexFormat format) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            var originalRenderPipeline = ((RenderSetupAccessor) (Object) this.state).canpipe_getPipeline();
-            var loader = p.getMaterialProgramLoader(originalRenderPipeline);
-            if (loader != null) {
-                format = loader.vertexFormat();
+            RenderPipeline originalRenderPipeline = ((RenderSetupAccessor) (Object) this.state).canpipe_getPipeline();
+            MaterialProgramProvider provider = p.getMaterialProgramProvider(originalRenderPipeline);
+            if (provider != null) {
+                format = provider.vertexFormat();
             }
         }
         return format;

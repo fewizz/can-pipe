@@ -66,7 +66,7 @@ public class Pipeline implements AutoCloseable {
     ) {}
 
     public static record Shadows(
-        Map<RenderPipeline, MaterialProgramProvider> materialProgramsLoaders,
+        Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders,
         List<Framebuffer> framebuffers,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
@@ -164,7 +164,7 @@ public class Pipeline implements AutoCloseable {
         this.materialProgramProviders.values().forEach(MaterialProgramProvider::close);
 
         if (this.shadows != null) {
-            this.shadows.materialProgramsLoaders.values().forEach(MaterialProgramProvider::close);
+            this.shadows.materialProgramProviders.values().forEach(MaterialProgramProvider::close);
         }
     }
 
@@ -221,11 +221,11 @@ public class Pipeline implements AutoCloseable {
         Profiler.get().pop();
     }
 
-    public MaterialProgramProvider getMaterialProgramLoader(RenderPipeline renderPipeline) {
+    public MaterialProgramProvider getMaterialProgramProvider(RenderPipeline renderPipeline) {
         Minecraft mc = Minecraft.getInstance();
 
         if (this.shadows != null && ((LevelRendererExtended) mc.levelRenderer).canpipe_getCurrentShadowCascadeIdx() >= 0) {
-            return this.shadows.materialProgramsLoaders().get(renderPipeline);
+            return this.shadows.materialProgramProviders().get(renderPipeline);
         }
         else {
             return this.materialProgramProviders.get(renderPipeline);

@@ -44,10 +44,10 @@ public class ChunkSectionsToRenderSeparateMixin {
             pipeline == RenderPipelines.TRANSLUCENT_TERRAIN
         )) {
             canpipe_originalRenderPipeline.set(pipeline);
-            MaterialProgramProvider loader = p.getMaterialProgramLoader(pipeline);
-            if (loader != null) {
+            MaterialProgramProvider provider = p.getMaterialProgramProvider(pipeline);
+            if (provider != null) {
                 Framebuffer fb = p.shadowFramebufferOr(pipeline != RenderPipelines.TRANSLUCENT_TERRAIN ? p.targets.solid() : p.targets.translucentTerrain());
-                return loader.getOrCreateCompiledRenderPipeline(fb.getFormats());
+                return provider.getOrCreateCompiledRenderPipeline(fb.getFormats());
             }
         }
         return operation.call(pipeline);
