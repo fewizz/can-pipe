@@ -29,7 +29,6 @@ import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.OptionGroup;
-import fewizz.canpipe.pipeline.Shaders;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;

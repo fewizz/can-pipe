@@ -5,7 +5,7 @@ import fewizz.canpipe.UniformBufferStruct;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.UniformBufferStruct.FloatUniform;
 import fewizz.canpipe.pipeline.Pipelines;
-import fewizz.canpipe.pipeline.Shaders;
+import fewizz.canpipe.pipeline.load.Shaders;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import xyz.rrtt217.HDRMod.api.HDRModApi;
