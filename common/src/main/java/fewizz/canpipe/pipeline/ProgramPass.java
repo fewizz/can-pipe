@@ -20,9 +20,11 @@ import com.mojang.renderpearl.api.pipeline.UniformType;
 import com.mojang.renderpearl.frontend.FrontendRenderPipeline;
 
 import fewizz.canpipe.CanPipe;
-import fewizz.canpipe.pipeline.UniformBufferStruct.IVec2Uniform;
-import fewizz.canpipe.pipeline.UniformBufferStruct.IntUniform;
-import fewizz.canpipe.pipeline.UniformBufferStruct.Mat4Uniform;
+import fewizz.canpipe.UniformBufferStruct;
+import fewizz.canpipe.Uniforms;
+import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
+import fewizz.canpipe.UniformBufferStruct.IntUniform;
+import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;

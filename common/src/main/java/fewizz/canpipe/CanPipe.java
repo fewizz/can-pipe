@@ -25,7 +25,6 @@ import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import fewizz.canpipe.compat.hdrmod.HDRModCompat;
 import fewizz.canpipe.pipeline.Pipelines;
-import fewizz.canpipe.pipeline.Uniforms;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.feature.ItemFeatureRenderer;

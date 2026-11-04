@@ -1,4 +1,4 @@
-package fewizz.canpipe.pipeline;
+package fewizz.canpipe;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,18 +17,20 @@ import com.mojang.renderpearl.api.buffers.GpuBuffer;
 import com.mojang.renderpearl.api.commands.CommandEncoder;
 import com.mojang.renderpearl.api.commands.RenderPass;
 
+import fewizz.canpipe.UniformBufferStruct.FloatUniform;
+import fewizz.canpipe.UniformBufferStruct.IVec2Uniform;
+import fewizz.canpipe.UniformBufferStruct.IntUniform;
+import fewizz.canpipe.UniformBufferStruct.Mat4Uniform;
+import fewizz.canpipe.UniformBufferStruct.Vec2Uniform;
+import fewizz.canpipe.UniformBufferStruct.Vec3Uniform;
+import fewizz.canpipe.UniformBufferStruct.Vec4Uniform;
 import fewizz.canpipe.light.Light;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.LightmapExtended;
-import fewizz.canpipe.pipeline.UniformBufferStruct.FloatUniform;
-import fewizz.canpipe.pipeline.UniformBufferStruct.IVec2Uniform;
-import fewizz.canpipe.pipeline.UniformBufferStruct.IntUniform;
-import fewizz.canpipe.pipeline.UniformBufferStruct.Mat4Uniform;
-import fewizz.canpipe.pipeline.UniformBufferStruct.Vec2Uniform;
-import fewizz.canpipe.pipeline.UniformBufferStruct.Vec3Uniform;
-import fewizz.canpipe.pipeline.UniformBufferStruct.Vec4Uniform;
+import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.pipeline.Pipelines;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DynamicGpuData;

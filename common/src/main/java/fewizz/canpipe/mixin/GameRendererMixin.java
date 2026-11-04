@@ -30,12 +30,12 @@ import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.commands.RenderPassDescriptor;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.mixininterface.CameraExtended;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipelines;
-import fewizz.canpipe.pipeline.Uniforms;
 import fewizz.canpipe.util.ShadowFrustum;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;

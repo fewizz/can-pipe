@@ -1,4 +1,4 @@
-package fewizz.canpipe.pipeline;
+package fewizz.canpipe;
 
 import java.util.ArrayList;
 import java.util.List;

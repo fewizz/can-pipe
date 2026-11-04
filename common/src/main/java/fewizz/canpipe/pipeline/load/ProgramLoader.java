@@ -22,10 +22,10 @@ import com.mojang.renderpearl.api.pipeline.UniformType;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.OptionGroup;
 import fewizz.canpipe.pipeline.Shaders;
-import fewizz.canpipe.pipeline.Uniforms;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
