@@ -46,7 +46,8 @@ public class Shaders {
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource,
         Optional<Integer> shadowMapSize,
-        Function<String, String> postProcess
+        Function<String, String> postProcess,
+        boolean awareOfDepthRangeChanges
     ) {
         String preprocessedSource = processIncludesAndDefinitions(
             source, location, options, appliedOptions, getShaderSource
@@ -59,9 +60,7 @@ public class Shaders {
             "#extension GL_ARB_texture_cube_map_array: enable\n\n"+
             "#define " + type.name() + "_SHADER\n\n";
 
-        var raw = Pipelines.getCurrentRaw();
-        assert raw != null;
-        if (raw.awareOfDepthRangeChanges) {
+        if (awareOfDepthRangeChanges) {
             if (RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
                 header +=
                     "#define CANPIPE_Z_ZERO_TO_ONE\n";

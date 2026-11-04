@@ -60,7 +60,7 @@ public class FramebufferLoader {
         }
 
         return new Framebuffer(
-            pipelineLocation, name,
+            name,
             (int idx) -> {
                 JsonObject colorAttachmentJson = colorAttachmentJsons.get(idx);
                 int lod = colorAttachmentJson.getInt("lod", 0);

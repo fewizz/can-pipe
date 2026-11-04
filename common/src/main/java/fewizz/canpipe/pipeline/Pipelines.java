@@ -250,10 +250,11 @@ final public class Pipelines implements PreparableReloadListener {
 
     public static void reloadCurrent() {
         Minecraft mc = Minecraft.getInstance();
-        Lights.loadRaw(Lights.readRaw(mc.getResourceManager()));
-        Materials.loadRaw(Materials.readRaw(mc.getResourceManager()));
-        MaterialMaps.loadRaw(MaterialMaps.readRaw(mc.getResourceManager()));
-        Pipelines.loadRaw(Pipelines.readRaw(mc.getResourceManager()));
+        var resourceManager = mc.getResourceManager();
+        Lights.loadRaw(Lights.readRaw(resourceManager));
+        Materials.loadRaw(Materials.readRaw(resourceManager));
+        MaterialMaps.loadRaw(MaterialMaps.readRaw(resourceManager));
+        Pipelines.loadRaw(Pipelines.readRaw(resourceManager));
     }
 
     public static @Nullable Pipeline getCurrent() {

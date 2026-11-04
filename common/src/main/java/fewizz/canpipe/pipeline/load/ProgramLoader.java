@@ -168,13 +168,14 @@ public class ProgramLoader {
                 }
 
                 return postprocess.apply(src);
-            }
+            },
+            awareOfDepthRangeChanges
         );
 
         String fragmentSrc = getShaderSource.apply(fragmentLocation).orElse(null);
         String fragmentSrcProcessed = Shaders.process(
             fragmentLocation, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
-            getShaderSource, shadowMapSize, postprocess
+            getShaderSource, shadowMapSize, postprocess, awareOfDepthRangeChanges
         );
 
         var shaderSource = new SimpleShaderSource(vertexLocation, vertexSrcProcessed, fragmentLocation, fragmentSrcProcessed);

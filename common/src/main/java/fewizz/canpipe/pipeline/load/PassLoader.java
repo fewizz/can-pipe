@@ -26,7 +26,7 @@ import net.minecraft.resources.Identifier;
 public class PassLoader {
 
     public static CompletableFuture<Optional<Pass>> load(
-        Identifier pipelineId,
+        Identifier pipelineLocation,
         JsonObject json,
         Function<String, Object> optionValueByName,
         Function<String, Optional<Framebuffer>> getOrLoadOptionalFramebuffer,
@@ -53,7 +53,7 @@ public class PassLoader {
 
         String programName = json.get(String.class, "program");
         Objects.requireNonNull(programName);
-        var id = Identifier.fromNamespaceAndPath(pipelineId.getNamespace(), passName);
+        Identifier id = pipelineLocation.withPath(passName);
 
         if (programName.equals("frex_clear")) {
             return CompletableFuture.completedFuture(Optional.of(new ClearPass(id, framebuffer.get())));

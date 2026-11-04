@@ -247,12 +247,12 @@ public class MaterialProgramLoader {
 
         String vertexSrcProcessed = Shaders.process(
             location, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
-            getShaderSource, shadowMapSize, postprocess
+            getShaderSource, shadowMapSize, postprocess, awareOfDepthRangeChanges
         );
 
         String fragmentSrcProcessed = Shaders.process(
             location, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
-            getShaderSource, shadowMapSize, postprocess
+            getShaderSource, shadowMapSize, postprocess, awareOfDepthRangeChanges
         );
 
         var shaderSource = new SimpleShaderSource(vertexShaderLocation, vertexSrcProcessed, fragmentShaderLocation, fragmentSrcProcessed);

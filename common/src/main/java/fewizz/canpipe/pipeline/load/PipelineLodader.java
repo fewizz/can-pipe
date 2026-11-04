@@ -95,7 +95,7 @@ public class PipelineLodader {
                     return null;
                 }
                 try {
-                    return TextureLoader.load(possibleJson.get(), location);
+                    return TextureLoader.load(possibleJson.get());
                 } catch(Exception e) {
                     throw new RuntimeException("Couldn't load texture \""+name+"\"", e);
                 }
@@ -325,7 +325,6 @@ public class PipelineLodader {
                 GpuTexture shadowMapTexture = shadowFramebuffer.getDepthTexture();
                 GpuTextureView shadowMapTextureView = shadowFramebuffer.getDepthTextureView();
                 Framebuffer fb = new Framebuffer(
-                    location,
                     shadowFramebuffer.name+"_"+(cascade+1),
                     (idx) -> { throw new RuntimeException("Color texture getter should not be called"); },
                     new Vector4f[]{},  // clear colors

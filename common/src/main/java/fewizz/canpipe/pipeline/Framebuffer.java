@@ -15,8 +15,6 @@ import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 
-import net.minecraft.resources.Identifier;
-
 public class Framebuffer extends RenderTarget {
 
     public final String name;
@@ -33,7 +31,6 @@ public class Framebuffer extends RenderTarget {
     private boolean destroyed = true;
 
     public Framebuffer(
-        Identifier pipelineLocation,
         String name,
         IntFunction<Pair<GpuTexture, GpuTextureView>> colorTextureSupplier,
         Vector4f[] colorClearColors,

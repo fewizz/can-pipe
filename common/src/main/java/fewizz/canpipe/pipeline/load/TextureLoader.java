@@ -16,11 +16,10 @@ import fewizz.canpipe.pipeline.Texture;
 import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
 
 public class TextureLoader {
 
-    public static Texture load(JsonObject json, Identifier pipelineLocation) {
+    public static Texture load(JsonObject json) {
         String name = json.get(String.class, "name");
 
         int maxLod = json.getInt("lod", 0);
