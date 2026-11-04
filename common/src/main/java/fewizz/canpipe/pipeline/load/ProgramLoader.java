@@ -63,17 +63,9 @@ public class ProgramLoader {
         var fragmentLocation = Identifier.parse(json.get(String.class, "fragmentSource"));
 
         var formats = framebuffer.getFormats();
-        String postfix = "";
-        for (var colorAttachmentFormat : formats.getLeft()) {
-            postfix += "-c-"+colorAttachmentFormat.toString();
-        }
-        if (formats.getRight() != null) {
-            postfix += "-d-"+formats.getRight().toString();
-        }
-        postfix = postfix.replace("_", "-").toLowerCase();
 
         var renderPipelineBuilder = RenderPipeline.builder()
-            .withLocation(pipelineLocation.withSuffix("-"+name).withSuffix(postfix))
+            .withLocation(pipelineLocation.withSuffix("-"+name))
             .withVertexShader(vertexLocation)
             .withFragmentShader(fragmentLocation)
             .withCull(false)

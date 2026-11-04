@@ -47,7 +47,7 @@ import net.minecraft.resources.Identifier;
 
 public class PipelineLodader {
 
-    public static Pipeline load(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) {
+    public static Pipeline load(PipelineRaw rawPipeline, Map<OptionGroup.Element<?>, Object> appliedOptions) throws Throwable {
         Map<String, Texture> textures = new HashMap<>();
         Map<String, Framebuffer> framebuffers = new HashMap<>();
         Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders = new HashMap<>();
@@ -499,6 +499,8 @@ public class PipelineLodader {
             if (shadows != null) {
                 shadows.materialProgramProviders().values().forEach(MaterialProgramProvider::close);
             }
+
+            throw t;
         }
 
         return new Pipeline(
