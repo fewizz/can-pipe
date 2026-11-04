@@ -75,9 +75,17 @@ public class Pipeline implements AutoCloseable {
         boolean supportForwardRender,  // isn't used in canvas
         boolean allowEntities,
         boolean allowParticles  // isn't used in canvas
-    ) {}
+    ) {
+
+        public int shadowMapSize() {
+            return this.framebuffers.get(0).getDepthTexture().getWidth(0);
+        }
+
+    }
 
     public static record Settings(
+        boolean enablePBR,
+        int glslVersion,
         float defaultZenithAngle,
         boolean smoothBrightnessBidirectionally,
         int brightnessSmoothingFrames,  // I wonder why smoothing is frame dependent, not time?

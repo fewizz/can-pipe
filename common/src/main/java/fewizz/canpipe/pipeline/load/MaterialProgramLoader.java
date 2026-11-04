@@ -29,6 +29,7 @@ import fewizz.canpipe.material.Material;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.OptionGroup;
+import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
@@ -45,19 +46,15 @@ public class MaterialProgramLoader {
 
     public static CompletableFuture<MaterialProgramProvider> load(
         RenderPipeline originalRenderPipeline,
-        int glslVersion,
-        boolean enablePBR,
+        Pipeline.Settings settings,
         boolean shadow,
-        Optional<Integer> shadowMapSize,
+        Pipeline.Shadows shadows,
         Identifier vertexShaderLocation,
         Identifier fragmentShaderLocation,
         Map<Identifier, OptionGroup> options,
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         List<String> samplers,
-        Function<Identifier, Optional<String>> getShaderSource,
-        float shadowsOffsetSlopeFactor,
-        float shadowsOffsetBiasUnits,
-        boolean awareOfDepthRangeChanges
+        Function<Identifier, Optional<String>> getShaderSource
     ) {
 
         List<VertexFormat> vertexBindings = new ArrayList<>();
@@ -110,12 +107,12 @@ public class MaterialProgramLoader {
 
             var dsState = originalRenderPipeline.getDepthStencilState();
             if (dsState != null) {
-                if (!awareOfDepthRangeChanges || shadow) {
+                if (!settings.awareOfDepthRangeChanges() || shadow) {
                     dsState = new DepthStencilState(
                         CanPipe.reverseCompareOp(dsState.depthTest()),
                         dsState.writeDepth(),
-                        !shadow ? -dsState.depthBiasScaleFactor() : shadowsOffsetSlopeFactor,
-                        !shadow ? -dsState.depthBiasConstant() : shadowsOffsetBiasUnits
+                        !shadow ? -dsState.depthBiasScaleFactor() : shadows.offsetSlopeFactor(),
+                        !shadow ? -dsState.depthBiasConstant() : shadows.offsetBiasUnits()
                     );
                 }
 
@@ -230,10 +227,10 @@ public class MaterialProgramLoader {
             return src;
         };
 
-        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
-        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, enablePBR);
+        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, settings.enablePBR());
+        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, settings.enablePBR());
 
-        if (!awareOfDepthRangeChanges && RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
+        if (!settings.awareOfDepthRangeChanges() && RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
             renderPipelineBuilder.withShaderDefine("CANPIPE_CLIP_DEPTH_RANGE_PATCH");
         }
 
@@ -245,13 +242,13 @@ public class MaterialProgramLoader {
         Object2IntOpenHashMap<String> uniformBindings = new Object2IntOpenHashMap<>();
 
         String vertexSrcProcessed = Shaders.process(
-            location, vertexSrc, ShaderType.VERTEX, glslVersion, options, appliedOptions,
-            getShaderSource, shadowMapSize, postprocess, awareOfDepthRangeChanges
+            location, vertexSrc, ShaderType.VERTEX, settings.glslVersion(), options, appliedOptions,
+            getShaderSource, Optional.ofNullable(shadows != null ? shadows.shadowMapSize() : null), postprocess, settings.awareOfDepthRangeChanges()
         );
 
         String fragmentSrcProcessed = Shaders.process(
-            location, fragmentSrc, ShaderType.FRAGMENT, glslVersion, options, appliedOptions,
-            getShaderSource, shadowMapSize, postprocess, awareOfDepthRangeChanges
+            location, fragmentSrc, ShaderType.FRAGMENT, settings.glslVersion(), options, appliedOptions,
+            getShaderSource, Optional.ofNullable(shadows != null ? shadows.shadowMapSize() : null), postprocess, settings.awareOfDepthRangeChanges()
         );
 
         var shaderSource = new SimpleShaderSource(vertexShaderLocation, vertexSrcProcessed, fragmentShaderLocation, fragmentSrcProcessed);
