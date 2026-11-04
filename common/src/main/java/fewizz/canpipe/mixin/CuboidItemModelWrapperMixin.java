@@ -17,8 +17,8 @@ public class CuboidItemModelWrapperMixin {
         method = "update",
         at = @At("RETURN")
     )
-    void onUpdate(CallbackInfo ci, @Local ItemStackRenderState.LayerRenderState layer, @Local(argsOnly = true) ItemStack itemStack) {
-        ((ItemStackLayerRenderStateExtended) layer).canpipe_setItemStack(itemStack.copy());
+    void onUpdate(CallbackInfo ci, @Local ItemStackRenderState.LayerRenderState layer, @Local(argsOnly = true) ItemStack item) {
+        ((ItemStackLayerRenderStateExtended) layer).canpipe_setItemStack(item.copy());
     }
 
 }

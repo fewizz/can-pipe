@@ -260,7 +260,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
             for (int i = offsetToFirstVertex; i <= 0; ++i) {
                 MemoryUtil.memPutShort(materialIndexPtr+i*this.vertexSize, this.canpipe_pendingMaterialIndex);
-                MemoryUtil.memPutByte(materialFlagsPtr+i*this.vertexSize, materialFlags);
+                MemoryUtil.memPutByte(materialFlagsPtr+(i*this.vertexSize), materialFlags);
             }
 
             this.canpipe_pendingMaterialIndex = -1;

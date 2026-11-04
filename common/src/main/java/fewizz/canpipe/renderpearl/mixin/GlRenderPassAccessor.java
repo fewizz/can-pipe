@@ -10,6 +10,6 @@ import com.mojang.renderpearl.backend.opengl.GlRenderPipeline;
 public interface GlRenderPassAccessor {
 
     @Accessor("pipeline")
-    public GlRenderPipeline canpipe_getPipeline();
+    GlRenderPipeline canpipe_getPipeline();
 
 }

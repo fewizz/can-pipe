@@ -81,7 +81,6 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override public boolean canpipe_isRenderingHand() { return this.canpipe_isRenderingHand; }
     @Override public Lightmap canpipe_getLightmap() { return this.lightmap; }
     @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
-    @Override public void canpipe_setOriginType(int originType) { this.canpipe_originType = originType; }
     @Override public void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget) { this.canpipe_mainRenderTargetOverride = renderTarget; }
 
     @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
@@ -211,7 +210,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
             var shortenedProjectionMatrix = ((CameraExtended) this.mainCamera).canpipe_createProjectionMatrixForCulling(depthFar, false);
 
-            var shortendedViewProjectionMatrix = new Matrix4f(shortenedProjectionMatrix).mul(viewMatrix);
+            var shortenedViewProjectionMatrix = new Matrix4f(shortenedProjectionMatrix).mul(viewMatrix);
 
             Vector3f min = new Vector3f();
             Vector3f max = new Vector3f();
@@ -234,7 +233,7 @@ public class GameRendererMixin implements GameRendererExtended {
 
             ShadowFrustum shadowFrustum = new ShadowFrustum(
                 this.canpipe_shadowViewMatrix, shadowProjectionMatrix,
-                shortendedViewProjectionMatrix, toSunDir
+                    shortenedViewProjectionMatrix, toSunDir
             );
             shadowFrustum.prepare(this.mainCamera.position().x, this.mainCamera.position().y, this.mainCamera.position().z);
             this.canpipe_shadowFrustums[cascade] = shadowFrustum;
@@ -316,7 +315,7 @@ public class GameRendererMixin implements GameRendererExtended {
         this.canpipe_isRenderingHand = true;
 
         profiler.popPush("can-pipe fabulous passes");
-        this.canpipe_originType = 2;  // camera
+        this.canpipe_originType = 2;  // screen
         p.onAfterWorldRender();
     }
 
@@ -328,7 +327,7 @@ public class GameRendererMixin implements GameRendererExtended {
         Pipeline p = Pipelines.getCurrent();
         if (p == null) { return; }
 
-        profiler.popPush("can-pipe after redner hand");
+        profiler.popPush("can-pipe after render hand");
 
         this.canpipe_isRenderingHand = false;
         p.onAfterRenderHand();

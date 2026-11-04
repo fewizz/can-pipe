@@ -1,11 +1,7 @@
 package fewizz.canpipe.mixin;
 
-import java.util.List;
-
 import org.apache.commons.lang3.tuple.Pair;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -26,10 +22,6 @@ import net.minecraft.client.renderer.rendertype.PreparedRenderType;
 @Mixin(PreparedRenderType.class)
 public class PreparedRenderTypeMixin {
 
-    @Shadow @Final private RenderPipeline pipeline;
-    @Shadow @Final List<PreparedRenderType.Texture> textures;
-
-
     @WrapOperation(
         method = "draw",
         at = @At(
@@ -40,13 +32,13 @@ public class PreparedRenderTypeMixin {
         )
     )
     CompiledRenderPipeline replaceRenderPipeline(
-        RenderPipeline renderPipeline,
+        RenderPipeline pipeline,
         Operation<CompiledRenderPipeline> operation,
         @Local RenderPass renderPass
     ) {
         Pipeline p = Pipelines.getCurrent();
         if (p != null) {
-            var loader = p.getMaterialProgramLoader(renderPipeline);
+            var loader = p.getMaterialProgramLoader(pipeline);
             if (loader != null) {
                 var colorAttachments = ((FrontendRenderPassAccessor) renderPass).canpipe_getColorAttachments();
                 var colorFormats = colorAttachments.stream().map(cts -> cts.textureView().texture().getFormat()).toList();
@@ -54,7 +46,7 @@ public class PreparedRenderTypeMixin {
                 return loader.getOrCreateCompiledRenderPipeline(Pair.of(colorFormats, depthFormat));
             }
         }
-        return operation.call(renderPipeline);
+        return operation.call(pipeline);
     }
 
     @Inject(

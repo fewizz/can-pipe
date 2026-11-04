@@ -11,6 +11,6 @@ import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 public interface RenderPipelineAccessor {
 
     @Accessor("canpipe_optionalSamplers")
-    public void canpipe_setOptionalSamplers(Set<String> samplers);
+    void canpipe_setOptionalSamplers(Set<String> samplers);
 
 }

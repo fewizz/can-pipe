@@ -88,7 +88,6 @@ public class Framebuffer extends RenderTarget {
             this.depthTextureView = null;
         }
 
-        this.depthTextureView = null;
         this.depthTexture = null;
 
         this.colorTextureView = null;

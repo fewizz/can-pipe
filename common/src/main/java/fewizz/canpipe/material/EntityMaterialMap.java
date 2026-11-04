@@ -103,7 +103,7 @@ public record EntityMaterialMap(
                         if (ctx.spriteTextureID != null) {
                             return spriteID.equals(ctx.spriteTextureID);
                         }
-                        return ctx.textureID != null ? ctx.textureID.equals(textureID) : false;
+                        return ctx.textureID != null && ctx.textureID.equals(textureID);
                     });
                 }
                 case "renderLayerName" -> {

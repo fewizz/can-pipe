@@ -57,7 +57,7 @@ public class SectionCompilerMixin {
             ")V"
         )
     )
-    void beforeTesselating(CallbackInfoReturnable<SectionCompiler.Results> ci, @Local BlockState blockState) {
+    void beforeTessellating(CallbackInfoReturnable<SectionCompiler.Results> ci, @Local BlockState blockState) {
         this.canpipe_capturedBlockState.set(MutablePair.of(blockState, null));
     }
 

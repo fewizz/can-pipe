@@ -20,8 +20,7 @@ public interface VertexConsumerMixin {
     @Inject(method = {"putBlockBakedQuad", "putBakedQuad"}, at = @At("HEAD"))
     default void setSpriteIndex(
         CallbackInfo ci,
-        @Local(argsOnly = true) BakedQuad quad,
-        @Local(argsOnly = true) QuadInstance instance
+        @Local(argsOnly = true) BakedQuad quad
     ) {
         if (this instanceof VertexConsumerExtended vce && vce.canpipe_hasSpriteIndex()) {
             vce.canpipe_setScopedSpriteSupplier(() -> quad.materialInfo().sprite());

@@ -698,7 +698,7 @@ public class Pipeline implements AutoCloseable {
 
         if (bindVanillaTextures) {
             // We don't know yet which render pipeline will be used
-            renderPass.setUniform("Sampler0", CanPipe.getWhiteTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
+            renderPass.setUniform("Sampler0", CanPipe.getWhitePixelTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
             renderPass.setUniform("Sampler1", Minecraft.getInstance().gameRenderer.overlayTexture().getTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
             renderPass.setUniform("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
         }

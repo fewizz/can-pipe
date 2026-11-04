@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -97,7 +98,7 @@ public class MaterialPrograms {
                 .withVertexShader(vertexShaderLocation)//vertexShaderIDWithPostfix)
                 .withFragmentShader(fragmentShaderLocation)//fragmentShaderIDWithPostfix)
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
-                .withCull(!shadow ? originalRenderPipeline.isCull() : false)
+                .withCull(!shadow && originalRenderPipeline.isCull())
                 .withPrimitiveTopology(originalRenderPipeline.getPrimitiveTopology());
 
             for (int bindingIndex = 0; bindingIndex < vertexBindings.size(); ++bindingIndex) {
@@ -122,7 +123,7 @@ public class MaterialPrograms {
         }
 
         List<String> attributeNames = vertexBindings.stream()
-            .flatMap((VertexFormat v) -> v == null ? List.<VertexFormatElement>of().stream() : v.getElements().stream())
+            .flatMap((VertexFormat v) -> v == null ? Stream.<VertexFormatElement>of() : v.getElements().stream())
             .map((VertexFormatElement ve) -> ve.name())
             .toList();
 
@@ -522,8 +523,8 @@ public class MaterialPrograms {
         }
 
         Float alphaCutout = null;
-        var alphaCoutputValueStr = originalRenderPipeline.getShaderDefines().values().get("ALPHA_CUTOUT");
-        var alphaCoutputValue = alphaCoutputValueStr != null ? Float.parseFloat(alphaCoutputValueStr) : null;
+        var alphaCutoutValueStr = originalRenderPipeline.getShaderDefines().values().get("ALPHA_CUTOUT");
+        var alphaCutoutValue = alphaCutoutValueStr != null ? Float.parseFloat(alphaCutoutValueStr) : null;
 
         if (
             originalRenderPipeline == RenderPipelines.TRANSLUCENT_BLOCK ||
@@ -533,7 +534,7 @@ public class MaterialPrograms {
             alphaCutout = 0.01F;
         }
         else if (
-            (alphaCoutputValue != null && alphaCoutputValue == 0.1F) ||
+            (alphaCutoutValue != null && alphaCutoutValue == 0.1F) ||
             originalRenderPipeline.getVertexFormatBinding(0) == DefaultVertexFormat.PARTICLE ||
 
             originalRenderPipeline == RenderPipelines.GLINT ||
@@ -568,7 +569,7 @@ public class MaterialPrograms {
             alphaCutout = 0.1F;
         }
         else if (
-            (alphaCoutputValue != null && alphaCoutputValue == 0.5F) ||
+            (alphaCutoutValue != null && alphaCutoutValue == 0.5F) ||
             originalRenderPipeline == RenderPipelines.CUTOUT_BLOCK ||
             originalRenderPipeline == RenderPipelines.CUTOUT_TERRAIN ||
             originalRenderPipeline == RenderPipelines.CUTOUT_TERRAIN_MULTIDRAW

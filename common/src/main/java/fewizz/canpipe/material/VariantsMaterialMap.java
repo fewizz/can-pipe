@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.block.state.properties.Property.Value;
@@ -34,10 +33,7 @@ public record VariantsMaterialMap<S extends StateHolder<?, ?>>(
 
         JsonObject defaultMapJson = json.getObject("defaultMap");
         if (defaultMapJson != null) {
-            MaterialMap possibleDefaultMap = MaterialMap.load(defaultMapJson);
-            if (possibleDefaultMap != null) {
-                defaultMap = possibleDefaultMap;
-            }
+            defaultMap = MaterialMap.load(defaultMapJson);
         }
 
         Map<S, MaterialMap> variants = new HashMap<>();
@@ -65,7 +61,7 @@ public record VariantsMaterialMap<S extends StateHolder<?, ?>>(
         StringBuilder stringBuilder = new StringBuilder();
 
         values.forEach(v -> {
-            if (stringBuilder.length() != 0) {
+            if (!stringBuilder.isEmpty()) {
                 stringBuilder.append(',');
             }
 
@@ -76,11 +72,6 @@ public record VariantsMaterialMap<S extends StateHolder<?, ?>>(
         });
 
         return stringBuilder.toString();
-    }
-
-    public MaterialMap forState(BlockState state) {
-        MaterialMap result = this.variants.get(state);
-        return result == null ? this.defaultMap : result;
     }
 
     Set<Material> getUsedMaterials() {

@@ -90,7 +90,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow private @Nullable GpuSampler chunkLayerSampler;
 
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
-    @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
+    @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector output) {}
     @Shadow private void submitBlockEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector submitNodeCollector) {}
     @Shadow private void submitTransientBlocks(final PoseStack poseStack, final SubmitNodeCollector submitNodeCollector, final LevelRenderState levelRenderState) {}
     @Shadow private void executeClassicTransparency(ChunkSectionsToRender chunkSectionsToRender, FeatureRenderDispatcher.PreparedFrame featureFrame, RenderPass renderPass) {}

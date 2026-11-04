@@ -16,7 +16,6 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.renderpearl.api.pipeline.CompareOp;
-import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.textures.AddressMode;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
@@ -25,7 +24,6 @@ import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.opengl.GlDevice;
 
 import fewizz.canpipe.renderpearl.GpuDeviceBackendExtended;
-import fewizz.canpipe.renderpearl.GpuShaderModule;
 import net.minecraft.resources.Identifier;
 
 @Mixin(GlDevice.class)
@@ -57,23 +55,6 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
             this.canpipe_addressModeW = null;
             this.canpipe_compareOp = null;
             this.canpipe_linearMipmap = null;
-        }
-    }
-
-    @Override
-    public GpuShaderModule canpipe_precompilePipelineModule(
-        Identifier id,
-        String shaderSource,
-        ShaderType shaderType,
-        TriConsumer<String, Identifier, String> onCompilationError
-    ) {
-        try {
-            this.canpipe_onCompilationError = onCompilationError;
-            throw new RuntimeException();
-            // return (GpuShaderModule) this.getOrCompileShader(id, shaderType, ShaderDefines.EMPTY, (_id, _shaderType) -> shaderSource);
-        } finally {
-            this.canpipe_onCompilationError = null;
-            this.canpipe_compilationLog = null;
         }
     }
 
@@ -147,11 +128,11 @@ public abstract class GlDeviceMixin implements GpuDeviceBackendExtended {
         )
     )
     boolean texImage3DIfLayerGreaterThanOne(
-        int target, int level, int internalFormat, int width, int height, int border, int format, int type, ByteBuffer pixels,
+        int target, int level, int internalformat, int width, int height, int border, int format, int type, ByteBuffer pixels,
         @Local(argsOnly = true, ordinal = 3) int depthOrLayers
     ) {
         if (depthOrLayers > 1) {
-            GL33C.glTexImage3D(GL33C.GL_TEXTURE_2D_ARRAY, level, internalFormat, width, height, depthOrLayers, 0, format, type, pixels);
+            GL33C.glTexImage3D(GL33C.GL_TEXTURE_2D_ARRAY, level, internalformat, width, height, depthOrLayers, 0, format, type, pixels);
             return false;
         }
         return true;

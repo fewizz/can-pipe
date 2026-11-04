@@ -14,16 +14,15 @@ public class HDRModCompat {
 
     public static void init() {
         if (PlatformHelperService.isModLoaded("hdr_mod")) {
-            HDRModApi.getInstance().addHDRStateChangeListener(
-                _isHdrEnabled /* Доверяй, но проверяй */ -> updatePipelineIfHDROptionValueChanged()
+            var api = HDRModApi.getInstance();
+            api.addHDRStateChangeListener(
+                _isHdrEnabled /* Доверяй, но проверяй */ -> updatePipelineIfHDROptionValueChanged(api)
             );
-            updatePipelineIfHDROptionValueChanged();
+            updatePipelineIfHDROptionValueChanged(api);
         }
     }
 
-    private static void updatePipelineIfHDROptionValueChanged() {
-        HDRModApi api = HDRModApi.getInstance();
-
+    private static void updatePipelineIfHDROptionValueChanged(HDRModApi api) {
         Identifier globalsShaderLocation = Identifier.tryParse("can-pipe:shaders/compat/hdrmod.glsl");
         String uboName = "hdrmod_globals";
 

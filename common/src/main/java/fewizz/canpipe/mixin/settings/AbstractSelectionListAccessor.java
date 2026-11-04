@@ -9,6 +9,6 @@ import net.minecraft.client.gui.components.AbstractSelectionList;
 public interface AbstractSelectionListAccessor {
 
     @Invoker("addEntry")
-    int callAddEntry(AbstractSelectionList.Entry<?> e);
+    int canpipe_addEntry(AbstractSelectionList.Entry<?> e);
 
 }

@@ -4,6 +4,7 @@ import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -209,7 +210,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                 this.resetButton.visible = appliedValue != null;
 
                 Consumer<Object> enableResetAndApplyValue = (Object value) -> {
-                    boolean equalsToDefault = value != null ? value.equals(e.defaultValue) : e.defaultValue == null;
+                    boolean equalsToDefault = Objects.equals(value, e.defaultValue);
                     this.resetButton.visible = !equalsToDefault;
                     applyValue.accept((!this.handlingReset && !equalsToDefault) ? value : null);
                 };
@@ -219,9 +220,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
 
                     var widget = Checkbox.builder(Component.empty(), minecraft.font)
                         .selected(initialValue)
-                        .onValueChange((checkbox, state) -> {
-                            enableResetAndApplyValue.accept(state);
-                        })
+                        .onValueChange((checkbox, state) -> enableResetAndApplyValue.accept(state))
                         .build();
 
                     this.valueWidget = widget;
@@ -239,9 +238,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     numberFormat.setMinimumFractionDigits(1);
                     numberFormat.setMaximumFractionDigits(3);
 
-                    Function<Double, Component> valueToComponent = (Double v) -> {
-                        return Component.literal(numberFormat.format(v));
-                    };
+                    Function<Double, Component> valueToComponent = (Double v) -> Component.literal(numberFormat.format(v));
 
                     var initialValue = appliedValue != null ? (double) appliedValue : floatElement.defaultValue;
 
@@ -277,9 +274,7 @@ public class PipelineOptionsScreen extends OptionsSubScreen {
                     };
                 }
                 else if (e instanceof OptionGroup.IntegerElement intElement) {
-                    Function<Long, Component> valueToComponent = (Long v) -> {
-                        return Component.literal(Long.toString(v));
-                    };
+                    Function<Long, Component> valueToComponent = (Long v) -> Component.literal(Long.toString(v));
 
                     var initialValue = appliedValue != null ? (long) appliedValue : intElement.defaultValue;
 

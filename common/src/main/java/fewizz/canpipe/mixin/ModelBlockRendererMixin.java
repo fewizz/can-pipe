@@ -19,7 +19,7 @@ public class ModelBlockRendererMixin {
     @Shadow @Final private QuadInstance quadInstance;
 
     @Inject(method = "tesselateBlock", at = @At("HEAD"))
-    void beforeTesselatingBlock(CallbackInfo ci) {
+    void beforeTessellatingBlock(CallbackInfo ci) {
         ((QuadInstanceExtended) this.quadInstance).canpipe_separateScale(Pipelines.getCurrent() != null);
     }
 

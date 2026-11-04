@@ -44,8 +44,8 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         method = "setupDraw",
         at = @At(value = "CONSTANT", args = "intValue=3553")  // GL_TEXTURE_2D
     )
-    int fixTextureTarget(int target, @Local GlTexture glTexture) {
-        return GlStateManagerAccessor.canpipe_getTextureTarget(glTexture.glId());
+    int fixTextureTarget(int target, @Local GlTexture texture) {
+        return GlStateManagerAccessor.canpipe_getTextureTarget(texture.glId());
     }
 
     @Override
@@ -230,13 +230,13 @@ public abstract class GlCommandEncoderMixin implements CommandEncoderBackendExte
         }
     )
     public Object moreDetailedErrorOnNullUniform(
-        Object uniformBufferSlice, @Local GlRenderPass renderPass, @Local(name = "i") int uniformIndex
+        Object uniformBufferSlice, @Local GlRenderPass renderPass, @Local(name = "i") int i  // uniform index
     ) {
         if (uniformBufferSlice == null) {
             GlRenderPipeline glRenderPipeline = ((GlRenderPassAccessor) renderPass).canpipe_getPipeline();
-            Uniform uniform = glRenderPipeline.program().getUniform(uniformIndex);
+            Uniform uniform = glRenderPipeline.program().getUniform(i);
             if (uniform != null) {
-                throw new IllegalStateException("Buffer for uniform #"+uniformIndex+" is null");
+                throw new IllegalStateException("Buffer for uniform #"+ i +" is null");
             }
         }
         return uniformBufferSlice;

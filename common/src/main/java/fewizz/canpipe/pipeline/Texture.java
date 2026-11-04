@@ -120,11 +120,8 @@ public class Texture extends AbstractTexture {
 
             if (paramName.equals("TEXTURE_MIN_FILTER")) {
                 switch (paramValue) {
-                    case "NEAREST": { min = FilterMode.NEAREST; break; }
-                    case "NEAREST_MIPMAP_NEAREST": { min = FilterMode.NEAREST; break; }
-
-                    case "LINEAR": { min = FilterMode.LINEAR; break; }
-                    case "LINEAR_MIPMAP_NEAREST": { min = FilterMode.LINEAR; break; }
+                    case "NEAREST", "NEAREST_MIPMAP_NEAREST": { min = FilterMode.NEAREST; break; }
+                    case "LINEAR", "LINEAR_MIPMAP_NEAREST": { min = FilterMode.LINEAR; break; }
 
                     case "NEAREST_MIPMAP_LINEAR": { min = FilterMode.NEAREST; linearMip = true; break; }
                     case "LINEAR_MIPMAP_LINEAR": { min = FilterMode.LINEAR; linearMip = true; break; }

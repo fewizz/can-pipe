@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.jetbrains.annotations.Nullable;
-
 import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.Nullable;
 
 public record OptionGroup(  // Or option category
     Identifier includeToken,
@@ -18,9 +17,10 @@ public record OptionGroup(  // Or option category
         public final String name;
         public final T defaultValue;
         public final String nameKey;
-        @Nullable public final String descriptionKey;
+        @Nullable
+        public final String descriptionKey;
 
-        Element(String name, T defaultValue, String nameKey, String descriptionKey) {
+        Element(String name, T defaultValue, String nameKey, @Nullable String descriptionKey) {
             this.name = name;
             this.defaultValue = defaultValue;
             this.nameKey = nameKey;

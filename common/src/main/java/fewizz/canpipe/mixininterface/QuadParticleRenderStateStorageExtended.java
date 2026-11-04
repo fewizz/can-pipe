@@ -6,7 +6,7 @@ import fewizz.canpipe.material.Material;
 
 public interface QuadParticleRenderStateStorageExtended {
 
-    public void canpipe_alsoAddMaterial(@Nullable Material material);
-    public short[] canpipe_materialsValues();
+    void canpipe_alsoAddMaterial(@Nullable Material material);
+    short[] canpipe_materialsValues();
 
 }

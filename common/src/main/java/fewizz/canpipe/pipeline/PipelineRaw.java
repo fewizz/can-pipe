@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.jetbrains.annotations.NotNull;
 
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonArray;
@@ -17,19 +16,20 @@ import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.jspecify.annotations.NonNull;
 
 public class PipelineRaw {
-    @NotNull public final Identifier location;
-    @NotNull public final String nameKey;
-    @NotNull public final String descriptionKey;
-    @NotNull public final Map<Identifier, OptionGroup> options;
-    @NotNull private final JsonObject json;
+    public final Identifier location;
+    public final String nameKey;
+    public final String descriptionKey;
+    public final Map<Identifier, OptionGroup> options;
+    private final JsonObject json;
     public final boolean awareOfDepthRangeChanges;
 
     PipelineRaw(
-        JsonObject pipelineJson,
-        Identifier pipelineLocation,
-        ResourceManager resourceManager
+            @NonNull JsonObject pipelineJson,
+            @NonNull Identifier pipelineLocation,
+            ResourceManager resourceManager
     ) {
         Map<String, JsonObject> includes = new HashMap<>();
 
@@ -81,7 +81,7 @@ public class PipelineRaw {
 
                 var prefix = elementO.get(String.class, "prefix");
                 var choices = JanksonUtils.listOfStrings(elementO, "choices");
-                choices = choices.size() == 0 ? null : choices;
+                choices = choices.isEmpty() ? null : choices;
 
                 OptionGroup.Element<?> element;
                 if (choices != null) {

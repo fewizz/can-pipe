@@ -1,6 +1,7 @@
 package fewizz.canpipe.pipeline;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -29,10 +30,10 @@ public class MoonPhasesTexture extends Texture {
     private static GpuTexture createMoonPhasesTexture() {
         Minecraft mc = Minecraft.getInstance();
 
-        List<NativeImage> phases = List.of(
+        List<NativeImage> phases = Stream.of(
             "full_moon", "waning_gibbous", "third_quarter", "waning_crescent",
             "new_moon", "waxing_crescent", "first_quarter", "waxing_gibbous"
-        ).stream().map(phaseName -> {
+        ).map(phaseName -> {
             try {
                 var resource = mc.getResourceManager().getResourceOrThrow(Identifier.withDefaultNamespace("textures/environment/celestial/moon/"+phaseName+".png"));
                 return NativeImage.read(resource.open());

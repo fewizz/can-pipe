@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -47,7 +48,6 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
     @Unique private ImageWidget canpipe_pipelineWarningSign = null;
     @Unique private Button canpipe_pipelineSettingsButton = null;
 
-    @Unique private int canpipe_pipelineWarningXOffset = 0;
     @Unique private int canpipe_pipelineSettingsButtonXOffset = 0;
 
     @Override
@@ -215,10 +215,10 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
 
         this.canpipe_pipelineWarningSign = ImageWidget.sprite(20, 20, Identifier.withDefaultNamespace("icon/info"));
 
-        ((AbstractSelectionListAccessor) this.list).callAddEntry(new OptionsList.AbstractEntry() {
+        ((AbstractSelectionListAccessor) this.list).canpipe_addEntry(new OptionsList.AbstractEntry() {
 
             @Override
-            public List<? extends GuiEventListener> children() {
+            public @NonNull List<? extends GuiEventListener> children() {
                 return List.of(
                     VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton,
                     VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign,
@@ -227,7 +227,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             }
 
             @Override
-            public List<? extends NarratableEntry> narratables() {
+            public @NonNull List<? extends NarratableEntry> narratables() {
                 return List.of(
                     VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton,
                     VideoSettingsScreenMixin.this.canpipe_pipelineWarningSign,
@@ -236,7 +236,7 @@ public abstract class VideoSettingsScreenMixin extends OptionsSubScreen implemen
             }
 
             @Override
-            public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
+            public void extractContent(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
                 final int left = VideoSettingsScreenMixin.this.width / 2 - 155;
 
                 VideoSettingsScreenMixin.this.canpipe_pipelineSwitchButton.setPosition(left, this.getContentY());

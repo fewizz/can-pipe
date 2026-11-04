@@ -23,7 +23,6 @@ public interface GameRendererExtended {
     Lightmap canpipe_getLightmap();
 
     int canpipe_getOriginType();
-    void canpipe_setOriginType(int originType);
 
     boolean canpipe_isRenderingHand();
 

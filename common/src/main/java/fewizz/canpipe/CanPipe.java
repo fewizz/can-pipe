@@ -44,8 +44,8 @@ public class CanPipe {
 
     private static GpuBuffer quadVertexUvBuffer;
     private static GpuBuffer[] int0to3UBOBuffers;
-    private static GpuTexture whiteTexture;
-    private static GpuTextureView whiteTextureView;
+    private static GpuTexture whitePixelTexture;
+    private static GpuTextureView whitePixelTextureView;
 
     public static Path getCompilationErrorsDirPath() {
         Minecraft mc = Minecraft.getInstance();
@@ -79,30 +79,30 @@ public class CanPipe {
             device.createBuffer(() -> "can-pipe 3", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 3)))
         };
 
-        CanPipe.whiteTexture = device.createTexture("can-pipe white", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, 1, 1, 1, 1);
+        CanPipe.whitePixelTexture = device.createTexture("can-pipe white", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, 1, 1, 1, 1);
         NativeImage whitePixel = new NativeImage(1, 1, false);
         whitePixel.setPixel(0, 0, 0xFFFFFFFF);
-        device.createCommandEncoder().writeToTexture(whiteTexture, whitePixel);
-        CanPipe.whiteTextureView = device.createTextureView(whiteTexture);
+        device.createCommandEncoder().writeToTexture(whitePixelTexture, whitePixel);
+        CanPipe.whitePixelTextureView = device.createTextureView(whitePixelTexture);
 
         HDRModCompat.init();
     }
 
     public static void beforeRendererClose() {
-        Pipelines.setLoadedPipeline(null);
+        Pipelines.setPipeline(null);
 
         CanPipe.quadVertexUvBuffer.close();
-        CanPipe.whiteTextureView.close();
-        CanPipe.whiteTexture.close();
-        for (var buffer : CanPipe.int0to3UBOBuffers.clone()) { buffer.close(); }
+        CanPipe.whitePixelTextureView.close();
+        CanPipe.whitePixelTexture.close();
+        for (var buffer : CanPipe.int0to3UBOBuffers) { buffer.close(); }
 
         Uniforms.close();
     }
 
     public static @NonNull GpuBuffer getQuadBuffer() { return CanPipe.quadVertexUvBuffer; }
     public static @NonNull GpuBuffer[] get0to3UBOBuffers() { return CanPipe.int0to3UBOBuffers; }
-    public static @NonNull GpuTexture getWhiteTexture() { return CanPipe.whiteTexture; }
-    public static @NonNull GpuTextureView getWhiteTextureView() { return CanPipe.whiteTextureView; }
+    public static @NonNull GpuTexture getWhitePixelTexture() { return CanPipe.whitePixelTexture; }
+    public static @NonNull GpuTextureView getWhitePixelTextureView() { return CanPipe.whitePixelTextureView; }
 
     public static class VertexFormats {
 

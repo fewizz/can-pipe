@@ -49,5 +49,5 @@ public class SimpleShaderSource implements ShaderSource {
 
     @Override
     public void close() {}
-    
+
 }

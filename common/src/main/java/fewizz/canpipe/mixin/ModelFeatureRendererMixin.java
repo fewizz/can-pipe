@@ -35,7 +35,7 @@ public class ModelFeatureRendererMixin {
 
             UvMapping uvMapping = submit.uvMapping();
 
-            if (uvMapping != null && uvMapping instanceof TextureAtlasSprite sprite) {
+            if (uvMapping instanceof TextureAtlasSprite sprite) {
                 vce.canpipe_setScopedSpriteSupplier(() -> sprite);
             }
 

@@ -76,8 +76,8 @@ public class ProgramPass extends Pass {
             var samplerTexture = samplerTextures.get(i).orElseGet(() -> {
                 CanPipe.LOGGER.warn("Couldn't find texture for sampler \""+sampler +"\", using \"white\" texture instead");
                 return new AbstractTexture() {{
-                    this.texture = CanPipe.getWhiteTexture();
-                    this.textureView = CanPipe.getWhiteTextureView();
+                    this.texture = CanPipe.getWhitePixelTexture();
+                    this.textureView = CanPipe.getWhitePixelTextureView();
                 }};
             });
             this.textures.add(samplerTexture);

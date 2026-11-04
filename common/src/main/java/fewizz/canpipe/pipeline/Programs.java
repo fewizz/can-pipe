@@ -187,9 +187,7 @@ public class Programs {
             },
             true  // compute locations
         ).thenApplyAsync(
-            pending -> {
-                return pending.finishCompile();
-            },
+            pending -> pending.finishCompile(),
             executor
         );
     }

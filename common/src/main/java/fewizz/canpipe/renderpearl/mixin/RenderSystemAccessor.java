@@ -11,6 +11,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 public interface RenderSystemAccessor {
 
     @Accessor("currentPipelineCache")
-    public static @Nullable PipelineCache canpipe_getCurrentPipelineCache() { return null; }
+    static @Nullable PipelineCache canpipe_getCurrentPipelineCache() { return null; }
 
 }

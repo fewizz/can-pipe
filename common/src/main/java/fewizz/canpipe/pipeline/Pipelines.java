@@ -172,10 +172,10 @@ final public class Pipelines implements PreparableReloadListener {
         }
 
         // "set" part
-        Pipelines.setLoadedPipeline(loadedPipeline);
+        Pipelines.setPipeline(loadedPipeline);
     }
 
-    public static void setLoadedPipeline(Pipeline loadedPipeline) {
+    public static void setPipeline(Pipeline loadedPipeline) {
         Minecraft mc = Minecraft.getInstance();
 
         ((GameRendererExtended) mc.gameRenderer).canpipe_setMainRenderTargetOverride(
@@ -207,7 +207,7 @@ final public class Pipelines implements PreparableReloadListener {
         ((GuiRendererAccessor) guiRenderer).canpipe_invalidateItemAtlas();
     }
 
-    public static Map<Identifier, PipelineRaw> readRaw(ResourceManager resourceManager) {
+    private static Map<Identifier, PipelineRaw> readRaw(ResourceManager resourceManager) {
         Map<Identifier, PipelineRaw> rawPipelines = new LinkedHashMap<>();
         resourceManager.listResources(
             "pipelines",
@@ -226,7 +226,7 @@ final public class Pipelines implements PreparableReloadListener {
         return rawPipelines;
     }
 
-    public static void loadRaw(Map<Identifier, PipelineRaw> rawPipelines) {
+    private static void loadRaw(Map<Identifier, PipelineRaw> rawPipelines) {
         RAW_PIPELINES.clear();
         RAW_PIPELINES.putAll(rawPipelines);
         PipelineRaw selected = null;
