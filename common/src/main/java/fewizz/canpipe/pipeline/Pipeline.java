@@ -50,6 +50,7 @@ import fewizz.canpipe.mixininterface.TextureAtlasExtended;
 import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import fewizz.canpipe.util.JanksonUtils;
+import fewizz.canpipe.util.MoonPhasesTexture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.ShaderDefines;

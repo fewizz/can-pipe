@@ -1,4 +1,4 @@
-package fewizz.canpipe.pipeline;
+package fewizz.canpipe.util;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -9,6 +9,7 @@ import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 
+import fewizz.canpipe.pipeline.Texture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 
