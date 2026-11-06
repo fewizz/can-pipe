@@ -62,7 +62,7 @@ final public class Pipelines implements PreparableReloadListener {
         Pipelines.currentRaw = raw;
 
         // delete previous compilation errors
-        CanPipe.deleteSpvCompilationErrorLogs();
+        CanPipe.deleteGlslToSpvCompilationErrorLogs();
 
         Map<OptionGroup.Element<?>, Object> appliedOptions = new HashMap<>();
         JsonObject config = new JsonObject();

@@ -51,7 +51,7 @@ public class CanPipe {
     private static GpuTexture whitePixelTexture;
     private static GpuTextureView whitePixelTextureView;
 
-    public static Path getSpvCompilationErrorsDirPath() {
+    public static Path getGlslToSpvCompilationErrorsDirPath() {
         Minecraft mc = Minecraft.getInstance();
         return mc.gameDirectory.toPath().resolve("can-pipe-compilation-errors");
     }
@@ -199,7 +199,7 @@ public class CanPipe {
 
     }
 
-    public static Identifier upgradeIdentifier(Identifier id) {
+    public static Identifier upgradedIdentifier(Identifier id) {
         if (id.getNamespace().equals("minecraft")) {
             String path = id.getPath();
             path = switch (path) {
@@ -267,7 +267,7 @@ public class CanPipe {
     }
 
     public static void onSpvCompilationError(String log, Identifier shaderLocation, String src) {
-        Path compilationErrorsPath = CanPipe.getSpvCompilationErrorsDirPath();
+        Path compilationErrorsPath = CanPipe.getGlslToSpvCompilationErrorsDirPath();
         try {
             Files.createDirectories(compilationErrorsPath);
             Files.writeString(
@@ -280,8 +280,8 @@ public class CanPipe {
         throw new RuntimeException("Couldn't compile \""+shaderLocation.toString()+"\": "+log);
     };
 
-    public static void deleteSpvCompilationErrorLogs() {
-        Path compilationErrorsPath = CanPipe.getSpvCompilationErrorsDirPath();
+    public static void deleteGlslToSpvCompilationErrorLogs() {
+        Path compilationErrorsPath = CanPipe.getGlslToSpvCompilationErrorsDirPath();
         if (!Files.exists(compilationErrorsPath)) {
             return;
         }

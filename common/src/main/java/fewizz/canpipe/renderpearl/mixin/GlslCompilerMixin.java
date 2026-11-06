@@ -60,7 +60,6 @@ public abstract class GlslCompilerMixin implements GlslCompilerExtended {
         if (listener != null) {
             this.canpipe_compilationErrorListener.set(null);
 
-            System.out.println("CALLING!!!!");
             byte[] bytes = new byte[sourceBuffer.limit()];
             sourceBuffer.get(0, bytes);
             String srcUtf8 = new String(bytes, StandardCharsets.UTF_8);

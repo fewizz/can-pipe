@@ -145,7 +145,7 @@ public class PipelineLodader {
         Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture = (String name) -> {
             AbstractTexture texture = null;
             if (name.contains(":")) {
-                var id = CanPipe.upgradeIdentifier(Identifier.parse(name));
+                var id = CanPipe.upgradedIdentifier(Identifier.parse(name));
 
                 if (id.equals(Identifier.withDefaultNamespace("textures/environment/moon_phases.png"))) {
                     texture = textures.computeIfAbsent(id.toString(), k -> new MoonPhasesTexture());
