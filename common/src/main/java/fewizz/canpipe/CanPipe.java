@@ -1,6 +1,11 @@
 package fewizz.canpipe;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.sdl.SDLScancode;
@@ -46,7 +51,7 @@ public class CanPipe {
     private static GpuTexture whitePixelTexture;
     private static GpuTextureView whitePixelTextureView;
 
-    public static Path getCompilationErrorsDirPath() {
+    public static Path getSpvCompilationErrorsDirPath() {
         Minecraft mc = Minecraft.getInstance();
         return mc.gameDirectory.toPath().resolve("can-pipe-compilation-errors");
     }
@@ -259,6 +264,43 @@ public class CanPipe {
             format.componentType() != GpuFormat.ComponentType.UINT_32 &&
             format != GpuFormat.RGB10A2_UINT &&
             format.componentCount() != 3;
+    }
+
+    public static void onSpvCompilationError(String log, Identifier shaderLocation, String src) {
+        Path compilationErrorsPath = CanPipe.getSpvCompilationErrorsDirPath();
+        try {
+            Files.createDirectories(compilationErrorsPath);
+            Files.writeString(
+                compilationErrorsPath.resolve(shaderLocation.toString().replace("/", "--").replace(":", "--")),
+                src+"\n"+log
+            );
+        } catch (IOException e) {
+            CanPipe.LOGGER.warn("Couldn't save \""+shaderLocation.toString()+"\" compilation error", e);
+        }
+        throw new RuntimeException("Couldn't compile \""+shaderLocation.toString()+"\": "+log);
+    };
+
+    public static void deleteSpvCompilationErrorLogs() {
+        Path compilationErrorsPath = CanPipe.getSpvCompilationErrorsDirPath();
+        if (!Files.exists(compilationErrorsPath)) {
+            return;
+        }
+        try {
+            Files.walkFileTree(compilationErrorsPath, new SimpleFileVisitor<Path>() {
+                @Override
+                public @NonNull FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+                @Override
+                public @NonNull FileVisitResult postVisitDirectory(@NonNull Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            CanPipe.LOGGER.error("Couldn't delete previous compilation errors", e);
+        }
     }
 
 }

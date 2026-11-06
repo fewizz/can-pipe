@@ -15,6 +15,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
@@ -53,6 +54,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import net.minecraft.resources.Identifier;
 
 @Mixin(PipelineBuilder.class)
 public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
@@ -64,21 +66,25 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
 
     @Unique private ThreadLocal<Consumer<SpvModule.Reflection.Descriptor>> canpipe_onUnhandledUniform = new ThreadLocal<>();
     @Unique private ThreadLocal<Boolean> canpipe_computeLocations = new ThreadLocal<>();
+    @Unique private ThreadLocal<TriConsumer<String, Identifier, String>> canpipe_spvCompilationErrorListener = new ThreadLocal<>();
 
     @Override
     public CompletableFuture<CompiledRenderPipeline.Pending> canpipe_compilePipeline(
         RenderPipeline pipeline, ShaderSource shaderSource, Executor executor,
         @Nullable Consumer<SpvModule.Reflection.Descriptor> onUnhandledUniform,
-        boolean computeLocations
+        boolean computeLocations,
+        TriConsumer<String, Identifier, String> spvCompilationErrorListener
     ) {
         try {
             this.canpipe_onUnhandledUniform.set(onUnhandledUniform);
             this.canpipe_computeLocations.set(computeLocations);
+            this.canpipe_spvCompilationErrorListener.set(spvCompilationErrorListener);
             return this.compilePipeline(pipeline, shaderSource, executor);
         }
         finally {
             this.canpipe_onUnhandledUniform.remove();
             this.canpipe_computeLocations.remove();
+            this.canpipe_spvCompilationErrorListener.remove();
         }
     }
 
@@ -87,14 +93,17 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
         RenderPipeline pipeline, ShaderSource shaderSource,
         ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos,
         Object2IntOpenHashMap<String> uniformBindings,
-        boolean computeLocations  // added
+        boolean computeLocations,  // added
+        TriConsumer<String, Identifier, String> spvCompilationErrorListener
     ) {
         try {
             this.canpipe_computeLocations.set(computeLocations);
+            this.canpipe_spvCompilationErrorListener.set(spvCompilationErrorListener);
             return this.generateBackendCreateInfo(pipeline, shaderSource, shaderCreateInfos, uniformBindings);
         }
         finally {
             this.canpipe_computeLocations.remove();
+            this.canpipe_spvCompilationErrorListener.remove();
         }
     }
 
@@ -131,9 +140,10 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
     )
     void extendedCompileToSpv(CallbackInfoReturnable<BackendRenderPipeline.CreateInfo> ci) {
         Boolean computeLocations = this.canpipe_computeLocations.get();
-        if (computeLocations != null && computeLocations) {
-            ((GlslCompilerExtended) this.compiler).canpipe_enableAutoMapLocationsForPendingCompilation();
-        }
+        if (computeLocations != null) ((GlslCompilerExtended) this.compiler).canpipe_setEnableAutoMapLocationsForPendingCompilation(computeLocations);
+
+        var listener = this.canpipe_spvCompilationErrorListener.get();
+        if (listener != null) ((GlslCompilerExtended) this.compiler).canpipe_setCompilationErrorListenerForPendingCompilation(listener);
     }
 
     @ModifyArg(
@@ -146,18 +156,18 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
     )
     Supplier<CompiledRenderPipeline.Pending> onSupplyAsync(Supplier<CompiledRenderPipeline.Pending> supplier) {
         Boolean computeLocations = this.canpipe_computeLocations.get();
-        if (computeLocations != null && computeLocations) {
-            return () -> {
-                this.canpipe_computeLocations.set(true);
-                try {
-                    return supplier.get();
-                }
-                finally {
-                    this.canpipe_computeLocations.remove();
-                }
-            };
-        }
-        return supplier;
+        TriConsumer<String, Identifier, String> spvCompilationErrorListener = this.canpipe_spvCompilationErrorListener.get();
+        return () -> {
+            this.canpipe_computeLocations.set(computeLocations);
+            this.canpipe_spvCompilationErrorListener.set(spvCompilationErrorListener);
+            try {
+                return supplier.get();
+            }
+            finally {
+                this.canpipe_computeLocations.remove();
+                this.canpipe_spvCompilationErrorListener.remove();
+            }
+        };
     }
 
     @Inject(

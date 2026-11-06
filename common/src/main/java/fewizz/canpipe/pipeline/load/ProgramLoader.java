@@ -180,7 +180,8 @@ public class ProgramLoader {
                 var type = descriptor.resourceType() == Spvc.SPVC_RESOURCE_TYPE_SAMPLED_IMAGE ? "Sampler" : "Uniform";
                 CanPipe.LOGGER.warn(type+" \""+descriptor.name()+"\" isn't handled by program \""+name+"\"");
             },
-            true  // compute locations
+            true,  // compute locations
+            CanPipe::onSpvCompilationError
         ).thenApplyAsync(
             pending -> pending.finishCompile(),
             executor

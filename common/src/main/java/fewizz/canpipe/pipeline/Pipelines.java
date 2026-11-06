@@ -1,21 +1,13 @@
 package fewizz.canpipe.pipeline;
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-import fewizz.canpipe.mixin.GameRendererAccessor;
-import fewizz.canpipe.mixin.GuiRendererAccessor;
-import fewizz.canpipe.mixin.LevelExtractorAccessor;
-import fewizz.canpipe.mixin.LevelRendererAccessor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -31,6 +23,10 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.light.Lights;
 import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
+import fewizz.canpipe.mixin.GameRendererAccessor;
+import fewizz.canpipe.mixin.GuiRendererAccessor;
+import fewizz.canpipe.mixin.LevelExtractorAccessor;
+import fewizz.canpipe.mixin.LevelRendererAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.pipeline.load.PipelineLodader;
 import fewizz.canpipe.pipeline.load.RawPipelineLoader;
@@ -66,24 +62,7 @@ final public class Pipelines implements PreparableReloadListener {
         Pipelines.currentRaw = raw;
 
         // delete previous compilation errors
-        if (Files.exists(CanPipe.getCompilationErrorsDirPath())) {
-            try {
-                Files.walkFileTree(CanPipe.getCompilationErrorsDirPath(), new SimpleFileVisitor<Path>() {
-                    @Override
-                    public @NonNull FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs) throws IOException {
-                        Files.delete(file);
-                        return FileVisitResult.CONTINUE;
-                    }
-                    @Override
-                    public @NonNull FileVisitResult postVisitDirectory(@NonNull Path dir, IOException exc) throws IOException {
-                        Files.delete(dir);
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            } catch (IOException e) {
-                CanPipe.LOGGER.error("Couldn't delete previous compilation errors", e);
-            }
-        }
+        CanPipe.deleteSpvCompilationErrorLogs();
 
         Map<OptionGroup.Element<?>, Object> appliedOptions = new HashMap<>();
         JsonObject config = new JsonObject();

@@ -260,7 +260,8 @@ public class MaterialProgramLoader {
                     shaderSource,
                     shaderCreateInfos,
                     uniformBindings,
-                    true  // compute locations
+                    true,  // compute locations
+                    CanPipe::onSpvCompilationError
                 );
                 if (renderPipelineCreateInfo == null) {
                     throw new RuntimeException("Couldn't compile material program \""+location+"\"");
