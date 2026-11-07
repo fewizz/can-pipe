@@ -21,9 +21,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.renderpearl.api.vertex.VertexFormatElement;
 
 import fewizz.canpipe.CanPipe;
@@ -46,6 +48,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Shadow private long vertexPointer = -1L;
 
     @Shadow private long beginElement(int semanticID) { return -1; }
+    @Shadow private long beginVertex() { return -1; }
+    @Shadow private static void putVec3f(final long pointer, final float x, final float y, final float z) {}
+    @Shadow private static void putRgba(final long pointer, final int argb) {}
+    @Shadow private static void putPackedUv(final long pointer, final int packedUv) {}
 
     @Unique private short canpipe_pendingMaterialIndex = -1;
     @Unique private Function<TextureAtlasSprite, Material> canpipe_materialSupplier = null;
@@ -55,6 +61,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     @Unique private Supplier<TextureAtlasSprite> canpipe_spriteSupplier = null;
     @Unique private boolean canpipe_recomputeNormal = false;
     @Unique private Float canpipe_aoPending = null;
+    @Unique private boolean canpipe_fastPathEntityShadow = false;
 
     @Unique private int canpipe_aoOffset;
     @Unique private int canpipe_uv0Offset;
@@ -94,7 +101,7 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
     }
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    void onInit(CallbackInfo ci) {
+    void onInit(CallbackInfo ci, @Local VertexFormat format) {
         Int2IntFunction getOffset = (int semanticID) -> {
             var element = this.elements[semanticID];
             return element != null ? element.offset() : -1;
@@ -118,6 +125,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         if (hasTangent && !hasNormal) {
             throw new RuntimeException("Normal should be enabled with in_tangent");
         }
+
+        this.canpipe_fastPathEntityShadow = format == CanPipe.VertexFormats.ENTITY_SHADOW;
     }
 
     @Unique
@@ -330,6 +339,50 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
 
         return this.canpipe_recomputeNormal ? -1 : normalPtr;
+    }
+
+    @Inject(
+        method = "addVertex(FFFIFFIIFFF)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/VertexConsumer;addVertex"
+        ),
+        cancellable = true
+    )
+    private void onAddVertexFull(
+        float x, float y, float z,
+        int color, float u, float v,
+        int overlayCoords, int lightCoords,
+        float nx, float ny, float nz,
+        CallbackInfo ci
+    ) {
+        if (!this.canpipe_fastPathEntityShadow) {
+            return;
+        }
+
+        long pointer = this.beginVertex();
+        putVec3f(pointer, x, y, z);
+        putRgba(pointer + 12L, color);
+        MemoryUtil.memPutFloat(pointer + 16L, u);
+        MemoryUtil.memPutFloat(pointer + 20L, v);
+        putPackedUv(pointer + 24L, overlayCoords);
+
+        int spriteIndex = -1;
+
+        if (this.canpipe_pendingSpriteIndex != -1) {
+            spriteIndex = this.canpipe_pendingSpriteIndex;
+        }
+        else if (this.canpipe_spriteSupplier != null) {
+            TextureAtlasSprite sprite = this.canpipe_spriteSupplier.get();
+
+            if (sprite != null) {
+                this.canpipe_pendingSpriteIndex = ((TextureAtlasSpriteExtended) sprite).canpipe_getIndex();
+            }
+        }
+
+        MemoryUtil.memPutInt(pointer + 28L, spriteIndex);
+
+        ci.cancel();
     }
 
     @Override
