@@ -1,7 +1,9 @@
 package fewizz.canpipe.material;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -12,8 +14,6 @@ import org.jspecify.annotations.Nullable;
 import blue.endless.jankson.Jankson;
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
-import it.unimi.dsi.fastutil.shorts.Short2ObjectMap;
-import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -24,13 +24,16 @@ final public class Materials implements PreparableReloadListener {
     private Materials() {}
 
     static private final Map<Identifier, Material> materials = new HashMap<>();
-    static private final Short2ObjectMap<Material> materialByIndex = new Short2ObjectOpenHashMap<>();
+    static private final List<Material> materialByIndex = new ArrayList<>();
 
     public static @Nullable Material get(Identifier location) {
         return Materials.materials.get(location);
     }
 
     public static Material get(short index) {
+        if (index >= Materials.materialByIndex.size()) {
+            throw new IllegalArgumentException("Requested material index ("+index+") is >= than materials count ("+Materials.materialByIndex.size());
+        }
         return Materials.materialByIndex.get(index);
     }
 
@@ -73,8 +76,8 @@ final public class Materials implements PreparableReloadListener {
         Materials.materials.clear();
         Materials.materialByIndex.clear();
 
-        int index = 0;
         for (var entry : materialsJson.entrySet()) {
+            int index = Materials.materialByIndex.size();
             if (index > Short.MAX_VALUE) {
                 throw new RuntimeException("Material index exceeded "+Short.MAX_VALUE);
             }
@@ -85,8 +88,7 @@ final public class Materials implements PreparableReloadListener {
             try {
                 Material material = Material.load((short) index, id, materialJson);
                 Materials.materials.put(entry.getKey(), material);
-                Materials.materialByIndex.put((short) index, material);
-                ++index;
+                Materials.materialByIndex.add(material);
             } catch (Exception e) {
                 CanPipe.LOGGER.error("Couldn't load material \""+id+"\"", e);
             }
