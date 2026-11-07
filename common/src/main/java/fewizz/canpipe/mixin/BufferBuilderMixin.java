@@ -284,21 +284,15 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             MemoryUtil.memPutByte(this.vertexPointer + this.canpipe_aoOffset, (byte)(Math.clamp(ao, 0.0F, 1.0F)*255.0F));
             this.canpipe_aoPending = null;
         }
-    }
+        if (this.canpipe_recomputeNormal) {
+            long normalPtr = this.beginElement(BufferBuilder.NORMAL_SEMANTIC_ID);
+            long tangentPtr = this.beginElement(CANPIPE_TANGENT_SEMANTIC_ID);
 
-    @Inject(method = "endLastVertex", at = @At("HEAD"))
-    private void endLastVertex(CallbackInfo ci) {
-        if (this.vertices == 0) {
-            return;
-        }
+            boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
 
-        long normalPtr = this.beginElement(BufferBuilder.NORMAL_SEMANTIC_ID);
-        long tangentPtr = this.beginElement(CANPIPE_TANGENT_SEMANTIC_ID);
-
-        boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
-
-        if (lastVertex) {
-            canpipe_setNormalAndTangent(normalPtr, -1, -1, -1, tangentPtr);
+            if (lastVertex) {
+                canpipe_setNormalAndTangent(normalPtr, -1, -1, -1, tangentPtr);
+            }
         }
     }
 
@@ -331,14 +325,16 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         )
     )
     private long onSetNormal(long normalPtr, float x, float y, float z) {
-        boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
-
-        if (lastVertex) {
+        if (normalPtr != -1) {
+            boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
             long tangentPtr = this.beginElement(CANPIPE_TANGENT_SEMANTIC_ID);
-            canpipe_setNormalAndTangent(this.canpipe_recomputeNormal ? normalPtr : -1, x, y, z, tangentPtr);
+
+            if (lastVertex) {
+                canpipe_setNormalAndTangent(normalPtr, x, y, z, tangentPtr);
+            }
         }
 
-        return this.canpipe_recomputeNormal ? -1 : normalPtr;
+        return normalPtr;//return this.canpipe_recomputeNormal ? -1 : normalPtr;
     }
 
     @Inject(
