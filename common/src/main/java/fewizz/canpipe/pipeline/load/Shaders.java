@@ -12,7 +12,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.common.collect.Iterators;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -50,9 +49,7 @@ public class Shaders {
         Function<String, String> postProcess,
         boolean awareOfDepthRangeChanges
     ) {
-        String preprocessedSource = processIncludesAndDefinitions(
-            source, location, options, appliedOptions, getShaderSource
-        );
+        String preprocessedSource = processIncludesAndDefinitions(source, location, options, appliedOptions, getShaderSource);
 
         preprocessedSource = postProcess.apply(preprocessedSource);
 
@@ -98,18 +95,14 @@ public class Shaders {
 
         StringBuilder result = new StringBuilder();
 
-        for (
-            Pair<String, Int2BooleanFunction> lc :
-            (Iterable<Pair<String, Int2BooleanFunction>>)
-            () -> commentedLinesIterator(includePreprocessedLinesIterator(
-                source, sourceLocation, preprocessed, options, appliedOptions, getShaderSource
-            ))
-        ) {
-            String line = lc.getLeft();
-            Int2BooleanFunction isCommentedAt = lc.getRight();
+        Iterable<LineWithCommentInfo> linesIterable =
+            () -> commentedLinesIterator(includePreprocessedLinesIterator(source, sourceLocation, preprocessed, options, appliedOptions, getShaderSource));
+
+        for (LineWithCommentInfo lineWithCommentInfo : linesIterable) {
+            String line = lineWithCommentInfo.line();
 
             var definitionMatcher = DEFINITION_PATTERN.matcher(line);
-            if (definitionMatcher.find() && !isCommentedAt.get(definitionMatcher.start(1))) {
+            if (definitionMatcher.find() && !lineWithCommentInfo.isLineCommentedAt(definitionMatcher.start(1))) {
                 String definitionName = definitionMatcher.group(1);
                 boolean wasAlreadyDefined = !definedDefinitions.add(definitionName);
                 if (wasAlreadyDefined) {
@@ -119,7 +112,7 @@ public class Shaders {
 
             // Implemented, because ecos has this conditional: #if HAND_SIZE < 1.0
             var floatConditionalMatcher = FLOAT_CONDITIONAL_PATTERN.matcher(line);
-            if (floatConditionalMatcher.find() && !isCommentedAt.get(floatConditionalMatcher.start(1))) {
+            if (floatConditionalMatcher.find() && !lineWithCommentInfo.isLineCommentedAt(floatConditionalMatcher.start(1))) {
                 Function<String, Object> numByValueOrOption = str -> {
                     if (FLOAT_PATTERN.matcher(str).matches()) {
                         return Double.parseDouble(str);
@@ -164,15 +157,14 @@ public class Shaders {
         return result.toString();
     }
 
-    private static Iterator<String>
-    includePreprocessedLinesIterator(
+    private static Iterator<String> includePreprocessedLinesIterator(
         String source, Identifier sourceLocation,
         Set<Identifier> preprocessed,
         Map<Identifier, OptionGroup> options,
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource
     ) {
-        var linesIter = commentedLinesIterator(source.lines().iterator());
+        var linesIterator = commentedLinesIterator(source.lines().iterator());
 
         return new Iterator<String>() {
             Iterator<String> innerIter = Collections.emptyIterator();
@@ -195,14 +187,13 @@ public class Shaders {
                 if (innerIter.hasNext()) {
                     return;
                 }
-                if (!linesIter.hasNext()) {
+                if (!linesIterator.hasNext()) {
                     return;
                 }
 
-                var lineAndIsCommentedAt = linesIter.next();
+                var lineWithCommentInfo = linesIterator.next();
 
-                String line = lineAndIsCommentedAt.getLeft();
-                Int2BooleanFunction isCommentedAt = lineAndIsCommentedAt.getRight();
+                String line = lineWithCommentInfo.line();
 
                 // MC's shader files always(?) specify this version
                 if (line.trim().equals("#version 330") && sourceLocation.getNamespace().equals("minecraft")) {
@@ -211,7 +202,7 @@ public class Shaders {
 
                 var includeMatcher = INCLUDE_PATTERN.matcher(line);
 
-                if (!(includeMatcher.find() && !isCommentedAt.get(includeMatcher.start(1))))  {
+                if (!(includeMatcher.find() && !lineWithCommentInfo.isLineCommentedAt(includeMatcher.start(1))))  {
                     innerIter = Iterators.singletonIterator(line);  // not an #include
                     return;
                 }
@@ -278,13 +269,8 @@ public class Shaders {
         };
     }
 
-    /** Iteration element is Pair of:<br>
-     * 1. line<br>
-     * 2. function, which takes position (int) in the line and returns true if code is commented out at that position, false otherwise
-    */
-    private static Iterator<Pair<String, Int2BooleanFunction>>
-    commentedLinesIterator(Iterator<String> lines) {
-        return new Iterator<Pair<String, Int2BooleanFunction>>() {
+    private static Iterator<LineWithCommentInfo> commentedLinesIterator(Iterator<String> lines) {
+        return new Iterator<LineWithCommentInfo>() {
             boolean prevLineIsCommented = false;
 
             @Override
@@ -293,7 +279,7 @@ public class Shaders {
             }
 
             @Override
-            public Pair<String, Int2BooleanFunction> next() {
+            public LineWithCommentInfo next() {
                 String line = lines.next();
                 final String initialLine = line;
                 final boolean initialPrevLineIsCommented = prevLineIsCommented;
@@ -314,7 +300,7 @@ public class Shaders {
                     return comment;
                 };
 
-                Int2BooleanFunction isCommentedAt = index -> {
+                Int2BooleanFunction isCommentedAtFunction = index -> {
                     if (singleLineCommentIndexStart != -1 && index > singleLineCommentIndexStart) {
                         return true;
                     }
@@ -322,9 +308,16 @@ public class Shaders {
                 };
 
                 prevLineIsCommented = isMultilineCommentedAt.get(initialLine.length());
-                return Pair.of(line, isCommentedAt);
+                return new LineWithCommentInfo(line, isCommentedAtFunction);
             }
         };
+    }
+
+    private record LineWithCommentInfo(String line, Int2BooleanFunction isLineCommentedAtFunction) {
+        // takes index (position) in the line and returns true if code is commented out at that position, false otherwise
+        boolean isLineCommentedAt(int index) {
+            return this.isLineCommentedAtFunction.apply(index);
+        }
     }
 
 }
