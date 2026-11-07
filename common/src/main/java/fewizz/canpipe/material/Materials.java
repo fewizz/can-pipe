@@ -31,9 +31,6 @@ final public class Materials implements PreparableReloadListener {
     }
 
     public static Material get(short index) {
-        if (index >= Materials.materialByIndex.size()) {
-            throw new IllegalArgumentException("Requested material index ("+index+") is >= than materials count ("+Materials.materialByIndex.size());
-        }
         return Materials.materialByIndex.get(index);
     }
 

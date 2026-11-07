@@ -16,7 +16,6 @@ import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import fewizz.canpipe.material.Material;
-import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixininterface.QuadParticleRenderStateExtended;
 import fewizz.canpipe.mixininterface.QuadParticleRenderStateStorageExtended;
 import fewizz.canpipe.mixininterface.VertexConsumerExtended;
@@ -70,10 +69,8 @@ public class QuadParticleRenderStateMixin implements QuadParticleRenderStateExte
     )
     void beforeRenderRotatedQuad(CallbackInfo ci, @Local(argsOnly = true) VertexConsumer bufferBuilder) {
         if (bufferBuilder instanceof VertexConsumerExtended vce) {
-            Material material = Materials.get(this.canpipe_materialsIndices[this.canpipe_forEachParticleIndex]);
-            if (material != null) {
-                vce.canpipe_setPendingMaterialIndex(material.index());
-            }
+            short materialIndex = this.canpipe_materialsIndices[this.canpipe_forEachParticleIndex];
+            vce.canpipe_setPendingMaterialIndex(materialIndex);
             ++this.canpipe_forEachParticleIndex;
         }
     }
