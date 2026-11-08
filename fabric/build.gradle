@@ -52,6 +52,9 @@ dependencies {
     // implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     // implementation "maven.modrinth:cloth-config:26.2.155+fabric"
     // implementation "maven.modrinth:modmenu:20.0.1"
+    // implementation "maven.modrinth:betternether:py6mlNTk"
+    // implementation "maven.modrinth:bclib:6QI6JObW"
+    // implementation "maven.modrinth:worldweaver:26.302.1"
 }
 
 compileJava.source project(":common").sourceSets.main.allSource

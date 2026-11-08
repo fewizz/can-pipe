@@ -9,6 +9,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -43,6 +45,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 
 public class MaterialProgramLoader {
+
+    // https://github.com/vram-guild/canvas/blob/9edb051bf3cba305623e6555c7d3ececb969b215/src/main/java/grondag/canvas/shader/PreReleaseShaderCompat.java#L208
+    static final Pattern OLD_MATERIAL_VERTEX_PATTERN = Pattern.compile("frx_startVertex\\s*\\(.*frx_VertexData\\s+(.+)\\s*\\)");
+
+    // https://github.com/vram-guild/canvas/blob/9edb051bf3cba305623e6555c7d3ececb969b215/src/main/java/grondag/canvas/shader/PreReleaseShaderCompat.java#L282
+    static final Pattern OLD_MATERIAL_FRAGMENT_PATTERN = Pattern.compile("frx_startFragment\\s*\\(.*frx_FragmentData\\s+(.+)\\s*\\)");
+
 
     public static CompletableFuture<MaterialProgramProvider> load(
         RenderPipeline originalRenderPipeline,
@@ -303,6 +312,22 @@ public class MaterialProgramLoader {
                 if (src == null) {
                     continue;
                 }
+
+                // https://github.com/vram-guild/canvas/blob/9edb051bf3cba305623e6555c7d3ececb969b215/src/main/java/grondag/canvas/shader/PreReleaseShaderCompat.java#L210
+                // Convert from old variant
+                Matcher matcher = OLD_MATERIAL_VERTEX_PATTERN.matcher(src);
+                if (matcher.find()) {
+                    String dataVarName = matcher.group(1);
+                    src = src.replace(dataVarName+".vertex", "frx_vertex");
+                    src = src.replace(dataVarName+".spriteUV", "frx_texcoord");
+                    src = src.replace(dataVarName+".color", "frx_vertexColor");
+                    src = src.replace(dataVarName+".normal", "frx_vertexNormal");
+                    src = src.replace(dataVarName+".light", "frx_vertexLight.xy");
+                    src = src.replace(dataVarName+".aoShade", "frx_vertexLight.z");
+
+                    src = src.replace(matcher.group(0), "frx_materialVertex()");
+                }
+
                 src = src.replace("frx_materialFragment", "_material_"+m.index());
 
                 String materialFunctionName = "_material_"+m.index();
@@ -509,6 +534,23 @@ public class MaterialProgramLoader {
                 if (src == null) {
                     continue;
                 }
+
+                // https://github.com/vram-guild/canvas/blob/9edb051bf3cba305623e6555c7d3ececb969b215/src/main/java/grondag/canvas/shader/PreReleaseShaderCompat.java#L284
+                Matcher matcher = OLD_MATERIAL_FRAGMENT_PATTERN.matcher(src);
+                if (matcher.find()) {
+                    String dataVarName = matcher.group(1);
+                    src = src.replace(dataVarName+".emissivity", "frx_fragEmissive");
+                    src = src.replace(dataVarName+".vertexNormal", "frx_vertexNormal");
+                    src = src.replace(dataVarName+".light", "frx_fragLight.xy");
+                    src = src.replace(dataVarName+".aoShade", "frx_fragLight.z");
+                    src = src.replace(dataVarName+".ao", "frx_fragEnableAo");
+                    src = src.replace(dataVarName+".diffuse", "frx_fragEnableDiffuse");
+                    src = src.replace(dataVarName+".spriteColor", "frx_sampleColor");  // right?
+                    src = src.replace(dataVarName+".vertexColor", "frx_vertexColor");
+
+                    src = src.replace(matcher.group(0), "frx_materialFragment()");
+                }
+
                 src = src.replace("frx_materialFragment", "_material_"+m.index());
 
                 String materialFunctionName = "_material_"+m.index();

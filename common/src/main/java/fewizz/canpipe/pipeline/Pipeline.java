@@ -325,7 +325,7 @@ public class Pipeline implements AutoCloseable {
     }
 
     public CompiledRenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
-        if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return null; }
+        // if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return null; }
 
         boolean patchDepth = !this.settings.awareOfDepthRangeChanges;
         boolean patchAttachment = (

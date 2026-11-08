@@ -164,6 +164,10 @@ public class Shaders {
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource
     ) {
+        if (!sourceLocation.getNamespace().equals("frex")) {
+            source = ShaderCompat.fixFrexUniforms(source);
+        }
+
         var linesIterator = commentedLinesIterator(source.lines().iterator());
 
         return new Iterator<String>() {

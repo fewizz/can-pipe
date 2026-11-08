@@ -25,6 +25,3 @@ const float frx_matExposure = 0.0;  // unused?
     const int frx_matHurt = 0;
     const int frx_matFlash = 0;
 #endif
-
-// Compat
-float frx_matUnmippedFactor() { return float(frx_matUnmipped); }
