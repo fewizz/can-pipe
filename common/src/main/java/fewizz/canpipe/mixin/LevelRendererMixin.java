@@ -271,9 +271,8 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
                 featureFrame.executeTranslucentAfterTerrain(renderPass);
             }
 
-            profiler.pop();
-
             featureFrame.close();
+            profiler.pop();
         }
 
         this.canpipe_currentShadowCascadeIdx = -1;

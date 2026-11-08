@@ -174,29 +174,39 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
                 Vector3f mid = new Vector3f(normal0).add(normal1).normalize();
 
                 int i = offsetToFirstVertex;
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(mid.x));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(mid.y));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(mid.z));
+                MemoryUtil.memCopy(new byte[] {
+                    canpipe_normalIntValueWithoutClamp(mid.x),
+                    canpipe_normalIntValueWithoutClamp(mid.y),
+                    canpipe_normalIntValueWithoutClamp(mid.z)
+                }, normalPtr+this.vertexSize*i);
 
                 i += 1;
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(normal0.x));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(normal0.y));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(normal0.z));
+                MemoryUtil.memCopy(new byte[] {
+                    canpipe_normalIntValueWithoutClamp(normal0.x),
+                    canpipe_normalIntValueWithoutClamp(normal0.y),
+                    canpipe_normalIntValueWithoutClamp(normal0.z)
+                }, normalPtr+this.vertexSize*i);
 
                 i += 1;
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(mid.x));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(mid.y));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(mid.z));
+                MemoryUtil.memCopy(new byte[] {
+                    canpipe_normalIntValueWithoutClamp(mid.x),
+                    canpipe_normalIntValueWithoutClamp(mid.y),
+                    canpipe_normalIntValueWithoutClamp(mid.z)
+                }, normalPtr+this.vertexSize*i);
 
                 i += 1;
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(normal1.x));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(normal1.y));
-                MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(normal1.z));
+                MemoryUtil.memCopy(new byte[] {
+                    canpipe_normalIntValueWithoutClamp(normal1.x),
+                    canpipe_normalIntValueWithoutClamp(normal1.y),
+                    canpipe_normalIntValueWithoutClamp(normal1.z)
+                }, normalPtr+this.vertexSize*i);
             } else {
                 for (int i = offsetToFirstVertex; i <= 0; ++i) {
-                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+0, canpipe_normalIntValueWithoutClamp(normal0.x));
-                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+1, canpipe_normalIntValueWithoutClamp(normal0.y));
-                    MemoryUtil.memPutByte(normalPtr+this.vertexSize*i+2, canpipe_normalIntValueWithoutClamp(normal0.z));
+                    MemoryUtil.memCopy(new byte[] {
+                        canpipe_normalIntValueWithoutClamp(normal0.x),
+                        canpipe_normalIntValueWithoutClamp(normal0.y),
+                        canpipe_normalIntValueWithoutClamp(normal0.z)
+                    }, normalPtr+this.vertexSize*i);
                 }
             }
         }
@@ -222,10 +232,12 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             Vector3f tangent = tangentPair.getLeft();
             boolean inverseBitangent = tangentPair.getRight();
             for (int i = offsetToFirstVertex; i <= 0; ++i) {
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+0, canpipe_normalIntValueWithoutClamp(tangent.x));
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+1, canpipe_normalIntValueWithoutClamp(tangent.y));
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+2, canpipe_normalIntValueWithoutClamp(tangent.z));
-                MemoryUtil.memPutByte(tangentPtr+i*this.vertexSize+3, canpipe_normalIntValueWithoutClamp(inverseBitangent ? -1.0F : 1.0F));
+                MemoryUtil.memCopy(new byte[] {
+                    canpipe_normalIntValueWithoutClamp(tangent.x),
+                    canpipe_normalIntValueWithoutClamp(tangent.y),
+                    canpipe_normalIntValueWithoutClamp(tangent.z),
+                    canpipe_normalIntValueWithoutClamp(inverseBitangent ? -1.0F : 1.0F)
+                }, tangentPtr+i*this.vertexSize);
             }
         }
     }
