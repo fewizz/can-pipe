@@ -36,10 +36,12 @@ import fewizz.canpipe.mixininterface.VertexConsumerExtended;
 import fewizz.canpipe.util.NormalAndTangent;
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.util.ARGB;
 
 @Mixin(BufferBuilder.class)
 public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
+    @Shadow @Final private static boolean IS_LITTLE_ENDIAN;
     @Shadow private int vertices;
     @Shadow @Final private PrimitiveTopology primitiveTopology;
     @Shadow @Final private int vertexSize;
@@ -200,6 +202,10 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
         }
 
         if (tangentPtr != -1) {
+            if (this.primitiveTopology.primitiveLength != 4) {
+                throw new RuntimeException("Can't compute tangent for non-quad ("+this.primitiveTopology.name()+") primitive topology");
+            }
+
             float
                 u0 = this.canpipe_getU(offsetToFirstVertex+0),
                 v0 = this.canpipe_getV(offsetToFirstVertex+0),
@@ -285,15 +291,28 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             this.canpipe_aoPending = null;
         }
         if (this.canpipe_recomputeNormal) {
-            long normalPtr = this.beginElement(BufferBuilder.NORMAL_SEMANTIC_ID);
+            this.setNormal(-1, -1, -1);
+        }
+    }
+
+    @ModifyExpressionValue(
+        method = "setNormal",
+        at = @At(
+            value = "INVOKE",
+            target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;beginElement(I)J"
+        )
+    )
+    private long onSetNormal(long normalPtr, float x, float y, float z) {
+        if (normalPtr != -1) {
+            boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
             long tangentPtr = this.beginElement(CANPIPE_TANGENT_SEMANTIC_ID);
 
-            boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
-
             if (lastVertex) {
-                canpipe_setNormalAndTangent(normalPtr, -1, -1, -1, tangentPtr);
+                this.canpipe_setNormalAndTangent(this.canpipe_recomputeNormal ? normalPtr : -1, x, y, z, tangentPtr);
             }
         }
+
+        return this.canpipe_recomputeNormal ? -1 : normalPtr;
     }
 
     @Inject(
@@ -313,28 +332,8 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
 
         boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
         if (lastVertex) {
-            canpipe_setSpriteAndMaterial(spriteIndexPtr, materialIndexPtr, materialFlagsPtr);
+            this.canpipe_setSpriteAndMaterial(spriteIndexPtr, materialIndexPtr, materialFlagsPtr);
         }
-    }
-
-    @ModifyExpressionValue(
-        method = "setNormal",
-        at = @At(
-            value = "INVOKE",
-            target = "Lcom/mojang/blaze3d/vertex/BufferBuilder;beginElement(I)J"
-        )
-    )
-    private long onSetNormal(long normalPtr, float x, float y, float z) {
-        if (normalPtr != -1) {
-            boolean lastVertex = (this.vertices % this.primitiveTopology.primitiveLength) == 0;
-            long tangentPtr = this.beginElement(CANPIPE_TANGENT_SEMANTIC_ID);
-
-            if (lastVertex) {
-                canpipe_setNormalAndTangent(normalPtr, x, y, z, tangentPtr);
-            }
-        }
-
-        return normalPtr;//return this.canpipe_recomputeNormal ? -1 : normalPtr;
     }
 
     @Inject(
@@ -356,13 +355,6 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             return;
         }
 
-        long pointer = this.beginVertex();
-        putVec3f(pointer, x, y, z);
-        putRgba(pointer + 12L, color);
-        MemoryUtil.memPutFloat(pointer + 16L, u);
-        MemoryUtil.memPutFloat(pointer + 20L, v);
-        putPackedUv(pointer + 24L, overlayCoords);
-
         int spriteIndex = -1;
 
         if (this.canpipe_pendingSpriteIndex != -1) {
@@ -376,7 +368,17 @@ public abstract class BufferBuilderMixin implements VertexConsumerExtended {
             }
         }
 
-        MemoryUtil.memPutInt(pointer + 28L, spriteIndex);
+        int abgr = ARGB.toABGR(color /* argb */);
+
+        long pointer = this.beginVertex();
+
+        MemoryUtil.memCopy(new int[] {
+            Float.floatToRawIntBits(x), Float.floatToRawIntBits(y), Float.floatToRawIntBits(z),
+            IS_LITTLE_ENDIAN ? abgr : Integer.reverseBytes(abgr),   // from BufferBuilder.putRgba, no idea why abgr tho
+            Float.floatToRawIntBits(u), Float.floatToRawIntBits(v),
+            IS_LITTLE_ENDIAN ? overlayCoords : ((overlayCoords << 16) | (overlayCoords >>> 16)),
+            spriteIndex
+        }, pointer);
 
         ci.cancel();
     }
