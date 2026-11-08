@@ -21,6 +21,7 @@
 	"mixins": [
 		"${mod_id}.mixins.json",
 		"${mod_id}.renderpearl.mixins.json",
+		"${mod_id}.compat.xaero.mixins.json",
 		"${mod_id}.compat.indigo.mixins.json"
 	],
 	"accessWidener" : "${mod_id}.accesswidener",

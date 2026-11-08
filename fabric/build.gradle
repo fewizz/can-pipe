@@ -55,6 +55,7 @@ dependencies {
     // implementation "maven.modrinth:betternether:py6mlNTk"
     // implementation "maven.modrinth:bclib:6QI6JObW"
     // implementation "maven.modrinth:worldweaver:26.302.1"
+    // implementation "maven.modrinth:xaeros-minimap:fabric-26.3-26.6.2"
 }
 
 compileJava.source project(":common").sourceSets.main.allSource

@@ -27,7 +27,6 @@ import fewizz.canpipe.mixin.GameRendererAccessor;
 import fewizz.canpipe.mixin.GuiRendererAccessor;
 import fewizz.canpipe.mixin.LevelRendererAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
-import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.load.PipelineLodader;
 import fewizz.canpipe.pipeline.load.RawPipelineLoader;
 import fewizz.canpipe.util.JanksonUtils;

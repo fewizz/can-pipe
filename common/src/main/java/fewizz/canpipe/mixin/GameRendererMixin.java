@@ -12,6 +12,7 @@ import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -55,7 +56,11 @@ public class GameRendererMixin implements GameRendererExtended {
     @Shadow @Final private FogRenderer fogRenderer;
     @Shadow @Final private GameRenderState gameRenderState;
     @Shadow @Final private Lightmap lightmap;
-    @Shadow @Final private RenderTarget mainRenderTarget;
+
+    // Some mods (like Xaero's Minimap) work with this field directly,
+    // So I can't just add an render target override nearby, and return it in GameRenderer.mainRenderTarget() instead of original one.
+    // I have to modify this variable.
+    @Shadow @Final @Mutable private RenderTarget mainRenderTarget;
 
     @Unique private long canpipe_renderStartNano = -1;
     @Unique private int canpipe_renderFrames = -1;
@@ -69,7 +74,7 @@ public class GameRendererMixin implements GameRendererExtended {
     @Unique private Matrix4f canpipe_lastProjectionMatrix;
     @Unique private boolean canpipe_runResizePasses = false;
     @Unique private boolean canpipe_runInitPasses = false;
-    @Unique private RenderTarget canpipe_mainRenderTargetOverride;
+    @Unique private RenderTarget canpipe_originalMainRenderTarget;
 
     @Unique private Vector3f[] canpipe_shadowInnerOffsets = null;
     @Unique private ShadowFrustum[] canpipe_shadowFrustums = null;
@@ -81,7 +86,22 @@ public class GameRendererMixin implements GameRendererExtended {
     @Override public boolean canpipe_isRenderingHand() { return this.canpipe_isRenderingHand; }
     @Override public Lightmap canpipe_getLightmap() { return this.lightmap; }
     @Override public int canpipe_getOriginType() { return this.canpipe_originType; }
-    @Override public void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget) { this.canpipe_mainRenderTargetOverride = renderTarget; }
+    @Override public void canpipe_setMainRenderTargetOverride(RenderTarget renderTarget) {
+        // replace
+        if (renderTarget != null) {
+            if (this.canpipe_originalMainRenderTarget == null) {
+                this.canpipe_originalMainRenderTarget = this.mainRenderTarget;
+            }
+            this.mainRenderTarget = renderTarget;
+        }
+        // restore
+        else {
+            if (this.canpipe_originalMainRenderTarget != null) {
+                this.mainRenderTarget = this.canpipe_originalMainRenderTarget;
+            }
+            this.canpipe_originalMainRenderTarget = null;
+        }
+    }
 
     @Override public ShadowFrustum[] canpipe_getShadowFrustums() { return this.canpipe_shadowFrustums; }
     @Override public Vector4f[] canpipe_getShadowCenters() { return this.canpipe_shadowCenters; }
@@ -338,15 +358,15 @@ public class GameRendererMixin implements GameRendererExtended {
     }
 
     @ModifyExpressionValue(
-        method = {"mainRenderTarget", "processBlurEffect", "render", "renderLevel", "takeAutoScreenshot", "renderItemInHand", "render3dHud"},
+        method = "resize",
         at = @At(
             value = "FIELD",
             target = "Lnet/minecraft/client/renderer/GameRenderer;mainRenderTarget:Lcom/mojang/blaze3d/pipeline/RenderTarget;"
         )
     )
-    RenderTarget replaceMainRenderTarget(RenderTarget renderTarget) {
-        if (this.canpipe_mainRenderTargetOverride != null) {
-            renderTarget = this.canpipe_mainRenderTargetOverride;
+    RenderTarget resizeOriginalRenderTarget(RenderTarget renderTarget) {
+        if (this.canpipe_originalMainRenderTarget != null) {
+            renderTarget = this.canpipe_originalMainRenderTarget;
         }
         return renderTarget;
     }
