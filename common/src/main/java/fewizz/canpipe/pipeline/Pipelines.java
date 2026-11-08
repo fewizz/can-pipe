@@ -25,13 +25,14 @@ import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.material.Materials;
 import fewizz.canpipe.mixin.GameRendererAccessor;
 import fewizz.canpipe.mixin.GuiRendererAccessor;
-import fewizz.canpipe.mixin.LevelExtractorAccessor;
 import fewizz.canpipe.mixin.LevelRendererAccessor;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
+import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.pipeline.load.PipelineLodader;
 import fewizz.canpipe.pipeline.load.RawPipelineLoader;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -169,11 +170,18 @@ final public class Pipelines implements PreparableReloadListener {
         if (prevPipelineUnloaded != newPipelineLoaded) {
             var srd = mc.levelRenderer.sectionRenderDispatcher();
             if (srd != null) { srd.dispose(); }
-            ((LevelRendererAccessor) mc.levelRenderer).canpipe_set_sectionRenderDispatcher(null);
+            ((LevelRendererAccessor) mc.levelRenderer).canpipe_setSectionRenderDispatcher(null);
             mc.levelExtractor.allChanged();
             mc.levelExtractor.resetSampler();
         }
-        ((LevelExtractorAccessor) mc.levelExtractor).canpipe_set_shouldResetSkyRenderer(true);
+
+        // LevelExtractor.shouldResetSkyRenderer may be ignored if level has no sky
+        SkyRenderer skyRenderer = ((LevelRendererAccessor) mc.levelRenderer).canpipe_getSkyRenderer();
+        if (skyRenderer != null) {
+            skyRenderer.close();
+            ((LevelRendererAccessor) mc.levelRenderer).canpipe_setSkyRenderer(null);
+        }
+
         var guiRenderer = ((GameRendererAccessor) mc.gameRenderer).canpipe_getGuiRenderer();
         ((GuiRendererAccessor) guiRenderer).canpipe_invalidateItemAtlas();
     }

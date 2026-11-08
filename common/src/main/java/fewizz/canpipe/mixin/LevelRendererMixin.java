@@ -54,6 +54,7 @@ import net.minecraft.client.renderer.CloudRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
@@ -88,6 +89,7 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
     @Shadow @Final private RenderBuffers renderBuffers;
     @Shadow private boolean usingMultiDrawIndirectForTerrain;
     @Shadow private @Nullable GpuSampler chunkLayerSampler;
+    @Shadow private @Nullable SkyRenderer skyRenderer;
 
     @Shadow private void checkPoseStack(PoseStack poseStack) {}
     @Shadow private void submitEntities(PoseStack poseStack, LevelRenderState levelRenderState, SubmitNodeCollector output) {}

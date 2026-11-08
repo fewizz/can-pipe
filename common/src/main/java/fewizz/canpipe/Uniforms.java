@@ -405,9 +405,16 @@ public class Uniforms {
         }
         {
             int value = 0;
-            value |= (mc.level.dimensionType().hasSkyLight() ? 1 : 0) << 0;
-            value |= (mc.level.isRaining() ? 1 : 0)                   << 1;
-            value |= (mc.level.isThundering() ? 1 : 0)                << 2;
+
+            boolean hasSkyLight = mc.level.dimensionType().hasSkyLight();
+            // was changed in some mc version
+            if (mc.level.dimensionType().skybox() == DimensionType.Skybox.END) {
+                hasSkyLight = false;
+            }
+
+            value |= (hasSkyLight             ? 1 : 0) << 0;
+            value |= (mc.level.isRaining()    ? 1 : 0) << 1;
+            value |= (mc.level.isThundering() ? 1 : 0) << 2;
             value |= (mc.level.dimensionType().cardinalLightType() == CardinalLighting.Type.NETHER ? 1 : 0)  << 3;
 
             int dimension = 3;

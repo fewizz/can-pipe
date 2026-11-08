@@ -25,7 +25,6 @@
         "GuiRendererAccessor",
         "ItemFeatureRendererMixin",
         "ItemStackLayerRenderState",
-        "LevelExtractorAccessor",
         "LevelExtractorMixin",
         "LevelRendererAccessor",
         "LevelRendererMixin",
