@@ -139,6 +139,11 @@ public class Framebuffer extends RenderTarget {
         destroyed = false;
     }
 
+    @Override
+    public boolean hasDepth() {
+        return this.depthTexture != null;
+    }
+
     public Pair<List<GpuFormat>, @Nullable GpuFormat> getFormats() {
         List<GpuFormat> result = new ArrayList<>();
         for (var a : this.colorTextures) {
