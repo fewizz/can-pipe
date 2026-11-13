@@ -1,6 +1,7 @@
 package fewizz.canpipe;
 
 import java.io.IOException;
+import java.nio.IntBuffer;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,11 +10,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.sdl.SDLScancode;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -76,17 +77,19 @@ public class CanPipe {
             }
         }
 
-        CanPipe.int0to3UBOBuffers = new GpuBuffer[] {
-            device.createBuffer(() -> "can-pipe 0", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 0))),
-            device.createBuffer(() -> "can-pipe 1", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 1))),
-            device.createBuffer(() -> "can-pipe 2", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 2))),
-            device.createBuffer(() -> "can-pipe 3", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(MemoryUtil.memAllocInt(1).put(0, 3)))
-        };
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            CanPipe.int0to3UBOBuffers = new GpuBuffer[] {
+                device.createBuffer(() -> "can-pipe 0", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(stack.ints(0))),
+                device.createBuffer(() -> "can-pipe 1", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(stack.ints(1))),
+                device.createBuffer(() -> "can-pipe 2", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(stack.ints(2))),
+                device.createBuffer(() -> "can-pipe 3", GpuBuffer.USAGE_UNIFORM, MemoryUtil.memByteBuffer(stack.ints(3)))
+            };
 
-        CanPipe.whitePixelTexture = device.createTexture("can-pipe white", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, 1, 1, 1, 1);
-        NativeImage whitePixel = new NativeImage(1, 1, false);
-        whitePixel.setPixel(0, 0, 0xFFFFFFFF);
-        device.createCommandEncoder().writeToTexture(whitePixelTexture, whitePixel);
+            CanPipe.whitePixelTexture = device.createTexture("can-pipe white", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, GpuFormat.RGBA8_UNORM, 1, 1, 1, 1);
+            IntBuffer whitePixel = stack.ints(0xFFFFFFFF);
+            device.createCommandEncoder().writeToTexture(whitePixelTexture, MemoryUtil.memByteBuffer(whitePixel), 0, 0, 0, 0, 1, 1);
+        }
+
         CanPipe.whitePixelTextureView = device.createTextureView(whitePixelTexture);
 
         HDRModCompat.init();
