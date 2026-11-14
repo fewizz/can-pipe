@@ -49,19 +49,6 @@ public class MoonPhasesTexture extends Texture {
         int w = phases.get(0).getWidth();
         int h = phases.get(0).getHeight();
 
-        NativeImage nativeImage = new NativeImage(w*4, h*2, false);
-        for (int y = 0; y < 2; ++y) {
-            for (int x = 0; x < 4; ++x) {
-                phases.get(y*4+x).copyRect(
-                    nativeImage,
-                    0, 0,  // src x/y
-                    x*w, y*h,  // dst x/y
-                    w, h,
-                    false, false  // don't mirror
-                );
-            }
-        }
-
         var texture = gpuDevice.createTexture(
             "can-pipe: moon phases",
             GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
@@ -69,7 +56,21 @@ public class MoonPhasesTexture extends Texture {
             w * 4, h * 2,
             1, 1
         );
-        commandEncoder.writeToTexture(texture, nativeImage);
+
+        try (NativeImage nativeImage = new NativeImage(w*4, h*2, false)) {
+            for (int y = 0; y < 2; ++y) {
+                for (int x = 0; x < 4; ++x) {
+                    phases.get(y*4+x).copyRect(
+                        nativeImage,
+                        0, 0,  // src x/y
+                        x*w, y*h,  // dst x/y
+                        w, h,
+                        false, false  // don't mirror
+                    );
+                }
+            }
+            commandEncoder.writeToTexture(texture, nativeImage);
+        }
 
         return texture;
     }
