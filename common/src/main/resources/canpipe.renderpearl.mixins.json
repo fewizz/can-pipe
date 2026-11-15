@@ -29,6 +29,7 @@
         "PipelineCacheMixin",
         "RenderPipelineBuilderMixin",
         "RenderSystemAccessor",
+        "SpvModuleTypeHandleAccessor",
         "VkCommandEncoderMixin",
         "VkDeviceAccessor",
         "VkDeviceMixin",

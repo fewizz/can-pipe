@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.function.TriConsumer;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.spvc.Spvc;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -226,21 +227,37 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
             var vertexOutputsToIgnore = vertexOutputs.stream().filter(v -> !fragmentInputsByName.containsKey(v.name())).map(v -> v.name()).toList();
             var fragmentInputsToIgnore = fragmentInputs.stream().filter(v -> !vertexOutputsByName.containsKey(v.name())).map(v -> v.name()).toList();
 
+            // Spvc.spvc_type_get_num_array_dimensions(0);
+
             Function<SpvModule.Reflection.InterfaceVariable, Integer> interfaceVarSlots = v -> {
-                int slots = 1;
+                int columns = Spvc.spvc_type_get_columns(((SpvModuleTypeHandleAccessor)v.type()).canpipe_getTypeHandle());
+
+                int slots = columns;
+
                 for (int d = 0; d < v.type().arrayDimensions(); ++d) {
+                    System.out.println(v.type().arrayLength(d));
                     slots *= v.type().arrayLength(d);
                 }
+
+                System.out.println(
+                    v.name() + ", slots: " + slots +
+                    ", dimensions: "+v.type().dimensions() +
+                    ", array dimensions: "+v.type().arrayDimensions() +
+                    ", vector size: "+v.type().vectorSize()+
+                    ", base type: "+v.type().baseType()+
+                    ", columns: "+columns
+                );
                 return slots;
             };
 
             int location = 0;
 
             for (var commonVarName : commonVars) {
-                var v = vertexOutputsByName.get(commonVarName);
-                v.location(location);
-                fragmentInputsByName.get(commonVarName).location(location);
-                location += interfaceVarSlots.apply(v);
+                var vVertex = vertexOutputsByName.get(commonVarName);
+                var vFragment = fragmentInputsByName.get(commonVarName);
+                vVertex.location(location);
+                vFragment.location(location);
+                location += interfaceVarSlots.apply(vVertex);
             }
 
             int vertexLocation = location;
