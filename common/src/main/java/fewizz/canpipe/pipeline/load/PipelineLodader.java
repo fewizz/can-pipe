@@ -18,14 +18,11 @@ import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.joml.Vector4f;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.textures.GpuTexture;
-import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonObject;
 import fewizz.canpipe.CanPipe;
@@ -36,7 +33,6 @@ import fewizz.canpipe.pipeline.Pass;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.RawPipeline;
 import fewizz.canpipe.pipeline.Texture;
-import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import fewizz.canpipe.util.MoonPhasesTexture;

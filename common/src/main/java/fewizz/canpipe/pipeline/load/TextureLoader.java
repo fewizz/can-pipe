@@ -61,7 +61,7 @@ public class TextureLoader {
             case "R11F_G11F_B10F" -> GpuFormat.RG11B10_FLOAT;
             case "RGBA8" -> GpuFormat.RGBA8_UNORM;
             case "RGBA8_SNORM" -> GpuFormat.RGBA8_SNORM;
-            case "RGBA12" -> GpuFormat.RGBA16_UNORM;   // have to provide RGBA12 instead of RGBA12
+            case "RGBA12" -> GpuFormat.RGBA16_UNORM;   // have to provide RGBA16 instead of RGBA12
             case "RGBA16" -> GpuFormat.RGBA16_UNORM;
             case "RGBA32UI" -> GpuFormat.RGBA32_UINT;
             case "RGBA16F" -> GpuFormat.RGBA16_FLOAT;

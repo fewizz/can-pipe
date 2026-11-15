@@ -5,20 +5,15 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Vector4f;
-import org.objectweb.asm.tree.analysis.Frame;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.textures.GpuTexture;
-import com.mojang.renderpearl.api.textures.GpuTextureView;
 
 import blue.endless.jankson.JsonElement;
 import blue.endless.jankson.JsonObject;
 import blue.endless.jankson.JsonPrimitive;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.Texture;
-import fewizz.canpipe.renderpearl.GpuDeviceExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import net.minecraft.resources.Identifier;
 

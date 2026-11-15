@@ -1,11 +1,9 @@
 package fewizz.canpipe.pipeline;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -23,8 +21,6 @@ import com.mojang.renderpearl.api.pipeline.ColorTargetState;
 import com.mojang.renderpearl.api.pipeline.CompiledRenderPipeline;
 import com.mojang.renderpearl.api.pipeline.DepthStencilState;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
-import com.mojang.renderpearl.api.pipeline.ShaderSource;
-import com.mojang.renderpearl.api.pipeline.ShaderType;
 import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
@@ -34,14 +30,14 @@ import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.mixininterface.GameRendererExtended;
 import fewizz.canpipe.mixininterface.LevelRendererExtended;
 import fewizz.canpipe.mixininterface.TextureAtlasExtended;
+import fewizz.canpipe.renderpearl.mixin.PipelineCacheAccessor;
+import fewizz.canpipe.renderpearl.mixin.RenderSystemAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderDefines;
-import net.minecraft.client.renderer.ShaderManager;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.level.Level;
 
@@ -325,8 +321,6 @@ public class Pipeline implements AutoCloseable {
     }
 
     public CompiledRenderPipeline onRenderPassSetPipeline(RenderPipeline pipeline, List<RenderPassDescriptor.Attachment<Optional<Vector4fc>>> colorAttachments) {
-        // if (!pipeline.getLocation().getNamespace().equals("minecraft")) { return null; }
-
         boolean patchDepth = !this.settings.awareOfDepthRangeChanges;
         boolean patchAttachment = (
             colorAttachments.size() != pipeline.getColorTargetStates().size() ||
@@ -366,10 +360,6 @@ public class Pipeline implements AutoCloseable {
                 );
             }
 
-            Minecraft mc = Minecraft.getInstance();
-            Map<Pair<Identifier, ShaderType>, String> shaderSources = new HashMap<>();
-            Map<Identifier, ShaderSource.CachedIncludeSource> includeSourcesBuilder = new HashMap<>();
-
             var defines = pipeline.getShaderDefines();
             if (patchDepth) {
                 defines = defines.withOverrides(ShaderDefines.builder().define("CANPIPE_CLIP_DEPTH_RANGE_PATCH").build());
@@ -390,48 +380,12 @@ public class Pipeline implements AutoCloseable {
                 pipeline.getSortKey()
             ) {};
 
-            for (Entry<Identifier, Resource> entry : mc.getResourceManager().listResources("shaders", p -> true).entrySet()) {
-                Identifier location = entry.getKey();
-                ShaderType shaderType = ShaderType.byLocation(location);
-                Resource resource = entry.getValue();
-
-                try {
-                    if (shaderType != null) {
-                        String contents = resource.readAllAsString();
-                        Identifier id = shaderType.idConverter().fileToId(location);
-                        shaderSources.put(Pair.of(id, shaderType), contents);
-                    }
-                    else if (ShaderManager.SHADER_INCLUDE_CONVERTER.matches(location)) {
-                        String contents = resource.readAllAsString();
-                        Identifier id = ShaderManager.SHADER_INCLUDE_CONVERTER.fileToId(location).withSuffix(ShaderManager.SHADER_INCLUDE_EXTENSION);
-                        includeSourcesBuilder.put(id, ShaderSource.CachedIncludeSource.create(id, contents));
-                    }
-                }
-                catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
             var device = RenderSystem.getDevice();
+            var shaderSource = ((PipelineCacheAccessor) RenderSystemAccessor.canpipe_getCurrentPipelineCache()).canpipe_getShaderSource();
+
             return device.compilePipeline(
                 newRenderPipeline,
-                new ShaderSource() {
-
-                    @Override
-                    public @Nullable String getShader(Identifier id, ShaderType type) {
-                        return shaderSources.get(Pair.of(id, type));
-                    }
-
-                    @Override
-                    public @Nullable CachedIncludeSource getInclude(Identifier id) {
-                        return includeSourcesBuilder.get(id);
-                    }
-
-                    @Override
-                    public void close() {
-                    }
-
-                },
+                shaderSource,
                 Runnable::run  // TODO?
             ).join().finishCompile();
         });
