@@ -230,7 +230,7 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
             // Spvc.spvc_type_get_num_array_dimensions(0);
 
             Function<SpvModule.Reflection.InterfaceVariable, Integer> interfaceVarSlots = v -> {
-                int columns = Spvc.spvc_type_get_columns(((SpvModuleTypeHandleAccessor)v.type()).canpipe_getTypeHandle());
+                int columns = Spvc.spvc_type_get_columns(((SpvModuleTypeHandleAccessor) v.type()).canpipe_getTypeHandle());
 
                 int slots = columns;
 
@@ -239,14 +239,6 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
                     slots *= v.type().arrayLength(d);
                 }
 
-                System.out.println(
-                    v.name() + ", slots: " + slots +
-                    ", dimensions: "+v.type().dimensions() +
-                    ", array dimensions: "+v.type().arrayDimensions() +
-                    ", vector size: "+v.type().vectorSize()+
-                    ", base type: "+v.type().baseType()+
-                    ", columns: "+columns
-                );
                 return slots;
             };
 

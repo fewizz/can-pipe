@@ -408,4 +408,9 @@ public class GameRendererMixin implements GameRendererExtended {
         return operation.call(commandEncoder, label, colorTexture, clearColor, depthTexture, clearDepth);
     }
 
+    @Inject(method = "close", at = @At("HEAD"))
+    void resetMainRenderTargetOnClose(CallbackInfo ci) {
+        this.canpipe_setMainRenderTargetOverride(null);
+    }
+
 }
