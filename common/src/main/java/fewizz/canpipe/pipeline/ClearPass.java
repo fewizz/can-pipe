@@ -17,9 +17,10 @@ public class ClearPass extends Pass {
     @Override
     public void apply(CommandEncoder commandEncoder) {
         for (int i = 0; i < this.framebuffer.colorTextureViews.length; ++i) {
+            var attachment = this.framebuffer.colorAttachments.get(i);
             ((CommandEncoderExtended) commandEncoder).canpipe_clearColorTexture(
-                this.framebuffer.colorTextures[i],
-                this.framebuffer.colorTextureClearColors[i],
+                attachment.texture().getTexture(),
+                attachment.clearColor(),
                 this.framebuffer.colorTextureViews[i].baseMipLevel(),
                 this.framebuffer.colorTextureViews[i].mipLevels(),
                 ((GpuTextureViewExtended) this.framebuffer.colorTextureViews[i]).canpipe_baseArrayLayer(),
@@ -28,8 +29,8 @@ public class ClearPass extends Pass {
         }
         if (this.framebuffer.getDepthTexture() != null) {
             ((CommandEncoderExtended) commandEncoder).canpipe_clearDepthTexture(
-                this.framebuffer.getDepthTexture(),
-                this.framebuffer.depthTextureClearDepth,
+                this.framebuffer.depthAttachment.texture().getTexture(),
+                this.framebuffer.depthAttachment.clearDepth(),
                 this.framebuffer.getDepthTextureView().baseMipLevel(),
                 this.framebuffer.getDepthTextureView().mipLevels(),
                 ((GpuTextureViewExtended) this.framebuffer.getDepthTextureView()).canpipe_baseArrayLayer(),

@@ -437,23 +437,16 @@ public class PipelineLodader {
         var cascadeRadii = JanksonUtils.listOfIntegers(shadowsJson, "cascadeRadius");
         for (int i = 0; i < cascadeRadii.size() + 1; ++i) {
             final int cascade = i;
-            GpuTexture shadowMapTexture = shadowFramebuffer.getDepthTexture();
-            GpuTextureView shadowMapTextureView = shadowFramebuffer.getDepthTextureView();
             Framebuffer fb = new Framebuffer(
                 shadowFramebuffer.name+"_"+(cascade+1),
-                (idx) -> { throw new RuntimeException("Color texture getter should not be called"); },
-                new Vector4f[]{},  // clear colors
-                () -> {
-                    var shadowMapCascadeTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
-                        shadowMapTexture,
-                        shadowMapTextureView.baseMipLevel(),
-                        shadowMapTextureView.mipLevels(),
-                        baseArrayLayer + layerCount * cascade,
-                        layerCount
-                    );
-                    return Pair.of(shadowMapTexture, shadowMapCascadeTextureView);
-                },
-                shadowFramebuffer.depthTextureClearDepth
+                List.of(),
+                new Framebuffer.DepthAttachment(
+                    shadowFramebuffer.depthAttachment.texture(),
+                    shadowFramebuffer.depthAttachment.lod(),
+                    baseArrayLayer + layerCount * cascade,
+                    layerCount,
+                    shadowFramebuffer.depthAttachment.clearDepth()
+                )
             );
             shadowFramebuffers.add(fb);
             framebuffers.put(fb.name, fb);

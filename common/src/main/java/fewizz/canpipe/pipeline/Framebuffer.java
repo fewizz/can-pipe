@@ -1,51 +1,51 @@
 package fewizz.canpipe.pipeline;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.IntFunction;
-import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4f;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.GpuFormat;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 
+import fewizz.canpipe.renderpearl.GpuDeviceExtended;
+
 public class Framebuffer extends RenderTarget {
+
+    public record ColorAttachment(Texture texture, int lod, int baseLayer, int layerCount, Vector4f clearColor) {}
+    public record DepthAttachment(Texture texture, int lod, int baseLayer, int layerCount, double clearDepth) {}
 
     public final String name;
 
-    private final IntFunction<Pair<GpuTexture, GpuTextureView>> colorAttachmentsSupplier;
-    private final Supplier<Pair<GpuTexture, GpuTextureView>> depthAttachmentSupplier;
+    public final List<ColorAttachment> colorAttachments;
+    public final DepthAttachment depthAttachment;
 
     public final GpuTexture[] colorTextures;
     public final GpuTextureView[] colorTextureViews;
-    public final Vector4f[] colorTextureClearColors;
-
-    public @Nullable final Double depthTextureClearDepth;
 
     private boolean destroyed = true;
 
     public Framebuffer(
         String name,
-        IntFunction<Pair<GpuTexture, GpuTextureView>> colorTextureSupplier,
-        Vector4f[] colorClearColors,
-        Supplier<Pair<GpuTexture, GpuTextureView>> depthTextureSupplier,
-        @Nullable Double depthClearDepth
+        List<ColorAttachment> colorAttachments,
+        DepthAttachment depthAttachment
     ) {
         super(name, null, null);
 
         this.name = name;
-        this.colorAttachmentsSupplier = colorTextureSupplier;
-        this.depthAttachmentSupplier = depthTextureSupplier;
-        this.colorTextures = new GpuTexture[colorClearColors.length];
-        this.colorTextureViews = new GpuTextureView[colorClearColors.length];
-        this.colorTextureClearColors = colorClearColors;
-        this.depthTextureClearDepth = depthClearDepth;
+
+        this.colorAttachments = Collections.unmodifiableList(colorAttachments);
+        this.depthAttachment = depthAttachment;
+
+        this.colorTextures = new GpuTexture[colorAttachments.size()];
+        this.colorTextureViews = new GpuTextureView[colorAttachments.size()];
 
         this.createBuffers(-1, -1);
     }
@@ -89,15 +89,12 @@ public class Framebuffer extends RenderTarget {
         if (!destroyed) { throw new RuntimeException(); }
 
         for (int i = 0; i < this.colorTextures.length; ++i) {
-            var colorTextureAndView = this.colorAttachmentsSupplier.apply(i);
-            var texture = colorTextureAndView.getLeft();
-            var textureView = colorTextureAndView.getRight();
+            var colorAttachment = this.colorAttachments.get(i);
 
-            if (texture == null) { throw new RuntimeException("Color attachment supplier must not return null for a texture"); }
-            if (textureView == null) { throw new RuntimeException("Color attachment supplier must not return null for a texture view"); }
-
-            this.colorTextures[i] = texture;
-            this.colorTextureViews[i] = textureView;
+            this.colorTextures[i] = colorAttachment.texture.getTexture();
+            this.colorTextureViews[i] = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                this.colorTextures[i], colorAttachment.lod, 1, colorAttachment.baseLayer, colorAttachment.layerCount
+            );
         }
 
         if (this.colorTextures.length > 0) {
@@ -105,9 +102,12 @@ public class Framebuffer extends RenderTarget {
             this.colorTextureView = this.colorTextureViews[0];
         }
 
-        var depthTextureAndView = this.depthAttachmentSupplier.get();
-        this.depthTexture = depthTextureAndView.getLeft();
-        this.depthTextureView = depthTextureAndView.getRight();
+        if (this.depthAttachment != null) {
+            this.depthTexture = this.depthAttachment.texture.getTexture();
+            this.depthTextureView = ((GpuDeviceExtended) RenderSystem.getDevice()).canpipe_createTextureView(
+                this.depthTexture, this.depthAttachment.lod, 1, this.depthAttachment.baseLayer, this.depthAttachment.layerCount
+            );
+        }
 
         this.width = this.height = -1;
 
