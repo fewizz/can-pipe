@@ -1,6 +1,8 @@
 package fewizz.canpipe.renderpearl;
 
-public interface GpuTextureViewExtended {
+import com.mojang.renderpearl.api.textures.GpuTextureView;
+
+public interface GpuTextureViewExtended extends GpuTextureView {
 
     int canpipe_baseArrayLayer();
     int canpipe_layerCount();

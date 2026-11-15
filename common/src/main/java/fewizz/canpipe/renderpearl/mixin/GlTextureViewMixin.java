@@ -13,7 +13,7 @@ import com.mojang.renderpearl.backend.api.GpuDeviceBackend;
 import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 
 @Mixin(GlTextureView.class)
-public class GlTextureViewMixin implements GpuTextureViewExtended {
+public abstract class GlTextureViewMixin implements GpuTextureViewExtended {
 
     @Unique /*final*/ int canpipe_baseArrayLayer;
     @Unique /*final*/ int canpipe_layerCount;

@@ -31,6 +31,7 @@ import com.mojang.renderpearl.api.vertex.VertexFormat;
 
 import fewizz.canpipe.compat.hdrmod.HDRModCompat;
 import fewizz.canpipe.pipeline.Pipelines;
+import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.feature.ItemFeatureRenderer;
@@ -267,6 +268,17 @@ public class CanPipe {
             format.componentType() != GpuFormat.ComponentType.UINT_32 &&
             format != GpuFormat.RGB10A2_UINT &&
             format.componentCount() != 3;
+    }
+
+    public static boolean textureViewsAreEqual(GpuTextureView a, GpuTextureView b) {
+        var ae = (GpuTextureViewExtended) a;
+        var be = (GpuTextureViewExtended) b;
+        return
+            a.texture() == b.texture() &&
+            a.baseMipLevel() == b.baseMipLevel() &&
+            a.mipLevels() == b.mipLevels() &&
+            ae.canpipe_baseArrayLayer() == be.canpipe_baseArrayLayer() &&
+            ae.canpipe_layerCount() == be.canpipe_layerCount();
     }
 
     public static void onSpvCompilationError(String log, Identifier shaderLocation, String src) {

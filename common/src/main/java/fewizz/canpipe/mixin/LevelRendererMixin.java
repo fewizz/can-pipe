@@ -355,26 +355,41 @@ public abstract class LevelRendererMixin implements LevelRendererExtended {
         if (p == null) return;
 
         var renderArea = new RenderPass.RenderArea(0, 0, p.targets.main().width, p.targets.main().height);
-
         var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.targets.solid().getDepthTexture(), p.targets.translucentTerrain().getDepthTexture(),
-            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.targets.translucentTerrain().getDepthTextureView()).canpipe_baseArrayLayer()
-        );
-        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.targets.solid().getDepthTexture(), p.targets.translucentItemEntity().getDepthTexture(),
-            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.targets.translucentItemEntity().getDepthTextureView()).canpipe_baseArrayLayer()
-        );
-        ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
-            p.targets.solid().getDepthTexture(), p.targets.translucentParticles().getDepthTexture(),
-            0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
-            ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
-            ((GpuTextureViewExtended) p.targets.translucentParticles().getDepthTextureView()).canpipe_baseArrayLayer()
-        );
+
+        if (!CanPipe.textureViewsAreEqual(p.targets.translucentTerrain().getDepthTextureView(), p.targets.solid().getDepthTextureView())) {
+            ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+                p.targets.solid().getDepthTexture(), p.targets.translucentTerrain().getDepthTexture(),
+                0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
+                ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
+                ((GpuTextureViewExtended) p.targets.translucentTerrain().getDepthTextureView()).canpipe_baseArrayLayer()
+            );
+        }
+
+        if (
+            !CanPipe.textureViewsAreEqual(p.targets.translucentItemEntity().getDepthTextureView(), p.targets.solid().getDepthTextureView()) &&
+            !CanPipe.textureViewsAreEqual(p.targets.translucentItemEntity().getDepthTextureView(), p.targets.translucentTerrain().getDepthTextureView())
+        ) {
+            ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+                p.targets.solid().getDepthTexture(), p.targets.translucentItemEntity().getDepthTexture(),
+                0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
+                ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
+                ((GpuTextureViewExtended) p.targets.translucentItemEntity().getDepthTextureView()).canpipe_baseArrayLayer()
+            );
+        }
+
+        if (
+            !CanPipe.textureViewsAreEqual(p.targets.translucentParticles().getDepthTextureView(), p.targets.solid().getDepthTextureView()) &&
+            !CanPipe.textureViewsAreEqual(p.targets.translucentParticles().getDepthTextureView(), p.targets.translucentTerrain().getDepthTextureView()) &&
+            !CanPipe.textureViewsAreEqual(p.targets.translucentParticles().getDepthTextureView(), p.targets.translucentItemEntity().getDepthTextureView())
+        ) {
+            ((CommandEncoderExtended) commandEncoder).canpipe_copyTextureToTexture(
+                p.targets.solid().getDepthTexture(), p.targets.translucentParticles().getDepthTexture(),
+                0, 0, 0, 0, 0, renderArea.width(), renderArea.height(),
+                ((GpuTextureViewExtended) p.targets.solid().getDepthTextureView()).canpipe_baseArrayLayer(),
+                ((GpuTextureViewExtended) p.targets.translucentParticles().getDepthTextureView()).canpipe_baseArrayLayer()
+            );
+        }
 
         this.executeClassicTransparency(chunkSectionsToRender, featureFrame, null /* no renderpass, see mixins below */);
     }

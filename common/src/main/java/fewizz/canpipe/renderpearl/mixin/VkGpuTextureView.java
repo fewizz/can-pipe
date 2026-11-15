@@ -13,7 +13,7 @@ import com.mojang.renderpearl.backend.vulkan.VulkanGpuTextureView;
 import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 
 @Mixin(VulkanGpuTextureView.class)
-public class VkGpuTextureView implements GpuTextureViewExtended {
+public abstract class VkGpuTextureView implements GpuTextureViewExtended {
 
     @Unique /*final*/ int canpipe_baseArrayLayer;
     @Unique /*final*/ int canpipe_layerCount;
