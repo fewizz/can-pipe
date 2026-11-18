@@ -32,6 +32,7 @@ import fewizz.canpipe.material.MaterialMaps;
 import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.OptionGroup;
 import fewizz.canpipe.pipeline.Pipeline;
+import fewizz.canpipe.pipeline.Pipeline.MaterialProgram;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
@@ -58,11 +59,9 @@ public class MaterialProgramLoader {
         Pipeline.Settings settings,
         boolean shadow,
         Pipeline.Shadows shadows,
-        Identifier vertexShaderLocation,
-        Identifier fragmentShaderLocation,
+        MaterialProgram materialProgram,
         Map<Identifier, OptionGroup> options,
         Map<OptionGroup.Element<?>, Object> appliedOptions,
-        List<String> samplers,
         Function<Identifier, Optional<String>> getShaderSource
     ) {
 
@@ -102,8 +101,8 @@ public class MaterialProgramLoader {
         {
             renderPipelineBuilder
                 .withLocation(location)
-                .withVertexShader(vertexShaderLocation)
-                .withFragmentShader(fragmentShaderLocation)
+                .withVertexShader(materialProgram.vertexShaderLocation())
+                .withFragmentShader(materialProgram.fragmentShaderLocation())
                 .withPolygonMode(originalRenderPipeline.getPolygonMode())
                 .withCull(!shadow && originalRenderPipeline.isCull())
                 .withPrimitiveTopology(originalRenderPipeline.getPrimitiveTopology());
@@ -180,7 +179,7 @@ public class MaterialProgramLoader {
             bindGroupLayoutBuilder.withUniform(externalUboName, UniformType.UNIFORM_BUFFER);
         }
 
-        for (String sampler : samplers) {
+        for (String sampler : materialProgram.samplers()) {
             bindGroupLayoutBuilder.withUniform(sampler, UniformType.COMBINED_IMAGE_SAMPLER);
         }
         renderPipelineBuilder.withBindGroupLayout(bindGroupLayoutBuilder.build());
@@ -236,8 +235,8 @@ public class MaterialProgramLoader {
             return src;
         };
 
-        String vertexSrc = getVertexSrc(vertexShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, settings.enablePBR());
-        String fragmentSrc = getFragmentSrc(fragmentShaderLocation, getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, settings.enablePBR());
+        String vertexSrc = getVertexSrc(materialProgram.vertexShaderLocation(), getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, settings.enablePBR());
+        String fragmentSrc = getFragmentSrc(materialProgram.fragmentShaderLocation(), getShaderSource, attributeNames, originalRenderPipeline, materials, shadow, terrain, terrainMultidraw, settings.enablePBR());
 
         if (!settings.awareOfDepthRangeChanges() && RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
             renderPipelineBuilder.withShaderDefine("CANPIPE_CLIP_DEPTH_RANGE_PATCH");
@@ -260,7 +259,10 @@ public class MaterialProgramLoader {
             getShaderSource, Optional.ofNullable(shadows != null ? shadows.shadowMapSize() : null), postprocess, settings.awareOfDepthRangeChanges()
         );
 
-        var shaderSource = new SimpleShaderSource(vertexShaderLocation, vertexSrcProcessed, fragmentShaderLocation, fragmentSrcProcessed);
+        var shaderSource = new SimpleShaderSource(
+            materialProgram.vertexShaderLocation(), vertexSrcProcessed,
+            materialProgram.fragmentShaderLocation(), fragmentSrcProcessed
+        );
 
         return CompletableFuture.supplyAsync(
             () -> {

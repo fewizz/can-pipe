@@ -33,6 +33,7 @@ import fewizz.canpipe.pipeline.Pass;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.RawPipeline;
 import fewizz.canpipe.pipeline.Texture;
+import fewizz.canpipe.pipeline.Pipeline.MaterialProgram;
 import fewizz.canpipe.renderpearl.GpuTextureViewExtended;
 import fewizz.canpipe.util.JanksonUtils;
 import fewizz.canpipe.util.MoonPhasesTexture;
@@ -100,14 +101,13 @@ public class PipelineLodader {
 
         Map<String, Texture> textures = new HashMap<>();
         Map<String, Framebuffer> framebuffers = new HashMap<>();
-        Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders = new HashMap<>();
-        Map<String, AbstractTexture> materialProgramSamplerTextures = new HashMap<>();
         Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompiledRenderPipeline> programs = new HashMap<>();
 
         Pipeline.Passes passes = new Pipeline.Passes(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
         Pipeline.Shadows shadows = null;
         Pipeline.Targets targets = null;
         Pipeline.FabulousTargets fabulousTargets = null;
+        MaterialProgram materialProgram = null;
 
         BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
         Executor localExecutor = runnable -> { tasks.add(runnable); };
@@ -240,7 +240,7 @@ public class PipelineLodader {
         if (shadowsJson != null) {
             var shadowsAndFutureMaterialProgram = loadShadowsAndMaterialProgram(
                 rawPipeline, pipelineJson, shadowsJson, appliedOptions,
-                getShaderSource, getOrLoadFramebuffer,
+                getShaderSource, getOrLoadFramebuffer, getOrLoadPipelineOrResourcepackTexture,
                 framebuffers, settings, localExecutor
             );
             shadows = shadowsAndFutureMaterialProgram.getLeft();
@@ -250,11 +250,14 @@ public class PipelineLodader {
         var finalShadows = shadows;
 
         // "materialProgram"
-        materialProgramLoadersAreReady = loadMaterialProgram(
-            rawPipeline, pipelineJson, appliedOptions,
-            getShaderSource, getOrLoadFramebuffer, getOrLoadPipelineOrResourcepackTexture, materialProgramSamplerTextures,
-            materialProgramProviders, settings, shadows, localExecutor
-        );
+        {
+            var materialProgramAndFuture = loadMaterialProgram(
+                rawPipeline, pipelineJson, appliedOptions,
+                getShaderSource, getOrLoadFramebuffer, getOrLoadPipelineOrResourcepackTexture, settings, shadows, localExecutor
+            );
+            materialProgram = materialProgramAndFuture.getLeft();
+            materialProgramLoadersAreReady = materialProgramAndFuture.getRight();
+        }
 
         // "programs"
 
@@ -332,10 +335,10 @@ public class PipelineLodader {
 
             programs.values().stream().forEach(CompiledRenderPipeline::close);
 
-            materialProgramProviders.values().forEach(MaterialProgramProvider::close);
+            materialProgram.providers().values().forEach(MaterialProgramProvider::close);
 
             if (shadows != null) {
-                shadows.materialProgramProviders().values().forEach(MaterialProgramProvider::close);
+                shadows.close();
             }
 
             throw t;
@@ -343,25 +346,26 @@ public class PipelineLodader {
 
         return new Pipeline(
             rawPipeline.location, appliedOptions,
-            settings, passes, shadows, targets, fabulousTargets,
-            textures, framebuffers, materialProgramProviders, materialProgramSamplerTextures, programs
+            settings, passes, shadows, targets, fabulousTargets, materialProgram,
+            textures, framebuffers, programs
         );
     }
 
-    static CompletableFuture<Void> loadMaterialProgram(
+    static Pair<MaterialProgram, CompletableFuture<Void>> loadMaterialProgram(
         RawPipeline rawPipeline,
         JsonObject pipelineJson,
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource,
         Function<String, Framebuffer> getOrLoadFramebuffer,
         Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture,
-        Map<String, AbstractTexture> materialProgramSamplerTextures,
-        Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders,
         Pipeline.Settings settings,
         Pipeline.Shadows shadows,
         Executor localExecutor
     ) {
         JsonObject materialProgramJson = JanksonUtils.objectOrThrow(pipelineJson, "materialProgram");
+
+        var vertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(materialProgramJson, "vertexSource"));
+        var fragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(materialProgramJson, "fragmentSource"));
 
         List<String> samplers = new ArrayList<>(JanksonUtils.listOfStrings(materialProgramJson, "samplers"));
         if (shadows != null) {
@@ -369,20 +373,18 @@ public class PipelineLodader {
             samplers.add("frxs_shadowMapTexture");
         }
 
-        var materialVertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(materialProgramJson, "vertexSource"));
-        var materialFragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(materialProgramJson, "fragmentSource"));
+        try (MaterialProgram materialProgram = new MaterialProgram(new HashMap<>(), samplers, new HashMap<>(), vertexShaderLocation, fragmentShaderLocation)) {
 
         CompletableFuture<Void> materialProgramLoadersAreReady = CompletableFuture.allOf(
             Stream.of(RENDER_PIPELINES_TO_REPLACE)
             .map(
                 renderPipeline -> MaterialProgramLoader.load(
                     renderPipeline, settings, false, shadows,
-                    materialVertexShaderLocation, materialFragmentShaderLocation,
-                    rawPipeline.options, appliedOptions, samplers, getShaderSource
+                    materialProgram, rawPipeline.options, appliedOptions, getShaderSource
                 ).whenCompleteAsync(
                     (materialProgramLoader, throwable) -> {
                         if (throwable != null) { throw new RuntimeException(throwable); }
-                        materialProgramProviders.put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
+                        materialProgram.providers().put(materialProgramLoader.originalRenderPipeline(), materialProgramLoader);
                     },
                     localExecutor
                 )
@@ -396,19 +398,25 @@ public class PipelineLodader {
             if (samplerImage.isEmpty()) {
                 throw new RuntimeException("Couldn't find material program sampler image \""+samplerImagesNames.get(i)+"\"");
             }
-            materialProgramSamplerTextures.put(sampler, samplerImage.get());
+            materialProgram.samplerTextures().put(sampler, samplerImage.get());
         }
+
         if (shadows != null) {
             String shadowMapTextureName = shadows.framebuffers().get(0).getDepthTexture().getLabel();
             Optional<AbstractTexture> shadowMapTexture = getOrLoadPipelineOrResourcepackTexture.apply(shadowMapTextureName);
             if (shadowMapTexture.isEmpty()) {
                 throw new RuntimeException("Couldn't find material program shadowmap image \""+shadowMapTextureName+"\"");
             }
-            materialProgramSamplerTextures.put("frxs_shadowMap", shadowMapTexture.get());
-            materialProgramSamplerTextures.put("frxs_shadowMapTexture", shadowMapTexture.get());
+            materialProgram.samplerTextures().put("frxs_shadowMap", shadowMapTexture.get());
+            materialProgram.samplerTextures().put("frxs_shadowMapTexture", shadowMapTexture.get());
         }
 
-        return materialProgramLoadersAreReady;
+        return Pair.of(
+            materialProgram,
+            materialProgramLoadersAreReady
+        );
+
+        }
     }
 
     static Pair<Pipeline.Shadows, CompletableFuture<Void>> loadShadowsAndMaterialProgram(
@@ -418,6 +426,7 @@ public class PipelineLodader {
         Map<OptionGroup.Element<?>, Object> appliedOptions,
         Function<Identifier, Optional<String>> getShaderSource,
         Function<String, Framebuffer> getOrLoadFramebuffer,
+        Function<String, Optional<AbstractTexture>> getOrLoadPipelineOrResourcepackTexture,
         Map<String, Framebuffer> framebuffers,
         Pipeline.Settings settings,
         Executor localExecutor
@@ -448,37 +457,52 @@ public class PipelineLodader {
             framebuffers.put(fb.name, fb);
         }
 
+        List<String> samplers = new ArrayList<>(JanksonUtils.listOfStrings(shadowsJson, "samplers"));
+
         var vertexShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "vertexSource"));
         var fragmentShaderLocation = Identifier.parse(JanksonUtils.stringOrThrow(shadowsJson, "fragmentSource"));
 
-        Pipeline.Shadows shadows = new Pipeline.Shadows(
-            new HashMap<>(),
-            shadowFramebuffers,
-            cascadeRadii,
-            shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
-            shadowsJson.getFloat("offsetBiasUnits", 4.0F),
-            shadowsJson.getBoolean("supportForwardRender", true),
-            shadowsJson.getBoolean("allowEntities", true),
-            shadowsJson.getBoolean("allowParticles", true)
-        );
+        try (
+            Pipeline.Shadows shadows = new Pipeline.Shadows(
+                new MaterialProgram(new HashMap<>(), samplers, new HashMap<>(), vertexShaderLocation, fragmentShaderLocation),
+                shadowFramebuffers,
+                cascadeRadii,
+                shadowsJson.getFloat("offsetSlopeFactor", 1.1F),
+                shadowsJson.getFloat("offsetBiasUnits", 4.0F),
+                shadowsJson.getBoolean("supportForwardRender", true),
+                shadowsJson.getBoolean("allowEntities", true),
+                shadowsJson.getBoolean("allowParticles", true)
+            )
+        ) {
+
+        var samplerImagesNames = JanksonUtils.listOfStrings(shadowsJson, "samplerImages");
+        for (int i = 0; i < Math.min(samplers.size(), samplerImagesNames.size()); ++i) {
+            String sampler = samplers.get(i);
+            var samplerImage = getOrLoadPipelineOrResourcepackTexture.apply(samplerImagesNames.get(i));
+            if (samplerImage.isEmpty()) {
+                throw new RuntimeException("Couldn't find material program sampler image \""+samplerImagesNames.get(i)+"\"");
+            }
+            shadows.materialProgram().samplerTextures().put(sampler, samplerImage.get());
+        }
 
         return Pair.of(shadows, CompletableFuture.allOf(
             Stream.of(RENDER_PIPELINES_TO_REPLACE)
             .map(
                 renderPipeline -> MaterialProgramLoader.load(
                     renderPipeline, settings, true, shadows,
-                    vertexShaderLocation, fragmentShaderLocation, rawPipeline.options, appliedOptions,
-                    List.of(), getShaderSource
+                    shadows.materialProgram(), rawPipeline.options, appliedOptions, getShaderSource
                 ).whenCompleteAsync(
                     (materialProgramProvider, throwable) -> {
                         if (materialProgramProvider != null) {
-                            shadows.materialProgramProviders().put(materialProgramProvider.originalRenderPipeline(), materialProgramProvider);
+                            shadows.materialProgram().providers().put(materialProgramProvider.originalRenderPipeline(), materialProgramProvider);
                         }
                     },
                     localExecutor
                 )
             ).toArray(CompletableFuture[]::new)
         ));
+
+        }
     }
 
     static CompletableFuture<Void> loadPasses(

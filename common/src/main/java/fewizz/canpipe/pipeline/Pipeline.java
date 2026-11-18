@@ -62,8 +62,23 @@ public class Pipeline implements AutoCloseable {
         Framebuffer clouds
     ) {}
 
+    public static record MaterialProgram(
+        Map<RenderPipeline, MaterialProgramProvider> providers,
+        List<String> samplers,
+        Map<String, AbstractTexture> samplerTextures,
+        Identifier vertexShaderLocation,
+        Identifier fragmentShaderLocation
+    ) implements AutoCloseable {
+
+        @Override
+        public void close() {
+            this.providers.values().forEach(MaterialProgramProvider::close);
+        }
+
+    }
+
     public static record Shadows(
-        Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders,
+        MaterialProgram materialProgram,
         List<Framebuffer> framebuffers,
         List<Integer> cascadeRadii,  // for cascades 1-3, cascade 0 has max radius (render distance)
         float offsetSlopeFactor,
@@ -71,10 +86,15 @@ public class Pipeline implements AutoCloseable {
         boolean supportForwardRender,  // isn't used in canvas
         boolean allowEntities,
         boolean allowParticles  // isn't used in canvas
-    ) {
+    ) implements AutoCloseable {
 
         public int shadowMapSize() {
             return this.framebuffers.get(0).getDepthTexture().getWidth(0);
+        }
+
+        @Override
+        public void close() {
+            this.materialProgram.close();
         }
 
     }
@@ -116,9 +136,7 @@ public class Pipeline implements AutoCloseable {
     public final Targets targets;
     public final @Nullable FabulousTargets fabulousTargets;
     public final @Nullable Shadows shadows;
-
-    private final Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders;
-    private final Map<String, ? extends AbstractTexture> materialProgramSamplerTextures;
+    public final MaterialProgram materialProgram;
 
     private final Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompiledRenderPipeline> programs;
     private final Map<String, Texture> textures;
@@ -135,10 +153,9 @@ public class Pipeline implements AutoCloseable {
         Pipeline.Shadows shadows,
         Pipeline.Targets targets,
         Pipeline.FabulousTargets fabulousTargets,
+        MaterialProgram materialProgram,
         Map<String, Texture> textures,
         Map<String, Framebuffer> framebuffers,
-        Map<RenderPipeline, MaterialProgramProvider> materialProgramProviders,
-        Map<String, AbstractTexture> materialProgramSamplerTextures,
         Map<Pair<String, Pair<List<GpuFormat>, GpuFormat>>, CompiledRenderPipeline> programs
     ) {
         this.location = location;
@@ -148,11 +165,10 @@ public class Pipeline implements AutoCloseable {
         this.shadows = shadows;
         this.targets = targets;
         this.fabulousTargets = fabulousTargets;
+        this.materialProgram = materialProgram;
 
         this.textures = textures;
         this.framebuffers = framebuffers;
-        this.materialProgramProviders = materialProgramProviders;
-        this.materialProgramSamplerTextures = materialProgramSamplerTextures;
         this.programs = programs;
     }
 
@@ -166,10 +182,10 @@ public class Pipeline implements AutoCloseable {
         this.programs.values().stream().forEach(CompiledRenderPipeline::close);
 
         this.replacedRenderPipelines.values().forEach(CompiledRenderPipeline::close);
-        this.materialProgramProviders.values().forEach(MaterialProgramProvider::close);
+        this.materialProgram.close();
 
         if (this.shadows != null) {
-            this.shadows.materialProgramProviders.values().forEach(MaterialProgramProvider::close);
+            this.shadows.close();
         }
     }
 
@@ -230,10 +246,10 @@ public class Pipeline implements AutoCloseable {
         Minecraft mc = Minecraft.getInstance();
 
         if (this.shadows != null && ((LevelRendererExtended) mc.levelRenderer).canpipe_getCurrentShadowCascadeIdx() >= 0) {
-            return this.shadows.materialProgramProviders().get(renderPipeline);
+            return this.shadows.materialProgram.providers.get(renderPipeline);
         }
         else {
-            return this.materialProgramProviders.get(renderPipeline);
+            return this.materialProgram.providers.get(renderPipeline);
         }
     }
 
@@ -262,12 +278,13 @@ public class Pipeline implements AutoCloseable {
     public void bindUniforms(RenderPass renderPass, Framebuffer framebuffer, boolean bindVanillaTextures) {
         GameRendererExtended gre = (GameRendererExtended) Minecraft.getInstance().gameRenderer;
         LevelRendererExtended lre = (LevelRendererExtended) Minecraft.getInstance().levelRenderer;
+        boolean renderingShadows = lre.canpipe_getCurrentShadowCascadeIdx() >= 0;
 
         Uniforms.setRenderPassFREXUniforms(renderPass);
 
         renderPass.setUniform("canpipe_ub_origin_type", CanPipe.get0to3UBOBuffers()[gre.canpipe_getOriginType()]);
         renderPass.setUniform("canpipe_ub_is_rendering_hand", CanPipe.get0to3UBOBuffers()[gre.canpipe_isRenderingHand() ? 1 : 0]);
-        if (lre.canpipe_getCurrentShadowCascadeIdx() >= 0) {
+        if (renderingShadows) {
             renderPass.setUniform("frxu_ub_cascade", CanPipe.get0to3UBOBuffers()[lre.canpipe_getCurrentShadowCascadeIdx()]);
         }
 
@@ -291,7 +308,7 @@ public class Pipeline implements AutoCloseable {
             renderPass.setUniform("Sampler2", Minecraft.getInstance().gameRenderer.lightmap(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
         }
 
-        for (var e : this.materialProgramSamplerTextures.entrySet()) {
+        for (var e : (!renderingShadows ? this.materialProgram : this.shadows.materialProgram).samplerTextures.entrySet()) {
             AbstractTexture texture = e.getValue();
             renderPass.setUniform(e.getKey(), texture.getTextureView(), texture.getSampler());
         }
