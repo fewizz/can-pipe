@@ -59,6 +59,10 @@ public abstract class MutableQuadViewImplMixin extends QuadViewImplMixin impleme
 
     @Inject(method = "clear", at = @At("TAIL"), remap = false)
     void onClear(CallbackInfoReturnable<MutableQuadViewImpl> ci) {
+        if (this.canpipe_extraData == null) {
+            this.canpipe_extraData = new int[QuadViewImplMixin.CANPIPE_DATA_STRIDE_INTS];
+        }
+
         int i = this.baseIndex / EncodingFormat.TOTAL_STRIDE * CANPIPE_DATA_STRIDE_INTS;
         this.canpipe_extraData[i+0] |= 0xFFFFFFFF;
         this.canpipe_extraData[i+1] |= 0xFFFFFFFF;
