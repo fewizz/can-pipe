@@ -12,6 +12,7 @@ import org.jspecify.annotations.NonNull;
 import org.lwjgl.sdl.SDLScancode;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.spvc.Spvc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,7 @@ import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.backend.api.SpvModule;
 
 import fewizz.canpipe.compat.hdrmod.HDRModCompat;
 import fewizz.canpipe.pipeline.Pipelines;
@@ -294,6 +296,11 @@ public class CanPipe {
         }
         throw new RuntimeException("Couldn't compile \""+shaderLocation.toString()+"\": "+log);
     };
+
+    public static void onUnhandledUniform(Identifier pipelineLocation, String shaderName, SpvModule.Reflection.Descriptor descriptor) {
+        var type = descriptor.resourceType() == Spvc.SPVC_RESOURCE_TYPE_SAMPLED_IMAGE ? "Sampler" : "Uniform";
+        CanPipe.LOGGER.warn(type+" \""+descriptor.name()+"\" isn't handled by shader \""+shaderName+"\" of pipeline \""+pipelineLocation+"\"");
+    }
 
     public static void deleteGlslToSpvCompilationErrorLogs() {
         Path compilationErrorsPath = CanPipe.getGlslToSpvCompilationErrorsDirPath();

@@ -8,8 +8,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import org.lwjgl.util.spvc.Spvc;
-
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
@@ -25,6 +23,7 @@ import fewizz.canpipe.CanPipe;
 import fewizz.canpipe.Uniforms;
 import fewizz.canpipe.pipeline.Framebuffer;
 import fewizz.canpipe.pipeline.OptionGroup;
+import fewizz.canpipe.renderpearl.ExtraPipelineBuilderOptions;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
@@ -176,12 +175,11 @@ public class ProgramLoader {
         return ((PipelineBuilderExtended) pipelineBuilder).canpipe_compilePipeline(
             pipeline, shaderSource,
             Util.backgroundExecutor(),  // !!!
-            (descriptor) -> {
-                var type = descriptor.resourceType() == Spvc.SPVC_RESOURCE_TYPE_SAMPLED_IMAGE ? "Sampler" : "Uniform";
-                CanPipe.LOGGER.warn(type+" \""+descriptor.name()+"\" isn't handled by program \""+name+"\"");
-            },
-            true,  // compute locations
-            CanPipe::onSpvCompilationError
+            new ExtraPipelineBuilderOptions(
+                true,  // compute locations
+                CanPipe::onUnhandledUniform,
+                CanPipe::onSpvCompilationError
+            )
         ).thenApplyAsync(
             pending -> pending.finishCompile(),
             executor

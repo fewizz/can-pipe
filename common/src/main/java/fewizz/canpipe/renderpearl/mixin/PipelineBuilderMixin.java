@@ -10,13 +10,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.function.TriConsumer;
-import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.spvc.Spvc;
 import org.spongepowered.asm.mixin.Final;
@@ -43,6 +40,7 @@ import com.mojang.renderpearl.frontend.shaders.SPIRVModule;
 import com.mojang.renderpearl.util.ShaderCompileException;
 
 import fewizz.canpipe.CanPipe;
+import fewizz.canpipe.renderpearl.ExtraPipelineBuilderOptions;
 import fewizz.canpipe.renderpearl.GlslCompilerExtended;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
@@ -55,7 +53,6 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
-import net.minecraft.resources.Identifier;
 
 @Mixin(PipelineBuilder.class)
 public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
@@ -65,27 +62,19 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
     @Shadow abstract public CompletableFuture<CompiledRenderPipeline.Pending> compilePipeline(RenderPipeline pipeline, ShaderSource shaderSource, Executor executor);
     @Shadow private BackendRenderPipeline.CreateInfo generateBackendCreateInfo(RenderPipeline pipeline, ShaderSource shaderSource, ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos, Object2IntOpenHashMap<String> uniformBindings) { return null; }
 
-    @Unique private ThreadLocal<Consumer<SpvModule.Reflection.Descriptor>> canpipe_onUnhandledUniform = new ThreadLocal<>();
-    @Unique private ThreadLocal<Boolean> canpipe_computeLocations = new ThreadLocal<>();
-    @Unique private ThreadLocal<TriConsumer<String, Identifier, String>> canpipe_spvCompilationErrorListener = new ThreadLocal<>();
+    @Unique private ThreadLocal<ExtraPipelineBuilderOptions> canpipe_extraOptions = new ThreadLocal<>();
 
     @Override
     public CompletableFuture<CompiledRenderPipeline.Pending> canpipe_compilePipeline(
         RenderPipeline pipeline, ShaderSource shaderSource, Executor executor,
-        @Nullable Consumer<SpvModule.Reflection.Descriptor> onUnhandledUniform,
-        boolean computeLocations,
-        TriConsumer<String, Identifier, String> spvCompilationErrorListener
+        ExtraPipelineBuilderOptions extraOptions
     ) {
         try {
-            this.canpipe_onUnhandledUniform.set(onUnhandledUniform);
-            this.canpipe_computeLocations.set(computeLocations);
-            this.canpipe_spvCompilationErrorListener.set(spvCompilationErrorListener);
+            this.canpipe_extraOptions.set(extraOptions);
             return this.compilePipeline(pipeline, shaderSource, executor);
         }
         finally {
-            this.canpipe_onUnhandledUniform.remove();
-            this.canpipe_computeLocations.remove();
-            this.canpipe_spvCompilationErrorListener.remove();
+            this.canpipe_extraOptions.remove();
         }
     }
 
@@ -94,17 +83,14 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
         RenderPipeline pipeline, ShaderSource shaderSource,
         ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos,
         Object2IntOpenHashMap<String> uniformBindings,
-        boolean computeLocations,  // added
-        TriConsumer<String, Identifier, String> spvCompilationErrorListener
+        ExtraPipelineBuilderOptions extraOptions
     ) {
         try {
-            this.canpipe_computeLocations.set(computeLocations);
-            this.canpipe_spvCompilationErrorListener.set(spvCompilationErrorListener);
+            this.canpipe_extraOptions.set(extraOptions);
             return this.generateBackendCreateInfo(pipeline, shaderSource, shaderCreateInfos, uniformBindings);
         }
         finally {
-            this.canpipe_computeLocations.remove();
-            this.canpipe_spvCompilationErrorListener.remove();
+            this.canpipe_extraOptions.remove();
         }
     }
 
@@ -117,13 +103,15 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
     )
     List<SpvModule.Reflection.Descriptor> handleUndefinedUniform(
         List<SpvModule.Reflection.Descriptor> result,
-        @Local Map<String, BindGroupLayout.UniformDescription> pipelineUniformsByName
+        @Local(name = "pipeline") RenderPipeline pipeline,
+        @Local Map<String, BindGroupLayout.UniformDescription> pipelineUniformsByName,
+        @Local BackendRenderPipeline.CreateInfo.Shader shader
     ) {
-        var handler = this.canpipe_onUnhandledUniform.get();
-        if (handler != null) {
+        var extraOptions = this.canpipe_extraOptions.get();
+        if (extraOptions != null && extraOptions.canpipe_onUnhandledUniform() != null) {
             result = result.stream().filter(d -> {
                 if (!pipelineUniformsByName.containsKey(d.name())) {
-                    handler.accept(d);
+                    extraOptions.canpipe_onUnhandledUniform().accept(pipeline.getLocation(), shader.name(), d);
                     return false;
                 }
                 return true;
@@ -140,10 +128,12 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
         )
     )
     void extendedCompileToSpv(CallbackInfoReturnable<BackendRenderPipeline.CreateInfo> ci) {
-        Boolean computeLocations = this.canpipe_computeLocations.get();
+        var extraOptions = this.canpipe_extraOptions.get();
+
+        Boolean computeLocations = extraOptions != null && extraOptions.canpipe_computeLocations();
         if (computeLocations != null) ((GlslCompilerExtended) this.compiler).canpipe_setEnableAutoMapLocationsForPendingCompilation(computeLocations);
 
-        var listener = this.canpipe_spvCompilationErrorListener.get();
+        var listener = extraOptions != null ? extraOptions.canpipe_spvCompilationErrorListener() : null;
         if (listener != null) ((GlslCompilerExtended) this.compiler).canpipe_setCompilationErrorListenerForPendingCompilation(listener);
     }
 
@@ -156,17 +146,14 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
         index = 0
     )
     Supplier<CompiledRenderPipeline.Pending> onSupplyAsync(Supplier<CompiledRenderPipeline.Pending> supplier) {
-        Boolean computeLocations = this.canpipe_computeLocations.get();
-        TriConsumer<String, Identifier, String> spvCompilationErrorListener = this.canpipe_spvCompilationErrorListener.get();
-        return () -> {
-            this.canpipe_computeLocations.set(computeLocations);
-            this.canpipe_spvCompilationErrorListener.set(spvCompilationErrorListener);
+        var extraOptions = this.canpipe_extraOptions.get();
+        return () -> {  // In case if executor runs a task in other thread
+            this.canpipe_extraOptions.set(extraOptions);
             try {
                 return supplier.get();
             }
             finally {
-                this.canpipe_computeLocations.remove();
-                this.canpipe_spvCompilationErrorListener.remove();
+                this.canpipe_extraOptions.remove();
             }
         };
     }
@@ -185,8 +172,9 @@ public abstract class PipelineBuilderMixin implements PipelineBuilderExtended {
         @Local ReferenceArrayList<BackendRenderPipeline.CreateInfo.Shader> shaderCreateInfos,
         @Local RenderPipeline pipeline
     ) throws ShaderCompileException {
-        Boolean computeLocations = this.canpipe_computeLocations.get();
-        if (computeLocations == null || !computeLocations) {
+
+        var extraOptions = this.canpipe_extraOptions.get();
+        if (extraOptions == null || !extraOptions.canpipe_computeLocations()) {
             return;
         }
 

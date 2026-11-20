@@ -33,6 +33,7 @@ import fewizz.canpipe.pipeline.MaterialProgramProvider;
 import fewizz.canpipe.pipeline.OptionGroup;
 import fewizz.canpipe.pipeline.Pipeline;
 import fewizz.canpipe.pipeline.Pipeline.MaterialProgram;
+import fewizz.canpipe.renderpearl.ExtraPipelineBuilderOptions;
 import fewizz.canpipe.renderpearl.PipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.RenderPipelineBuilderExtended;
 import fewizz.canpipe.renderpearl.mixin.FrontendGpuDeviceAccessor;
@@ -271,8 +272,11 @@ public class MaterialProgramLoader {
                     shaderSource,
                     shaderCreateInfos,
                     uniformBindings,
-                    true,  // compute locations
-                    CanPipe::onSpvCompilationError
+                    new ExtraPipelineBuilderOptions(
+                        true,  // compute locations
+                        CanPipe::onUnhandledUniform,
+                        CanPipe::onSpvCompilationError
+                    )
                 );
                 if (renderPipelineCreateInfo == null) {
                     throw new RuntimeException("Couldn't compile material program \""+location+"\"");
